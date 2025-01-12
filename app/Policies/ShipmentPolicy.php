@@ -2,18 +2,20 @@
 
 namespace App\Policies;
 
-use App\Models\Shipment;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
+use App\Models\Shipment;
+use Illuminate\Auth\Access\HandlesAuthorization;
 
 class ShipmentPolicy
 {
+    use HandlesAuthorization;
+
     /**
      * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool
     {
-        return true;
+        return $user->can('view_any_shipment');
     }
 
     /**
@@ -21,7 +23,7 @@ class ShipmentPolicy
      */
     public function view(User $user, Shipment $shipment): bool
     {
-        return true;
+        return $user->can('view_shipment');
     }
 
     /**
@@ -29,7 +31,7 @@ class ShipmentPolicy
      */
     public function create(User $user): bool
     {
-        return true;
+        return $user->can('create_shipment');
     }
 
     /**
@@ -37,7 +39,7 @@ class ShipmentPolicy
      */
     public function update(User $user, Shipment $shipment): bool
     {
-        return true;
+        return $user->can('update_shipment');
     }
 
     /**
@@ -45,22 +47,62 @@ class ShipmentPolicy
      */
     public function delete(User $user, Shipment $shipment): bool
     {
-        return true;
+        return $user->can('delete_shipment');
     }
 
     /**
-     * Determine whether the user can restore the model.
+     * Determine whether the user can bulk delete.
      */
-    public function restore(User $user, Shipment $shipment): bool
+    public function deleteAny(User $user): bool
     {
-        return true;
+        return $user->can('delete_any_shipment');
     }
 
     /**
-     * Determine whether the user can permanently delete the model.
+     * Determine whether the user can permanently delete.
      */
     public function forceDelete(User $user, Shipment $shipment): bool
     {
-        return true;
+        return $user->can('force_delete_shipment');
+    }
+
+    /**
+     * Determine whether the user can permanently bulk delete.
+     */
+    public function forceDeleteAny(User $user): bool
+    {
+        return $user->can('force_delete_any_shipment');
+    }
+
+    /**
+     * Determine whether the user can restore.
+     */
+    public function restore(User $user, Shipment $shipment): bool
+    {
+        return $user->can('restore_shipment');
+    }
+
+    /**
+     * Determine whether the user can bulk restore.
+     */
+    public function restoreAny(User $user): bool
+    {
+        return $user->can('restore_any_shipment');
+    }
+
+    /**
+     * Determine whether the user can replicate.
+     */
+    public function replicate(User $user, Shipment $shipment): bool
+    {
+        return $user->can('replicate_shipment');
+    }
+
+    /**
+     * Determine whether the user can reorder.
+     */
+    public function reorder(User $user): bool
+    {
+        return $user->can('reorder_shipment');
     }
 }

@@ -2,18 +2,21 @@
 
 namespace App\Policies;
 
-use App\Models\Staff;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
+use App\Models\Staff;
+use Illuminate\Auth\Access\HandlesAuthorization;
 
 class StaffPolicy
 {
+    use HandlesAuthorization;
+
     /**
      * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool
     {
-        return true;
+        //return $user->can('view_any_staff');
+        return false;
     }
 
     /**
@@ -21,7 +24,7 @@ class StaffPolicy
      */
     public function view(User $user, Staff $staff): bool
     {
-        return true;
+        return $user->can('view_staff');
     }
 
     /**
@@ -29,7 +32,7 @@ class StaffPolicy
      */
     public function create(User $user): bool
     {
-        return true;
+        return $user->can('create_staff');
     }
 
     /**
@@ -37,7 +40,7 @@ class StaffPolicy
      */
     public function update(User $user, Staff $staff): bool
     {
-        return true;
+        return $user->can('update_staff');
     }
 
     /**
@@ -45,22 +48,62 @@ class StaffPolicy
      */
     public function delete(User $user, Staff $staff): bool
     {
-        return true;
+        return $user->can('delete_staff');
     }
 
     /**
-     * Determine whether the user can restore the model.
+     * Determine whether the user can bulk delete.
      */
-    public function restore(User $user, Staff $staff): bool
+    public function deleteAny(User $user): bool
     {
-        return true;
+        return $user->can('delete_any_staff');
     }
 
     /**
-     * Determine whether the user can permanently delete the model.
+     * Determine whether the user can permanently delete.
      */
     public function forceDelete(User $user, Staff $staff): bool
     {
-        return true;
+        return $user->can('force_delete_staff');
+    }
+
+    /**
+     * Determine whether the user can permanently bulk delete.
+     */
+    public function forceDeleteAny(User $user): bool
+    {
+        return $user->can('force_delete_any_staff');
+    }
+
+    /**
+     * Determine whether the user can restore.
+     */
+    public function restore(User $user, Staff $staff): bool
+    {
+        return $user->can('restore_staff');
+    }
+
+    /**
+     * Determine whether the user can bulk restore.
+     */
+    public function restoreAny(User $user): bool
+    {
+        return $user->can('restore_any_staff');
+    }
+
+    /**
+     * Determine whether the user can replicate.
+     */
+    public function replicate(User $user, Staff $staff): bool
+    {
+        return $user->can('replicate_staff');
+    }
+
+    /**
+     * Determine whether the user can reorder.
+     */
+    public function reorder(User $user): bool
+    {
+        return $user->can('reorder_staff');
     }
 }

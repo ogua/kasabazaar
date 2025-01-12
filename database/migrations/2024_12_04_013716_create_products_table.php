@@ -15,11 +15,11 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('name');
             $table->string('product_image')->nullable();
-            $table->string('sku')->unique();
+            $table->string('sku')->nullable();
             $table->string('category');
             $table->integer('weight')->nullable();
             $table->decimal('value', 10, 2);
-            $table->uuid('branch_id'); // Inventory branch
+            $table->uuid('branch_id')->nullable(); // Inventory branch
             $table->timestamps();
         });
     }

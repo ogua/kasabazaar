@@ -6,9 +6,22 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "barryvdh/laravel-dompdf": "^3.0",
+        "bezhansalleh/filament-shield": "^3.3",
         "filament/filament": "^3.2",
+        "flowframe/laravel-trend": "^0.3.0",
+        "icetalker/filament-table-repeater": "^1.3",
+        "joaopaulolndev/filament-edit-profile": "^1.0",
         "laravel/framework": "^11.9",
-        "laravel/tinker": "^2.9"
+        "laravel/tinker": "^2.9",
+        "matscode/paystack": "^1.10",
+        "nnjeim/world": "^1.1",
+        "pragmarx/countries": "^0.8.3",
+        "solution-forest/filament-simplelightbox": "^0.0.10",
+        "spatie/laravel-pdf": "^1.5",
+        "swisnl/filament-backgrounds": "^1.1",
+        "unicodeveloper/laravel-paystack": "^1.2",
+        "ysfkaya/filament-phone-input": "^3.1"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

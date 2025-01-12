@@ -10,15 +10,18 @@ use Filament\Panel;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser, HasTenants
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasUuids;
+    use HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -56,6 +59,11 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         return $this->belongsToMany(Branch::class);
     }
 
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
     public function getTenants(Panel $panel): Collection
     {
         return $this->branches;
@@ -68,7 +76,12 @@ class User extends Authenticatable implements FilamentUser, HasTenants
 
     public function canAccessPanel(Panel $panel): bool
     {
-            return true;
+        return true;
+    }
+
+    public function client(): BelongsTo
+    {
+        return $this->belongsTo(Client::class,"client_id");
     }
 
 }

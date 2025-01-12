@@ -18,7 +18,7 @@ class StaffResource extends Resource
     protected static ?string $model = Staff::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
-    protected static ?string $navigationGroup = 'Human Resource';
+   // protected static ?string $navigationGroup = 'Users';
 
 
     public static function form(Form $form): Form

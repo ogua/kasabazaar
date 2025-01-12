@@ -13,9 +13,15 @@ return new class extends Migration
     {
         Schema::create('clients', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->uuid('branch_id');
             $table->string('name');
             $table->string('email');
             $table->string('phone');
+            $table->string('country')->nullable();
+            $table->string('state_region')->nullable();
+            $table->string('city')->nullable();
+            $table->string('id_type'); // Receiver's ID type
+            $table->string('id_number');
             $table->text('address');
             $table->timestamps();
         });

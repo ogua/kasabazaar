@@ -13,6 +13,7 @@ use Illuminate\Support\Str;
 
 class RegisterBranch extends RegisterTenant
 {
+
     public static function getLabel(): string
     {
         return 'Register branch';
@@ -23,16 +24,35 @@ class RegisterBranch extends RegisterTenant
         return $form
         ->schema([
 
-            Forms\Components\TextInput::make('name')
-            ->label('Branch name')
-            ->required()
-            ->live(onBlur:true)
-            ->afterStateUpdated(fn ($set, ?string $state) => $set('slug', Str::slug($state))),
+            Forms\Components\Section::make('')
+                ->description('')
+                ->schema([
+                    Forms\Components\TextInput::make('name')
+                    ->label('Branch name')
+                    ->required()
+                    ->live(onBlur:true)
+                    ->columnSpan(2)
+                    ->afterStateUpdated(fn ($set, ?string $state) => $set('slug', Str::slug($state))),
 
-            Forms\Components\Hidden::make('slug'),
+                    Forms\Components\Hidden::make('slug'),
 
-            Forms\Components\TextInput::make('location')
-            ->required(),
+                    Forms\Components\TextInput::make('email'),
+
+                    Forms\Components\TextInput::make('phone'),
+
+                    Forms\Components\TextInput::make('country'),
+
+                    Forms\Components\TextInput::make('state')
+                    ->required(),
+
+                    Forms\Components\Textarea::make('address')
+                    ->columnSpan(2)
+                    ->required(),
+
+                ])
+                ->columns(2),
+
+
         ]);
     }
 
@@ -40,13 +60,11 @@ class RegisterBranch extends RegisterTenant
     {
         $team = Branch::create($data);
 
-        $schooladmin = User::where('role',"School_admin_".auth()->user()->school_id)
-        ->where('school_id', auth()->user()->school_id)
-        ->get();
+        $user = User::where('id',auth()->user()->id)->first();
 
-        foreach ($schooladmin as $user) {
-            $user->branches()->attach($team->id);
-        }
+        $user->branches()->attach($team->id);
+
+        return $team;
 
         //assign this role for all admin.
         $adminUsers = User::whereHas('roles',function($query){

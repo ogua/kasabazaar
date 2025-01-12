@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuid('shipment_id');
             $table->decimal('total_amount', 10, 2);
-            $table->enum('status', ['unpaid', 'paid']);
+            $table->enum('status', ['unpaid', 'paid','partial']);
             $table->timestamps();
         });
     }
