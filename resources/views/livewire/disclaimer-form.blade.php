@@ -65,14 +65,13 @@ Please read the above information before signing below.
                     {{ $this->form }}
 
                     @php
-                        $url = route('make-payment-agreement',['record' => $this->record])
+                        $url =
                     @endphp
 
                     <x-filament::button
-                        href="{{ $url }}"
-                        tag="a"
                         icon="heroicon-m-arrow-right"
                         style="background-color: #A0043C;margin-top: 20px;"
+                        wire:click='save'
                     >
                        Proceed
                     </x-filament::button>

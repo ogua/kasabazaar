@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\Shipment;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -35,9 +36,16 @@ class DisclaimerForm extends Component implements HasForms
             ->statePath('data');
     }
 
-    public function save(): void
+    public function save()
     {
         $data = $this->form->getState();
+
+        $shipment = Shipment::where('id',$this->record)->first();
+        $shipment->is_diclaimer_aggred = $data['disclaima_aggreed'];
+        $shipment->save();
+
+
+         return redirect()->route('make-payment-agreement',['record' => $this->record]);
 
         $this->record->update($data);
     }
