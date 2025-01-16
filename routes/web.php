@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\ShippingController;
+use App\Livewire\AgreementForm;
 use App\Livewire\DisclaimerForm;
+use App\Livewire\PaymentsuccessfulPage;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -20,6 +22,9 @@ Route::get('/print-quotation/{record}',[ShippingController::class,'printquotatio
 Route::get('/make-payment/{record}',DisclaimerForm::class)
 ->name('make-payment');
 
-Route::get('/make-payment-agreement/{record}',DisclaimerForm::class)
+Route::get('/make-payment-agreement/{record}',AgreementForm::class)
 ->name('make-payment-agreement');
+
+Route::get('/paid-successfully',PaymentsuccessfulPage::class)
+->name('paid-successfully');
 

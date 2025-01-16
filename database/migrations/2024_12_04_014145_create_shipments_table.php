@@ -34,6 +34,7 @@ return new class extends Migration
             $table->boolean('is_received')->default(false);
             $table->boolean('signed_received_form')->nullable();
             $table->boolean('is_diclaimer_aggred')->nullable();
+            $table->boolean('is_agreement_aggred')->nullable();
 
             $table->timestamps();
 

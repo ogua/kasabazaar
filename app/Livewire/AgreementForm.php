@@ -2,13 +2,16 @@
 
 namespace App\Livewire;
 
-use App\Models\User;
+use App\Filament\Client\Pages\PageSuccessfully;
 use Filament\Forms;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
+use App\Models\User;
 use Livewire\Component;
+use App\Models\Shipment;
+use Filament\Forms\Form;
 use Illuminate\Contracts\View\View;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Matscode\Paystack\Transaction;
 
 class AgreementForm extends Component implements HasForms
 {
@@ -16,7 +19,9 @@ class AgreementForm extends Component implements HasForms
 
     public ?array $data = [];
 
-    public function mount(): void
+    public $record;
+
+    public function mount($record): void
     {
         $this->form->fill();
     }
@@ -24,20 +29,43 @@ class AgreementForm extends Component implements HasForms
     public function form(Form $form): Form
     {
         return $form
-            ->schema([
-                //
-            ])
+            ->schema([Forms\Components\Checkbox::make('disclaima_aggreed')->required()->label('I have read and agree to the terms and conditions above')])
             ->statePath('data')
             ->model(User::class);
     }
 
-    public function create(): void
+    public function create()
     {
         $data = $this->form->getState();
 
-        $record = User::create($data);
+        if (empty($data['disclaima_aggreed'])) {
+            return;
+        }
 
-        $this->form->model($record)->saveRelationships();
+        $shipment = Shipment::where('id', $this->record)->first();
+        $shipment->is_agreement_aggred = $data['disclaima_aggreed'];
+        $shipment->save();
+
+        $secretKey = env('PAYSTACK_SECRET_KEY');
+        // creating the transaction object
+        $Transaction = new Transaction($secretKey);
+
+        $amount = $shipment->total;
+
+        $response = (object) $Transaction
+            ->setCallbackUrl(route('paid-successfully'))
+            ->setEmail($shipment->client?->email)
+            ->setAmount($amount)
+            ->setMetadata([
+                'fullname' => $shipment->client?->name,
+                'phone' => $shipment->client?->phone,
+                'email' => $shipment->client?->email,
+                'reference' => $shipment->shipping_reference,
+                'shipment_id' => $shipment->id,
+            ])
+            ->initialize();
+
+        return redirect()->to($response->authorizationUrl);
     }
 
     public function render(): View

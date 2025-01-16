@@ -65,7 +65,7 @@ Please read the above information before signing below.
                     {{ $this->form }}
 
                     @php
-                        $url =
+                        $url = "";
                     @endphp
 
                     <x-filament::button
@@ -73,7 +73,7 @@ Please read the above information before signing below.
                         style="background-color: #A0043C;margin-top: 20px;"
                         wire:click='save'
                     >
-                       Proceed
+                       Proceed To Shipping Agreement
                     </x-filament::button>
                 </form>
 
