@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('shipment_items', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('shipment_id');
+            $table->string('box_no');
             $table->uuid('product_id');
             $table->integer('quantity');
             $table->decimal('item_cost', 10, 2);

@@ -17,9 +17,14 @@ class ShippingController extends Controller
     {
         $shipping = $id;
 
-        //  dd($shipping);
-
         return view('packing-slip',compact('shipping'));
+
+        return Pdf::view('packing-slip', ['shipping' => $id])
+        ->format('a4')
+        ->save('packing-slip.pdf');
+
+
+        
         //    ->headerHtml('<div>My header</div>')
         //    ->format('a4')
         //     ->name('invoice-2023-04-10.pdf');
@@ -29,7 +34,10 @@ class ShippingController extends Controller
     public function shippinginvoice(Shipment $id)
     {
 
-        return view('shipping-slip');
+        return view('shipping-invoice',['shipping' => $id]);
+
+        return Pdf::view('shipping-invoice', ['shipping' => $id])
+        ->name('shipping-invoice.pdf');
     }
 
     public function printquotation(Quotation $record)

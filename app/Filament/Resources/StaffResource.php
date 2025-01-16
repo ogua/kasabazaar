@@ -19,6 +19,7 @@ class StaffResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
    // protected static ?string $navigationGroup = 'Users';
+   protected static bool $shouldRegisterNavigation = false;
 
 
     public static function form(Form $form): Form

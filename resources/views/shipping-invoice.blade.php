@@ -1,12 +1,11 @@
 <x-layouts.app>
-    <div class="bg-gray-100 py-10" style="background-image: url('/images/kasabazaarr-logo.png'); background-size: cover; background-position: center;">
+    <div class="bg-gray-100 py-10">
         <div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg">
             <!-- Header -->
             <div class="flex justify-between items-center border-b pb-4 mb-6">
                 <div>
                     <h1 class="text-2xl font-bold text-gray-700">KasaBazaar</h1>
-                    <p class="text-sm text-gray-500">Rose Door to Door Shipping and Delivery</p>
-                    <p class="text-sm text-gray-500">Packing List</p>
+                    <p class="text-sm text-gray-500">Shipping Invoice</p>
                 </div>
                 <div>
                     <p class="text-sm text-gray-500">Date: <span class="font-medium">{{ $shipping->created_at }}</span></p>
@@ -14,18 +13,17 @@
                 </div>
             </div>
     
-            <!-- Shipping Information -->
+            <!-- Branch Details -->
             <div class="mb-6">
-                <h2 class="text-lg font-semibold text-gray-700 mt-4">Shipping Information</h2>
-                <div class="space-y-4 p-4 border rounded-lg bg-gray-50">
-                    <p class="text-sm text-gray-500">Shipping From: <span class="font-medium">{{ $shipping->origin_branch_id }}</span></p>
-                    <p class="text-sm text-gray-500">Shipping To: <span class="font-medium">{{ $shipping->destination_branch_id }}</span></p>
-                    <p class="text-sm text-gray-500">Shipping Method: <span class="font-medium">Sea, Air, Domestic, RORO Car, 20/40 Ft Container</span></p>
-                </div>
+                <h2 class="text-lg font-semibold text-gray-700">Branch Details</h2>
+                <p class="text-sm text-gray-500">Name: <span class="font-medium">{{ $shipping->branch?->name }}</span></p>
+                <p class="text-sm text-gray-500">Address: <span class="font-medium">{{ $shipping->branch?->address }}</span></p>
+                <p class="text-sm text-gray-500">Phone: <span class="font-medium">{{ $shipping->branch?->phone }}</span></p>
+                <p class="text-sm text-gray-500">Email: <span class="font-medium">{{ $shipping->branch?->email }}</span></p>
             </div>
-
+    
             <!-- Receivers -->
-            <div class="mb-6 mt-4">
+            <div class="mb-6">
                 <h2 class="text-lg font-semibold text-gray-700">Receivers</h2>
                 <div class="space-y-4">
                     <!-- Loop through receivers -->
@@ -41,14 +39,14 @@
             </div>
     
             <!-- Items -->
-            <div class="mt-4">
-                <h2 class="text-lg font-semibold text-gray-700">Packing List</h2>
+            <div>
+                <h2 class="text-lg font-semibold text-gray-700">Shipment Items</h2>
                 <table class="w-full mt-4 text-left border">
                     <thead>
                         <tr class="bg-gray-100">
                             <th class="p-2 border text-sm font-medium text-gray-600">#</th>
                             <th class="p-2 border text-sm font-medium text-gray-600">Item</th>
-                            <th class="p-2 border text-sm font-medium text-gray-600">Box No</th>
+                            <th class="p-2 border text-sm font-medium text-gray-600">box_no</th>
                             <th class="p-2 border text-sm font-medium text-gray-600">Quantity</th>
                             <th class="p-2 border text-sm font-medium text-gray-600">Value</th>
                         </tr>
@@ -68,17 +66,15 @@
                 </table>
             </div>
     
-            <!-- Signature and Date -->
-            <div class="mt-8 flex justify-between items-center border-t pt-4">
-                <div class="text-sm text-gray-500">
-                    <p>Signature:</p>
-                    <p class="border-b w-40 h-10 mt-1">__________________</p>
-                </div>
-                <div class="text-sm text-gray-500 text-right">
-                    <p>Date: <span class="font-medium">______________________</span></p>
+            <!-- Total Amount -->
+            <div class="mt-6 flex justify-end">
+                <div>
+                    <p class="text-sm text-gray-500">Subtotal: <span class="font-medium">${{ number_format($shipping->total,2) }}</span></p>
+                    <p class="text-sm text-gray-500">Tax: <span class="font-medium">0%</span></p>
+                    <p class="text-lg font-bold text-gray-700">Total: <span class="text-blue-500">${{ number_format($shipping->total,2) }}</span></p>
                 </div>
             </div>
-
+    
             <!-- Footer -->
             <div class="mt-8 text-center text-sm text-gray-500">
                 <p>Thank you for shipping with KasaBazaar!</p>
