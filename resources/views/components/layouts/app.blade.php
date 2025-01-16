@@ -9,6 +9,12 @@
 
         <title>{{ config('app.name') }}</title>
 
+        @if ($favicon = filament()->getFavicon())
+            <link rel="icon" href="{{ $favicon }}" />
+            @else
+            <link rel="icon" href="/images/kasabazaar-logo.png" />
+        @endif
+
         <style>
             [x-cloak] {
                 display: none !important;

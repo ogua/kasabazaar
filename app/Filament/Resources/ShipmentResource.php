@@ -53,9 +53,12 @@ class ShipmentResource extends Resource
 
 
 
-            Forms\Components\Section::make('Sender')
-            ->description('Choose Sender')
+            Forms\Components\Section::make('Sender / Shipping Reference')
+            ->description('Reference / Choose Sender')
             ->schema([
+                Forms\Components\TextInput::make('shipping_reference')
+                ->required(),
+
                 Forms\Components\Select::make('client_id')
                 ->label('Choose Sender')
                 ->required()

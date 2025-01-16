@@ -17,6 +17,7 @@ return new class extends Migration
             $table->uuid('client_id'); // Sender
             $table->uuid('branch_id'); // Origin branch
 
+            $table->string('shipping_reference')->nullable();
             $table->string('tracking_number')->nullable(); // Unique tracking number
             $table->string('origin_branch_id'); // Origin branch
             $table->string('destination_branch_id'); // Destination branch

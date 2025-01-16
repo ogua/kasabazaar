@@ -122,6 +122,7 @@ class ClientResource extends Resource
             public static function table(Table $table): Table
             {
                 return $table
+                ->recordUrl('')
                 ->columns([
                     Tables\Columns\TextColumn::make('name')
                     ->label('Sender name')

@@ -15,8 +15,7 @@ class StaffPolicy
      */
     public function viewAny(User $user): bool
     {
-        //return $user->can('view_any_staff');
-        return false;
+        return $user->can('view_any_staff');
     }
 
     /**

@@ -8,7 +8,6 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-
 Route::get('/packing-slip/{id}',[ShippingController::class,'packingslip'])
 ->name('packing-slip');
 
