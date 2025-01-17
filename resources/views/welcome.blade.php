@@ -28,14 +28,14 @@
                 <div class="p-4 border rounded-lg shadow-sm bg-gray-50">
                     <img src="/images/import-export.png" alt="Import and Export" class="object-cover w-full h-40 mb-4 rounded">
                     <h2 class="text-lg font-semibold text-gray-700">Import and Export</h2>
-                    <a href="/images/import-export" class="inline-block px-4 py-2 mt-4 text-white bg-blue-500 rounded hover:bg-blue-600">Import & Export</a>
+                    <a href="http://shipping.kasabazaar.com" class="inline-block px-4 py-2 mt-4 text-white bg-blue-500 rounded hover:bg-blue-600">Import & Export</a>
                 </div>
 
                 <!-- Real Estate -->
                 <div class="p-4 border rounded-lg shadow-sm bg-gray-50">
                     <img src="/images/real-estate.jpg" alt="Real Estate" class="object-cover w-full h-40 mb-4 rounded">
                     <h2 class="text-lg font-semibold text-gray-700">Real Estate</h2>
-                    <a href="http://shipping.kasabazaar.com" class="inline-block px-4 py-2 mt-4 text-white bg-blue-500 rounded hover:bg-blue-600">Real Estate</a>
+                    <a href="#" class="inline-block px-4 py-2 mt-4 text-white bg-blue-500 rounded hover:bg-blue-600">Real Estate</a>
                 </div>
 
                 <!-- Property Management -->
