@@ -27,7 +27,8 @@ class EditShipment extends EditRecord
     {
         $records = $this->getRecord();
 
-        $amountopay = $records->items->sum('item_cost');
+       // $amountopay = $records->items->sum('item_cost');
+        $amountopay = $records->total;
         $paid = $records->payments->sum('amount');
 
         $records->total = $amountopay;

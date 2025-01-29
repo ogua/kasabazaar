@@ -27,4 +27,9 @@ class Receiver extends Model
     {
         return $this->belongsTo(Country::class,"country");
     }
+
+    public function items()
+    {
+        return $this->hasMany(ShipmentItem::class,"receiver_id");
+    }
 }

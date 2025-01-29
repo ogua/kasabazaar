@@ -18,6 +18,15 @@ class Shipment extends Model
         'status' => ShippingStatus::class
     ];
 
+    // Automatically update related items after saving
+    protected static function booted()
+    {
+        static::saved(function ($shipping) {
+            $shipping->updateItemsShipmentId();
+        });
+    }
+    
+
     public function items()
     {
         return $this->hasMany(ShipmentItem::class,"shipment_id");
@@ -69,4 +78,17 @@ class Shipment extends Model
     {
         return $this->belongsTo(Country::class,"country");
     }
+
+
+    // Custom method to update shipment_id for related items
+    public function updateItemsShipmentId()
+    {
+        foreach ($this->receivers as $receiver) {
+            foreach ($receiver->items as $item) {
+                $item->update(['shipment_id' => $this->id]);
+            }
+        }
+    }
+
+
 }

@@ -21,6 +21,11 @@ class PaymentResource extends Resource
 
     protected static ?string $title = 'Transactions';
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->orderBy('created_at', 'desc');
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -124,6 +129,7 @@ class PaymentResource extends Resource
                 ->label('Recorded By')
                 ->badge()
                 ->color('info')
+                ->placeholder('Online Payment')
                 ->searchable(),
 
                 Tables\Columns\TextColumn::make('created_at')

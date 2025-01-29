@@ -2,9 +2,23 @@
     <!-- Top Header Section with Company Logo, Name, and Login Button -->
     <div class="flex items-center justify-between p-4 bg-white shadow-md">
         <!-- Company Logo and Name -->
-        <div class="flex items-center">
-            <img src="/images/kasabazaar-logo.png" alt="Kasabazar Logo" class="w-12 h-12 mr-2">
-            <span class="text-2xl font-bold text-gray-800">Kasabazar</span>
+        <div class="flex items-start">
+            <div class="flex items-center">
+                <img src="/images/kasabazaar-logo.png" alt="Kasabazar Logo" class="w-12 h-12 mr-2">
+                <div>
+                    <span class="text-2xl font-bold text-gray-800">Kasabazar</span>
+                    <!-- Contact Information -->
+                    <div class="text-sm text-gray-600">
+                        <p>Mobile: <a href="tel:+233123456789" class="text-blue-500 hover:underline">+1(574) 440 7460</a>, 
+                            <a href="tel:+233987654321" class="text-blue-500 hover:underline">+1(347) 867 4498</a>
+                        </p>
+                        
+                        <p>Email: <a href="mailto:info@kasabazaar.com" class="text-blue-500 hover:underline">kasabazaar109@gmail.com</a>, 
+                            <a href="mailto:support@kasabazaar.com" class="text-blue-500 hover:underline">support@kasabazaar.com</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Login Button -->
@@ -15,7 +29,7 @@
 
     <!-- Main Content -->
     <div class="flex items-center justify-center min-h-screen bg-gray-100">
-        <div class="w-full max-w-4xl p-6 text-center bg-white rounded-lg shadow-lg">
+        <div class="w-full max-w-5xl p-6 text-center bg-white rounded-lg shadow-lg">
             <!-- Logo and Welcome Message -->
             <div class="mb-8">
                 <img src="/images/kasabazaar-logo.png" alt="Logo" class="w-24 mx-auto mb-4">
@@ -28,7 +42,7 @@
                 <div class="p-4 border rounded-lg shadow-sm bg-gray-50">
                     <img src="/images/import-export.png" alt="Import and Export" class="object-cover w-full h-40 mb-4 rounded">
                     <h2 class="text-lg font-semibold text-gray-700">Import and Export</h2>
-                    <a href="http://shipping.kasabazaar.com" class="inline-block px-4 py-2 mt-4 text-white bg-blue-500 rounded hover:bg-blue-600">Import & Export</a>
+                    <a href="http://shipping.kasabazaar.com" class="inline-block px-4 py-2 mt-4 text-white bg-blue-500 rounded hover:bg-blue-600">Rose Door To Door</a>
                 </div>
 
                 <!-- Real Estate -->

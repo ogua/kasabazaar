@@ -5,8 +5,10 @@ namespace App\Filament\Resources\ShipmentResource\Pages;
 use App\Filament\Resources\ShipmentResource;
 use App\Models\Invoice;
 use App\Models\ShipmentUpdate;
+use App\Service\NotificationService;
 use Filament\Actions;
 use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Support\Facades\Concurrency;
 
 class CreateShipment extends CreateRecord
 {
@@ -49,7 +51,7 @@ class CreateShipment extends CreateRecord
     {
         $records = $this->getRecord();
 
-        $amountopay = $records->items->sum('item_cost');
+        $amountopay = $records->total;
         $paid = $records->payments->sum('amount');
 
         $records->total = $amountopay;
@@ -61,7 +63,7 @@ class CreateShipment extends CreateRecord
         Invoice::create([
             'shipment_id' => $records->id,
             'total_amount' => $records->total,
-            'status' => $left < 1 ? 'paid' : 'unpaid',
+            'status' => $left < 1 ? 'paid' : 'partial',
         ]);
 
         ShipmentUpdate::create([
@@ -70,5 +72,15 @@ class CreateShipment extends CreateRecord
             'status' => $records->status->value,
             'remarks' => $records->status->value,
         ]);
+
+        $email = $records->client?->email;
+        $phone = $records->client?->phone;
+        $message = "No message";
+
+        //notify sender by mail and sms
+         Concurrency::defer([
+            fn () => NotificationService::sendSmsToSender($phone,$message),
+            fn () => NotificationService::sendMailToSender($email,$message),
+         ]);
     }
 }

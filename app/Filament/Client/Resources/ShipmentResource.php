@@ -112,9 +112,10 @@ class ShipmentResource extends Resource
                         })
                         ->infolist([
                             RepeatableEntry::make('items')
-                                ->label('')
-                                ->schema([ImageEntry::make('product.product_image')->label('')->columnSpan(2), TextEntry::make('box_no'), TextEntry::make('product.name')->state(fn($record) => $record->product?->name . ' (' . $record->quantity . 'x)')->columnSpan(2), TextEntry::make('item_cost')->label('Value')])
-                                ->columns(6),
+                                    ->label('') 
+                                    ->schema([ImageEntry::make('product.product_image')->label('')->columnSpan(2), TextEntry::make('receiver.receiver_name')
+                                    ->badge(), TextEntry::make('box_no'), TextEntry::make('product.name')->state(fn($record) => $record->product?->name . ' (' . $record->quantity . 'x)')->columnSpan(2), TextEntry::make('item_cost')->label('Value')])
+                                    ->columns(7),
                         ])
                         ->modalSubmitAction(false),
 

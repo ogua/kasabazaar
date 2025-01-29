@@ -166,77 +166,129 @@ class ShipmentResource extends Resource
                                 ->searchable(),
 
                             Forms\Components\TextInput::make('receiver_id_number')->label('Receiver ID Number')->required()->maxLength(255),
+
+                            Forms\Components\Section::make('Shipping')
+                            ->description('Shipping Items')
+                            ->schema([
+                                TableRepeater::make('items')
+                                    ->label('')
+                                    ->live()
+                                    ->relationship()
+                                    ->addActionLabel('Add More Items')
+                                    ->colStyles([
+                                        'box_no' => 'width: 200px;',
+                                        'quantity' => 'width: 100px;',
+                                        'item_cost' => 'width: 200px;',
+                                    ])
+                                    ->schema([Forms\Components\TextInput::make('box_no')->default(null), Forms\Components\Select::make('product_id')->label('Product')->required()->options(Product::pluck('name', 'id'))->preload()->searchable()->live(), Forms\Components\TextInput::make('quantity')->label('Qty')->required()->default(1)->numeric(), Forms\Components\TextInput::make('item_cost')->required()->label('Value')->numeric()->prefix('$')])
+                                    ->columns(3),
+                            ])
+                            ->columnSpanFull(3),
+
+
                         ])
                         ->columns(4),
                 ])
                 ->columnSpanFull(),
 
-            Forms\Components\Section::make('Shipping')
-                ->description('Shipping Items')
-                ->schema([
-                    TableRepeater::make('items')
-                        ->label('')
-                        ->live()
-                        ->relationship()
-                        ->addActionLabel('Add More Items')
-                        ->colStyles([
-                            'box_no' => 'width: 200px;',
-                            'quantity' => 'width: 100px;',
-                            'item_cost' => 'width: 200px;',
-                        ])
-                        ->schema([Forms\Components\TextInput::make('box_no')->default(null), Forms\Components\Select::make('product_id')->label('Product')->required()->options(Product::pluck('name', 'id'))->preload()->searchable()->live(), Forms\Components\TextInput::make('quantity')->label('Qty')->required()->default(1)->numeric(), Forms\Components\TextInput::make('item_cost')->required()->label('Value')->numeric()->prefix('$')])
-                        ->columns(3),
-                ])
-                ->columnSpanFull(3),
 
             Forms\Components\Section::make('')
                 ->description('')
                 ->schema([
                     Forms\Components\Placeholder::make('totalitem')
                         ->content(function ($get, $set) {
-                            $items = $get('items');
+                            $items = array_column($get('receivers'),'items');
+                            $totalCount = array_sum(array_map('count', $items));
 
-                            return 'Total item: ' . count($items);
+                            return 'Total item: '.$totalCount;
                         })
                         ->label(''),
 
-                    Forms\Components\Placeholder::make('totqty')
+                        Forms\Components\Placeholder::make('totqty')
                         ->content(function ($get, $set) {
-                            $items = collect($get('items'))->pluck('quantity')->sum();
-
-                            return 'Total qty: ' . $items;
+                            $receivers = $get('receivers');
+                    
+                            // Initialize total quantity
+                            $totqty = 0;
+                    
+                            // Iterate through each receiver and their items
+                            foreach ($receivers as $receiver) {
+                                if (isset($receiver['items']) && is_array($receiver['items'])) {
+                                    $totqty += array_sum(array_column($receiver['items'], 'quantity'));
+                                }
+                            }
+                    
+                            return 'Total Quantities: ' . $totqty;
                         })
                         ->label(''),
 
-                    Forms\Components\Placeholder::make('item')
+                        Forms\Components\Placeholder::make('totqty')
                         ->content(function ($get, $set) {
-                            $items = collect($get('items'))->pluck('item_cost')->sum();
-
-                            return "Subtotal: $" . number_format($items, 2);
+                            $receivers = $get('receivers');
+                    
+                            // Initialize total quantity
+                            $subtotal = 0;
+                    
+                            // Iterate through each receiver and their items
+                            foreach ($receivers as $receiver) {
+                                if (isset($receiver['items']) && is_array($receiver['items'])) {
+                                    $subtotal += array_sum(array_column($receiver['items'], 'item_cost'));
+                                }
+                            }
+                    
+                            return "Subtotal: $" . number_format($subtotal, 2);
                         })
                         ->label(''),
+
                 ])
                 ->columns(3),
+
+            Forms\Components\TextInput::make('shipping_cost')->default(0)->required()->columnSpan(2)->live(onBlur: true)->prefix('$'),
+
+
+            Forms\Components\Section::make('')
+                ->description('')
+                ->schema([
+                    
+                        Forms\Components\Placeholder::make('totqty')
+                        ->content(function ($get, $set) {
+                            $receivers = $get('receivers');
+                    
+                            // Initialize total quantity
+                            $subtotal = 0;
+                    
+                            // Iterate through each receiver and their items
+                            foreach ($receivers as $receiver) {
+                                if (isset($receiver['items']) && is_array($receiver['items'])) {
+                                    $subtotal += array_sum(array_column($receiver['items'], 'item_cost'));
+                                }
+                            }
+
+                            $grandtotal = $subtotal  + $get('shipping_cost');
+
+                            $set('total',$grandtotal);
+                    
+                            return "Grand Total: $" . number_format($grandtotal, 2);
+                        })
+                        ->columnSpanFull()
+                        ->extraAttributes([
+                            'class' => 'bg-primary-500 p-4 text-center font-bold text-white text-2xl'
+                        ])
+                        ->label(''),
+
+                ])
+                ->columnSpanFull(),
+
+            Forms\Components\Hidden::make('total')->default(0),
 
             Forms\Components\Section::make('Payments')
                 ->description('Shipping Cost & Payment Information')
                 ->schema([
-                    Forms\Components\TextInput::make('shipping_cost')->default(0)->required()->columnSpan(2)->live(onBlur: true)->prefix('$'),
-
-                    Forms\Components\Placeholder::make('item')
-                        ->content(function ($get, $set) {
-                            $items = collect($get('items'))->pluck('item_cost')->sum();
-
-                            $total = $items + $get('shipping_cost');
-
-                            return "Grand Total: $" . number_format($total, 2);
-                        })
-                        ->label(''),
-
+                    
                     Forms\Components\Repeater::make('Payments')
                         ->label('')
                         ->relationship('payments')
-                        ->addActionLabel('Add Another Payment')
+                        ->addActionLabel('Add Payment')
                         ->schema([
                             Forms\Components\Section::make('')
                                 ->description('')
@@ -284,9 +336,12 @@ class ShipmentResource extends Resource
                                 ])
                                 ->columns(3),
                         ])
+                        ->defaultItems(0)
                         ->columnSpanFull(),
+                ])
+                ->columns(4),
 
-                    Forms\Components\Section::make('Shipping / Payment Status')
+                Forms\Components\Section::make('Shipping / Payment Status')
                         ->description('')
                         ->visibleOn('create')
                         ->schema([
@@ -327,8 +382,8 @@ class ShipmentResource extends Resource
                             Forms\Components\DatePicker::make('estimated_delivery_date'),
                         ])
                         ->columns(3),
-                ])
-                ->columns(4),
+
+
         ]);
     }
 
@@ -458,6 +513,8 @@ class ShipmentResource extends Resource
                             ->label('Shipping Items')
                             ->color('info')
                             ->icon('heroicon-m-truck')
+                            ->modalWidth('5xl')
+                            ->slideOver()
                             ->fillForm(function ($record) {
                                 return [
                                     'items' => $record->items,
@@ -465,9 +522,10 @@ class ShipmentResource extends Resource
                             })
                             ->infolist([
                                 RepeatableEntry::make('items')
-                                    ->label('')
-                                    ->schema([ImageEntry::make('product.product_image')->label('')->columnSpan(2), TextEntry::make('box_no'), TextEntry::make('product.name')->state(fn($record) => $record->product?->name . ' (' . $record->quantity . 'x)')->columnSpan(2), TextEntry::make('item_cost')->label('Value')])
-                                    ->columns(6),
+                                    ->label('') 
+                                    ->schema([ImageEntry::make('product.product_image')->label('')->columnSpan(2), TextEntry::make('receiver.receiver_name')
+                                    ->badge(), TextEntry::make('box_no'), TextEntry::make('product.name')->state(fn($record) => $record->product?->name . ' (' . $record->quantity . 'x)')->columnSpan(2), TextEntry::make('item_cost')->label('Value')])
+                                    ->columns(7),
                             ])
                             ->modalSubmitAction(false),
 

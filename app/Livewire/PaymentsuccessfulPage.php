@@ -2,7 +2,13 @@
 
 namespace App\Livewire;
 
+use App\Models\Invoice;
+use App\Models\Payment;
 use Livewire\Component;
+use App\Models\Shipment;
+use App\Models\Transaction;
+use App\Service\NotificationService;
+use Illuminate\Support\Facades\Concurrency;
 use Unicodeveloper\Paystack\Facades\Paystack;
 
 
@@ -28,16 +34,19 @@ class PaymentsuccessfulPage extends Component
 
             $email = $paymentdata['customer']['email'];
             $phone = $paymentdata['customer']['phone'];
+            $shippingid = $paymentdata['metadata']['shipment_id'];
 
             $data = [
-                //'vourcher_id' => $paymentdata['metadata']['form_id'],
                 'transaction_id' => str_pad(mt_rand(1, 99999999999), 11, '0', STR_PAD_LEFT),
                 'transaction_status' => $paymentDetails['status'],
                 'reference' => $paymentdata['reference'],
-                //'index_number' => $paymentdata['metadata']['form_id'],
-                //'payment_type' => $paymentdata['metadata']['payment_type'],
-                //'academicyear' => $paymentdata['metadata']['academicyear'],
-                //'semester' => $paymentdata['metadata']['semester'],
+
+                'client_fullname' => $paymentdata['metadata']['fullname'],
+                'phone' => $paymentdata['metadata']['phone'],
+                'email' => $paymentdata['metadata']['email'],
+                'shipment_reference' => $paymentdata['metadata']['reference'],
+                'shipment_id' => $paymentdata['metadata']['shipment_id'],
+
                 'amount' => $amount,
                 'message' => $paymentDetails['message'],
                 'reponse' => $paymentdata['gateway_response'],
@@ -54,40 +63,75 @@ class PaymentsuccessfulPage extends Component
                 'mobile_money_number' => $paymentdata['authorization']['mobile_money_number'],
                 'full_name' => $paymentdata['customer']['last_name'].' '.$paymentdata['customer']['first_name'],
                 'code' => $paymentdata['customer']['customer_code'],
-                'email' => $paymentdata['customer']['email'],
-                'phone' => $paymentdata['customer']['phone'],
+                //'email' => $paymentdata['customer']['email'],
+               // 'phone' => $paymentdata['customer']['phone'],
                 'log_start_time' => $paymentdata['log']['start_time'],
                 'log_spent_time' => $paymentdata['log']['time_spent'],
                 'log_attempts' => $paymentdata['log']['attempts'],
                 'log_errors' => $paymentdata['log']['errors'],
             ];
 
-           // dd($data);
+            $check = Transaction::where('reference',$ref)
+            ->where('shipment_id',$shippingid)
+            ->first();
 
-            // $check = PaystackTransaction::where('reference',$ref)
-            // ->where('vourcher_id',$form_id)
-            // ->first();
+            if (!$check) {
+                $new = new Transaction($data);
+                $new->save();
 
-            // if (!$check) {
-            //     $new = new PaystackTransaction($data);
-            //     $new->save();
+                //update shipment
+                $shipping = Shipment::where('id',$shippingid)->first();
+                $amountopay = $shipping->total;
+                $paid = (int) $shipping->payments->sum('amount') + (float) str_replace(',', '', $amount);
 
-            //     $vourcherid = $new->vourcher_id;
-            //     $voucher = AdmissionVoucher::findOrFail($vourcherid);
+                $shipping->total = $amountopay;
+                $shipping->paid = $paid;
 
-            //     $phone = $new->phone;
-            //     $email = $new->email;
-            //     $url = env('APP_URL').'/admission';
+                $left = $amountopay - $paid;
 
-            //     $message = "UniMAC Admission eVoucher ({$voucher->appform?->name}) \nApplicant SERIAL: {$voucher->serial} \nPIN: {$voucher->pin} \nTransaction ID: {$new->transaction_id} \nAmount Paid: {$amount} \nVisit {$url} to start the admission process";
+                if ($left > 0) {
+                    $shipping->payment_status = 'partial';
+                }else{
+                    $shipping->payment_status = 'paid';
+                }
 
-            //     //send sms
-            //     NotificationService::notifyApplicantBySms($phone,$message);
+                $shipping->save();
 
-            //     //send email
-            //     $showDate = false;
-            //     Mail::to($email)->send(new SendEvoucherMail($voucher,$new,$showDate));
-            // }
+                Invoice::where('shipment_id',$shippingid)->update([
+                    'status' => $left < 1 ? 'paid' : 'partial',
+                ]);
+
+                // Create the serial number
+                $reff = "REFF".date('y-m-dhmis');
+
+                //add payment to shipment
+                $paymentsdata = [
+                    'branch_id' => $shipping->branch_id,
+                    'shipment_id' => $shipping->id,
+                    'payment_ref' => 'REF:' . date('Ymdhms'),
+                    'balance' => $left,
+                    'amount' => (float) str_replace(',', '', $amount),
+                    'paying_method' => $paymentdata['channel'],
+                    'paid_on' => date('Y-m-d H:i:s'),
+                    'payment_type' => 'credit',
+                ];
+
+            //  dd($paymentsdata);
+
+                $pay = new Payment($paymentsdata);
+                $pay->save();
+
+                $phone = $paymentdata['metadata']['phone'];
+                $email = $paymentdata['metadata']['email'];
+
+                $message = "Payment Received Successfully. Thank you for choosing KasaBaZaar Rose Door To Door";
+
+               //notify sender by mail and sms
+                Concurrency::defer([
+                    fn () => NotificationService::sendSmsToSender($phone,$message),
+                    fn () => NotificationService::sendMailToSender($email,$message),
+                ]);
+            }
         }
 
     }
