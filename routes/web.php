@@ -1,14 +1,31 @@
 <?php
 
-use App\Http\Controllers\ShippingController;
 use App\Livewire\AgreementForm;
 use App\Livewire\DisclaimerForm;
-use App\Livewire\PaymentsuccessfulPage;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\WebController;
+use App\Livewire\PaymentsuccessfulPage;
+use App\Http\Controllers\ShippingController;
 
 Route::get('/', function () {
-    return view('welcome');
-});
+    return view('web.home');
+})
+->name('home-page');
+
+Route::get('/about-us',[WebController::class,'aboutUs'])
+->name('about-us');
+
+Route::get('/our-services',[WebController::class,'ourservices'])
+->name('our-services');
+
+Route::get('/our-projects',[WebController::class,'ourprojects'])
+->name('our-projects');
+
+Route::get('/tracking',[WebController::class,'tracking'])
+->name('our-tracking');
+
+Route::get('/contact-us',[WebController::class,'contactus'])
+->name('contact-us');
 
 Route::get('/packing-slip/{id}',[ShippingController::class,'packingslip'])
 ->name('packing-slip');
