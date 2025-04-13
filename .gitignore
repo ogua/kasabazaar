@@ -18,3 +18,5 @@ yarn-error.log
 /.idea
 /.vscode
 /.zed
+/vendor/nnjeim/world/resources/json/cities.json
+/vendor/nnjeim/world/resources/json/states.json
