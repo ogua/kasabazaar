@@ -68,11 +68,22 @@ class UserResource extends Resource
                         Forms\Components\TextInput::make('email')
                             ->required()
                             ->maxLength(255),
+
                         Forms\Components\DateTimePicker::make('email_verified_at'),
 
                         // Forms\Components\Toggle::make('is_active')
                         // ->required()
                         // ->columnSpanFull(),
+
+                        Forms\Components\Select::make('branches')
+                        ->label('Branch')
+                        ->relationship()
+                            ->options(
+                                Branch::all()->pluck('name', 'id')
+                            )
+                            ->preload()
+                            ->multiple()
+                            ->searchable(),
 
                         Forms\Components\TextInput::make('password')
                         ->label('Password')
