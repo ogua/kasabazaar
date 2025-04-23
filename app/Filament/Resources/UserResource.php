@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Filament\Facades\Filament;
 use Filament\Resources\Resource;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rules\Password;
 use App\Filament\Resources\UserResource\Pages;
@@ -74,12 +75,12 @@ class UserResource extends Resource
                         // ->columnSpanFull(),
 
                         Forms\Components\TextInput::make('password')
-                        ->label('Change Password')
+                        ->label('Password')
                         ->password()
                         ->revealable(filament()->arePasswordsRevealable())
                         ->required(fn (string $context): bool => $context === 'create')
                         ->rule(Password::default())
-                        ->dehydrateStateUsing(fn ($state) => hash::make($state))
+                        ->dehydrateStateUsing(fn ($state) => Hash::make($state))
                         ->dehydrated(fn ($state) => filled($state))
                         ->same('passwordConfirmation')
                         ->live(onBlur: true)
