@@ -148,7 +148,7 @@
             </div>
 
             <div class="features-image col-lg-5 order-1 order-lg-2" data-aos="fade-up" data-aos-delay="200">
-                <img src="{{ URL::to('assets/shipping-images/shipping (11).jpg') }}" alt="Shipping Services">
+                <img src="{{ URL::to('assets/shipping-images/shipping (11).JPG') }}" alt="Shipping Services">
             </div>
 
         </div>
