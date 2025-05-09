@@ -17,6 +17,7 @@
                 <i class="bi bi-geo-alt"></i>
                 <h3>Address</h3>
                 <p>Adako Jachie, Ejisu, Kumasi</p>
+                <p></p>
               </div>
             </div><!-- End Info Item -->
   
@@ -24,7 +25,7 @@
               <div class="info-item d-flex flex-column justify-content-center align-items-center" data-aos="fade-up" data-aos-delay="300">
                 <i class="bi bi-telephone"></i>
                 <h3>Call Us</h3>
-                <p><b>USA<</b></p>
+                <p><b>USA</b></p>
                 <p>+1 (773) 970 – 0129</p>
                 <p>+1 (574) 440 – 7460</p>
                 <hr>
