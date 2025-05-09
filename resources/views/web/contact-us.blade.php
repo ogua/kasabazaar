@@ -24,8 +24,13 @@
               <div class="info-item d-flex flex-column justify-content-center align-items-center" data-aos="fade-up" data-aos-delay="300">
                 <i class="bi bi-telephone"></i>
                 <h3>Call Us</h3>
-                <p>+1(574) 440 7460</p>
-                <p>+1(347) 867 4498</p>
+                <p><b>USA<</b></p>
+                <p>+1 (773) 970 – 0129</p>
+                <p>+1 (574) 440 – 7460</p>
+                <hr>
+                <p class="text-bold"><b>GHANA</b></p>
+                <p>+233 50 972 5081</p>
+                <p>+233 50 972 5073</p>
               </div>
             </div><!-- End Info Item -->
   

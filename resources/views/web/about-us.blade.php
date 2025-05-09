@@ -17,10 +17,10 @@
 
             <div class="col-lg-7" data-aos="fade-up" data-aos-delay="100">
                 <h2 class="inner-title">About Us</h2>
-                <div class="our-story">
+                <div class="our-storys">
                     <h4>Rose Door to Door Shipping & Delivery</h4>
                     <h3>Our Story</h3>
-                    <p>This most trusted and reliable freight forwarding company, Rose Door to Door Shipping and Delivery from KasaBazaar Limited, has become a household name in Ghana and the African communities in the United States of America, especially in Michigan, Indiana, New York, Kentucky, and more. It was registered and incorporated in [year of incorporation].</p>
+                    <p>This most trusted and reliable freight forwarding company, Rose Door to Door Shipping and Delivery from KasaBazaar Limited, has become a household name in Ghana and the African communities in the United States of America, especially in Michigan, Indiana, New York, Kentucky, and more. It was registered and incorporated in 2020.</p>
                     
                     <p>Our dedicated and professional staff are experienced in freight forwarding and home delivery services. Our shipping experts are dedicated to anticipating and meeting your shipping needs whenever they arise. Our customers enjoy peace of mind and happiness whenever their goods are with us because of the excellent services we have been providing over the years.</p>
                     
@@ -47,7 +47,7 @@
       <!-- Section Title -->
       <div class="container section-title" data-aos="fade-up">
         <h2>Stats</h2>
-        <p>Necessitatibus eius consequatur ex aliquid fuga eum quidem sint consectetur velit</p>
+        {{-- <p>Necessitatibus eius consequatur ex aliquid fuga eum quidem sint consectetur velit</p> --}}
       </div><!-- End Section Title -->
 
       <div class="container" data-aos="fade-up" data-aos-delay="100">
@@ -58,7 +58,7 @@
             <div class="stats-item d-flex align-items-center w-100 h-100">
               <i class="bi bi-emoji-smile color-blue flex-shrink-0"></i>
               <div>
-                <span data-purecounter-start="0" data-purecounter-end="232" data-purecounter-duration="1" class="purecounter"></span>
+                <span data-purecounter-start="0" data-purecounter-end="3000" data-purecounter-duration="1" class="purecounter"></span>
                 <p>Happy Clients</p>
               </div>
             </div>
@@ -68,7 +68,7 @@
             <div class="stats-item d-flex align-items-center w-100 h-100">
               <i class="bi bi-journal-richtext color-orange flex-shrink-0"></i>
               <div>
-                <span data-purecounter-start="0" data-purecounter-end="521" data-purecounter-duration="1" class="purecounter"></span>
+                <span data-purecounter-start="0" data-purecounter-end="2521" data-purecounter-duration="1" class="purecounter"></span>
                 <p>Projects</p>
               </div>
             </div>
@@ -145,11 +145,10 @@
                     </div><!-- End Icon Box -->
 
                 </div>
-
             </div>
 
             <div class="features-image col-lg-5 order-1 order-lg-2" data-aos="fade-up" data-aos-delay="200">
-                <img src="assets/img/shipping (11).jpg" alt="Shipping Services">
+                <img src="{{ URL::to('assets/shipping-images/shipping (11).jpg') }}" alt="Shipping Services">
             </div>
 
         </div>
@@ -336,7 +335,7 @@
           </div><!-- End Team Member -->
 
 
-          <div class="col-lg-4 col-md-6 member" data-aos="fade-up" data-aos-delay="600">
+          {{-- <div class="col-lg-4 col-md-6 member" data-aos="fade-up" data-aos-delay="600">
             <div class="member-img">
               <img src="assets/team/team-11.png" class="img-fluid" alt="">
               <div class="social">
@@ -350,7 +349,8 @@
               <h4>Mr. Solomon Kutiame</h4>
               <span>I.T Manager</span>
             </div>
-          </div><!-- End Team Member -->
+          </div>
+          <!-- End Team Member --> --}}
 
 
           <div class="col-lg-4 col-md-6 member" data-aos="fade-up" data-aos-delay="600">

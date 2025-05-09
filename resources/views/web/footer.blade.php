@@ -3,13 +3,20 @@
     <div class="container footer-top">
       <div class="row gy-4">
         <div class="col-lg-3 col-md-3 footer-about">
-          <a href="index.html" class="logo d-flex align-items-center">
-            <span class="sitename">KasaBazaar</span>
+          <a href="/" class="logo d-flex align-items-center">
+            {{-- <span class="sitename">KasaBazaar</span> --}}
+            <img src="{{ URL::to('images/Kasabazaar-logo.jpg') }}" alt="">
           </a>
           <div class="pt-3 footer-contact">
-            <p>Adako Jachie, Ejisu, Kumasi</p>
-            <p class="mt-3"><strong>Phone:</strong> <span>+233 55 282 1206</span></p>
-            <p><strong>Email:</strong> <span>info@kasabazaar.com</span></p>
+            <p>USA</p>
+            <p><strong>Phone:</strong> <span>+1 (773) 970 – 0129</span></p>
+            <p class=""><strong>Phone:</strong> <span>+1 (574) 440 – 7460</span></p>
+
+            <p class="mt-3">GHANA</p>
+            <p><strong>Phone:</strong> <span>+233 50 972 5081</span></p>
+            <p><strong>Phone:</strong> <span>+233 50 972 5073</span></p>
+
+            <p class="mt-3"><strong>Email:</strong> <span>kasabazaar109@gmail.com</span></p>
           </div>
           <div class="mt-4 social-links d-flex">
             <a href=""><i class="bi bi-twitter-x"></i></a>

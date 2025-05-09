@@ -1,6 +1,6 @@
 @extends('web.default-template')
 
-@section('heading','Index - KasaBazaar Shipping & Logistics')
+@section('heading','Index - Rose Door to Door Shipping & Delivery Services')
 
 @section('main-content')
 
@@ -11,8 +11,8 @@
       <div class="container">
         <div class="row justify-content-center" data-aos="fade-up" data-aos-delay="100">
           <div class="text-center col-lg-7">
-            <h2>Welcome to KasaBazaar</h2>
-            <p>Unlock Seamless Trade and Superior Convenience: Choose Us for Door-to-Door Delivery Services Connecting Ghana, the USA, and other international locations. Whether you're shipping locally or internationally, KasaBazaar provides you with fast, reliable, and cost-effective shipping solutions. Experience top-notch customer service, real-time tracking, and guaranteed delivery right to your doorstep. With KasaBazaar, your deliveries are in trusted hands.</p>
+            <h2>Welcome to Rose Door to Door Shipping and Delivery Service</h2>
+            <p>Whether you’re shipping locally and internationally, Rose Door to Door Shipping and Delivery Service provides. Your deliveries are in trusted hands.</p>
             <a href="#get-started" class="btn-get-started">Get Started</a>
           </div>
         </div>
