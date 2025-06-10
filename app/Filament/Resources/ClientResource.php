@@ -2,20 +2,20 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\ClientResource\Pages;
-use App\Filament\Resources\ClientResource\RelationManagers;
-use App\Models\City;
-use App\Models\Client;
-use App\Models\State;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use App\Models\City;
 use Filament\Tables;
-use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Models\State;
+use App\Models\Client;
 use Nnjeim\World\World;
+use Filament\Forms\Form;
+use Filament\Tables\Table;
+use Filament\Resources\Resource;
+use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Resources\ClientResource\Pages;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Resources\ClientResource\RelationManagers;
 
 class ClientResource extends Resource
 {
@@ -46,17 +46,13 @@ class ClientResource extends Resource
 
                 Forms\Components\TextInput::make('email')
                 ->label('Sender email')
-                ->email()
-                ->required()
-                ->maxLength(255),
+                ->email(),
 
                 PhoneInput::make('phone')
-                ->label('Sender Phone number')
-                ->required(),
+                ->label('Sender Phone number'),
 
                 Forms\Components\Select::make('country')
                 ->label('Sender country')
-                ->required()
                 ->options(World::countries()->data->pluck('name','id'))
                 ->preload()
                 ->searchable()
@@ -64,7 +60,6 @@ class ClientResource extends Resource
 
                 Forms\Components\Select::make('state_region')
                 ->label('Sender State/Region')
-                ->required()
                 ->options(function($get){
 
                     if(blank($get('country')))
@@ -79,7 +74,6 @@ class ClientResource extends Resource
 
                 Forms\Components\Select::make('city')
                 ->label('Sender city')
-                ->required()
                 ->options(function($get){
 
                     if(blank($get('state_region')))
@@ -94,7 +88,6 @@ class ClientResource extends Resource
 
                 Forms\Components\Select::make('id_type')
                 ->label('Sender ID Type')
-                ->required()
                 ->options([
                     'Drivers License' => 'Drivers License',
                     'Ghana Card' => 'Ghana Card',
@@ -105,13 +98,11 @@ class ClientResource extends Resource
 
                     Forms\Components\TextInput::make('id_number')
                     ->label('Sender ID Number')
-                    ->required()
                     ->maxLength(255),
 
 
                     Forms\Components\Textarea::make('address')
                     ->label('Sender address')
-                    ->required()
                     ->columnSpanFull(),
                     ])
                     ->columns(2),
