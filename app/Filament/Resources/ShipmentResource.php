@@ -8,6 +8,7 @@ use Filament\Tables;
 use App\Models\State;
 use App\Models\Branch;
 use App\Models\Client;
+use App\Models\Country;
 use App\Models\Product;
 use Nnjeim\World\World;
 use App\Models\Shipment;
@@ -122,8 +123,12 @@ class ShipmentResource extends Resource
                             ->required()->maxLength(255),
 
                             Forms\Components\Select::make('country')
-                            ->label('Receiver Country')->required()
-                            ->options(World::countries()->data->pluck('name', 'id'))->preload()->searchable()->live(),
+                            ->label('Receiver Country')
+                            //->required()
+                            ->options(Country::pluck('name', 'id'))
+                            ->preload()
+                            ->searchable()
+                            ->live(),
 
                             Forms\Components\Select::make('state_region')
                                 ->label('Receiver State/Region')
@@ -150,7 +155,10 @@ class ShipmentResource extends Resource
                                 })
                                 ->searchable(),
 
-                            Forms\Components\Textarea::make('address')->label('Receiver address')->required()->columnSpanFull(),
+                            Forms\Components\Textarea::make('address')
+                            ->label('Receiver address')
+                           // ->required()
+                            ->columnSpanFull(),
 
                             PhoneInput::make('receiver_phone'),
                             //->required(),
