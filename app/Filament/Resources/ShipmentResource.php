@@ -2,35 +2,35 @@
 
 namespace App\Filament\Resources;
 
-use App\Enums\ShippingStatus;
-use App\Filament\Resources\ShipmentResource\Pages;
-use App\Filament\Resources\ShipmentResource\RelationManagers;
-use App\Models\Branch;
+use Filament\Forms;
 use App\Models\City;
+use Filament\Tables;
+use App\Models\State;
+use App\Models\Branch;
 use App\Models\Client;
 use App\Models\Product;
-use App\Models\Shipment;
-use App\Models\ShipmentUpdate;
-use App\Models\State;
-use Filament\Facades\Filament;
-use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Infolists\Components\ImageEntry;
-use Filament\Infolists\Components\RepeatableEntry;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Actions\ActionGroup;
-use Filament\Tables\Enums\ActionsPosition;
-use Filament\Tables\Table;
-use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use libphonenumber\NumberFormat;
-use Livewire\Attributes\Layout;
 use Nnjeim\World\World;
+use App\Models\Shipment;
+use Filament\Forms\Form;
+use Filament\Tables\Table;
+use App\Enums\ShippingStatus;
+use App\Models\ShipmentUpdate;
+use Filament\Facades\Filament;
+use Livewire\Attributes\Layout;
+use Filament\Resources\Resource;
+use libphonenumber\NumberFormat;
+use Filament\Tables\Actions\ActionGroup;
+use Illuminate\Database\Eloquent\Builder;
 use PragmaRX\Countries\Package\Countries;
+use Filament\Tables\Enums\ActionsPosition;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ImageEntry;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
+use App\Filament\Resources\ShipmentResource\Pages;
+use Filament\Infolists\Components\RepeatableEntry;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Resources\ShipmentResource\RelationManagers;
+use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 
 class ShipmentResource extends Resource
 {
@@ -53,7 +53,9 @@ class ShipmentResource extends Resource
                 ->schema([
                     Forms\Components\TextInput::make('shipping_reference')->required(),
 
-                    Forms\Components\Select::make('client_id')->label('Choose Sender')->required()->options(Client::get()->pluck('fullname_branch', 'id'))->preload()->searchable(),
+                    Forms\Components\Select::make('client_id')->label('Choose Sender')
+                    ->required()->options(Client::get()->pluck('fullname_branch', 'id'))
+                    ->preload()->searchable(),
 
                     // Forms\Components\TextInput::make('branch_id')
                     //     ->required()
@@ -116,13 +118,16 @@ class ShipmentResource extends Resource
                         ->label('')
                         ->addActionLabel('Add More Receivers')
                         ->schema([
-                            Forms\Components\TextInput::make('receiver_name')->required()->maxLength(255),
+                            Forms\Components\TextInput::make('receiver_name')
+                            ->required()->maxLength(255),
 
-                            Forms\Components\Select::make('country')->label('Receiver Country')->required()->options(World::countries()->data->pluck('name', 'id'))->preload()->searchable()->live(),
+                            Forms\Components\Select::make('country')
+                            ->label('Receiver Country')->required()
+                            ->options(World::countries()->data->pluck('name', 'id'))->preload()->searchable()->live(),
 
                             Forms\Components\Select::make('state_region')
                                 ->label('Receiver State/Region')
-                                ->required()
+                               // ->required()
                                 ->options(function ($get) {
                                     if (blank($get('country'))) {
                                         return [];
@@ -135,7 +140,7 @@ class ShipmentResource extends Resource
 
                             Forms\Components\Select::make('city')
                                 ->label('Receiver city')
-                                ->required()
+                                //->required()
                                 ->options(function ($get) {
                                     if (blank($get('state_region'))) {
                                         return [];
@@ -147,7 +152,8 @@ class ShipmentResource extends Resource
 
                             Forms\Components\Textarea::make('address')->label('Receiver address')->required()->columnSpanFull(),
 
-                            PhoneInput::make('receiver_phone')->required(),
+                            PhoneInput::make('receiver_phone'),
+                            //->required(),
 
                             Forms\Components\TextInput::make('receiver_email')
                                 ->email()
@@ -156,7 +162,7 @@ class ShipmentResource extends Resource
 
                             Forms\Components\Select::make('receiver_id_type')
                                 ->label('Receiver ID Type')
-                                ->required()
+                                //->required()
                                 ->options([
                                     'Drivers License' => 'Drivers License',
                                     'Ghana Card' => 'Ghana Card',
@@ -165,7 +171,10 @@ class ShipmentResource extends Resource
                                 ])
                                 ->searchable(),
 
-                            Forms\Components\TextInput::make('receiver_id_number')->label('Receiver ID Number')->required()->maxLength(255),
+                            Forms\Components\TextInput::make('receiver_id_number')
+                            ->label('Receiver ID Number')
+                           // ->required()
+                            ->maxLength(255),
 
                             Forms\Components\Section::make('Shipping')
                             ->description('Shipping Items')
@@ -243,7 +252,12 @@ class ShipmentResource extends Resource
                 ])
                 ->columns(3),
 
-            Forms\Components\TextInput::make('shipping_cost')->default(0)->required()->columnSpan(2)->live(onBlur: true)->prefix('$'),
+            Forms\Components\TextInput::make('shipping_cost')
+            ->default(0)
+            ->required()
+            ->columnSpan(2)
+            ->live(onBlur: true)
+            ->prefix('$'),
 
 
             Forms\Components\Section::make('')
