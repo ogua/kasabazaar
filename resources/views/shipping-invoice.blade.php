@@ -18,13 +18,13 @@
             <!-- Branch Details -->
             <div class="mb-6">
                 <h2 class="text-lg font-semibold text-gray-700">Client Details</h2>
-                <p class="text-sm text-gray-500">Name: <span class="font-medium">{{ $shipping->branch?->name }}</span>
+                <p class="text-sm text-gray-500">Name: <span class="font-medium">{{ $shipping->client?->name }}</span>
                 </p>
                 <p class="text-sm text-gray-500">Address: <span
                         class="font-medium">{{ $shipping->branch?->address }}</span></p>
-                <p class="text-sm text-gray-500">Phone: <span class="font-medium">{{ $shipping->branch?->phone }}</span>
+                <p class="text-sm text-gray-500">Phone: <span class="font-medium">{{ $shipping->client?->phone }}</span>
                 </p>
-                <p class="text-sm text-gray-500">Email: <span class="font-medium">{{ $shipping->branch?->email }}</span>
+                <p class="text-sm text-gray-500">Email: <span class="font-medium">{{ $shipping->client?->email }}</span>
                 </p>
             </div>
 
