@@ -450,9 +450,11 @@ class ShipmentResource extends Resource
 
                 Tables\Columns\TextColumn::make('shipped_at')->dateTime()->sortable(),
 
-                Tables\Columns\TextColumn::make('shipping_cost')->numeric()->sortable()->badge()->color('danger')->state(fn($record) => number_format($record->shipping_cost, 2))->prefix('$'),
+               /// Tables\Columns\TextColumn::make('shipping_cost')->numeric()->sortable()->badge()->color('danger')->state(fn($record) => number_format($record->shipping_cost, 2))->prefix('$'),
 
-                Tables\Columns\TextColumn::make('total')->sortable()->badge()->color('info')->state(fn($record) => number_format($record->total, 2))->prefix('$'),
+                Tables\Columns\TextColumn::make('total')
+                ->label('shipping_cost')
+                ->sortable()->badge()->color('info')->state(fn($record) => number_format($record->total, 2))->prefix('$'),
 
                 Tables\Columns\TextColumn::make('paid')->sortable()->badge()->color('warning')->state(fn($record) => number_format($record->paid, 2))->prefix('$'),
 
