@@ -197,7 +197,14 @@ class ShipmentResource extends Resource
                                         'quantity' => 'width: 100px;',
                                         'item_cost' => 'width: 200px;',
                                     ])
-                                    ->schema([Forms\Components\TextInput::make('box_no')->default(null), Forms\Components\Select::make('product_id')->label('Product')->required()->options(Product::pluck('name', 'id'))->preload()->searchable()->live(), Forms\Components\TextInput::make('quantity')->label('Qty')->required()->default(1)->numeric(), Forms\Components\TextInput::make('item_cost')->required()->label('Value')->numeric()->prefix('$')])
+                                    ->schema([Forms\Components\TextInput::make('box_no')->default(null), 
+                                    Forms\Components\Select::make('product_id')->label('Product')->required()
+                                    ->options(Product::pluck('name', 'id'))->preload()->searchable()->live(), 
+                                    Forms\Components\TextInput::make('quantity')->label('Qty')->required()->default(1)->numeric(), 
+                                    // Forms\Components\TextInput::make('item_cost')
+                                    // ->required()->label('Value')
+                                    // ->numeric()->prefix('$')
+                                    ])
                                     ->columns(3),
                             ])
                             ->columnSpanFull(3),
@@ -547,7 +554,7 @@ class ShipmentResource extends Resource
                                     ->label('') 
                                     ->schema([ImageEntry::make('product.product_image')->label('')->columnSpan(2), TextEntry::make('receiver.receiver_name')
                                     ->badge(), TextEntry::make('box_no'), TextEntry::make('product.name')->state(fn($record) => $record->product?->name . ' (' . $record->quantity . 'x)')->columnSpan(2), 
-                                    //TextEntry::make('item_cost')->label('Value')
+                                    TextEntry::make('item_cost')->label('Value')
                                     ])
                                     ->columns(7),
                             ])
