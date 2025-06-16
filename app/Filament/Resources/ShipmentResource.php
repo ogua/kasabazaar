@@ -268,6 +268,7 @@ class ShipmentResource extends Resource
                 ->columns(3),
 
             Forms\Components\TextInput::make('shipping_cost')
+            ->label('Extral cost')
             ->default(0)
             ->required()
             ->columnSpan(2)
@@ -308,7 +309,8 @@ class ShipmentResource extends Resource
                 ])
                 ->columnSpanFull(),
 
-            Forms\Components\Hidden::make('total')->default(0),
+            Forms\Components\TextInput::make('total')
+            ->default(0),
 
             Forms\Components\Section::make('Payments')
                 ->description('Shipping Cost & Payment Information')
