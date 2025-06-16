@@ -97,10 +97,11 @@
                             </table>
 
                             <!-- Display Total Quantity -->
-                            <div class="mt-4 text-right">
+                            
+                            {{-- <div class="mt-4 text-right">
                                 <p class="text-sm font-bold text-gray-700">Total Quantity: <span
                                         class="text-blue-500">{{ $totalQuantity }}</span></p>
-                            </div>
+                            </div> --}}
                         </div>
                     @endforeach
                 </div>
