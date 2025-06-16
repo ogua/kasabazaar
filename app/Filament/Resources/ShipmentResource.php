@@ -201,9 +201,9 @@ class ShipmentResource extends Resource
                                     Forms\Components\Select::make('product_id')->label('Product')->required()
                                     ->options(Product::pluck('name', 'id'))->preload()->searchable()->live(), 
                                     Forms\Components\TextInput::make('quantity')->label('Qty')->required()->default(1)->numeric(), 
-                                    // Forms\Components\TextInput::make('item_cost')
-                                    // ->required()->label('Value')
-                                    // ->numeric()->prefix('$')
+                                    Forms\Components\TextInput::make('item_cost')
+                                    ->required()->label('Value')
+                                    ->numeric()->prefix('$')
                                     ])
                                     ->columns(3),
                             ])
