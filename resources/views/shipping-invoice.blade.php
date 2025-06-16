@@ -59,11 +59,10 @@
                                     class="font-medium">{{ $receiver->receiver_id_type }} :
                                     {{ $receiver->receiver_id_number }}</span></p>
                             @endif
-                        </div>
 
 
-                        <!-- Items -->
-                        <div>
+                             <!-- Items -->
+                        <div class="mt-4">
                             <h2 class="text-lg font-semibold text-gray-700">Shipment Items</h2>
                             <table class="w-full mt-4 text-left border">
                                 <thead>
@@ -102,6 +101,8 @@
                                 <p class="text-sm font-bold text-gray-700">Total Quantity: <span
                                         class="text-blue-500">{{ $totalQuantity }}</span></p>
                             </div> --}}
+                        </div>
+
                         </div>
                     @endforeach
                 </div>
