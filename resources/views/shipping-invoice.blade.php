@@ -17,7 +17,7 @@
 
             <!-- Branch Details -->
             <div class="mb-6">
-                <h2 class="text-lg font-semibold text-gray-700">Branch Details</h2>
+                <h2 class="text-lg font-semibold text-gray-700">Client Details</h2>
                 <p class="text-sm text-gray-500">Name: <span class="font-medium">{{ $shipping->branch?->name }}</span>
                 </p>
                 <p class="text-sm text-gray-500">Address: <span
@@ -37,16 +37,28 @@
                         <div class="p-4 border rounded-lg bg-gray-50">
                             <h2 class="text-lg font-semibold text-gray-700">Receiver {{ $loop->iteration }} </h2>
                             <hr>
+
+                            @if($receiver->receiver_name)
                             <p class="text-sm text-gray-500">Name: <span
                                     class="font-medium">{{ $receiver->receiver_name }}</span></p>
+                            @endif
+                            
+                            @if($receiver->mcountry?->name)
                             <p class="text-sm text-gray-500">Address: <span
                                     class="font-medium">{{ $receiver->mcountry?->name }},
                                     {{ $receiver->mstate?->name }}, {{ $receiver->mcity?->name }}</span></p>
+                            @endif
+
+                            @if($receiver->receiver_phone)
                             <p class="text-sm text-gray-500">Phone: <span
                                     class="font-medium">{{ $receiver->receiver_phone }}</span></p>
-                            <p class="text-sm text-gray-500">ID: <span
+                            @endif
+
+                            @if($receiver->receiver_id_type)
+                                <p class="text-sm text-gray-500">ID: <span
                                     class="font-medium">{{ $receiver->receiver_id_type }} :
                                     {{ $receiver->receiver_id_number }}</span></p>
+                            @endif
                         </div>
 
 
@@ -60,7 +72,7 @@
                                         <th class="p-2 border text-sm font-medium text-gray-600">Item</th>
                                         <th class="p-2 border text-sm font-medium text-gray-600">Box No</th>
                                         <th class="p-2 border text-sm font-medium text-gray-600">Quantity</th>
-                                        <th class="p-2 border text-sm font-medium text-gray-600">Value</th>
+                                        {{-- <th class="p-2 border text-sm font-medium text-gray-600">Value</th> --}}
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -78,7 +90,7 @@
                                             </td>
                                             <td class="p-2 border text-sm text-gray-500">{{ $item->box_no }}</td>
                                             <td class="p-2 border text-sm text-gray-500">{{ $item->quantity }}</td>
-                                            <td class="p-2 border text-sm text-gray-500">{{ $item->item_cost }}</td>
+                                            {{-- <td class="p-2 border text-sm text-gray-500">{{ $item->item_cost }}</td> --}}
                                         </tr>
                                     @endforeach
                                 </tbody>
