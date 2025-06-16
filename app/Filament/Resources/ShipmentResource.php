@@ -267,13 +267,22 @@ class ShipmentResource extends Resource
                 ])
                 ->columns(3),
 
-            Forms\Components\TextInput::make('shipping_cost')
-            ->label('Extral cost')
-            ->default(0)
-            ->required()
-            ->columnSpan(2)
-            ->live(onBlur: true)
-            ->prefix('$'),
+            // Forms\Components\TextInput::make('shipping_cost')
+            // ->label('Extral cost')
+            // ->default(0)
+            // ->required()
+            // ->columnSpan(2)
+            // ->live(onBlur: true)
+            // ->prefix('$'),
+
+            Forms\Components\Hidden::make('shipping_cost')
+            ->default(0),
+            // ->label('Extral cost')
+            // ->default(0)
+            // ->required()
+            // ->columnSpan(2)
+            // ->live(onBlur: true)
+            // ->prefix('$'),
 
 
             Forms\Components\Section::make('')
@@ -297,20 +306,24 @@ class ShipmentResource extends Resource
                             $grandtotal = $subtotal  + $get('shipping_cost');
 
                             $set('total',$grandtotal);
+
+                            return "";
                     
-                            return "Grand Total: $" . number_format($grandtotal, 2);
+                            //return "Grand Total: $" . number_format($grandtotal, 2);
                         })
                         ->columnSpanFull()
-                        ->extraAttributes([
+                        ->label(''),
+
+                         Forms\Components\TextInput::make('total')
+                         ->label('Grand Total')
+                          ->prefix('$')
+                          ->extraAttributes([
                             'class' => 'bg-primary-500 p-4 text-center font-bold text-white text-2xl'
                         ])
-                        ->label(''),
+                         ->default(0),
 
                 ])
                 ->columnSpanFull(),
-
-            Forms\Components\TextInput::make('total')
-            ->default(0),
 
             Forms\Components\Section::make('Payments')
                 ->description('Shipping Cost & Payment Information')
