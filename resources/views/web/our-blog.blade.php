@@ -41,7 +41,7 @@
 
                                 <hr>
 
-                                <a href="{{ route('blog-details', ['slug' => $blog->slug, 'record' => $blog->id]) }}"
+                                <a href="{{ route('blog-details', ['slug' => $blog->slug]) }}"
                                     class="readmore stretched-link"><span>Read More</span><i
                                         class="bi bi-arrow-right"></i></a>
 
