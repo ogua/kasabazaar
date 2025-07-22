@@ -4,7 +4,7 @@
             <!-- Header -->
             <div class="flex justify-between items-center border-b pb-4 mb-6">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-700">KasaBazaar (Rose Door To Door)</h1>
+                    <h1 class="text-2xl font-bold text-gray-700">Rose Door To Door Packaging And Shipping Company</h1>
                     <p class="text-sm text-gray-500">Shipping Invoice</p>
                 </div>
                 <div>
@@ -121,7 +121,7 @@
 
             <!-- Footer -->
             <div class="mt-8 text-center text-sm text-gray-500">
-                <p>Thank you for shipping with KasaBazaar (Rose Door To Door)!</p>
+                <p>Thank you for shipping with Rose Door To Door Packaging And Shipping Company!</p>
             </div>
         </div>
     </div>
