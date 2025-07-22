@@ -1,6 +1,6 @@
 @extends('web.sub-template')
 
-@section('heading','Services - KasaBazaar Shipping & Logistics')
+@section('heading','Services - Rose Door To Door Shipping & Logistics')
 
 @section('sub-heading','About')
 

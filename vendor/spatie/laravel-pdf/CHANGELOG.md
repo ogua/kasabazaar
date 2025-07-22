@@ -2,6 +2,67 @@
 
 All notable changes to `laravel-pdf` will be documented in this file.
 
+## 1.5.6 - 2025-06-11
+
+### What's Changed
+
+* Bump dependabot/fetch-metadata from 2.3.0 to 2.4.0 by @dependabot in https://github.com/spatie/laravel-pdf/pull/244
+* Update alternatives.md by @mininoz in https://github.com/spatie/laravel-pdf/pull/251
+* Fix failing tests by @sertxudev in https://github.com/spatie/laravel-pdf/pull/256
+* Ensure PDF is saved before asserting its content by @sertxudev in https://github.com/spatie/laravel-pdf/pull/258
+
+### New Contributors
+
+* @mininoz made their first contribution in https://github.com/spatie/laravel-pdf/pull/251
+* @sertxudev made their first contribution in https://github.com/spatie/laravel-pdf/pull/256
+
+**Full Changelog**: https://github.com/spatie/laravel-pdf/compare/1.5.5...1.5.6
+
+## 1.5.5 - 2025-02-20
+
+### What's Changed
+
+* Bump dependabot/fetch-metadata from 2.2.0 to 2.3.0 by @dependabot in https://github.com/spatie/laravel-pdf/pull/218
+* Bump aglipanci/laravel-pint-action from 2.4 to 2.5 by @dependabot in https://github.com/spatie/laravel-pdf/pull/223
+* Laravel 12.x Compatibility by @laravel-shift in https://github.com/spatie/laravel-pdf/pull/228
+
+### New Contributors
+
+* @laravel-shift made their first contribution in https://github.com/spatie/laravel-pdf/pull/228
+
+**Full Changelog**: https://github.com/spatie/laravel-pdf/compare/1.5.4...1.5.5
+
+## 1.5.4 - 2025-01-06
+
+### What's Changed
+
+* improve @InlinedImage to detect mime type by @Seb33300 in https://github.com/spatie/laravel-pdf/pull/180
+
+### New Contributors
+
+* @Seb33300 made their first contribution in https://github.com/spatie/laravel-pdf/pull/180
+
+**Full Changelog**: https://github.com/spatie/laravel-pdf/compare/1.5.3...1.5.4
+
+## 1.5.3 - 2024-12-16
+
+### What's Changed
+
+* update contributing link as no CONTRIBUTING.md file by @Nathan-Cowin in https://github.com/spatie/laravel-pdf/pull/192
+* Complete views and disks by @adelf in https://github.com/spatie/laravel-pdf/pull/200
+* Allow spatie/browsershot v5 by @hailwood in https://github.com/spatie/laravel-pdf/pull/199
+* Fix inconsistent behavior in save() method when using vs not using a disk by @aalyusuf in https://github.com/spatie/laravel-pdf/pull/196
+* add assertDontSee test method by @Nathan-Cowin in https://github.com/spatie/laravel-pdf/pull/191
+
+### New Contributors
+
+* @Nathan-Cowin made their first contribution in https://github.com/spatie/laravel-pdf/pull/192
+* @adelf made their first contribution in https://github.com/spatie/laravel-pdf/pull/200
+* @hailwood made their first contribution in https://github.com/spatie/laravel-pdf/pull/199
+* @aalyusuf made their first contribution in https://github.com/spatie/laravel-pdf/pull/196
+
+**Full Changelog**: https://github.com/spatie/laravel-pdf/compare/1.5.2...1.5.3
+
 ## 1.5.2 - 2024-07-16
 
 ### What's Changed

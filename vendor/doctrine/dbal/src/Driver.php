@@ -8,13 +8,14 @@ use Doctrine\DBAL\Driver\API\ExceptionConverter;
 use Doctrine\DBAL\Driver\Connection as DriverConnection;
 use Doctrine\DBAL\Driver\Exception;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Platforms\Exception\PlatformException;
 use SensitiveParameter;
 
 /**
  * Driver interface.
  * Interface that all DBAL drivers must implement.
  *
- * @psalm-import-type Params from DriverManager
+ * @phpstan-import-type Params from DriverManager
  */
 interface Driver
 {
@@ -22,7 +23,7 @@ interface Driver
      * Attempts to create a connection with the database.
      *
      * @param array<string, mixed> $params All connection parameters.
-     * @psalm-param Params $params All connection parameters.
+     * @phpstan-param Params $params All connection parameters.
      *
      * @return DriverConnection The database connection.
      *
@@ -38,6 +39,8 @@ interface Driver
      * the platform this driver connects to.
      *
      * @return AbstractPlatform The database platform.
+     *
+     * @throws PlatformException
      */
     public function getDatabasePlatform(ServerVersionProvider $versionProvider): AbstractPlatform;
 

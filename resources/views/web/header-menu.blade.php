@@ -14,6 +14,7 @@
           <li><a href="{{ route('about-us') }}" class="{{ request()->routeIs('about-us') ? 'active' : '' }}">About</a></li>
           <li><a href="{{ route('our-services') }}" class="{{ request()->routeIs('our-services') ? 'active' : '' }}">Services</a></li>
           <li><a href="{{ route('our-projects') }}" class="{{ request()->routeIs('our-projects') ? 'active' : '' }}">Projects</a></li>
+          <li><a href="{{ route('our-blog') }}" class="{{ request()->routeIs('our-blog') ? 'active' : '' }}">News</a></li>
           <li><a href="{{ route('our-tracking') }}" class="{{ request()->routeIs('our-tracking') ? 'active' : '' }}">Tracking</a></li>
           <!-- <li><a href="blog.php">Blog</a></li>
           <li class="dropdown"><a href="#"><span>Dropdown</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>

@@ -58,8 +58,8 @@ use function count;
  *
  * Instantiation through the DriverManager looks like:
  *
- * @psalm-import-type Params from DriverManager
- * @psalm-import-type OverrideParams from DriverManager
+ * @phpstan-import-type Params from DriverManager
+ * @phpstan-import-type OverrideParams from DriverManager
  * @example
  *
  * $conn = DriverManager::getConnection(array(
@@ -96,7 +96,7 @@ class PrimaryReadReplicaConnection extends Connection
      * @internal The connection can be only instantiated by the driver manager.
      *
      * @param array<string, mixed> $params
-     * @psalm-param Params $params
+     * @phpstan-param Params $params
      */
     public function __construct(array $params, Driver $driver, ?Configuration $config = null)
     {
@@ -141,6 +141,7 @@ class PrimaryReadReplicaConnection extends Connection
         return $this->performConnect();
     }
 
+    /** @throws Exception */
     protected function performConnect(?string $connectionName = null): DriverConnection
     {
         $requestedConnectionChange = ($connectionName !== null);
@@ -192,6 +193,8 @@ class PrimaryReadReplicaConnection extends Connection
      * Connects to the primary node of the database cluster.
      *
      * All following statements after this will be executed against the primary node.
+     *
+     * @throws Exception
      */
     public function ensureConnectedToPrimary(): void
     {
@@ -204,6 +207,8 @@ class PrimaryReadReplicaConnection extends Connection
      * All following statements after this will be executed against the replica node,
      * unless the keepReplica option is set to false and a primary connection
      * was already opened.
+     *
+     * @throws Exception
      */
     public function ensureConnectedToReplica(): void
     {
@@ -239,7 +244,7 @@ class PrimaryReadReplicaConnection extends Connection
      * @param array<OverrideParams> $replicas
      *
      * @return array<string, mixed>
-     * @psalm-return OverrideParams
+     * @phpstan-return OverrideParams
      */
     protected function chooseReplicaConnectionParameters(
         #[SensitiveParameter]

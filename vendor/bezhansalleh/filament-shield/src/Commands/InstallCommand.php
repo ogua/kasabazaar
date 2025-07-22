@@ -7,19 +7,19 @@ namespace BezhanSalleh\FilamentShield\Commands;
 use Filament\Facades\Filament;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\PromptsForMissingInput;
+use Illuminate\Support\Facades\Process;
 use Symfony\Component\Console\Attribute\AsCommand;
 
 #[AsCommand(name: 'shield:install')]
 class InstallCommand extends Command implements PromptsForMissingInput
 {
     use Concerns\CanBeProhibitable;
-    use Concerns\CanGenerateRelationshipsForTenancy;
     use Concerns\CanMakePanelTenantable;
     use Concerns\CanManipulateFiles;
     use Concerns\CanRegisterPlugin;
 
     /** @var string */
-    protected $signature = 'shield:install {panel} {--tenant} {--generate-relationships}';
+    protected $signature = 'shield:install {panel} {--tenant}';
 
     /** @var string */
     protected $description = 'Install and configure shield for the given Filament Panel';
@@ -45,8 +45,8 @@ class InstallCommand extends Command implements PromptsForMissingInput
             (string) str($panel->getId())
                 ->studly()
                 ->append('PanelProvider')
-                ->prepend('Providers/Filament/')
-                ->replace('\\', '/')
+                ->prepend('Providers' . DIRECTORY_SEPARATOR . 'Filament' . DIRECTORY_SEPARATOR)
+                ->replace(['\\', '/'], DIRECTORY_SEPARATOR)
                 ->append('.php'),
         );
 
@@ -82,14 +82,7 @@ class InstallCommand extends Command implements PromptsForMissingInput
             );
         }
 
-        if (filled($tenant) && $this->option('generate-relationships')) {
-            $this->generateRelationships($panel);
-        }
-
-        $this->call('shield:generate', [
-            '--resource' => 'RoleResource',
-            '--panel' => $panel->getId(),
-        ]);
+        Process::run("php artisan shield:generate --resource=RoleResource --panel={$panel->getId()}");
 
         $this->components->info('Shield has been successfully configured & installed!');
 

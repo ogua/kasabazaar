@@ -11,6 +11,8 @@ use Filament\Forms\Components\Field;
 use Filament\Pages\Page;
 use Filament\Support\RawJs;
 use Illuminate\Support\Facades\Http;
+use libphonenumber\PhoneNumberFormat;
+use libphonenumber\PhoneNumberType;
 use Propaganistas\LaravelPhone\Rules\Phone as PhoneRule;
 use Ysfkaya\FilamentPhoneInput\PhoneInputNumberType;
 
@@ -20,6 +22,7 @@ class PhoneInput extends Field implements HasAffixActions
     use HasExtraInputAttributes;
     use HasPlaceholder;
 
+    // @phpstan-ignore-next-line
     protected string $view = 'filament-phone-input::phone-input';
 
     protected string | Closure | PhoneInputNumberType $displayNumberFormat = PhoneInputNumberType::NATIONAL;
@@ -169,6 +172,14 @@ class PhoneInput extends Field implements HasAffixActions
 
         $instance = phone(number: $state, country: $country);
 
+        if (is_int($format) && enum_exists(PhoneNumberFormat::class)) {
+            $format = PhoneNumberFormat::tryFrom($format);
+        }
+
+        if (! $format) {
+            return $state;
+        }
+
         if ($instance->isValid()) {
             return $instance->format($format);
         }
@@ -217,14 +228,25 @@ class PhoneInput extends Field implements HasAffixActions
         return $this->generateRelativeStatePath($path, $this->countryStatePathIsAbsolute);
     }
 
-    public function validateFor(string | array $country = 'AUTO', int | array | null $type = null, bool $lenient = false)
+    public function validateFor(string | array $country = 'INTERNATIONAL', int | string | array | PhoneNumberType | null $type = null, bool $lenient = false)
     {
         $this->validatedCountry = $country;
 
-        $rule = (new PhoneRule)->country($country)->type($type);
+        $rule = new PhoneRule;
+
+        // @phpstan-ignore-next-line
+        if (method_exists($rule, 'international') && ($country === 'AUTO' || $country === 'INTERNATIONAL')) {
+            $rule->international();
+        } else {
+            $rule->country($country);
+        }
 
         if ($lenient) {
             $rule->lenient();
+        }
+
+        if ($type) {
+            $rule->type($type);
         }
 
         return $this->rule($rule);

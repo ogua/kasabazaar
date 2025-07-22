@@ -17,6 +17,7 @@
     $suffixIcon = $getSuffixIcon();
     $suffixLabel = $getSuffixLabel();
     $statePath = $getStatePath();
+    $disabledDates = $getDisabledDates();
 @endphp
 
 <x-dynamic-component
@@ -65,13 +66,12 @@
             />
         @else
             <div
-                x-ignore
                 @if (FilamentView::hasSpaMode())
-                    {{-- format-ignore-start --}}ax-load="visible || event (ax-modal-opened)"{{-- format-ignore-end --}}
+                    {{-- format-ignore-start --}}x-load="visible || event (ax-modal-opened)"{{-- format-ignore-end --}}
                 @else
-                    ax-load
+                    x-load
                 @endif
-                ax-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('date-time-picker', 'filament/forms') }}"
+                x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('date-time-picker', 'filament/forms') }}"
                 x-data="dateTimePickerFormComponent({
                             displayFormat:
                                 '{{ convert_date_format($getDisplayFormat())->to('day.js') }}',
@@ -81,6 +81,15 @@
                             shouldCloseOnDateSelection: @js($shouldCloseOnDateSelection()),
                             state: $wire.{{ $applyStateBindingModifiers("\$entangle('{$statePath}')") }},
                         })"
+                wire:ignore
+                wire:key="{{ $this->getId() }}.{{ $statePath }}.{{ $field::class }}.{{
+                    substr(md5(serialize([
+                        'disabledDates' => $disabledDates,
+                        'isDisabled' => $isDisabled,
+                        'maxDate' => $maxDate,
+                        'minDate' => $minDate,
+                    ])), 0, 64)
+                }}"
                 x-on:keydown.esc="isOpen() && $event.stopPropagation()"
                 {{
                     $attributes
@@ -96,7 +105,7 @@
                 <input
                     x-ref="disabledDates"
                     type="hidden"
-                    value="{{ json_encode($getDisabledDates()) }}"
+                    value="{{ json_encode($disabledDates) }}"
                 />
 
                 <button

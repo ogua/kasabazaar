@@ -2,6 +2,139 @@
 
 All notable changes to `filament-edit-profile` will be documented in this file.
 
+## v1.0.44 - 2025-06-14
+
+### What's Changed
+
+* fix: avoid error when plugin is null in getSlug() method by @edeoliv in https://github.com/joaopaulolndev/filament-edit-profile/pull/98
+
+**Full Changelog**: https://github.com/joaopaulolndev/filament-edit-profile/compare/v1.0.43...v1.0.44
+
+## v1.0.43 - 2025-05-21
+
+**Full Changelog**: https://github.com/joaopaulolndev/filament-edit-profile/compare/v1.0.42...v1.0.43
+
+## v1.0.42 - 2025-05-20
+
+### What's Changed
+
+* fix(profile): correct input field to use 'email' instead of auth identifier by @jeffersongoncalves in https://github.com/joaopaulolndev/filament-edit-profile/pull/90
+* fix(profile): handle missing Sanctum class in token visibility logic by @jeffersongoncalves in https://github.com/joaopaulolndev/filament-edit-profile/pull/91
+
+### New Contributors
+
+* @jeffersongoncalves made their first contribution in https://github.com/joaopaulolndev/filament-edit-profile/pull/90
+
+**Full Changelog**: https://github.com/joaopaulolndev/filament-edit-profile/compare/v1.0.41...v1.0.42
+
+## v1.0.41 - 2025-05-19
+
+### What's Changed
+
+* feat(profile): add email form visibility toggle by @andrefelipe18 in https://github.com/joaopaulolndev/filament-edit-profile/pull/88
+
+**Full Changelog**: https://github.com/joaopaulolndev/filament-edit-profile/compare/v1.0.40...v1.0.41
+
+## v1.0.40 - 2025-05-19
+
+### What's Changed
+
+* Call to a member function getSlug() on null by @bigraja in https://github.com/joaopaulolndev/filament-edit-profile/pull/82
+* Bump dependabot/fetch-metadata from 2.3.0 to 2.4.0 by @dependabot in https://github.com/joaopaulolndev/filament-edit-profile/pull/85
+* Use `getAuthIdentifierName()` instead of hardcoded `email` in profile… by @leandrogehlen in https://github.com/joaopaulolndev/filament-edit-profile/pull/83
+* Fix null plugin access in EditProfilePage when panel context is unavailable by @MiguelAngelMP10 in https://github.com/joaopaulolndev/filament-edit-profile/pull/84
+* Update CustomFieldsForm.php by @Emotard1991 in https://github.com/joaopaulolndev/filament-edit-profile/pull/87
+
+### New Contributors
+
+* @bigraja made their first contribution in https://github.com/joaopaulolndev/filament-edit-profile/pull/82
+* @leandrogehlen made their first contribution in https://github.com/joaopaulolndev/filament-edit-profile/pull/83
+* @MiguelAngelMP10 made their first contribution in https://github.com/joaopaulolndev/filament-edit-profile/pull/84
+* @Emotard1991 made their first contribution in https://github.com/joaopaulolndev/filament-edit-profile/pull/87
+
+**Full Changelog**: https://github.com/joaopaulolndev/filament-edit-profile/compare/v1.0.39...v1.0.40
+
+## v1.0.39 - 2025-04-22
+
+**Full Changelog**: https://github.com/joaopaulolndev/filament-edit-profile/compare/v1.0.38...v1.0.39
+
+## v1.0.38 - 2025-04-16
+
+### What's Changed
+
+* Simplify slug retrieval logic by @andrefelipe18 in https://github.com/joaopaulolndev/filament-edit-profile/pull/80
+
+### New Contributors
+
+* @andrefelipe18 made their first contribution in https://github.com/joaopaulolndev/filament-edit-profile/pull/80
+
+**Full Changelog**: https://github.com/joaopaulolndev/filament-edit-profile/compare/v1.0.37...v1.0.38
+
+## v1.0.37 - 2025-03-27
+
+### What's Changed
+
+* Support Laravel 12 by @patriciomartinns in https://github.com/joaopaulolndev/filament-edit-profile/pull/73
+* Add Japanese Language Support by @staffkojinpro in https://github.com/joaopaulolndev/filament-edit-profile/pull/77
+* [Bug} compatibily with Model::shouldBeStrict() by @gpibarra in https://github.com/joaopaulolndev/filament-edit-profile/pull/75
+
+### New Contributors
+
+* @patriciomartinns made their first contribution in https://github.com/joaopaulolndev/filament-edit-profile/pull/73
+* @staffkojinpro made their first contribution in https://github.com/joaopaulolndev/filament-edit-profile/pull/77
+
+**Full Changelog**: https://github.com/joaopaulolndev/filament-edit-profile/compare/v1.0.36...v1.0.37
+
+## v1.0.36 - 2025-02-19
+
+### What's Changed
+
+* feat localization : add Turkish lang by @AzizEmir in https://github.com/joaopaulolndev/filament-edit-profile/pull/72
+
+### New Contributors
+
+* @AzizEmir made their first contribution in https://github.com/joaopaulolndev/filament-edit-profile/pull/72
+
+**Full Changelog**: https://github.com/joaopaulolndev/filament-edit-profile/compare/v1.0.35...v1.0.36
+
+## v1.0.35 - 2025-02-12
+
+### What's Changed
+
+* Add id to custom fields by @Ercogx in https://github.com/joaopaulolndev/filament-edit-profile/pull/68
+
+### New Contributors
+
+* @Ercogx made their first contribution in https://github.com/joaopaulolndev/filament-edit-profile/pull/68
+
+**Full Changelog**: https://github.com/joaopaulolndev/filament-edit-profile/compare/v1.0.34...v1.0.35
+
+## v1.0.34 - 2025-02-07
+
+### What's Changed
+
+* Bump dependabot/fetch-metadata from 2.2.0 to 2.3.0 by @dependabot in https://github.com/joaopaulolndev/filament-edit-profile/pull/65
+* Bump aglipanci/laravel-pint-action from 2.4 to 2.5 by @dependabot in https://github.com/joaopaulolndev/filament-edit-profile/pull/67
+* Feat: Add more property support to custom fields by @gigili in https://github.com/joaopaulolndev/filament-edit-profile/pull/64
+
+### New Contributors
+
+* @gigili made their first contribution in https://github.com/joaopaulolndev/filament-edit-profile/pull/64
+
+**Full Changelog**: https://github.com/joaopaulolndev/filament-edit-profile/compare/v1.0.33...v1.0.34
+
+## v1.0.33 - 2024-12-05
+
+### What's Changed
+
+* Refactor Configuration for Filament Profile Editing and Avatar Handling by @ludndev in https://github.com/joaopaulolndev/filament-edit-profile/pull/59
+
+### New Contributors
+
+* @ludndev made their first contribution in https://github.com/joaopaulolndev/filament-edit-profile/pull/59
+
+**Full Changelog**: https://github.com/joaopaulolndev/filament-edit-profile/compare/v1.0.32...v1.0.33
+
 ## v1.0.32 - 2024-11-02
 
 ### What's Changed

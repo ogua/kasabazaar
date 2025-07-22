@@ -37,6 +37,8 @@ class FilamentEditProfilePlugin implements Plugin
 
     public bool $shouldShowEditProfileForm = true;
 
+    public bool $shouldShowEmailForm = true;
+
     public bool $shouldShowEditPasswordForm = true;
 
     public Closure | bool $shouldShowDeleteAccountForm = true;
@@ -246,6 +248,10 @@ class FilamentEditProfilePlugin implements Plugin
 
     public function getShouldShowSanctumTokens(): bool
     {
+        if (! class_exists('Laravel\Sanctum\Sanctum')) {
+            $this->sanctumTokens = false;
+        }
+
         return $this->evaluate($this->sanctumTokens);
     }
 
@@ -282,6 +288,18 @@ class FilamentEditProfilePlugin implements Plugin
         }
 
         return $this;
+    }
+
+    public function shouldShowEmailForm(Closure | bool $value = true): static
+    {
+        $this->shouldShowEmailForm = $value;
+
+        return $this;
+    }
+
+    public function getShouldShowEmailForm(): bool
+    {
+        return $this->evaluate($this->shouldShowEmailForm);
     }
 
     public function getShouldShowAvatarForm(): bool

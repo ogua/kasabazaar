@@ -27,6 +27,12 @@ Route::get('/tracking',[WebController::class,'tracking'])
 Route::get('/contact-us',[WebController::class,'contactus'])
 ->name('contact-us');
 
+Route::get('/news',[WebController::class,'ourblog'])
+->name('our-blog');
+
+Route::get('/news/{slug}',[WebController::class,'blogDetails'])
+->name('blog-details');
+
 Route::get('/packing-slip/{id}',[ShippingController::class,'packingslip'])
 ->name('packing-slip');
 

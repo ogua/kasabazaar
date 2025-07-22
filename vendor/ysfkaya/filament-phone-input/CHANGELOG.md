@@ -2,6 +2,124 @@
 
 All notable changes to `filament-phone-input` will be documented in this file
 
+## v3.2.1 - 2025-06-24
+
+### What's Changed
+
+- Compatibility issues
+
+**Full Changelog**: https://github.com/ysfkaya/filament-phone-input/compare/v3.2.0...v3.2.1
+
+## v3.2.0 - 2025-06-23
+
+### What's Changed
+
+* Improves and compatibility with both `propaganistas/laravel-phone`'s ^5.0 and ^6.0 versions by @ysfkaya in https://github.com/ysfkaya/filament-phone-input/pull/90
+
+**Full Changelog**: https://github.com/ysfkaya/filament-phone-input/compare/v3.1.11...v3.2.0
+
+## v3.1.11 - 2025-06-18
+
+### What's Changed
+
+- Fixed unmatched number format in `propaganistas/laravel-phone`
+
+**Full Changelog**: https://github.com/ysfkaya/filament-phone-input/compare/v3.1.10...v3.1.11
+
+## v3.1.10 - 2025-06-16
+
+### What's Changed
+
+* add support for propaganistas/laravel-phone v6.0 by @SeyamMs in https://github.com/ysfkaya/filament-phone-input/pull/83
+
+### New Contributors
+
+* @SeyamMs made their first contribution in https://github.com/ysfkaya/filament-phone-input/pull/83
+
+**Full Changelog**: https://github.com/ysfkaya/filament-phone-input/compare/v3.1.9...v3.1.10
+
+## 3.1.9 - 2025-05-28
+
+### What's Changed
+
+* fix: replace the old flag of Syria with the new  official flag by @ARMBouhali in https://github.com/ysfkaya/filament-phone-input/pull/81
+
+### New Contributors
+
+* @ARMBouhali made their first contribution in https://github.com/ysfkaya/filament-phone-input/pull/81
+
+**Full Changelog**: https://github.com/ysfkaya/filament-phone-input/compare/v3.1.8...v3.1.9
+
+## v2.3.8 - 2025-04-25
+
+### What's Changed
+
+- Fixes libphonenumber enum issue
+
+**Full Changelog**: https://github.com/ysfkaya/filament-phone-input/compare/v2.3.7...v2.3.8
+
+## 3.1.8 - 2025-03-23
+
+### What's Changed
+
+* Update PhoneInputNumberType.php by @mehmethamza in https://github.com/ysfkaya/filament-phone-input/pull/72
+
+### New Contributors
+
+* @mehmethamza made their first contribution in https://github.com/ysfkaya/filament-phone-input/pull/72
+
+**Full Changelog**: https://github.com/ysfkaya/filament-phone-input/compare/v3.1.7...v3.1.8
+
+## 3.1.7 - 2025-03-10
+
+### What's Changed
+
+* Resolve critical vulnerability GHSA-vjh7-7g9h-fjfh by @Orrison in https://github.com/ysfkaya/filament-phone-input/pull/69
+
+### New Contributors
+
+* @Orrison made their first contribution in https://github.com/ysfkaya/filament-phone-input/pull/69
+
+**Full Changelog**: https://github.com/ysfkaya/filament-phone-input/compare/v3.1.6...v2.4.8
+
+## v2.4.8 - 2025-03-10
+
+### What's Changed
+
+* Resolve critical vulnerability GHSA-vjh7-7g9h-fjfh by @Orrison in https://github.com/ysfkaya/filament-phone-input/pull/69
+
+### New Contributors
+
+* @Orrison made their first contribution in https://github.com/ysfkaya/filament-phone-input/pull/69
+
+**Full Changelog**: https://github.com/ysfkaya/filament-phone-input/compare/v3.1.6...v2.4.8
+
+## v3.1.6 - 2025-02-22
+
+### What's Changed
+
+* Fix Alpine directive from 'ax-' to 'x-' in phone input view by @smiliyas in https://github.com/ysfkaya/filament-phone-input/pull/67
+
+**Full Changelog**: https://github.com/ysfkaya/filament-phone-input/compare/v3.1.5...v3.1.6
+
+## 3.1.5 - 2025-02-10
+
+### What's Changed
+
+- Fixed an issue where the associative values of `PhoneEntry` and `PhoneColumn` components were not showing up.
+
+## 3.1.4 - 2024-12-17
+
+### What's Changed
+
+* Fixes `Js` class implementation issue in `phone-input.blade.php` by @elegasoft in https://github.com/ysfkaya/filament-phone-input/pull/60
+
+### New Contributors
+
+* @elegasoft made their first contribution in https://github.com/ysfkaya/filament-phone-input/pull/60
+
+**Full Changelog**: https://github.com/ysfkaya/filament-phone-input/compare/v3.1.3...v3.1.4
+
 ## 3.1.3 - 2024-12-14
 
 ### What's New
@@ -39,6 +157,18 @@ The flag images have been updated in the latest version of the `intl-tel-input` 
 
 ```bash
 php artisan vendor:publish --tag="filament-phone-input-assets" --force
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

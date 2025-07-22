@@ -75,6 +75,7 @@ final class Result implements ResultInterface
         }
     }
 
+    /** @throws Exception */
     public function getColumnName(int $index): string
     {
         try {
@@ -98,7 +99,7 @@ final class Result implements ResultInterface
     }
 
     /**
-     * @psalm-param PDO::FETCH_* $mode
+     * @phpstan-param PDO::FETCH_* $mode
      *
      * @throws Exception
      */
@@ -112,7 +113,7 @@ final class Result implements ResultInterface
     }
 
     /**
-     * @psalm-param PDO::FETCH_* $mode
+     * @phpstan-param PDO::FETCH_* $mode
      *
      * @return list<mixed>
      *

@@ -10,12 +10,14 @@ use BezhanSalleh\FilamentShield\Traits\HasShieldFormComponents;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Pages\SubNavigationPosition;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Unique;
 
 class RoleResource extends Resource implements HasShieldPermissions
 {
@@ -45,7 +47,10 @@ class RoleResource extends Resource implements HasShieldPermissions
                             ->schema([
                                 Forms\Components\TextInput::make('name')
                                     ->label(__('filament-shield::filament-shield.field.name'))
-                                    ->unique(ignoreRecord: true)
+                                    ->unique(
+                                        ignoreRecord: true, /** @phpstan-ignore-next-line */
+                                        modifyRuleUsing: fn (Unique $rule) => Utils::isTenancyEnabled() ? $rule->where(Utils::getTenantModelForeignKey(), Filament::getTenant()?->id) : $rule
+                                    )
                                     ->required()
                                     ->maxLength(255),
 
@@ -183,6 +188,11 @@ class RoleResource extends Resource implements HasShieldPermissions
     public static function getNavigationSort(): ?int
     {
         return Utils::getResourceNavigationSort();
+    }
+
+    public static function getSubNavigationPosition(): SubNavigationPosition
+    {
+        return Utils::getSubNavigationPosition() ?? static::$subNavigationPosition;
     }
 
     public static function getSlug(): string

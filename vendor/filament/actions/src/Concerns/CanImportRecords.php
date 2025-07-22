@@ -30,9 +30,8 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Number;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rules\File;
 use Illuminate\Validation\ValidationException;
-use League\Csv\ByteSequence;
+use League\Csv\Bom;
 use League\Csv\CharsetConverter;
 use League\Csv\Info;
 use League\Csv\Reader as CsvReader;
@@ -195,7 +194,7 @@ trait CanImportRecords
             }
 
             $csvReader->setHeaderOffset($action->getHeaderOffset() ?? 0);
-            $csvResults = Statement::create()->process($csvReader);
+            $csvResults = (new Statement)->process($csvReader);
 
             $totalRows = $csvResults->count();
             $maxRows = $action->getMaxRows() ?? $totalRows;
@@ -343,7 +342,7 @@ trait CanImportRecords
                     $columns = $this->getImporter()::getColumns();
 
                     $csv = Writer::createFromFileObject(new SplTempFileObject);
-                    $csv->setOutputBOM(ByteSequence::BOM_UTF8);
+                    $csv->setOutputBOM(Bom::Utf8);
 
                     if (filled($csvDelimiter = $this->getCsvDelimiter())) {
                         $csv->setDelimiter($csvDelimiter);
@@ -383,7 +382,7 @@ trait CanImportRecords
                 }),
         ]);
 
-        $this->color('gray');
+        $this->defaultColor('gray');
 
         $this->modalWidth('xl');
 
@@ -403,7 +402,7 @@ trait CanImportRecords
         $filePath = $file->getRealPath();
 
         if (config("filesystems.disks.{$fileDisk}.driver") !== 's3') {
-            $resource = fopen($filePath, mode: 'r');
+            $resource = $file->readStream();
         } else {
             /** @var AwsS3V3Adapter $s3Adapter */
             $s3Adapter = Storage::disk($fileDisk)->getAdapter();
@@ -439,7 +438,21 @@ trait CanImportRecords
 
     protected function detectCsvEncoding(mixed $resource): ?string
     {
-        $fileHeader = fgets($resource);
+        rewind($resource);
+
+        $lineCount = 0;
+        $contentSample = '';
+
+        while ((! feof($resource)) && ($lineCount < 20)) {
+            $line = fgets($resource);
+
+            if ($line === false) {
+                break;
+            }
+
+            $contentSample .= $line;
+            $lineCount++;
+        }
 
         // The encoding of a subset should be declared before the encoding of its superset.
         $encodings = [
@@ -454,7 +467,7 @@ trait CanImportRecords
         ];
 
         foreach ($encodings as $encoding) {
-            if (! mb_check_encoding($fileHeader, $encoding)) {
+            if (! mb_check_encoding($contentSample, $encoding)) {
                 continue;
             }
 
@@ -602,45 +615,43 @@ trait CanImportRecords
     {
         $fileRules = [
             'extensions:csv,txt',
-            File::types(['csv', 'txt'])->rules([
-                function (string $attribute, mixed $value, Closure $fail) {
-                    $csvStream = $this->getUploadedFileStream($value);
+            fn (): Closure => function (string $attribute, mixed $value, Closure $fail) {
+                $csvStream = $this->getUploadedFileStream($value);
 
-                    if (! $csvStream) {
-                        return;
+                if (! $csvStream) {
+                    return;
+                }
+
+                $csvReader = CsvReader::createFromStream($csvStream);
+
+                if (filled($csvDelimiter = $this->getCsvDelimiter($csvReader))) {
+                    $csvReader->setDelimiter($csvDelimiter);
+                }
+
+                $csvReader->setHeaderOffset($this->getHeaderOffset() ?? 0);
+
+                $csvColumns = $csvReader->getHeader();
+
+                $duplicateCsvColumns = [];
+
+                foreach (array_count_values($csvColumns) as $header => $count) {
+                    if ($count <= 1) {
+                        continue;
                     }
 
-                    $csvReader = CsvReader::createFromStream($csvStream);
+                    $duplicateCsvColumns[] = $header;
+                }
 
-                    if (filled($csvDelimiter = $this->getCsvDelimiter($csvReader))) {
-                        $csvReader->setDelimiter($csvDelimiter);
-                    }
+                if (empty($duplicateCsvColumns)) {
+                    return;
+                }
 
-                    $csvReader->setHeaderOffset($this->getHeaderOffset() ?? 0);
+                $filledDuplicateCsvColumns = array_filter($duplicateCsvColumns, fn ($value): bool => filled($value));
 
-                    $csvColumns = $csvReader->getHeader();
-
-                    $duplicateCsvColumns = [];
-
-                    foreach (array_count_values($csvColumns) as $header => $count) {
-                        if ($count <= 1) {
-                            continue;
-                        }
-
-                        $duplicateCsvColumns[] = $header;
-                    }
-
-                    if (empty($duplicateCsvColumns)) {
-                        return;
-                    }
-
-                    $filledDuplicateCsvColumns = array_filter($duplicateCsvColumns, fn ($value): bool => filled($value));
-
-                    $fail(trans_choice('filament-actions::import.modal.form.file.rules.duplicate_columns', count($filledDuplicateCsvColumns), [
-                        'columns' => implode(', ', $filledDuplicateCsvColumns),
-                    ]));
-                },
-            ]),
+                $fail(trans_choice('filament-actions::import.modal.form.file.rules.duplicate_columns', count($filledDuplicateCsvColumns), [
+                    'columns' => implode(', ', $filledDuplicateCsvColumns),
+                ]));
+            },
         ];
 
         foreach ($this->fileValidationRules as $rules) {

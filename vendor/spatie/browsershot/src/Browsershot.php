@@ -68,6 +68,15 @@ class Browsershot
 
     protected ImageManipulations $imageManipulations;
 
+    protected array $unsafeProtocols = [
+        'file:',
+        'file:/',
+        'file://',
+        'file:\\',
+        'file:\\\\',
+        'view-source',
+    ];
+
     public static function url(string $url): static
     {
         return (new static)->setUrl($url);
@@ -259,15 +268,11 @@ class Browsershot
     {
         $url = trim($url);
 
-        $unsupportedProtocols = [
-            'file://',
-            'file:/',
-            'file:\\',
-            'file:\\\\',
-            'view-source',
-        ];
+        if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+            throw FileUrlNotAllowed::urlCannotBeParsed($url);
+        }
 
-        foreach ($unsupportedProtocols as $unsupportedProtocol) {
+        foreach ($this->unsafeProtocols as $unsupportedProtocol) {
             if (str_starts_with(strtolower($url), $unsupportedProtocol)) {
                 throw FileUrlNotAllowed::make();
             }
@@ -301,8 +306,18 @@ class Browsershot
 
     public function setHtml(string $html): static
     {
-        if (str_contains(strtolower($html), 'file://') || str_contains(strtolower($html), 'file:/')) {
-            throw HtmlIsNotAllowedToContainFile::make();
+        $decodedHtml = html_entity_decode($html, ENT_QUOTES | ENT_HTML5);
+
+        $protocols = array_filter($this->unsafeProtocols, function (string $protocol) {
+            return $protocol !== 'file:';
+        });
+
+        foreach ([$html, $decodedHtml] as $content) {
+            foreach ($protocols as $protocol) {
+                if (str_contains(strtolower($content), $protocol)) {
+                    throw HtmlIsNotAllowedToContainFile::make();
+                }
+            }
         }
 
         $this->html = $html;

@@ -14,6 +14,7 @@ use function oci_cancel;
 use function oci_error;
 use function oci_fetch_all;
 use function oci_fetch_array;
+use function oci_field_name;
 use function oci_num_fields;
 use function oci_num_rows;
 
@@ -87,13 +88,7 @@ final class Result implements ResultInterface
 
     public function columnCount(): int
     {
-        $count = oci_num_fields($this->statement);
-
-        if ($count !== false) {
-            return $count;
-        }
-
-        return 0;
+        return oci_num_fields($this->statement);
     }
 
     public function getColumnName(int $index): string
