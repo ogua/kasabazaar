@@ -58,7 +58,7 @@
     </section><!-- /Blog Posts Section -->
 
     <!-- Blog Pagination Section -->
-    <section id="blog-pagination" class="blog-pagination section">
+    {{-- <section id="blog-pagination" class="blog-pagination section">
 
         <div class="container">
             <div class="d-flex justify-content-center">
@@ -75,5 +75,6 @@
             </div>
         </div>
 
-    </section><!-- /Blog Pagination Section -->
+    </section> --}}
+    <!-- /Blog Pagination Section -->
 @endsection

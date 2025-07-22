@@ -7,9 +7,9 @@ use App\Models\Quotation;
 use Illuminate\Http\Request;
 use Matscode\Paystack\Transaction;
 use Spatie\LaravelPdf\Facades\Pdf;
-use Spatie\LaravelPdf\Support\pdfpport\pdf;
 use Unicodeveloper\Paystack\Facades\Paystack;
 use App\Filament\Client\Pages\PageSuccessfully;
+use Spatie\LaravelPdf\Support\pdfpport\pdf as PdfSupport;
 
 class ShippingController extends Controller
 {
