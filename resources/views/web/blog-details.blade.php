@@ -2,7 +2,7 @@
 
 @section('heading', $blogplost?->title.' - Rose Door To Door Shipping & Logistics')
 
-@section('sub-heading', $blogplost?->title ?? 'News')
+@section('sub-heading', $blogplost?->title ?? 'Rose To Door Shipping & Logistics News')
 
 @section('main-content')
     <div class="container">
