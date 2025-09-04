@@ -3,9 +3,9 @@
         href="https://mail.hostinger.com"
         tag="a"
         target="_blank"
-        icon="heroicon-o-paper-airplane"
         size="xs"
         tooltip="Visit Staff Mail"
+        icon="heroicon-o-paper-airplane"
         outlined
     >
         Mail
