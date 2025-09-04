@@ -16,10 +16,10 @@
           <li><a href="{{ route('our-projects') }}" class="{{ request()->routeIs('our-projects') ? 'active' : '' }}">Projects</a></li>
           <li><a href="{{ route('our-blog') }}" class="{{ request()->routeIs('our-blog') ? 'active' : '' }}">News</a></li>
           <li><a href="{{ route('our-tracking') }}" class="{{ request()->routeIs('our-tracking') ? 'active' : '' }}">Tracking</a></li>
-          <!-- <li><a href="blog.php">Blog</a></li>
-          <li class="dropdown"><a href="#"><span>Dropdown</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
+          <!-- <li><a href="blog.php">Blog</a></li>  -->
+          {{-- <li class="dropdown"><a href="#"><span>Staff</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
             <ul>
-              <li><a href="#">Dropdown 1</a></li>
+              <li><a href="#">Mail</a></li>
               <li class="dropdown"><a href="#"><span>Deep Dropdown</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
                 <ul>
                   <li><a href="#">Deep Dropdown 1</a></li>
@@ -33,8 +33,13 @@
               <li><a href="#">Dropdown 3</a></li>
               <li><a href="#">Dropdown 4</a></li>
             </ul>
-          </li> -->
+          </li> --}}
           <li><a href="{{ route('contact-us') }}" class="{{ request()->routeIs('contact-us') ? 'active' : '' }}">Contact</a></li>
+          <li class="dropdown"><a href="#"><span>Staff</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
+            <ul>
+              <li><a href="https://mail.hostinger.com" target="_blank">Mail</a></li>
+            </ul>
+          </li>
           <li><a href="/admin" class="">Login</a></li>
         </ul>
         <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
