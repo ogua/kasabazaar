@@ -35,11 +35,12 @@
             </ul>
           </li> --}}
           <li><a href="{{ route('contact-us') }}" class="{{ request()->routeIs('contact-us') ? 'active' : '' }}">Contact</a></li>
-          <li class="dropdown"><a href="#"><span>Staff</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
+           <li><a href="https://mail.hostinger.com" target="_blank">Staff Mail</a></li>
+          {{-- <li class="dropdown"><a href="#"><span>Staff</span> <i class="bi bi-chevron-down toggle-dropdown"></i></a>
             <ul>
               <li><a href="https://mail.hostinger.com" target="_blank">Mail</a></li>
             </ul>
-          </li>
+          </li> --}}
           <li><a href="/admin" class="">Login</a></li>
         </ul>
         <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
