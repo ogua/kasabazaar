@@ -11,11 +11,11 @@
 <section id="about" class="about section">
     <div class="container">
         <div class="row position-relative">
-            <div class="col-lg-5 about-img" data-aos="zoom-out" data-aos-delay="200">
+            {{-- <div class="col-lg-5 about-img" data-aos="zoom-out" data-aos-delay="200">
                 <img src="assets/shipping-images/shipping (5).JPG" alt="Rose Door to Door Shipping Image">
-            </div>
+            </div> --}}
 
-            <div class="col-lg-7" data-aos="fade-up" data-aos-delay="100">
+            <div class="col-lg-12" data-aos="fade-up" data-aos-delay="100">
                 <h2 class="inner-title">About Us</h2>
                 <div class="our-storys">
                     <h4>Rose Door to Door Shipping & Delivery</h4>
@@ -203,23 +203,7 @@
             </div>
           </div><!-- End Team Member -->
 
-          <div class="col-lg-4 col-md-6 member" data-aos="fade-up" data-aos-delay="300">
-            <div class="member-img">
-              <img src="assets/team/team-3.jpg" class="img-fluid" alt="">
-              <div class="social">
-                <a href="#"><i class="bi bi-twitter-x"></i></a>
-                <a href="#"><i class="bi bi-facebook"></i></a>
-                <a href="#"><i class="bi bi-instagram"></i></a>
-                <a href="#"><i class="bi bi-linkedin"></i></a>
-              </div>
-            </div>
-            <div class="member-info text-center">
-              <h4>Alfred Oduro</h4>
-              <span>Site Engineer</span>
-            </div>
-          </div><!-- End Team Member -->
-
-          <div class="col-lg-4 col-md-6 member" data-aos="fade-up" data-aos-delay="400">
+           <div class="col-lg-4 col-md-6 member" data-aos="fade-up" data-aos-delay="400">
             <div class="member-img">
               <img src="assets/team/team-4.png" class="img-fluid" alt="">
               <div class="social">
@@ -232,89 +216,6 @@
             <div class="member-info text-center">
               <h4>Tina Arhin</h4>
               <span>Admin Secretary</span>
-            </div>
-          </div><!-- End Team Member -->
-
-          <div class="col-lg-4 col-md-6 member" data-aos="fade-up" data-aos-delay="500">
-            <div class="member-img">
-              <img src="assets/team/team-5.jpg" class="img-fluid" alt="">
-              <div class="social">
-                <a href="#"><i class="bi bi-twitter-x"></i></a>
-                <a href="#"><i class="bi bi-facebook"></i></a>
-                <a href="#"><i class="bi bi-instagram"></i></a>
-                <a href="#"><i class="bi bi-linkedin"></i></a>
-              </div>
-            </div>
-            <div class="member-info text-center">
-              <h4>Paul Adel Owusu</h4>
-              <span>Architect</span>
-            </div>
-          </div><!-- End Team Member -->
-
-          <div class="col-lg-4 col-md-6 member" data-aos="fade-up" data-aos-delay="600">
-            <div class="member-img">
-              <img src="assets/team/team-6.jpg" class="img-fluid" alt="">
-              <div class="social">
-                <a href="#"><i class="bi bi-twitter-x"></i></a>
-                <a href="#"><i class="bi bi-facebook"></i></a>
-                <a href="#"><i class="bi bi-instagram"></i></a>
-                <a href="#"><i class="bi bi-linkedin"></i></a>
-              </div>
-            </div>
-            <div class="member-info text-center">
-              <h4>Abigail Nkansa</h4>
-              <span>Property Management Head</span>
-            </div>
-          </div><!-- End Team Member -->
-
-
-          <div class="col-lg-4 col-md-6 member" data-aos="fade-up" data-aos-delay="600">
-            <div class="member-img">
-              <img src="assets/team/team-7.jpg" class="img-fluid" alt="">
-              <div class="social">
-                <a href="#"><i class="bi bi-twitter-x"></i></a>
-                <a href="#"><i class="bi bi-facebook"></i></a>
-                <a href="#"><i class="bi bi-instagram"></i></a>
-                <a href="#"><i class="bi bi-linkedin"></i></a>
-              </div>
-            </div>
-            <div class="member-info text-center">
-              <h4>Pastor Joe Quao</h4>
-              <span>Chaplain</span>
-            </div>
-          </div><!-- End Team Member -->
-
-
-          <div class="col-lg-4 col-md-6 member" data-aos="fade-up" data-aos-delay="600">
-            <div class="member-img">
-              <img src="assets/team/team-8.png" class="img-fluid" alt="">
-              <div class="social">
-                <a href="#"><i class="bi bi-twitter-x"></i></a>
-                <a href="#"><i class="bi bi-facebook"></i></a>
-                <a href="#"><i class="bi bi-instagram"></i></a>
-                <a href="#"><i class="bi bi-linkedin"></i></a>
-              </div>
-            </div>
-            <div class="member-info text-center">
-              <h4>Abdul-Latif Ana’ambono, ISSAH​</h4>
-              <span>Quantity Surveyor</span>
-            </div>
-          </div><!-- End Team Member -->
-
-
-          <div class="col-lg-4 col-md-6 member" data-aos="fade-up" data-aos-delay="600">
-            <div class="member-img">
-              <img src="assets/team/team-9.png" class="img-fluid" alt="">
-              <div class="social">
-                <a href="#"><i class="bi bi-twitter-x"></i></a>
-                <a href="#"><i class="bi bi-facebook"></i></a>
-                <a href="#"><i class="bi bi-instagram"></i></a>
-                <a href="#"><i class="bi bi-linkedin"></i></a>
-              </div>
-            </div>
-            <div class="member-info text-center">
-              <h4>Reindorf Nkansah Dapaah</h4>
-              <span>Property Management Head</span>
             </div>
           </div><!-- End Team Member -->
 
@@ -333,6 +234,24 @@
               <span>Property Management Head</span>
             </div>
           </div><!-- End Team Member -->
+
+          {{-- <div class="col-lg-4 col-md-6 member" data-aos="fade-up" data-aos-delay="500">
+            <div class="member-img">
+              <img src="assets/team/team-5.jpg" class="img-fluid" alt="">
+              <div class="social">
+                <a href="#"><i class="bi bi-twitter-x"></i></a>
+                <a href="#"><i class="bi bi-facebook"></i></a>
+                <a href="#"><i class="bi bi-instagram"></i></a>
+                <a href="#"><i class="bi bi-linkedin"></i></a>
+              </div>
+            </div>
+            <div class="member-info text-center">
+              <h4>Paul Adel Owusu</h4>
+              <span>Architect</span>
+            </div>
+          </div> --}}
+          <!-- End Team Member -->
+          
 
 
           {{-- <div class="col-lg-4 col-md-6 member" data-aos="fade-up" data-aos-delay="600">

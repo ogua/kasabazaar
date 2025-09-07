@@ -63,7 +63,7 @@
         <div class="col-lg-6 d-flex align-items-center" data-aos="zoom-out" data-aos-delay="100">
           <div class="content">
             <h3>Your Trusted Partner for Global Shipments</h3>
-            <p>Take your business or personal shipments to the next level with KasaBazaar. Whether you’re sending parcels to Ghana, the USA, or anywhere else, we make the process smooth, reliable, and efficient. Experience our door-to-door delivery service that ensures your package arrives safely and on time, every time.</p>
+            <p>Take your business or personal shipments to the next level with Rose Door to Door Shipping and Delivery Service. Whether you’re sending parcels to Ghana, the USA, or anywhere else, we make the process smooth, reliable, and efficient. Experience our door-to-door delivery service that ensures your package arrives safely and on time, every time.</p>
             <p>Get started today and enjoy the convenience of real-time tracking, reliable customer support, and the best international shipping rates. Let us handle the logistics while you focus on what matters most.</p>
           </div>
         </div>
@@ -93,7 +93,7 @@
               <div class="text-center col-12">
                 <div class="loading">Loading</div>
                 <div class="error-message"></div>
-                <div class="sent-message">Your quote request has been successfully sent. Thank you for choosing KasaBazaar!</div>
+                <div class="sent-message">Your quote request has been successfully sent. Thank you for choosing Rose Door to Door Shipping and Delivery Service!</div>
   
                 <button type="submit">Get a Quote</button>
               </div>
@@ -114,7 +114,7 @@
     <!-- Section Title -->
     <div class="container section-title" data-aos="fade-up">
       <h2>Reliable and Efficient Logistics for Every Shipment</h2>
-      <p>From construction materials to delicate shipments, we ensure timely, secure, and safe delivery solutions tailored to your needs. See how KasaBazaar handles it all with expertise.</p>
+      <p>From construction materials to delicate shipments, we ensure timely, secure, and safe delivery solutions tailored to your needs. See how Rose Door to Door Shipping and Delivery Service handles it all with expertise.</p>
     </div><!-- End Section Title -->
   
     <div class="container">

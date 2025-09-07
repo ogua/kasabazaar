@@ -8,6 +8,7 @@ use App\Livewire\PaymentsuccessfulPage;
 use App\Http\Controllers\ShippingController;
 
 Route::get('/', function () {
+    //return view('welcome');
     return view('web.home');
 })
 ->name('home-page');
