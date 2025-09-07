@@ -34,6 +34,9 @@ Route::get('/news',[WebController::class,'ourblog'])
 Route::get('/news/{slug}',[WebController::class,'blogDetails'])
 ->name('blog-details');
 
+// Route::get('/sitemap',[WebController::class,'sitemap'])
+// ->name('sitemap');
+
 Route::get('/packing-slip/{id}',[ShippingController::class,'packingslip'])
 ->name('packing-slip');
 

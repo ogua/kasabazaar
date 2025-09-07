@@ -19,6 +19,7 @@
         "pragmarx/countries": "^0.8.3",
         "solution-forest/filament-simplelightbox": "^0.0.10",
         "spatie/laravel-pdf": "^1.5",
+        "spatie/laravel-sitemap": "^7.3",
         "swisnl/filament-backgrounds": "^1.1",
         "unicodeveloper/laravel-paystack": "^1.2",
         "ysfkaya/filament-phone-input": "^3.1"
