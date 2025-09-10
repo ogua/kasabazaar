@@ -47,7 +47,7 @@
             
             <div>
                 <h3 class="text-gray-800 text-xl font-bold">
-                    <span class="text-red-600">ROSE</span> DOOR TO DOOR SHIPPING
+                    <span class="text-red-600">ROSE</span> DOOR TO DOOR SHIPPING AND DELIVERY CO
                 </h3>
                 <p class="text-sm text-gray-600 mt-1 font-bold">
                     <span class="text-[#4169E1]">GH</span> - Adako Jachie, Ejisu - Kumasi, Ghana
