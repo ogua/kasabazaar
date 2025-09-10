@@ -43,6 +43,9 @@ Route::get('/packing-slip/{id}',[ShippingController::class,'packingslip'])
 Route::get('/shipping-invoice/{id}',[ShippingController::class,'shippinginvoice'])
 ->name('shipping-invoice');
 
+Route::get('/shipping-receipt/{id}',[ShippingController::class,'shippingreceipt'])
+->name('shipping-receipt');
+
 Route::get('/print-quotation/{record}',[ShippingController::class,'printquotation'])
 ->name('print-quotation');
 

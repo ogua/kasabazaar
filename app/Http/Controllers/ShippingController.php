@@ -40,6 +40,12 @@ class ShippingController extends Controller
         ->name('shipping-invoice.pdf');
     }
 
+    public function shippingreceipt(Shipment $id)
+    {
+
+        return view('shipping-receipt',['shipping' => $id]);
+    }
+
     public function printquotation(Quotation $record)
     {
 

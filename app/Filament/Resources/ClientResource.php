@@ -7,6 +7,7 @@ use App\Models\City;
 use Filament\Tables;
 use App\Models\State;
 use App\Models\Client;
+use App\Models\Country;
 use Nnjeim\World\World;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
@@ -53,7 +54,7 @@ class ClientResource extends Resource
 
                 Forms\Components\Select::make('country')
                 ->label('Sender country')
-                ->options(World::countries()->data->pluck('name','id'))
+                ->options(Country::pluck('name','id'))
                 ->preload()
                 ->searchable()
                 ->live(),
