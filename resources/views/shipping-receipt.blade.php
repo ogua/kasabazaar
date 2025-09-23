@@ -168,14 +168,14 @@
         <div class="flex justify-between items-start">
             <div class="flex-1 bg-white rounded-lg p-4 shadow-sm">
                 <h5 class="text-gray-700 font-extrabold">Using Cashapp</h5>
-                <p class="text-sm text-gray-600 mt-2">Phone #: (317) 774-6913</p>
-                <p class="text-sm text-gray-600">Name: Rose Adel <span class="font-mono">$KasaBazaar1</span></p>
+                <p class="text-xl font-extrabold text-gray-600 mt-2">Phone #: (317) 774-6913</p>
+                <p class="text-xl font-extrabold text-gray-600">Name: Rose Adel <span class="font-mono">$KasaBazaar1</span></p>
             </div>
             
             <div class="flex-1 bg-white rounded-lg p-4 shadow-sm">
                 <h5 class="text-gray-700 font-extrabold text-right">Using Zelle</h5>
-                <p class="text-sm text-gray-600 mt-2 text-right">Phone #: (317) 774-6913</p>
-                <p class="text-sm text-gray-600 text-right">Name: Kasabazaar</p>
+                <p class="text-xl font-extrabold text-gray-600 mt-2 text-right">Phone #: (317) 774-6913</p>
+                <p class="text-xl font-extrabold text-gray-600 text-right">Name: Kasabazaar</p>
             </div>
         </div>
     </div>

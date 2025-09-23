@@ -182,7 +182,7 @@
               </div>
             </div>
             <div class="member-info text-center">
-              <h4>J.W. Abel</h4>
+              <h4>J.W. Adel</h4>
               <span>Director</span>
             </div>
           </div><!-- End Team Member -->
