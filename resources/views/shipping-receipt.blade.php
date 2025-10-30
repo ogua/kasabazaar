@@ -69,10 +69,16 @@
             <div class="bg-red-600 text-white rounded-lg p-4 shadow-md">
                 <p class="text-xs uppercase font-extrabold tracking-wider">Amount Paid</p>
                 <div class="text-2xl font-extrabold mt-2">
-                    ${{ number_format($shipping->total, 2) }}
+                    ${{ number_format($shipping->payments->sum('amount'), 2) }}
                 </div>
                 <div class="text-sm text-white mt-4 text-right font-extrabold">
-                    Balance: <span class="font-semibold">$0.00</span>
+                    @php
+                        $total = $shipping->total - $shipping->payments->sum('amount');
+                        if ($total < 0) {
+                            $total = 0;
+                        }
+                    @endphp
+                    Balance: <span class="font-semibold">${{ number_format($total,2) }}</span>
                 </div>
             </div>
         </div>
@@ -119,7 +125,7 @@
                         ${{ number_format($shipping->total, 2) }}
                     </td>
                 </tr>
-                @for ($i = 0; $i < 3; $i++)
+                @for ($i = 0; $i < 2; $i++)
                 <tr>
                     <td class="">&nbsp;</td>
                     <td class="">&nbsp;</td>

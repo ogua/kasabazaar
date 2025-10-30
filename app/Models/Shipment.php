@@ -32,6 +32,11 @@ class Shipment extends Model
         return $this->hasMany(ShipmentItem::class,"shipment_id");
     }
 
+    public function puchaseditems()
+    {
+        return $this->hasMany(Purchaseditem::class,"shipment_id");
+    }
+
     public function statusupdate()
     {
         return $this->hasMany(ShipmentUpdate::class,"shipment_id");

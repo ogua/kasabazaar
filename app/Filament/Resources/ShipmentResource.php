@@ -55,8 +55,8 @@ class ShipmentResource extends Resource
                     Forms\Components\TextInput::make('shipping_reference')->required(),
 
                     Forms\Components\Select::make('client_id')->label('Choose Sender')
-                    ->required()->options(Client::get()->pluck('fullname_branch', 'id'))
-                    ->preload()->searchable(),
+                        ->required()->options(Client::get()->pluck('fullname_branch', 'id'))
+                        ->preload()->searchable(),
 
                     // Forms\Components\TextInput::make('branch_id')
                     //     ->required()
@@ -111,6 +111,63 @@ class ShipmentResource extends Resource
                 ])
                 ->columns(4),
 
+
+            Forms\Components\Section::make('purchased Items')
+                ->description('List of Items Purchased')
+                ->schema([
+                    TableRepeater::make('puchaseditems')
+                        ->label('')
+                        ->live()
+                        ->relationship()
+                        ->addActionLabel('Add More Items')
+                        ->schema(
+                            [
+                                Forms\Components\TextInput::make('name')->default(null),
+                                Forms\Components\TextInput::make('quantity')->label('Qty')->required()->default(1)->numeric(),
+                                Forms\Components\TextInput::make('item_cost')
+                                    ->required()->label('Cost')
+                                    ->default(0)
+                                    ->numeric()->prefix('$')
+                            ]
+                        ),
+                ])
+                ->columnSpanFull(),
+
+
+                 Forms\Components\Section::make('')
+                ->description('')
+                ->schema([
+                    Forms\Components\Placeholder::make('totalpitem')
+                        ->content(function ($get, $set) {
+
+                            return 'Total item: ' . count($get('puchaseditems'));
+                        })
+                        ->label(''),
+
+                    Forms\Components\Placeholder::make('totpqty')
+                        ->content(function ($get, $set) {
+                            $receivers = $get('puchaseditems');
+
+                            $totalQuantity = collect($receivers)->pluck('quantity')->sum();
+
+                            return 'Total Quantities: ' . $totalQuantity;
+                        })
+                        ->label(''),
+
+                    Forms\Components\Placeholder::make('totpsub')
+                        ->content(function ($get, $set) {
+                            $receivers = $get('puchaseditems');
+
+                            $item_cost = collect($receivers)->pluck('item_cost')->sum();
+                            
+                            $set('item_puchase_total', $item_cost);
+                            return "Subtotal: $" . number_format($item_cost, 2);
+                        })
+                        ->label(''),
+
+                ])
+                ->columns(3),
+
             Forms\Components\Section::make('Receivers')
                 ->description('Receivers Information')
                 ->schema([
@@ -120,19 +177,19 @@ class ShipmentResource extends Resource
                         ->addActionLabel('Add More Receivers')
                         ->schema([
                             Forms\Components\TextInput::make('receiver_name')
-                            ->required()->maxLength(255),
+                                ->required()->maxLength(255),
 
                             Forms\Components\Select::make('country')
-                            ->label('Receiver Country')
-                            //->required()
-                            ->options(Country::pluck('name', 'id'))
-                            ->preload()
-                            ->searchable()
-                            ->live(),
+                                ->label('Receiver Country')
+                                //->required()
+                                ->options(Country::pluck('name', 'id'))
+                                ->preload()
+                                ->searchable()
+                                ->live(),
 
                             Forms\Components\Select::make('state_region')
                                 ->label('Receiver State/Region')
-                               // ->required()
+                                // ->required()
                                 ->options(function ($get) {
                                     if (blank($get('country'))) {
                                         return [];
@@ -156,9 +213,9 @@ class ShipmentResource extends Resource
                                 ->searchable(),
 
                             Forms\Components\Textarea::make('address')
-                            ->label('Receiver address')
-                           // ->required()
-                            ->columnSpanFull(),
+                                ->label('Receiver address')
+                                // ->required()
+                                ->columnSpanFull(),
 
                             PhoneInput::make('receiver_phone'),
                             //->required(),
@@ -180,34 +237,45 @@ class ShipmentResource extends Resource
                                 ->searchable(),
 
                             Forms\Components\TextInput::make('receiver_id_number')
-                            ->label('Receiver ID Number')
-                           // ->required()
-                            ->maxLength(255),
+                                ->label('Receiver ID Number')
+                                // ->required()
+                                ->maxLength(255),
 
                             Forms\Components\Section::make('Shipping')
-                            ->description('Shipping Items')
-                            ->schema([
-                                TableRepeater::make('items')
-                                    ->label('')
-                                    ->live()
-                                    ->relationship()
-                                    ->addActionLabel('Add More Items')
-                                    ->colStyles([
-                                        'box_no' => 'width: 200px;',
-                                        'quantity' => 'width: 100px;',
-                                        'item_cost' => 'width: 200px;',
-                                    ])
-                                    ->schema([Forms\Components\TextInput::make('box_no')->default(null), 
-                                    Forms\Components\Select::make('product_id')->label('Product')->required()
-                                    ->options(Product::pluck('name', 'id'))->preload()->searchable()->live(), 
-                                    Forms\Components\TextInput::make('quantity')->label('Qty')->required()->default(1)->numeric(), 
-                                    Forms\Components\TextInput::make('item_cost')
-                                    ->required()->label('Value')
-                                    ->numeric()->prefix('$')
-                                    ])
-                                    ->columns(3),
-                            ])
-                            ->columnSpanFull(3),
+                                ->description('Shipping Items')
+                                ->schema([
+                                    TableRepeater::make('items')
+                                        ->label('')
+                                        ->live()
+                                        ->relationship()
+                                        ->addActionLabel('Add More Items')
+                                        ->colStyles([
+                                            //'box_no' => 'width: 200px;',
+                                            'quantity' => 'width: 100px;',
+                                            'item_cost' => 'width: 200px;',
+                                        ])
+                                        ->schema(
+                                            [
+                                                Forms\Components\Hidden::make('box_no')->default(null),
+                                                Forms\Components\Select::make('product_id')
+                                                    ->label('Product')
+                                                    ->required()
+                                                    ->relationship('product', 'name')
+                                                    //->options(Product::pluck('name', 'id'))
+                                                    ->preload()
+                                                    ->searchable()
+                                                    ->createOptionForm(ProductResource::formself())
+                                                    ->editOptionForm(ProductResource::formself())
+                                                    ->live(),
+                                                Forms\Components\TextInput::make('quantity')->label('Qty')->required()->default(1)->numeric(),
+                                                Forms\Components\TextInput::make('item_cost')
+                                                    ->required()->label('Value')
+                                                    ->numeric()->prefix('$')
+                                            ]
+                                        )
+                                        ->columns(2),
+                                ])
+                                ->columnSpanFull(3),
 
 
                         ])
@@ -221,45 +289,47 @@ class ShipmentResource extends Resource
                 ->schema([
                     Forms\Components\Placeholder::make('totalitem')
                         ->content(function ($get, $set) {
-                            $items = array_column($get('receivers'),'items');
+                            $items = array_column($get('receivers'), 'items');
                             $totalCount = array_sum(array_map('count', $items));
 
-                            return 'Total item: '.$totalCount;
+                            return 'Total item: ' . $totalCount;
                         })
                         ->label(''),
 
-                        Forms\Components\Placeholder::make('totqty')
+                    Forms\Components\Placeholder::make('totqty')
                         ->content(function ($get, $set) {
                             $receivers = $get('receivers');
-                    
+
                             // Initialize total quantity
                             $totqty = 0;
-                    
+
                             // Iterate through each receiver and their items
                             foreach ($receivers as $receiver) {
                                 if (isset($receiver['items']) && is_array($receiver['items'])) {
                                     $totqty += array_sum(array_column($receiver['items'], 'quantity'));
                                 }
                             }
-                    
+
                             return 'Total Quantities: ' . $totqty;
                         })
                         ->label(''),
 
-                        Forms\Components\Placeholder::make('totqty')
+                    Forms\Components\Placeholder::make('totqty')
                         ->content(function ($get, $set) {
                             $receivers = $get('receivers');
-                    
+
                             // Initialize total quantity
                             $subtotal = 0;
-                    
+
                             // Iterate through each receiver and their items
                             foreach ($receivers as $receiver) {
                                 if (isset($receiver['items']) && is_array($receiver['items'])) {
                                     $subtotal += array_sum(array_column($receiver['items'], 'item_cost'));
                                 }
                             }
-                    
+
+                            $set('shipping_cost', $subtotal);
+
                             return "Subtotal: $" . number_format($subtotal, 2);
                         })
                         ->label(''),
@@ -275,8 +345,8 @@ class ShipmentResource extends Resource
             // ->live(onBlur: true)
             // ->prefix('$'),
 
-            Forms\Components\Hidden::make('shipping_cost')
-            ->default(0),
+            // Forms\Components\TextInput::make('shipping_cost')
+            //     ->default(0),
             // ->label('Extral cost')
             // ->default(0)
             // ->required()
@@ -285,17 +355,19 @@ class ShipmentResource extends Resource
             // ->prefix('$'),
 
 
+
+
             Forms\Components\Section::make('')
                 ->description('')
                 ->schema([
-                    
-                        Forms\Components\Placeholder::make('totqty')
+
+                    Forms\Components\Placeholder::make('totqty')
                         ->content(function ($get, $set) {
                             $receivers = $get('receivers');
-                    
+
                             // Initialize total quantity
                             $subtotal = 0;
-                    
+
                             // Iterate through each receiver and their items
                             foreach ($receivers as $receiver) {
                                 if (isset($receiver['items']) && is_array($receiver['items'])) {
@@ -303,24 +375,41 @@ class ShipmentResource extends Resource
                                 }
                             }
 
-                            $grandtotal = $subtotal  + $get('shipping_cost');
+                            $grandtotal = $subtotal  + $get('shipping_cost') + $get('item_puchase_total');
 
-                            $set('total',$grandtotal);
+                            $set('total', $grandtotal);
 
                             return "";
-                    
+
                             //return "Grand Total: $" . number_format($grandtotal, 2);
                         })
                         ->columnSpanFull()
                         ->label(''),
 
-                         Forms\Components\TextInput::make('total')
-                         ->label('Grand Total')
-                          ->prefix('$')
-                          ->extraAttributes([
+                     Forms\Components\TextInput::make('item_puchase_total')
+                        ->label('Total Items Purchased')
+                        ->prefix('$')
+                        ->extraAttributes([
                             'class' => 'bg-primary-500 p-4 text-center font-bold text-white text-2xl'
                         ])
-                         ->default(0),
+                        ->dehydrated(false)
+                        ->default(0),
+
+                    Forms\Components\TextInput::make('shipping_cost')
+                        ->label('Shipping Cost')
+                        ->prefix('$')
+                        ->extraAttributes([
+                            'class' => 'bg-primary-500 p-4 text-center font-bold text-white text-2xl'
+                        ])
+                        ->default(0),
+
+                    Forms\Components\TextInput::make('total')
+                        ->label('Grand Total')
+                        ->prefix('$')
+                        ->extraAttributes([
+                            'class' => 'bg-primary-500 p-4 text-center font-bold text-white text-2xl'
+                        ])
+                        ->default(0),
 
                 ])
                 ->columnSpanFull(),
@@ -328,7 +417,7 @@ class ShipmentResource extends Resource
             Forms\Components\Section::make('Payments')
                 ->description('Shipping Cost & Payment Information')
                 ->schema([
-                    
+
                     Forms\Components\Repeater::make('Payments')
                         ->label('')
                         ->relationship('payments')
@@ -385,47 +474,47 @@ class ShipmentResource extends Resource
                 ])
                 ->columns(4),
 
-                Forms\Components\Section::make('Shipping / Payment Status')
-                        ->description('')
-                        ->visibleOn('create')
-                        ->schema([
-                            Forms\Components\Select::make('payment_status')
-                                ->options([
-                                    'pending' => 'Pending',
-                                    'paid' => 'Paid',
-                                    'partial' => 'Partial',
-                                ])
-                                ->searchable()
-                                ->required(),
-
-                            Forms\Components\Select::make('status')
-                                ->label('Shipping status')
-                                ->options(ShippingStatus::class)
-                                ->searchable()
-                                ->required(),
-
-                            Forms\Components\DateTimePicker::make('shipped_at'),
-                            Forms\Components\DatePicker::make('estimated_delivery_date'),
+            Forms\Components\Section::make('Shipping / Payment Status')
+                ->description('')
+                ->visibleOn('create')
+                ->schema([
+                    Forms\Components\Select::make('payment_status')
+                        ->options([
+                            'pending' => 'Pending',
+                            'paid' => 'Paid',
+                            'partial' => 'Partial',
                         ])
-                        ->columns(2),
+                        ->searchable()
+                        ->required(),
 
-                    Forms\Components\Section::make('Shipping / Payment Status')
-                        ->description('')
-                        ->visibleOn('edit')
-                        ->schema([
-                            Forms\Components\Select::make('payment_status')
-                                ->options([
-                                    'pending' => 'Pending',
-                                    'paid' => 'Paid',
-                                    'partial' => 'Partial',
-                                ])
-                                ->searchable()
-                                ->required(),
+                    Forms\Components\Select::make('status')
+                        ->label('Shipping status')
+                        ->options(ShippingStatus::class)
+                        ->searchable()
+                        ->required(),
 
-                            Forms\Components\DateTimePicker::make('shipped_at'),
-                            Forms\Components\DatePicker::make('estimated_delivery_date'),
+                    Forms\Components\DateTimePicker::make('shipped_at'),
+                    Forms\Components\DatePicker::make('estimated_delivery_date'),
+                ])
+                ->columns(2),
+
+            Forms\Components\Section::make('Shipping / Payment Status')
+                ->description('')
+                ->visibleOn('edit')
+                ->schema([
+                    Forms\Components\Select::make('payment_status')
+                        ->options([
+                            'pending' => 'Pending',
+                            'paid' => 'Paid',
+                            'partial' => 'Partial',
                         ])
-                        ->columns(3),
+                        ->searchable()
+                        ->required(),
+
+                    Forms\Components\DateTimePicker::make('shipped_at'),
+                    Forms\Components\DatePicker::make('estimated_delivery_date'),
+                ])
+                ->columns(3),
 
 
         ]);
@@ -450,11 +539,11 @@ class ShipmentResource extends Resource
 
                 Tables\Columns\TextColumn::make('shipped_at')->dateTime()->sortable(),
 
-               /// Tables\Columns\TextColumn::make('shipping_cost')->numeric()->sortable()->badge()->color('danger')->state(fn($record) => number_format($record->shipping_cost, 2))->prefix('$'),
+                /// Tables\Columns\TextColumn::make('shipping_cost')->numeric()->sortable()->badge()->color('danger')->state(fn($record) => number_format($record->shipping_cost, 2))->prefix('$'),
 
                 Tables\Columns\TextColumn::make('total')
-                ->label('shipping_cost')
-                ->sortable()->badge()->color('info')->state(fn($record) => number_format($record->total, 2))->prefix('$'),
+                    ->label('shipping_cost')
+                    ->sortable()->badge()->color('info')->state(fn($record) => number_format($record->total, 2))->prefix('$'),
 
                 Tables\Columns\TextColumn::make('paid')->sortable()->badge()->color('warning')->state(fn($record) => number_format($record->paid, 2))->prefix('$'),
 
@@ -568,16 +657,25 @@ class ShipmentResource extends Resource
                             })
                             ->infolist([
                                 RepeatableEntry::make('items')
-                                    ->label('') 
-                                    ->schema([ImageEntry::make('product.product_image')->label('')->columnSpan(2), TextEntry::make('receiver.receiver_name')
-                                    ->badge(), TextEntry::make('box_no'), TextEntry::make('product.name')->state(fn($record) => $record->product?->name . ' (' . $record->quantity . 'x)')->columnSpan(2), 
-                                    TextEntry::make('item_cost')->label('Value')
+                                    ->label('')
+                                    ->schema([
+                                        ImageEntry::make('product.product_image')->label('')->columnSpan(2),
+                                        TextEntry::make('receiver.receiver_name')
+                                            ->badge(),
+                                        TextEntry::make('box_no'),
+                                        TextEntry::make('product.name')->state(fn($record) => $record->product?->name . ' (' . $record->quantity . 'x)')->columnSpan(2),
+                                        TextEntry::make('item_cost')->label('Value')
                                     ])
                                     ->columns(7),
                             ])
                             ->modalSubmitAction(false),
 
                         Tables\Actions\Action::make('Print Invoice')->icon('heroicon-m-receipt-percent')->color('success')->url(fn($record) => route('shipping-invoice', $record->id), shouldOpenInNewTab: true),
+
+                        Tables\Actions\Action::make('Print Receipt')
+                        ->icon('heroicon-m-printer')
+                        ->color('info')
+                        ->url( fn ($record) => route('shipping-receipt', $record), shouldOpenInNewTab: true),
 
                         Tables\Actions\Action::make('packingslip')->label('Packing Slip')->color('warning')->icon('heroicon-m-inbox-stack')->url(fn($record) => route('packing-slip', $record->id), shouldOpenInNewTab: true),
 
@@ -600,9 +698,9 @@ class ShipmentResource extends Resource
                             ->modalHeading('Payment Information')
                             ->modalSubmitAction(false),
 
-                        Tables\Actions\Action::make('updatepayments')->label('Add Payment')->icon('heroicon-m-banknotes')//->modalWidth(MaxWidth::ScreenMedium)
-                        // ->modalSubmitAction(false)
-                        ->modalCancelAction(false),
+                        Tables\Actions\Action::make('updatepayments')->label('Add Payment')->icon('heroicon-m-banknotes') //->modalWidth(MaxWidth::ScreenMedium)
+                            // ->modalSubmitAction(false)
+                            ->modalCancelAction(false),
                     ]),
                 ],
                 position: ActionsPosition::BeforeColumns,
@@ -613,8 +711,8 @@ class ShipmentResource extends Resource
     public static function getRelations(): array
     {
         return [
-                //
-            ];
+            //
+        ];
     }
 
     public static function getPages(): array
