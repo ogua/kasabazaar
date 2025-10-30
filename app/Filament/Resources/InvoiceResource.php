@@ -58,7 +58,18 @@ class InvoiceResource extends Resource
                 ->numeric()
                 ->badge()
                 ->color('info')
+                ->prefix('$')
                 ->sortable(),
+                
+                Tables\Columns\TextColumn::make('payment_status')
+                ->label('Paid Amount')
+                ->state(fn($record) => number_format($record->shipment?->payments->sum('amount'),2))
+                ->numeric()
+                ->badge()
+                ->color('success')
+                ->prefix('$')
+                ->sortable(),
+
                 Tables\Columns\TextColumn::make('status')
                 ->badge(),
                 Tables\Columns\TextColumn::make('created_at')
