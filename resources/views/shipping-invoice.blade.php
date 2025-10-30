@@ -125,7 +125,7 @@
                                         <tr class="bg-red-500 text-white">
                                             <th class="p-3 border text-base font-bold">#</th>
                                             <th class="p-3 border text-base font-bold">Item</th>
-                                            <th class="p-3 border text-base font-bold">Box No</th>
+                                            {{-- <th class="p-3 border text-base font-bold">Box No</th> --}}
                                             <th class="p-3 border text-base font-bold">Quantity</th>
                                         </tr>
                                     </thead>
@@ -138,8 +138,8 @@
                                                     {{ $loop->iteration }}</td>
                                                 <td class="p-3 border text-base text-white font-bold">
                                                     {{ $item->product?->name }}</td>
-                                                <td class="p-3 border text-base text-white font-bold">
-                                                    {{ $item->box_no }}</td>
+                                                {{-- <td class="p-3 border text-base text-white font-bold">
+                                                    {{ $item->box_no }}</td> --}}
                                                 <td class="p-3 border text-base text-white font-bold">
                                                     {{ $item->quantity }}</td>
                                             </tr>
