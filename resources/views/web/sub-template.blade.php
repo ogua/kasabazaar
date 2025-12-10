@@ -26,6 +26,9 @@
   <!-- Main CSS File -->
   <link href="{{ URL::to('assets/css/main.css') }}" rel="stylesheet">
 
+  <!-- Livewire Styles -->
+  @livewireStyles
+
   <!-- =======================================================
   * Template Name: UpConstruction
   * Template URL: https://bootstrapmade.com/upconstruction-bootstrap-construction-website-template/
@@ -78,6 +81,9 @@
   
     <!-- Main JS File -->
     <script src="{{ URL::to('assets/js/main.js') }}"></script>
+
+    <!-- Livewire Scripts -->
+    @livewireScripts
 
 </body>
 

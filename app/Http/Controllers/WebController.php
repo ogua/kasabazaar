@@ -28,6 +28,11 @@ class WebController extends Controller
         return view('web.tracking');
     }
 
+    public function feeback()
+    {
+        return view('web.feeback');
+    }
+
 
     public function contactus()
     {

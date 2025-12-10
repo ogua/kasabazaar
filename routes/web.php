@@ -2,6 +2,7 @@
 
 use App\Livewire\AgreementForm;
 use App\Livewire\DisclaimerForm;
+use App\Livewire\CustomerFeedaback;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebController;
 use App\Livewire\PaymentsuccessfulPage;
@@ -24,6 +25,9 @@ Route::get('/our-projects',[WebController::class,'ourprojects'])
 
 Route::get('/tracking',[WebController::class,'tracking'])
 ->name('our-tracking');
+
+Route::get('/feeback',[WebController::class,'feeback'])
+->name('our-feeback');
 
 Route::get('/contact-us',[WebController::class,'contactus'])
 ->name('contact-us');
@@ -57,4 +61,7 @@ Route::get('/make-payment-agreement/{record}',AgreementForm::class)
 
 Route::get('/paid-successfully',PaymentsuccessfulPage::class)
 ->name('paid-successfully');
+
+Route::get('/customer-feedback',CustomerFeedaback::class)
+->name('customer-feedback');
 
