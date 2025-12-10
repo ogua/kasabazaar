@@ -26,7 +26,7 @@ Route::get('/our-projects',[WebController::class,'ourprojects'])
 Route::get('/tracking',[WebController::class,'tracking'])
 ->name('our-tracking');
 
-Route::get('/feeback',[WebController::class,'feeback'])
+Route::get('/feedback',[WebController::class,'feeback'])
 ->name('our-feeback');
 
 Route::get('/contact-us',[WebController::class,'contactus'])
