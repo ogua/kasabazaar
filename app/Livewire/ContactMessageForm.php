@@ -16,7 +16,7 @@ class ContactMessageForm extends Component
 
     protected $rules = [
         'name' => 'required|string|max:255',
-        'email' => 'required|email|max:255',
+        'email' => 'nullable|email|max:255',
         'phone' => 'nullable|string|max:50',
         'subject' => 'required|string|max:255',
         'message' => 'required|string',
@@ -24,7 +24,6 @@ class ContactMessageForm extends Component
 
     protected $messages = [
         'name.required' => 'Please enter your name.',
-        'email.required' => 'Please enter your email address.',
         'email.email' => 'Please enter a valid email address.',
         'subject.required' => 'Please enter a subject.',
         'message.required' => 'Please enter your message.',

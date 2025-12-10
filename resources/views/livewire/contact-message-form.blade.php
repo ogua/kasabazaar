@@ -25,7 +25,7 @@
                 </div>
 
                 <div class="col-md-6">
-                    <label class="form-label fw-bold">Your Email <span class="text-danger">*</span></label>
+                    <label class="form-label fw-bold">Your Email</label>
                     <input type="email" wire:model="email" class="form-control @error('email') is-invalid @enderror" placeholder="Enter your email address" required>
                     @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>

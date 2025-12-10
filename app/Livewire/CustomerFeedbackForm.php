@@ -19,7 +19,7 @@ class CustomerFeedbackForm extends Component
 
     protected $rules = [
         'customer_name' => 'required|string|max:255',
-        'customer_email' => 'required|email|max:255',
+        'customer_email' => 'nullable|email|max:255',
         'customer_phone' => 'required|string|max:50',
         'feedback_on' => 'required|in:Rose Shipment,NeoRide Africa',
         'category' => 'required|string',
@@ -30,7 +30,7 @@ class CustomerFeedbackForm extends Component
 
     protected $messages = [
         'customer_name.required' => 'Please enter your name.',
-        'customer_email.required' => 'Please enter your email address.',
+        //'customer_email.required' => 'Please enter your email address.',
         'customer_email.email' => 'Please enter a valid email address.',
         'customer_phone.required' => 'Please enter your phone number.',
         'feedback_on.required' => 'Please select a service.',

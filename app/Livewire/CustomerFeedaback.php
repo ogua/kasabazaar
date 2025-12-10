@@ -68,7 +68,7 @@ class CustomerFeedaback extends Component implements HasForms
                         Forms\Components\TextInput::make('customer_phone')
                             ->label('Phone Number')
                             //->tel()
-                            ->required()
+                            //->required()
                             ->maxLength(50)
                             ->placeholder('Enter your phone number'),
                     ])->columns(3),
