@@ -540,7 +540,7 @@
                 </tr>
                 <tr>
                     <td class="total-label">Discount:</td>
-                    <td class="total-value">$0.00</td>
+                    <td class="total-value">${{ number_format($shipping->discount, 2) }}</td>
                 </tr>
                 <tr class="grand-total">
                     <td class="total-label" style="color: white;">Grand Total:</td>
