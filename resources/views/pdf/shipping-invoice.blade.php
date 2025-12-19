@@ -534,12 +534,12 @@
                                         <td class="text-right">${{ number_format($item->item_cost, 2) }}</td>
                                     </tr>
                                 @endforeach
-                                <tr style="background: #e0e7ff; font-weight: bold;">
+                                {{-- <tr style="background: #e0e7ff; font-weight: bold;">
                                     <td colspan="2">Receiver Subtotal</td>
                                     <td class="text-center">{{ $receiver->items->sum('quantity') }}</td>
                                     <td class="text-right">${{ number_format($receiver->items->sum('item_cost'), 2) }}
                                     </td>
-                                </tr>
+                                </tr> --}}
                             </tbody>
                         </table>
                     @endif
@@ -575,14 +575,14 @@
             </div>
             <div class="totals-right">
                 <table class="totals-table" style="margin-left: auto;">
-                    @if ($shipping->pickupitems && $shipping->pickupitems->count() > 0)
+                    {{-- @if ($shipping->pickupitems && $shipping->pickupitems->count() > 0)
                         <tr>
                             <td class="total-label">Pickup Items Total:</td>
                             <td class="total-value">
                                 ${{ number_format($shipping->pickupitems->sum(fn($i) => $i->quantity * $i->item_cost), 2) }}
                             </td>
                         </tr>
-                    @endif
+                    @endif --}}
                     <tr>
                         <td class="total-label">Shipping Cost:</td>
                         <td class="total-value">${{ number_format($shipping->shipping_cost, 2) }}</td>
