@@ -227,14 +227,14 @@
 
         .totals-left {
             display: table-cell;
-            width: 50%;
+            width: 60%;
             vertical-align: top;
             padding-rightt: 20px;
         }
 
         .totals-right {
             display: table-cell;
-            width: 50%;
+            width: 40%;
             vertical-align: top;
             text-align: right;
         }
