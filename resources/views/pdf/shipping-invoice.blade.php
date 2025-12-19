@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -199,7 +200,7 @@
         }
 
         .receiver-box {
-            background: #1e40af; 
+            background: #1e40af;
             color: white;
             padding: 12px;
             border-radius: 6px;
@@ -350,15 +351,17 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <!-- Header -->
         <div class="header">
             <div class="header-left">
-                @if(file_exists(public_path('images/kasabazaar-logo.png')))
-                    <img src="{{ URL::to('images/kasabazaar-logo.png') }}" alt="Logo" class="logo" style="max-width: 400px;">
+                @if (file_exists(public_path('images/kasabazaar-logo.png')))
+                    <img src="{{ URL::to('images/kasabazaar-logo.png') }}" alt="Logo" class="logo"
+                        style="max-width: 400px;">
                 @endif
-                
+
                 {{-- <div class="company-name">
                     <span class="rose">ROSE</span> DOOR TO DOOR SHIPPING AND DELIVERY CO
                 </div> --}}
@@ -371,13 +374,16 @@
                 </div> --}}
             </div>
             <div class="header-right">
+                @php
+                    $balance = $shipping->total - $shipping->payments->sum('amount');
+                    if ($balance < 0) {
+                        $balance = 0;
+                    }
+                @endphp
                 {{-- <div class="amount-box">
                     <div class="amount-label">Amount Paid</div>
                     <div class="amount-value">${{ number_format($shipping->payments->sum('amount'), 2) }}</div>
-                    @php
-                        $balance = $shipping->total - $shipping->payments->sum('amount');
-                        if ($balance < 0) $balance = 0;
-                    @endphp
+                   
                     <div class="balance">Balance: ${{ number_format($balance, 2) }}</div>
                 </div> --}}
                 <div class="invoice-title">SHIPPING INVOICE</div>
@@ -406,11 +412,11 @@
                         <span class="info-label">Email:</span>
                         <span class="info-value">{{ $shipping->client?->email }}</span>
                     </div>
-                    @if($shipping->client?->address)
-                    <div class="info-row">
-                        <span class="info-label">Address:</span>
-                        <span class="info-value">{{ $shipping->client?->address }}</span>
-                    </div>
+                    @if ($shipping->client?->address)
+                        <div class="info-row">
+                            <span class="info-label">Address:</span>
+                            <span class="info-value">{{ $shipping->client?->address }}</span>
+                        </div>
                     @endif
                 </div>
                 <div class="client-info-right">
@@ -427,11 +433,12 @@
                         <span class="info-label">Status:</span>
                         <span class="info-value">{{ ucfirst($shipping->status->value) }}</span>
                     </div>
-                    @if($shipping->estimated_delivery_date)
-                    <div class="info-row">
-                        <span class="info-label">Est. Delivery:</span>
-                        <span class="info-value">{{ \Carbon\Carbon::parse($shipping->estimated_delivery_date)->format('j M Y') }}</span>
-                    </div>
+                    @if ($shipping->estimated_delivery_date)
+                        <div class="info-row">
+                            <span class="info-label">Est. Delivery:</span>
+                            <span
+                                class="info-value">{{ \Carbon\Carbon::parse($shipping->estimated_delivery_date)->format('j M Y') }}</span>
+                        </div>
                     @endif
                 </div>
             </div>
@@ -444,115 +451,125 @@
         </div> --}}
 
         <!-- Pickup Items (if any) -->
-        @if($shipping->pickupitems && count($shipping->receivers) > 1)
-        <div class="section">
-            <div class="section-title">Pickup Items</div>
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 50px;">#</th>
-                        <th>Item Description</th>
-                        <th style="width: 80px;" class="text-center">Qty</th>
-                        <th style="width: 100px;" class="text-right">Unit Cost</th>
-                        <th style="width: 100px;" class="text-right">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($shipping->pickupitems as $index => $item)
-                    <tr>
-                        <td>{{ $index + 1 }}</td>
-                        <td>{{ $item->product?->name ?? 'N/A' }}</td>
-                        <td class="text-center">{{ $item->quantity }}</td>
-                        <td class="text-right">${{ number_format($item->item_cost, 2) }}</td>
-                        <td class="text-right">${{ number_format($item->quantity * $item->item_cost, 2) }}</td>
-                    </tr>
-                    @endforeach
-                    <tr style="background: #f3f4f6; font-weight: bold;">
-                        <td colspan="2">Pickup Items Subtotal</td>
-                        <td class="text-center">{{ $shipping->pickupitems->sum('quantity') }}</td>
-                        <td></td>
-                        <td class="text-right">${{ number_format($shipping->pickupitems->sum(fn($i) => $i->quantity * $i->item_cost), 2) }}</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+        @if ($shipping->pickupitems && count($shipping->receivers) > 1)
+            <div class="section">
+                <div class="section-title">Pickup Items</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">#</th>
+                            <th>Item Description</th>
+                            <th style="width: 80px;" class="text-center">Qty</th>
+                            <th style="width: 100px;" class="text-right">Unit Cost</th>
+                            <th style="width: 100px;" class="text-right">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($shipping->pickupitems as $index => $item)
+                            <tr>
+                                <td>{{ $index + 1 }}</td>
+                                <td>{{ $item->product?->name ?? 'N/A' }}</td>
+                                <td class="text-center">{{ $item->quantity }}</td>
+                                <td class="text-right">${{ number_format($item->item_cost, 2) }}</td>
+                                <td class="text-right">${{ number_format($item->quantity * $item->item_cost, 2) }}</td>
+                            </tr>
+                        @endforeach
+                        <tr style="background: #f3f4f6; font-weight: bold;">
+                            <td colspan="2">Pickup Items Subtotal</td>
+                            <td class="text-center">{{ $shipping->pickupitems->sum('quantity') }}</td>
+                            <td></td>
+                            <td class="text-right">
+                                ${{ number_format($shipping->pickupitems->sum(fn($i) => $i->quantity * $i->item_cost), 2) }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         @endif
 
         <!-- Receivers and Their Items -->
-        @if($shipping->receivers && $shipping->receivers->count() > 0)
-        <div class="section">
-            <div class="section-title">Receivers & Shipping Items</div>
+        @if ($shipping->receivers && $shipping->receivers->count() > 0)
+            <div class="section">
+                <div class="section-title">Receivers & Shipping Items</div>
 
-            @foreach($shipping->receivers as $receiverIndex => $receiver)
-            <div class="receiver-box">
-                <div class="receiver-name">
-                    Receiver {{ $receiverIndex + 1 }}: {{ $receiver->receiver_name }}
-                </div>
-                <div class="receiver-details">
-                    @if($receiver->receiver_phone)
-                        Phone: {{ $receiver->receiver_phone }} |
+                @foreach ($shipping->receivers as $receiverIndex => $receiver)
+                    <div class="receiver-box">
+                        <div class="receiver-name">
+                            Receiver {{ $receiverIndex + 1 }}: {{ $receiver->receiver_name }}
+                        </div>
+                        <div class="receiver-details">
+                            @if ($receiver->receiver_phone)
+                                Phone: {{ $receiver->receiver_phone }} |
+                            @endif
+                            @if ($receiver->receiver_email)
+                                Email: {{ $receiver->receiver_email }}
+                            @endif
+                            @if ($receiver->mcountry || $receiver->mstate || $receiver->mcity)
+                                <br>Location:
+                                {{ $receiver->mcountry?->name }}{{ $receiver->mstate ? ', ' . $receiver->mstate->name : '' }}{{ $receiver->mcity ? ', ' . $receiver->mcity->name : '' }}
+                            @endif
+                            @if ($receiver->address)
+                                <br>Address: {{ $receiver->address }}
+                            @endif
+                            @if ($receiver->receiver_id_type)
+                                <br>ID: {{ $receiver->receiver_id_type }} - {{ $receiver->receiver_id_number }}
+                            @endif
+                        </div>
+                    </div>
+
+                    @if ($receiver->items && $receiver->items->count() > 0)
+                        <table class="receiver-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">#</th>
+                                    <th>Item Description</th>
+                                    <th style="width: 80px;" class="text-center">Qty</th>
+                                    <th style="width: 100px;" class="text-right">Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($receiver->items as $itemIndex => $item)
+                                    <tr>
+                                        <td>{{ $itemIndex + 1 }}</td>
+                                        <td>{{ $item->product?->name ?? 'N/A' }}</td>
+                                        <td class="text-center">{{ $item->quantity }}</td>
+                                        <td class="text-right">${{ number_format($item->item_cost, 2) }}</td>
+                                    </tr>
+                                @endforeach
+                                <tr style="background: #e0e7ff; font-weight: bold;">
+                                    <td colspan="2">Receiver Subtotal</td>
+                                    <td class="text-center">{{ $receiver->items->sum('quantity') }}</td>
+                                    <td class="text-right">${{ number_format($receiver->items->sum('item_cost'), 2) }}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     @endif
-                    @if($receiver->receiver_email)
-                        Email: {{ $receiver->receiver_email }}
-                    @endif
-                    @if($receiver->mcountry || $receiver->mstate || $receiver->mcity)
-                        <br>Location: {{ $receiver->mcountry?->name }}{{ $receiver->mstate ? ', ' . $receiver->mstate->name : '' }}{{ $receiver->mcity ? ', ' . $receiver->mcity->name : '' }}
-                    @endif
-                    @if($receiver->address)
-                        <br>Address: {{ $receiver->address }}
-                    @endif
-                    @if($receiver->receiver_id_type)
-                        <br>ID: {{ $receiver->receiver_id_type }} - {{ $receiver->receiver_id_number }}
-                    @endif
-                </div>
+                @endforeach
             </div>
-
-            @if($receiver->items && $receiver->items->count() > 0)
-            <table class="receiver-table">
-                <thead>
-                    <tr>
-                        <th style="width: 50px;">#</th>
-                        <th>Item Description</th>
-                        <th style="width: 80px;" class="text-center">Qty</th>
-                        <th style="width: 100px;" class="text-right">Value</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($receiver->items as $itemIndex => $item)
-                    <tr>
-                        <td>{{ $itemIndex + 1 }}</td>
-                        <td>{{ $item->product?->name ?? 'N/A' }}</td>
-                        <td class="text-center">{{ $item->quantity }}</td>
-                        <td class="text-right">${{ number_format($item->item_cost, 2) }}</td>
-                    </tr>
-                    @endforeach
-                    <tr style="background: #e0e7ff; font-weight: bold;">
-                        <td colspan="2">Receiver Subtotal</td>
-                        <td class="text-center">{{ $receiver->items->sum('quantity') }}</td>
-                        <td class="text-right">${{ number_format($receiver->items->sum('item_cost'), 2) }}</td>
-                    </tr>
-                </tbody>
-            </table>
-            @endif
-            @endforeach
-        </div>
         @endif
 
         <!-- Totals & Payment Methods -->
         <div class="totals-section">
             <div class="totals-left">
                 <div class="payment-section">
-                    <div class="payment-title" style="text-align: center;font-weight: bold;font-size: 16px;color: #4169E1;">Payment Methods:</div>
+                    <div class="payment-title"
+                        style="text-align: center;font-weight: bold;font-size: 16px;color: #4169E1;">Payment Methods:
+                    </div>
                     <div class="payment-methods">
                         <div class="payment-method">
-                            <img src="{{ URL::to('images/cash-app.png') }}" alt="Logo" class="logo" style="max-width: 120px; margin-bottom: 5px;">
-                            <p style="font-size: 11px;font-weight: bold; margin-bottom: 2px;">Phone #: (317) 774-6913</p>
+                            <img src="{{ URL::to('images/cash-app.png') }}" alt="Logo" class="logo"
+                                style="max-width: 120px; margin-bottom: 5px;">
+                            <p style="font-size: 11px;font-weight: bold; margin-bottom: 2px;">Phone #: (317) 774-6913
+                            </p>
                             <p style="font-size: 11px;font-weight: bold; margin-bottom: 2px;">Name: Rose Adel</p>
                             <p style="font-size: 11px;font-weight: bold;">$KasaBazaar1</p>
                         </div>
                         <div class="payment-method" style="text-align: right;">
-                            <img src="{{ URL::to('images/zelle.png') }}" alt="Logo" class="logo" style="max-width: 120px; margin-bottom: 5px;">
-                            <p style="font-size: 11px;font-weight: bold; margin-bottom: 2px;">Phone #: (317) 774-6913</p>
+                            <img src="{{ URL::to('images/zelle.png') }}" alt="Logo" class="logo"
+                                style="max-width: 120px; margin-bottom: 5px;">
+                            <p style="font-size: 11px;font-weight: bold; margin-bottom: 2px;">Phone #: (317) 774-6913
+                            </p>
                             <p style="font-size: 11px;font-weight: bold;">Name: Kasabazaar</p>
                         </div>
                     </div>
@@ -560,11 +577,13 @@
             </div>
             <div class="totals-right">
                 <table class="totals-table" style="margin-left: auto;">
-                    @if($shipping->pickupitems && $shipping->pickupitems->count() > 0)
-                    <tr>
-                        <td class="total-label">Pickup Items Total:</td>
-                        <td class="total-value">${{ number_format($shipping->pickupitems->sum(fn($i) => $i->quantity * $i->item_cost), 2) }}</td>
-                    </tr>
+                    @if ($shipping->pickupitems && $shipping->pickupitems->count() > 0)
+                        <tr>
+                            <td class="total-label">Pickup Items Total:</td>
+                            <td class="total-value">
+                                ${{ number_format($shipping->pickupitems->sum(fn($i) => $i->quantity * $i->item_cost), 2) }}
+                            </td>
+                        </tr>
                     @endif
                     <tr>
                         <td class="total-label">Shipping Cost:</td>
@@ -592,13 +611,14 @@
                     </tr>
                     <tr>
                         <td class="total-label">Amount Paid:</td>
-                        <td class="total-value" style="color: #16a34a;">${{ number_format($shipping->payments->sum('amount'), 2) }}</td>
+                        <td class="total-value" style="color: #16a34a;">
+                            ${{ number_format($shipping->payments->sum('amount'), 2) }}</td>
                     </tr>
-                    @if($balance > 0)
-                    <tr>
-                        <td class="total-label">Balance Due:</td>
-                        <td class="total-value" style="color: #dc2626;">${{ number_format($balance, 2) }}</td>
-                    </tr>
+                    @if ($balance > 0)
+                        <tr>
+                            <td class="total-label">Balance Due:</td>
+                            <td class="total-value" style="color: #dc2626;">${{ number_format($balance, 2) }}</td>
+                        </tr>
                     @endif
                 </table>
             </div>
@@ -607,10 +627,11 @@
         <!-- Footer -->
         <div class="footer">
             <p style="font-size: 12px;font-weight: bold">Note:</p>
-             <p>Goods shipped without insurance cover does not guarantee full compensation in case of damage or loss.</p>
-             <p>All used and Non-Manufactured packed items are shipped without warranty.</p>
+            <p>Goods shipped without insurance cover does not guarantee full compensation in case of damage or loss.</p>
+            <p>All used and Non-Manufactured packed items are shipped without warranty.</p>
             <p style="font-weight: bold">Thank you for choosing Rose Door To Door Shipping and Delivery Co!</p>
         </div>
     </div>
 </body>
+
 </html>
