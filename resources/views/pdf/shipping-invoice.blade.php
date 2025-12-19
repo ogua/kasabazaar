@@ -337,7 +337,7 @@
         <div class="header">
             <div class="header-left">
                 @if(file_exists(public_path('images/kasabazaar-logo.png')))
-                    <img src="{{ public_path('images/kasabazaar-logo.png') }}" alt="Logo" class="logo">
+                    <img src="{{ URL::to('images/kasabazaar-logo.png') }}" alt="Logo" class="logo">
                 @endif
                 <div class="company-name">
                     <span class="rose">ROSE</span> DOOR TO DOOR SHIPPING AND DELIVERY CO
@@ -564,17 +564,17 @@
             <div class="payment-title">Payment can be made through the following methods:</div>
             <div class="payment-methods">
                 <div class="payment-method">
-                    <img src="{{ public_path('images/cash-app.png') }}" alt="Logo" class="logo">
-                    <h4>Cash App</h4>
-                    <p>Phone #: (317) 774-6913</p>
-                    <p>Name: Rose Adel</p>
-                    <p>$KasaBazaar1</p>
+                    <img src="{{ URL::to('images/cash-app.png') }}" alt="Logo" class="logo">
+                    {{-- <h4>Cash App</h4> --}}
+                    <p style="font-size: 20px;font-weight: bold;">Phone #: (317) 774-6913</p>
+                    <p style="font-size: 20px;font-weight: bold;">Name: Rose Adel</p>
+                    <p style="font-size: 20px;font-weight: bold;">$KasaBazaar1</p>
                 </div>
                 <div class="payment-method" style="text-align: right;">
-                    <img src="{{ public_path('images/zelle.png') }}" alt="Logo" class="logo">
-                    <h4>Zelle</h4>
-                    <p>Phone #: (317) 774-6913</p>
-                    <p>Name: Kasabazaar</p>
+                    <img src="{{ URL::to('images/zelle.png') }}" alt="Logo" class="logo">
+                    {{-- <h4>Zelle</h4> --}}
+                    <p style="font-size: 20px;font-weight: bold;">Phone #: (317) 774-6913</p>
+                    <p style="font-size: 20px;font-weight: bold;">Name: Kasabazaar</p>
                 </div>
             </div>
         </div>
