@@ -234,7 +234,7 @@
 
         .totals-right {
             display: table-cell;
-            width: 40%;
+            width: 30%;
             vertical-align: top;
             text-align: right;
         }
