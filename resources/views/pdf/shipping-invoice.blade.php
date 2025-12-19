@@ -303,7 +303,6 @@
         .footer p {
             font-size: 12px;
             font-style: italic;
-            font-weight: bold;
         }
 
         .tracking-info {
@@ -589,7 +588,7 @@
         <div class="footer">
              <p>Goods shipped without insurance cover does not guarantee full compensation in case of damage or loss.</p>
              <p>All used and Non-Manufactured packed items are shipped without warranty</p>
-            <p>Thank you for choosing Rose Door To Door Shipping and Delivery Co!</p>
+            <p style="font-weight: bold">Thank you for choosing Rose Door To Door Shipping and Delivery Co!</p>
         </div>
     </div>
 </body>
