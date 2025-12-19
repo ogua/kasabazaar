@@ -372,7 +372,7 @@
         <div class="section">
             <div class="client-info">
                 <div class="client-info-left">
-                    <div class="section-title">Bill To (Sender)</div>
+                    <div class="section-title">Sender</div>
                     <div class="info-row">
                         <span class="info-label">Name:</span>
                         <span class="info-value">{{ $shipping->client?->name }}</span>
@@ -423,7 +423,7 @@
         </div> --}}
 
         <!-- Pickup Items (if any) -->
-        @if($shipping->pickupitems && $shipping->pickupitems->count() > 0)
+        @if($shipping->pickupitems && $shipping->receivers->count() > 0)
         <div class="section">
             <div class="section-title">Pickup Items</div>
             <table>
