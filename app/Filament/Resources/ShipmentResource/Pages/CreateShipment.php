@@ -532,8 +532,25 @@ class CreateShipment extends CreateRecord
                                 Forms\Components\TextInput::make('shipping_cost')
                                     ->label('Shipping Cost')
                                     ->prefix('$')
-                                    ->disabled()
-                                    ->dehydrated()
+                                    ->live(onBlur: true)
+                                     ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                        $subtotal = $state ?? 0;
+                                        $discount = $get('discount') ?? 0;
+                                        $total = max($subtotal - $discount, 0);
+                                        $set('total', $total);
+                                    })
+                                    ->default(0),
+
+                                Forms\Components\TextInput::make('discount')
+                                    ->label('Discount')
+                                    ->prefix('$')
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                        $subtotal = $get('shipping_cost') ?? 0;
+                                        $discount = $state ?? 0;
+                                        $total = max($subtotal - $discount, 0);
+                                        $set('total', $total);
+                                    })
                                     ->default(0),
 
                                 Forms\Components\TextInput::make('total')
