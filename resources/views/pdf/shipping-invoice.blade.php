@@ -36,6 +36,8 @@
             display: table-cell;
             width: 50%;
             vertical-align: top;
+            padding-top: 10px;
+            padding-left: 10px;
         }
 
         .header-right {
@@ -49,6 +51,8 @@
             max-width: 180px;
             height: auto;
             margin-bottom: 10px;
+            margin-top: 5px;
+            margin-left: 5px;
         }
 
         .company-name {
@@ -76,7 +80,7 @@
         .amount-box {
             background: #dc2626;
             color: white;
-            padding: 15px;
+            padding: 10px;
             border-radius: 8px;
             text-align: center;
             margin-bottom: 10px;
@@ -221,6 +225,22 @@
             margin-top: 20px;
             border-top: 2px solid #e5e7eb;
             padding-top: 15px;
+            display: table;
+            width: 100%;
+        }
+
+        .totals-left {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding-right: 20px;
+        }
+
+        .totals-right {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            text-align: right;
         }
 
         .totals-table {
@@ -518,76 +538,77 @@
         </div>
         @endif
 
-        <!-- Totals -->
+        <!-- Totals & Payment Methods -->
         <div class="totals-section">
-            <table class="totals-table">
-                @if($shipping->pickupitems && $shipping->pickupitems->count() > 0)
-                <tr>
-                    <td class="total-label">Pickup Items Total:</td>
-                    <td class="total-value">${{ number_format($shipping->pickupitems->sum(fn($i) => $i->quantity * $i->item_cost), 2) }}</td>
-                </tr>
-                @endif
-                <tr>
-                    <td class="total-label">Shipping Cost:</td>
-                    <td class="total-value">${{ number_format($shipping->shipping_cost, 2) }}</td>
-                </tr>
-                <tr>
-                    <td class="total-label">Subtotal:</td>
-                    <td class="total-value">${{ number_format($shipping->total, 2) }}</td>
-                </tr>
-                <tr>
-                    <td class="total-label">Tax (0%):</td>
-                    <td class="total-value">$0.00</td>
-                </tr>
-                <tr>
-                    <td class="total-label">Discount:</td>
-                    <td class="total-value">${{ number_format($shipping->discount, 2) }}</td>
-                </tr>
-                <tr>
-                    <td class="total-label">Insurance:</td>
-                    <td class="total-value">${{ number_format($shipping->insurance, 2) }}</td>
-                </tr>
-                <tr class="grand-total">
-                    <td class="total-label" style="color: white;">Grand Total:</td>
-                    <td class="total-value" style="color: white;">${{ number_format($shipping->total, 2) }}</td>
-                </tr>
-                <tr>
-                    <td class="total-label">Amount Paid:</td>
-                    <td class="total-value" style="color: #16a34a;">${{ number_format($shipping->payments->sum('amount'), 2) }}</td>
-                </tr>
-                @if($balance > 0)
-                <tr>
-                    <td class="total-label">Balance Due:</td>
-                    <td class="total-value" style="color: #dc2626;">${{ number_format($balance, 2) }}</td>
-                </tr>
-                @endif
-            </table>
-        </div>
-
-        <!-- Payment Methods -->
-        <div class="payment-section">
-            <div class="payment-title" style="text-align: center;font-weight: bold;font-size: 20px;color: #4169E1;">Payment can be made through the following methods:</div>
-            <div class="payment-methods">
-                <div class="payment-method">
-                    <img src="{{ URL::to('images/cash-app.png') }}" alt="Logo" class="logo">
-                    {{-- <h4>Cash App</h4> --}}
-                    <p style="font-size: 12px;font-weight: bold;">Phone #: (317) 774-6913</p>
-                    <p style="font-size: 12px;font-weight: bold;">Name: Rose Adel</p>
-                    <p style="font-size: 12px;font-weight: bold;">$KasaBazaar1</p>
+            <div class="totals-left">
+                <div class="payment-section">
+                    <div class="payment-title" style="text-align: center;font-weight: bold;font-size: 16px;color: #4169E1;">Payment Methods:</div>
+                    <div class="payment-methods">
+                        <div class="payment-method">
+                            <img src="{{ URL::to('images/cash-app.png') }}" alt="Logo" class="logo" style="max-width: 120px; margin-bottom: 5px;">
+                            <p style="font-size: 11px;font-weight: bold; margin-bottom: 2px;">Phone #: (317) 774-6913</p>
+                            <p style="font-size: 11px;font-weight: bold; margin-bottom: 2px;">Name: Rose Adel</p>
+                            <p style="font-size: 11px;font-weight: bold;">$KasaBazaar1</p>
+                        </div>
+                        <div class="payment-method" style="text-align: right;">
+                            <img src="{{ URL::to('images/zelle.png') }}" alt="Logo" class="logo" style="max-width: 120px; margin-bottom: 5px;">
+                            <p style="font-size: 11px;font-weight: bold; margin-bottom: 2px;">Phone #: (317) 774-6913</p>
+                            <p style="font-size: 11px;font-weight: bold;">Name: Kasabazaar</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="payment-method" style="text-align: right;">
-                    <img src="{{ URL::to('images/zelle.png') }}" alt="Logo" class="logo">
-                    {{-- <h4>Zelle</h4> --}}
-                    <p style="font-size: 12px;font-weight: bold;">Phone #: (317) 774-6913</p>
-                    <p style="font-size: 12px;font-weight: bold;">Name: Kasabazaar</p>
-                </div>
+            </div>
+            <div class="totals-right">
+                <table class="totals-table" style="margin-left: auto;">
+                    @if($shipping->pickupitems && $shipping->pickupitems->count() > 0)
+                    <tr>
+                        <td class="total-label">Pickup Items Total:</td>
+                        <td class="total-value">${{ number_format($shipping->pickupitems->sum(fn($i) => $i->quantity * $i->item_cost), 2) }}</td>
+                    </tr>
+                    @endif
+                    <tr>
+                        <td class="total-label">Shipping Cost:</td>
+                        <td class="total-value">${{ number_format($shipping->shipping_cost, 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="total-label">Subtotal:</td>
+                        <td class="total-value">${{ number_format($shipping->total, 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="total-label">Tax (0%):</td>
+                        <td class="total-value">$0.00</td>
+                    </tr>
+                    <tr>
+                        <td class="total-label">Discount:</td>
+                        <td class="total-value">${{ number_format($shipping->discount, 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="total-label">Insurance:</td>
+                        <td class="total-value">${{ number_format($shipping->insurance, 2) }}</td>
+                    </tr>
+                    <tr class="grand-total">
+                        <td class="total-label" style="color: white;">Grand Total:</td>
+                        <td class="total-value" style="color: white;">${{ number_format($shipping->total, 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="total-label">Amount Paid:</td>
+                        <td class="total-value" style="color: #16a34a;">${{ number_format($shipping->payments->sum('amount'), 2) }}</td>
+                    </tr>
+                    @if($balance > 0)
+                    <tr>
+                        <td class="total-label">Balance Due:</td>
+                        <td class="total-value" style="color: #dc2626;">${{ number_format($balance, 2) }}</td>
+                    </tr>
+                    @endif
+                </table>
             </div>
         </div>
 
         <!-- Footer -->
         <div class="footer">
+            <p style="font-size: 12px;font-weight: bold">Note:</p>
              <p>Goods shipped without insurance cover does not guarantee full compensation in case of damage or loss.</p>
-             <p>All used and Non-Manufactured packed items are shipped without warranty</p>
+             <p>All used and Non-Manufactured packed items are shipped without warranty.</p>
             <p style="font-weight: bold">Thank you for choosing Rose Door To Door Shipping and Delivery Co!</p>
         </div>
     </div>
