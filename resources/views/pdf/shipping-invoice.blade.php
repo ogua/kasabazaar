@@ -337,7 +337,7 @@
         <div class="header">
             <div class="header-left">
                 @if(file_exists(public_path('images/kasabazaar-logo.png')))
-                    <img src="{{ URL::to('images/kasabazaar-logo.png') }}" alt="Logo" class="logo" style="max-width: 300px;">
+                    <img src="{{ URL::to('images/kasabazaar-logo.png') }}" alt="Logo" class="logo" style="max-width: 400px;">
                 @endif
                 
                 {{-- <div class="company-name">
