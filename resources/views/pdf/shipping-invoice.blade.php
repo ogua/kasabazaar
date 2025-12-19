@@ -566,15 +566,15 @@
                 <div class="payment-method">
                     <img src="{{ URL::to('images/cash-app.png') }}" alt="Logo" class="logo">
                     {{-- <h4>Cash App</h4> --}}
-                    <p style="font-size: 20px;font-weight: bold;">Phone #: (317) 774-6913</p>
-                    <p style="font-size: 20px;font-weight: bold;">Name: Rose Adel</p>
-                    <p style="font-size: 20px;font-weight: bold;">$KasaBazaar1</p>
+                    <p style="font-size: 15px;font-weight: bold;">Phone #: (317) 774-6913</p>
+                    <p style="font-size: 15px;font-weight: bold;">Name: Rose Adel</p>
+                    <p style="font-size: 15px;font-weight: bold;">$KasaBazaar1</p>
                 </div>
                 <div class="payment-method" style="text-align: right;">
                     <img src="{{ URL::to('images/zelle.png') }}" alt="Logo" class="logo">
                     {{-- <h4>Zelle</h4> --}}
-                    <p style="font-size: 20px;font-weight: bold;">Phone #: (317) 774-6913</p>
-                    <p style="font-size: 20px;font-weight: bold;">Name: Kasabazaar</p>
+                    <p style="font-size: 15px;font-weight: bold;">Phone #: (317) 774-6913</p>
+                    <p style="font-size: 15px;font-weight: bold;">Name: Kasabazaar</p>
                 </div>
             </div>
         </div>
