@@ -425,7 +425,7 @@
         </div> --}}
 
         <!-- Pickup Items (if any) -->
-        @if($shipping->pickupitems && count($shipping->receivers) > 0)
+        @if($shipping->pickupitems && count($shipping->receivers) > 1)
         <div class="section">
             <div class="section-title">Pickup Items</div>
             <table>
