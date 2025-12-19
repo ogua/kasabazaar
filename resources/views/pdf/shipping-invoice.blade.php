@@ -544,6 +544,10 @@
                     <td class="total-label">Discount:</td>
                     <td class="total-value">${{ number_format($shipping->discount, 2) }}</td>
                 </tr>
+                <tr>
+                    <td class="total-label">Insurance:</td>
+                    <td class="total-value">${{ number_format($shipping->insurance, 2) }}</td>
+                </tr>
                 <tr class="grand-total">
                     <td class="total-label" style="color: white;">Grand Total:</td>
                     <td class="total-value" style="color: white;">${{ number_format($shipping->total, 2) }}</td>
@@ -583,6 +587,7 @@
 
         <!-- Footer -->
         <div class="footer">
+             <p>Good shipped without insurance cover does not guarantee full compensation in case of damage or loss.</p>
             <p>Thank you for choosing Rose Door To Door Shipping and Delivery Co!</p>
         </div>
     </div>

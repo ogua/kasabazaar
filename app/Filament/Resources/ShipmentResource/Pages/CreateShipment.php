@@ -550,6 +550,14 @@ class CreateShipment extends CreateRecord
                                     })
                                     ->default(0),
 
+                                    
+                                Forms\Components\TextInput::make('insurance')
+                                    ->label('Insurance')
+                                    ->prefix('$')
+                                    ->dehydrated()
+                                    ->default(0)
+                                    ->extraAttributes(['class' => 'font-bold text-xl']),
+
                                 Forms\Components\TextInput::make('total')
                                     ->label('Grand Total')
                                     ->prefix('$')
