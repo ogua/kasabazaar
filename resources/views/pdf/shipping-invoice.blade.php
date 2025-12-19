@@ -28,9 +28,7 @@
         .header {
             display: table;
             width: 100%;
-            margin-bottom: 20px;
             border-bottom: 3px solid #dc2626;
-            padding-bottom: 15px;
         }
 
         .header-left {
@@ -49,7 +47,6 @@
         .logo {
             max-width: 180px;
             height: auto;
-            margin-bottom: 10px;
             margin-top: 5px;
             margin-left: 5px;
         }
@@ -232,7 +229,7 @@
             display: table-cell;
             width: 50%;
             vertical-align: top;
-            padding-right: 20px;
+            padding-rightt: 20px;
         }
 
         .totals-right {
@@ -312,7 +309,7 @@
 
         .footer {
             margin-top: 30px;
-            padding: 15px;
+            padding: 10px;
             background: #dc2626;
             color: white;
             text-align: center;
@@ -357,7 +354,7 @@
             <div class="header-left">
                 @if (file_exists(public_path('images/kasabazaar-logo.png')))
                     <img src="{{ URL::to('images/kasabazaar-logo.png') }}" alt="Logo" class="logo"
-                        style="max-width: 300px;position: relative; top: -10px;">
+                        style="max-width: 300px;position: relative; top: -30px;">
                 @endif
 
                 {{-- <div class="company-name">
