@@ -357,7 +357,7 @@
             <div class="header-left">
                 @if (file_exists(public_path('images/kasabazaar-logo.png')))
                     <img src="{{ URL::to('images/kasabazaar-logo.png') }}" alt="Logo" class="logo"
-                        style="max-width: 300px;">
+                        style="max-width: 300px;position: relative; top: -10px;">
                 @endif
 
                 {{-- <div class="company-name">
@@ -378,12 +378,12 @@
                         $balance = 0;
                     }
                 @endphp
-                {{-- <div class="amount-box">
+                <div class="amount-box">
                     <div class="amount-label">Amount Paid</div>
                     <div class="amount-value">${{ number_format($shipping->payments->sum('amount'), 2) }}</div>
                    
                     <div class="balance">Balance: ${{ number_format($balance, 2) }}</div>
-                </div> --}}
+                </div>
                 <div class="invoice-title">SHIPPING INVOICE</div>
                 <div class="invoice-details">
                     <p><strong>Invoice No:</strong> {{ $shipping->shipping_reference }}</p>
@@ -624,7 +624,6 @@
 
         <!-- Footer -->
         <div class="footer">
-            <p style="font-size: 12px;font-weight: bold">Note:</p>
             <p>Goods shipped without insurance cover does not guarantee full compensation in case of damage or loss.</p>
             <p>All used and Non-Manufactured packed items are shipped without warranty.</p>
             <p style="font-weight: bold">Thank you for choosing Rose Door To Door Shipping and Delivery Co!</p>
