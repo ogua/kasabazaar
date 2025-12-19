@@ -561,7 +561,7 @@
 
         <!-- Payment Methods -->
         <div class="payment-section">
-            <div class="payment-title">Payment can be made through the following methods:</div>
+            <div class="payment-title" style="text-align: center;font-weight: bold;font-size: 20px;color: #4169E1;">Payment can be made through the following methods:</div>
             <div class="payment-methods">
                 <div class="payment-method">
                     <img src="{{ URL::to('images/cash-app.png') }}" alt="Logo" class="logo">

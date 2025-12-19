@@ -687,12 +687,12 @@ class CreateShipment extends CreateRecord
             ->body("Tracking: {$shipment->tracking_number}")
             ->success()
             ->actions([
-                \Filament\Notifications\Actions\Action::make('view_invoice')
-                    ->label('View Invoice')
-                    ->url(route('shipping-invoice', $shipment->id))
-                    ->openUrlInNewTab(),
+                // \Filament\Notifications\Actions\Action::make('view_invoice')
+                //     ->label('View Invoice')
+                //     ->url(route('shipping-invoice', $shipment->id))
+                //     ->openUrlInNewTab(),
                 \Filament\Notifications\Actions\Action::make('download_pdf')
-                    ->label('Download PDF')
+                    ->label('View Invoice')
                     ->url(route('shipping-invoice-pdf', $shipment->id))
                     ->openUrlInNewTab(),
             ])
