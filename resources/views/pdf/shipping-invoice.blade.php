@@ -168,12 +168,13 @@
         }
 
         th {
-            background: #dc2626;
-            color: white;
+            background: transparent;
+            color: #333;
             padding: 10px 8px;
             text-align: left;
             font-size: 11px;
             font-weight: bold;
+            border-bottom: 2px solid #dc2626;
         }
 
         td {
@@ -182,9 +183,7 @@
             font-size: 11px;
         }
 
-        tr:nth-child(even) {
-            background: #f9fafb;
-        }
+
 
         .text-right {
             text-align: right;
@@ -228,15 +227,30 @@
         .totals-left {
             display: table-cell;
             width: 60%;
-            vertical-align: top;
-            padding-rightt: 20px;
+            vertical-align: bottom;
+            padding-right: 20px;
         }
 
         .totals-right {
             display: table-cell;
-            width: 30%;
-            vertical-align: top;
+            width: 40%;
+            vertical-align: bottom;
             text-align: right;
+        }
+
+        .payment-section {
+            padding: 15px;
+            background: #f3f4f6;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .balance-inline {
+            padding: 8px 15px;
+            background: #fee2e2;
+            border-radius: 6px;
+            border: 1px solid #dc2626;
+            text-align: center;
         }
 
         .totals-table {
@@ -269,12 +283,7 @@
             padding: 10px;
         }
 
-        .payment-section {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f3f4f6;
-            border-radius: 6px;
-        }
+
 
         .payment-title {
             font-size: 12px;
@@ -546,7 +555,7 @@
 
         <!-- Totals & Payment Methods -->
         <div class="totals-section">
-            <div class="totals-left">
+            <div class="totals-left" style="margin-right: 20px;">
                 <div class="payment-section">
                     <div class="payment-title"
                         style="text-align: center;font-weight: bold;font-size: 16px;color: #4169E1;">Payment Methods:
