@@ -126,9 +126,8 @@ class CreateShipment extends CreateRecord
                                 ->required()
                                 ->relationship(
                                     name: 'client',
-                                    modifyQueryUsing: fn($query) => $query->with('branch')
+                                    titleAttribute: 'name'
                                 )
-                                ->getOptionLabelUsing(fn($record) => $record?->fullname_branch ?? $record?->name)
                                 ->searchable(['name', 'email', 'phone'])
                                 ->createOptionForm(ClientResource::clientschema())
                                 ->editOptionForm(ClientResource::clientschema())
