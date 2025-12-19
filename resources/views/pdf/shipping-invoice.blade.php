@@ -195,7 +195,7 @@
         }
 
         .receiver-box {
-            background: #4169E1;
+            background: #1e40af; 
             color: white;
             padding: 12px;
             border-radius: 6px;
@@ -214,7 +214,7 @@
         }
 
         .receiver-table th {
-            background: #1e40af;
+            background: #4169E1;
         }
 
         .totals-section {
@@ -425,7 +425,7 @@
         </div> --}}
 
         <!-- Pickup Items (if any) -->
-        @if($shipping->pickupitems && $shipping->receivers->count() > 0)
+        @if($shipping->pickupitems && count($shipping->receivers) > 0)
         <div class="section">
             <div class="section-title">Pickup Items</div>
             <table>
