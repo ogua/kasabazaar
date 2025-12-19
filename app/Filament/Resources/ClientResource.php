@@ -35,139 +35,165 @@ class ClientResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-        ->schema(self::schema());
-            }
+            ->schema(self::schema());
+    }
 
-            public static function schema() : array {
-                return [
-                    Forms\Components\Section::make('')
-            ->description('')
-            ->schema([
 
-                Forms\Components\TextInput::make('name')
-                ->label('Sender name')
-                ->required()
-                ->maxLength(255),
+    public static function clientschema(): array
+    {
+        return [
+            Forms\Components\Section::make('')
+                ->description('')
+                ->schema([
 
-                Forms\Components\TextInput::make('email')
-                ->label('Sender email')
-                ->email(),
+                    Forms\Components\TextInput::make('name')
+                        ->label('Sender name')
+                        ->required()
+                        ->maxLength(255),
 
-                PhoneInput::make('phone')
-                ->label('Sender Phone number'),
+                    Forms\Components\TextInput::make('email')
+                        ->label('Sender email')
+                        ->email(),
 
-                Forms\Components\Select::make('country')
-                ->label('Sender country')
-                ->options(Country::pluck('name','id'))
-                ->preload()
-                ->searchable()
-                ->live(),
+                    PhoneInput::make('phone')
+                        ->label('Sender Phone number'),
 
-                Forms\Components\Select::make('state_region')
-                ->label('Sender State/Region')
-                ->options(function($get){
+                    Forms\Components\Textarea::make('address')
+                        ->label('Sender address')
+                        ->columnSpanFull(),
+                ])
+                ->columns(2),
+        ];
+    }
 
-                    if(blank($get('country')))
-                    {
-                        return [];
-                    }
+    public static function schema(): array
+    {
+        return [
+            Forms\Components\Section::make('')
+                ->description('')
+                ->schema([
 
-                    return State::where('country_id',$get('country'))->pluck('name','id');
-                })
-                ->searchable()
-                ->live(),
+                    Forms\Components\TextInput::make('name')
+                        ->label('Sender name')
+                        ->required()
+                        ->maxLength(255),
 
-                Forms\Components\Select::make('city')
-                ->label('Sender city')
-                ->options(function($get){
+                    Forms\Components\TextInput::make('email')
+                        ->label('Sender email')
+                        ->email(),
 
-                    if(blank($get('state_region')))
-                    {
-                        return [];
-                    }
+                    PhoneInput::make('phone')
+                        ->label('Sender Phone number'),
 
-                    return City::where('state_id',$get('state_region'))->pluck('name','id');
+                    Forms\Components\Select::make('country')
+                        ->label('Sender country')
+                        ->options(Country::pluck('name', 'id'))
+                        ->preload()
+                        ->searchable()
+                        ->live(),
 
-                })
-                ->searchable(),
+                    Forms\Components\Select::make('state_region')
+                        ->label('Sender State/Region')
+                        ->options(function ($get) {
 
-                Forms\Components\Select::make('id_type')
-                ->label('Sender ID Type')
-                ->options([
-                    'Drivers License' => 'Drivers License',
-                    'Ghana Card' => 'Ghana Card',
-                    'Voter ID Card' => 'Voter ID Card',
-                    'Passport' => 'Passport',
-                    ])
-                    ->searchable(),
+                            if (blank($get('country'))) {
+                                return [];
+                            }
+
+                            return State::where('country_id', $get('country'))->pluck('name', 'id');
+                        })
+                        ->searchable()
+                        ->live(),
+
+                    Forms\Components\Select::make('city')
+                        ->label('Sender city')
+                        ->options(function ($get) {
+
+                            if (blank($get('state_region'))) {
+                                return [];
+                            }
+
+                            return City::where('state_id', $get('state_region'))->pluck('name', 'id');
+                        })
+                        ->searchable(),
+
+                    Forms\Components\Select::make('id_type')
+                        ->label('Sender ID Type')
+                        ->options([
+                            'Drivers License' => 'Drivers License',
+                            'Ghana Card' => 'Ghana Card',
+                            'Voter ID Card' => 'Voter ID Card',
+                            'Passport' => 'Passport',
+                        ])
+                        ->searchable(),
 
                     Forms\Components\TextInput::make('id_number')
-                    ->label('Sender ID Number')
-                    ->maxLength(255),
+                        ->label('Sender ID Number')
+                        ->maxLength(255),
 
 
                     Forms\Components\Textarea::make('address')
-                    ->label('Sender address')
-                    ->columnSpanFull(),
-                    ])
-                    ->columns(2),
-                ];
-            }
+                        ->label('Sender address')
+                        ->columnSpanFull(),
+                ])
+                ->columns(2),
+        ];
+    }
 
-            public static function table(Table $table): Table
-            {
-                return $table
-                ->recordUrl('')
-                ->columns([
-                    Tables\Columns\TextColumn::make('name')
+    public static function table(Table $table): Table
+    {
+        return $table
+            ->recordUrl('')
+            ->columns([
+                Tables\Columns\TextColumn::make('name')
                     ->label('Sender name')
                     ->searchable(),
-                    Tables\Columns\TextColumn::make('email')
+                Tables\Columns\TextColumn::make('email')
                     ->label('Sender email')
                     ->searchable(),
-                    Tables\Columns\TextColumn::make('phone')
+                Tables\Columns\TextColumn::make('phone')
                     ->label('Sender phone')
                     ->searchable(),
-                    Tables\Columns\TextColumn::make('countrystatecity')
+                Tables\Columns\TextColumn::make('countrystatecity')
                     ->label('Country')
                     ->state(fn($record) => "{$record->mcountry?->name}, {$record->mstate?->name}, {$record->mcity?->name}")
                     ->searchable(),
-                    Tables\Columns\TextColumn::make('created_at')
+                Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                    Tables\Columns\TextColumn::make('updated_at')
+                Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                    ])
-                    ->filters([
-                        //
-                        ])
-                        ->actions([
-                            Tables\Actions\EditAction::make(),
-                            Tables\Actions\DeleteAction::make(),
-                            ])
-                            ->bulkActions([
-                                Tables\Actions\BulkActionGroup::make([
-                                    Tables\Actions\DeleteBulkAction::make(),
-                                ]),
-                            ]);
-                        }
+            ])
+            ->filters([
+                //
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
 
-                        public static function getRelations(): array
-                        {
-                            return [
-                                //
-                            ];
-                        }
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
+    }
 
-                        public static function getPages(): array
-                        {
-                            return [
-                                'index' => Pages\ListClients::route('/'),
-                                'create' => Pages\CreateClient::route('/create'),
-                                'edit' => Pages\EditClient::route('/{record}/edit'),
-                            ];
-                        }
-                    }
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListClients::route('/'),
+            'create' => Pages\CreateClient::route('/create'),
+            'edit' => Pages\EditClient::route('/{record}/edit'),
+        ];
+    }
+}

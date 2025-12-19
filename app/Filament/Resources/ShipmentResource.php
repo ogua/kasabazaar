@@ -69,8 +69,8 @@ class ShipmentResource extends Resource
                                     ->required()
                                     ->relationship(name: 'client', titleAttribute: 'fullname_branch')
                                     ->getOptionLabelFromRecordUsing(fn($record) => $record->fullname_branch)
-                                    ->createOptionForm(ClientResource::schema())
-                                    ->editOptionForm(ClientResource::schema())
+                                    ->createOptionForm(ClientResource::clientschema())
+                                    ->editOptionForm(ClientResource::clientschema())
                                     ->preload()
                                     ->searchable()
                                     ->columnSpan(1),
