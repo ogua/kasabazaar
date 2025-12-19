@@ -37,8 +37,6 @@
             display: table-cell;
             width: 50%;
             vertical-align: top;
-            padding-top: 10px;
-            padding-left: 10px;
         }
 
         .header-right {
@@ -359,7 +357,7 @@
             <div class="header-left">
                 @if (file_exists(public_path('images/kasabazaar-logo.png')))
                     <img src="{{ URL::to('images/kasabazaar-logo.png') }}" alt="Logo" class="logo"
-                        style="max-width: 400px;">
+                        style="max-width: 300px;">
                 @endif
 
                 {{-- <div class="company-name">
