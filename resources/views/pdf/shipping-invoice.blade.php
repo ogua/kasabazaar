@@ -621,8 +621,8 @@
 
         <!-- Footer -->
         <div class="footer">
-            <p>Goods shipped without insurance cover does not guarantee full compensation in case of damage or loss.</p>
-            <p>All used and Non-Manufactured packed items are shipped without warranty.</p>
+            <p style="font-size: 11px;">Goods shipped without insurance cover does not guarantee full compensation in case of damage or loss.</p>
+            <p style="font-size: 11px;">All used and Non-Manufactured packed items are shipped without warranty.</p>
             <p style="font-weight: bold">Thank you for choosing Rose Door To Door Shipping and Delivery Co!</p>
         </div>
     </div>
