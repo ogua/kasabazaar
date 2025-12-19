@@ -47,6 +47,15 @@ Route::get('/packing-slip/{id}',[ShippingController::class,'packingslip'])
 Route::get('/shipping-invoice/{id}',[ShippingController::class,'shippinginvoice'])
 ->name('shipping-invoice');
 
+Route::get('/shipping-invoice-pdf/{id}',[ShippingController::class,'shippinginvoicepdf'])
+->name('shipping-invoice-pdf');
+
+Route::get('/shipping-invoice-download/{id}',[ShippingController::class,'downloadinvoicepdf'])
+->name('shipping-invoice-download');
+
+Route::get('/send-invoice-email/{id}',[ShippingController::class,'sendinvoiceemail'])
+->name('send-invoice-email');
+
 Route::get('/shipping-receipt/{id}',[ShippingController::class,'shippingreceipt'])
 ->name('shipping-receipt');
 

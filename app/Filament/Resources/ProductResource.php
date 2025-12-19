@@ -27,9 +27,7 @@ class ProductResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema([
-                ...self::formself(),
-            ]);
+            ->schema(self::formself());
     }
 
 

@@ -6,10 +6,11 @@ use Filament\Support\Contracts\HasLabel;
 
 enum ShippingStatus : string implements HasLabel, HasColor
 {
-    case pending = 'pending';
-    case intransit = 'in transit';
+    case pickup = 'pickup';
+    case shipped = 'Shipped';
     case delivered = 'delivered';
     case cancelled = 'cancelled';
+    case pending = 'pending';
 
     public function getLabel(): ?string
     {
@@ -19,10 +20,11 @@ enum ShippingStatus : string implements HasLabel, HasColor
     public function getColor(): string | array | null {
 
         return match ($this){
-            self::pending => 'warning',
-            self::intransit => 'info',
+            self::pickup => 'warning',
+            self::shipped => 'info',
             self::delivered => 'success',
             self::cancelled => 'danger',
+            self::pending => 'danger',
         };
 
     }

@@ -35,8 +35,12 @@ class ClientResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-        ->schema([
-            Forms\Components\Section::make('')
+        ->schema(self::schema());
+            }
+
+            public static function schema() : array {
+                return [
+                    Forms\Components\Section::make('')
             ->description('')
             ->schema([
 
@@ -107,8 +111,7 @@ class ClientResource extends Resource
                     ->columnSpanFull(),
                     ])
                     ->columns(2),
-
-                ]);
+                ];
             }
 
             public static function table(Table $table): Table

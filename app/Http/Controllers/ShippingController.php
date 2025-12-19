@@ -5,85 +5,108 @@ namespace App\Http\Controllers;
 use App\Models\Shipment;
 use App\Models\Quotation;
 use Illuminate\Http\Request;
+use App\Service\InvoiceService;
 use Matscode\Paystack\Transaction;
-use Spatie\LaravelPdf\Facades\Pdf;
+use App\Http\Controllers\Controller;
 use Unicodeveloper\Paystack\Facades\Paystack;
 use App\Filament\Client\Pages\PageSuccessfully;
-use Spatie\LaravelPdf\Support\pdfpport\pdf as PdfSupport;
 
 class ShippingController extends Controller
 {
+    /**
+     * Display packing slip view
+     */
     public function packingslip(Shipment $id)
     {
         $shipping = $id;
+        $shipping->load(['client', 'receivers.items.product', 'receivers.mcountry', 'receivers.mstate', 'receivers.mcity']);
 
-        return view('packing-slip',compact('shipping'));
-
-        return Pdf::view('packing-slip', ['shipping' => $id])
-        ->format('a4')
-        ->save('packing-slip.pdf');
-
-
-        
-        //    ->headerHtml('<div>My header</div>')
-        //    ->format('a4')
-        //     ->name('invoice-2023-04-10.pdf');
+        return view('packing-slip', compact('shipping'));
     }
 
-
+    /**
+     * Display shipping invoice view (for printing)
+     */
     public function shippinginvoice(Shipment $id)
     {
+        $shipping = $id;
+        $shipping->load(['client', 'receivers.items.product', 'pickupitems.product', 'puchaseditems', 'payments']);
 
-        return view('shipping-invoice',['shipping' => $id]);
-
-        return Pdf::view('shipping-invoice', ['shipping' => $id])
-        ->name('shipping-invoice.pdf');
+        return view('pdf.shipping-invoice', ['shipping' => $shipping]);
     }
 
+    /**
+     * Download shipping invoice as PDF
+     */
+    public function shippinginvoicepdf(Shipment $id)
+    {
+        return InvoiceService::streamPdf($id);
+    }
+
+    /**
+     * Download shipping invoice PDF (force download)
+     */
+    public function downloadinvoicepdf(Shipment $id)
+    {
+        return InvoiceService::downloadPdf($id);
+    }
+
+    /**
+     * Display shipping receipt view
+     */
     public function shippingreceipt(Shipment $id)
     {
+        $shipping = $id;
+        $shipping->load(['client', 'payments']);
 
-        return view('shipping-receipt',['shipping' => $id]);
+        return view('shipping-receipt', ['shipping' => $shipping]);
     }
 
+    /**
+     * Send invoice email to client
+     */
+    public function sendinvoiceemail(Shipment $id)
+    {
+        $success = InvoiceService::sendInvoiceEmail($id);
+
+        if ($success) {
+            return back()->with('success', 'Invoice sent successfully to ' . $id->client?->email);
+        }
+
+        return back()->with('error', 'Failed to send invoice. Please check the client email address.');
+    }
+
+    /**
+     * Print quotation
+     */
     public function printquotation(Quotation $record)
     {
-
-        dd($record);
-
-        return Pdf::view('shipping-slip')
-        ->headerHtml('<div>My header</div>')
-        ->name('invoice-2023-04-10.pdf');
+        return view('quotation', ['quotation' => $record]);
     }
 
-
+    /**
+     * Process payment via Paystack
+     */
     public function makePayment(Shipment $record)
     {
-
-
-        dd($record);
         $secretKey = env('PAYSTACK_SECRET_KEY');
-        // creating the transaction object
         $Transaction = new Transaction($secretKey);
 
         $amount = ($record->total);
 
         $response = (object) $Transaction
-        ->setCallbackUrl(PageSuccessfully::getUrl())
-        ->setEmail( $record->client?->email)
-        ->setAmount($amount)
-        ->setMetadata(
-            [
+            ->setCallbackUrl(PageSuccessfully::getUrl())
+            ->setEmail($record->client?->email)
+            ->setAmount($amount)
+            ->setMetadata([
                 'fullname' => $record->client?->name,
                 'phone' => $record->client?->phone,
                 'email' => $record->client?->email,
                 'reference' => $record->reference,
                 'shipment_id' => $record->id,
-                ])
-                ->initialize();
+            ])
+            ->initialize();
 
-                return redirect()->to($response->authorizationUrl);
-
-            }
-
-        }
+        return redirect()->to($response->authorizationUrl);
+    }
+}

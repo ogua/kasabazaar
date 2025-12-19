@@ -651,7 +651,11 @@ class ShipmentResource extends Resource
                 Tables\Filters\SelectFilter::make('status')
                     ->options(ShippingStatus::class),
                 Tables\Filters\SelectFilter::make('payment_status')
-                    ->options([]),
+                    ->options([
+                        'pending' => 'Pending',
+                        'paid' => 'Paid',
+                        'partial' => 'Partial',
+                    ]),
             ])
             ->actions(
                 [
