@@ -378,12 +378,12 @@
                         $balance = 0;
                     }
                 @endphp
-                <div class="amount-box">
+                {{-- <div class="amount-box">
                     <div class="amount-label">Amount Paid</div>
                     <div class="amount-value">${{ number_format($shipping->payments->sum('amount'), 2) }}</div>
                    
                     <div class="balance">Balance: ${{ number_format($balance, 2) }}</div>
-                </div>
+                </div> --}}
                 <div class="invoice-title">SHIPPING INVOICE</div>
                 <div class="invoice-details">
                     <p><strong>Invoice No:</strong> {{ $shipping->shipping_reference }}</p>
