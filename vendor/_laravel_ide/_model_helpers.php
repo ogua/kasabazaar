@@ -1919,14 +1919,14 @@ namespace App\Models {
      *
      * @property \Illuminate\Support\Carbon|null $updated_at
      * @property \Illuminate\Support\Carbon|null $created_at
-     * @property string $address
-     * @property string $id_number
-     * @property string $id_type
+     * @property string|null $address
+     * @property string|null $id_number
+     * @property string|null $id_type
      * @property string|null $city
      * @property string|null $state_region
      * @property string|null $country
      * @property string $phone
-     * @property string $email
+     * @property string|null $email
      * @property string $name
      * @property string $branch_id
      * @property string $id
@@ -4175,7 +4175,21 @@ namespace App\Models {
     /**
      * App\Models\PickupItems
      *
+     * @property \Illuminate\Support\Carbon|null $updated_at
+     * @property \Illuminate\Support\Carbon|null $created_at
+     * @property float $item_cost
+     * @property mixed $quantity
+     * @property string $product_id
+     * @property string|null $shipment_id
+     * @property string $id
      * @property-read \App\Models\Product $product
+     * @method static \Illuminate\Database\Eloquent\Builder<PickupItems>|PickupItems whereId($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<PickupItems>|PickupItems whereShipmentId($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<PickupItems>|PickupItems whereProductId($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<PickupItems>|PickupItems whereQuantity($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<PickupItems>|PickupItems whereItemCost($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<PickupItems>|PickupItems whereCreatedAt($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<PickupItems>|PickupItems whereUpdatedAt($value)
      * @method static \Illuminate\Database\Eloquent\Builder<PickupItems>|PickupItems newModelQuery()
      * @method static \Illuminate\Database\Eloquent\Builder<PickupItems>|PickupItems newQuery()
      * @method static \Illuminate\Database\Eloquent\Builder<PickupItems>|PickupItems query()
@@ -6688,6 +6702,7 @@ namespace App\Models {
      * @property string|null $recorderd_by
      * @property string|null $delivered_at
      * @property string|null $estimated_delivery_date
+     * @property float $discount
      * @property float|null $shipping_cost
      * @property string|null $shipped_at
      * @property \App\Enums\ShippingStatus $status
@@ -6726,6 +6741,7 @@ namespace App\Models {
      * @method static \Illuminate\Database\Eloquent\Builder<Shipment>|Shipment whereStatus($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Shipment>|Shipment whereShippedAt($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Shipment>|Shipment whereShippingCost($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<Shipment>|Shipment whereDiscount($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Shipment>|Shipment whereEstimatedDeliveryDate($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Shipment>|Shipment whereDeliveredAt($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Shipment>|Shipment whereRecorderdBy($value)

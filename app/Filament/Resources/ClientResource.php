@@ -11,7 +11,9 @@ use App\Models\Country;
 use Nnjeim\World\World;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Filament\Facades\Filament;
 use Filament\Resources\Resource;
+use Filament\Forms\Components\Hidden;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\ClientResource\Pages;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
@@ -46,6 +48,9 @@ class ClientResource extends Resource
                 ->description('')
                 ->schema([
 
+                   Hidden::make('branch_id')
+                    ->default(Filament::getTenant()?->id),
+
                     Forms\Components\TextInput::make('name')
                         ->label('Sender name')
                         ->required()
@@ -72,6 +77,9 @@ class ClientResource extends Resource
             Forms\Components\Section::make('')
                 ->description('')
                 ->schema([
+
+                    Hidden::make('branch_id')
+                    ->default(Filament::getTenant()?->id),
 
                     Forms\Components\TextInput::make('name')
                         ->label('Sender name')

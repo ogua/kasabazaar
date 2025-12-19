@@ -69,8 +69,8 @@ class ShipmentResource extends Resource
                                     ->required()
                                     ->relationship(name: 'client', titleAttribute: 'fullname_branch')
                                     ->getOptionLabelFromRecordUsing(fn($record) => $record->fullname_branch)
-                                    ->createOptionForm(ClientResource::clientschema())
-                                    ->editOptionForm(ClientResource::clientschema())
+                                    //->createOptionForm(ClientResource::clientschema())
+                                    //->editOptionForm(ClientResource::clientschema())
                                     ->preload()
                                     ->searchable()
                                     ->columnSpan(1),
@@ -164,6 +164,7 @@ class ShipmentResource extends Resource
 
                                         Forms\Components\Select::make('single_receiver_id_type')
                                             ->label('ID Type')
+                                            ->hidden()
                                             ->options([
                                                 'Drivers License' => 'Drivers License',
                                                 'Ghana Card' => 'Ghana Card',

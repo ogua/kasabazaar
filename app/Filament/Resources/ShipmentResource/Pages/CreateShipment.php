@@ -47,14 +47,15 @@ class CreateShipment extends CreateRecord
                     preg_match('/Mobile|Android|iPhone|iPad/i', request()->header('User-Agent'));
 
         $schema = [
+
             Forms\Components\Select::make('product_id')
                 ->label('Product')
                 ->required()
                 ->relationship('product', 'name')
                 ->preload()
                 ->searchable()
-                ->createOptionForm(ProductResource::formself())
-                ->editOptionForm(ProductResource::formself()),
+                ->createOptionForm(ProductResource::productself())
+                ->editOptionForm(ProductResource::productself()),
             Forms\Components\TextInput::make('quantity')
                 ->label('Qty')
                 ->required()
@@ -81,28 +82,19 @@ class CreateShipment extends CreateRecord
         $isMobile = request()->header('User-Agent') && 
                     preg_match('/Mobile|Android|iPhone|iPad/i', request()->header('User-Agent'));
 
-        if ($isMobile) {
-            // Use regular Repeater for mobile
-            $repeater = Forms\Components\Repeater::make($name)
-                ->label('')
-                ->live()
-                ->addActionLabel('+ Add Item')
-                ->defaultItems(1)
-                ->collapsible()
-                ->itemLabel(fn (array $state): ?string => 
-                    isset($state['product_id']) ? 'Item #' : 'New Item'
-                )
-                ->schema(self::getItemSchema())
-                ->columns(1); // Stack fields vertically on mobile
-        } else {
-            // Use TableRepeater for desktop
-            $repeater = TableRepeater::make($name)
-                ->label('')
-                ->live()
-                ->addActionLabel('+ Add Item')
-                ->defaultItems(1)
-                ->schema(self::getItemSchema());
-        }
+        $col = $isMobile ? 1 : 3;
+
+         $repeater = Forms\Components\Repeater::make($name)
+            ->label('')
+            ->live()
+            ->addActionLabel('+ Add More Item')
+            ->defaultItems(1)
+            //->collapsible()
+            ->itemLabel(fn (array $state): ?string => 
+                isset($state['product_id']) ? 'Item #' : 'New Item'
+            )
+            ->schema(self::getItemSchema())
+            ->columns($col); // Stack fields vertically on mobile
 
         if ($relationship) {
             $repeater->relationship($relationship);
@@ -132,8 +124,8 @@ class CreateShipment extends CreateRecord
                                     ->required()
                                     ->relationship(name: 'client', titleAttribute: 'fullname_branch')
                                     ->getOptionLabelFromRecordUsing(fn($record) => $record->fullname_branch)
-                                    ->createOptionForm(ClientResource::schema())
-                                    ->editOptionForm(ClientResource::schema())
+                                    ->createOptionForm(ClientResource::clientschema())
+                                    ->editOptionForm(ClientResource::clientschema())
                                     ->preload()
                                     ->searchable()
                                     ->columnSpan(1),
@@ -223,6 +215,7 @@ class CreateShipment extends CreateRecord
                                         Forms\Components\TextInput::make('single_receiver_email')
                                             ->email()
                                             ->label('Email')
+                                            ->hidden()
                                             ->placeholder('email@example.com'),
 
                                         Forms\Components\Select::make('single_receiver_id_type')
@@ -233,13 +226,12 @@ class CreateShipment extends CreateRecord
                                                 'Voter ID Card' => 'Voter ID Card',
                                                 'Passport' => 'Passport',
                                             ])
+                                            ->hidden()
                                             ->native(false),
-                                    ]),
 
-                                Forms\Components\Grid::make(4)
-                                    ->schema([
-                                        Forms\Components\TextInput::make('single_receiver_id_number')
-                                            ->label('ID Number'),
+                                            Forms\Components\TextInput::make('single_receiver_id_number')
+                                            ->label('ID Number')
+                                            ->hidden(),
 
                                         Forms\Components\Select::make('single_receiver_country')
                                             ->label('Country')
@@ -275,11 +267,12 @@ class CreateShipment extends CreateRecord
                                 Forms\Components\Textarea::make('single_receiver_address')
                                     ->label('Delivery Address')
                                     ->placeholder('Full delivery address')
+                                    ->hidden()
                                     ->rows(2)
                                     ->columnSpanFull(),
                             ])
-                            ->visible(fn($get) => $get('receiver_mode') === 'single')
-                            ->collapsible(),
+                            ->visible(fn($get) => $get('receiver_mode') === 'single'),
+                            //->collapsible(),
 
                         // Items Section - For Single Receiver (responsive)
                         Forms\Components\Section::make('Pickup Items')
@@ -321,9 +314,9 @@ class CreateShipment extends CreateRecord
                                 Forms\Components\Repeater::make('receivers')
                                     ->relationship('receivers')
                                     ->label('')
-                                    ->addActionLabel('+ Add Receiver')
-                                    ->defaultItems(1)
-                                    ->collapsible()
+                                    ->addActionLabel('+ Add More Receiver')
+                                    ->defaultItems(4)
+                                    //->collapsible()
                                     ->cloneable()
                                     ->itemLabel(fn(array $state): ?string => $state['receiver_name'] ?? 'New Receiver')
                                     ->schema([
@@ -339,7 +332,8 @@ class CreateShipment extends CreateRecord
 
                                                 Forms\Components\TextInput::make('receiver_email')
                                                     ->email()
-                                                    ->label('Email'),
+                                                    ->label('Email')
+                                                    ->hidden(),
 
                                                 Forms\Components\Select::make('receiver_id_type')
                                                     ->label('ID Type')
@@ -349,13 +343,12 @@ class CreateShipment extends CreateRecord
                                                         'Voter ID Card' => 'Voter ID Card',
                                                         'Passport' => 'Passport',
                                                     ])
+                                                    ->hidden()
                                                     ->native(false),
-                                            ]),
 
-                                        Forms\Components\Grid::make(4)
-                                            ->schema([
-                                                Forms\Components\TextInput::make('receiver_id_number')
-                                                    ->label('ID Number'),
+                                                    Forms\Components\TextInput::make('receiver_id_number')
+                                                    ->label('ID Number')
+                                                    ->hidden(),
 
                                                 Forms\Components\Select::make('country')
                                                     ->label('Country')
@@ -388,9 +381,11 @@ class CreateShipment extends CreateRecord
                                                     ->native(false),
                                             ]),
 
+
                                         Forms\Components\Textarea::make('address')
                                             ->label('Address')
                                             ->rows(1)
+                                            ->hidden()
                                             ->columnSpanFull(),
 
                                         Forms\Components\Section::make('Items for this Receiver')
@@ -460,7 +455,7 @@ class CreateShipment extends CreateRecord
                                     ->relationship('payments')
                                     ->addActionLabel('+ Add Payment')
                                     ->defaultItems(0)
-                                    ->collapsible()
+                                    //->collapsible()
                                     ->schema([
                                         Forms\Components\Grid::make(3)
                                             ->schema([
@@ -533,6 +528,7 @@ class CreateShipment extends CreateRecord
                                     ->label('Shipping Cost')
                                     ->prefix('$')
                                     ->live(onBlur: true)
+                                    ->numeric()
                                      ->afterStateUpdated(function ($state, callable $set, callable $get) {
                                         $subtotal = $state ?? 0;
                                         $discount = $get('discount') ?? 0;
@@ -544,6 +540,7 @@ class CreateShipment extends CreateRecord
                                 Forms\Components\TextInput::make('discount')
                                     ->label('Discount')
                                     ->prefix('$')
+                                    ->numeric()
                                     ->live(onBlur: true)
                                     ->afterStateUpdated(function ($state, callable $set, callable $get) {
                                         $subtotal = $get('shipping_cost') ?? 0;
@@ -556,7 +553,6 @@ class CreateShipment extends CreateRecord
                                 Forms\Components\TextInput::make('total')
                                     ->label('Grand Total')
                                     ->prefix('$')
-                                    ->disabled()
                                     ->dehydrated()
                                     ->default(0)
                                     ->extraAttributes(['class' => 'font-bold text-xl']),

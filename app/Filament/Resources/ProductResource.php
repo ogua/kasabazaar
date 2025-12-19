@@ -7,7 +7,9 @@ use Filament\Tables;
 use App\Models\Product;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Filament\Facades\Filament;
 use Filament\Resources\Resource;
+use Filament\Forms\Components\Hidden;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\ProductResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -30,52 +32,85 @@ class ProductResource extends Resource
             ->schema(self::formself());
     }
 
-
-    public static function formself() : array {
+    public static function productself(): array
+    {
         return [
             Forms\Components\Section::make('')
                 ->description('')
                 ->schema([
-                Forms\Components\FileUpload::make('product_image')
-                    ->image()
-                    ->columnSpanFull(),
 
-                Forms\Components\TextInput::make('name')
-                ->required()
-                ->maxLength(255),
+                    Hidden::make('branch_id')
+                        ->default(Filament::getTenant()?->id),
 
-                // Forms\Components\TextInput::make('sku')
-                //     ->label('SKU')
-                //     ->required()
-                //     ->maxLength(255),
+                    Forms\Components\TextInput::make('name')
+                        ->required()
+                        ->maxLength(255),
 
-                Forms\Components\Select::make('category')
-                    ->required()
-                    ->options([
-                        'Vehicles' => 'Vehicles',
-                        'Home Appliances' => 'Home Appliances',
-                        'Electronic Gadgets' => 'Electronic Gadgets',
-                        'Construction/Building Materials' => 'Construction/Building Materials',
-                        'Others' => 'Others',
-                    ])
-                    ->searchable(),
+                    Hidden::make('category')
+                        ->default("Others"),
 
-                Forms\Components\TextInput::make('weight')
-                    ->numeric()
-                    ->default(null),
+                    Hidden::make('weight')
+                        ->default(0),
 
-                Forms\Components\TextInput::make('value')
-                    ->required()
-                    ->numeric(),
-
-                // Forms\Components\TextInput::make('branch_id')
-                //     ->required()
-                //     ->maxLength(36),
+                    Hidden::make('value')
+                        ->default(0),
 
                 ])
                 ->columns(2),
         ];
-        
+    }
+
+
+    public static function formself(): array
+    {
+        return [
+            Forms\Components\Section::make('')
+                ->description('')
+                ->schema([
+                    // Forms\Components\FileUpload::make('product_image')
+                    //     ->image()
+                    //     ->columnSpanFull(),
+
+                    Hidden::make('branch_id')
+                        ->default(Filament::getTenant()?->id),
+
+                    Forms\Components\TextInput::make('name')
+                        ->required()
+                        ->maxLength(255),
+
+                    // Forms\Components\TextInput::make('sku')
+                    //     ->label('SKU')
+                    //     ->required()
+                    //     ->maxLength(255),
+
+                    Forms\Components\Select::make('category')
+                        ->required()
+                        ->options([
+                            'Vehicles' => 'Vehicles',
+                            'Home Appliances' => 'Home Appliances',
+                            'Electronic Gadgets' => 'Electronic Gadgets',
+                            'Construction/Building Materials' => 'Construction/Building Materials',
+                            'Others' => 'Others',
+                        ])
+                        ->default('Others')
+                        ->searchable(),
+
+                    Forms\Components\TextInput::make('weight')
+                        ->numeric()
+                        ->default(0),
+
+                    Forms\Components\TextInput::make('value')
+                        ->required()
+                        ->default(0)
+                        ->numeric(),
+
+                    // Forms\Components\TextInput::make('branch_id')
+                    //     ->required()
+                    //     ->maxLength(36),
+
+                ])
+                ->columns(2),
+        ];
     }
 
     public static function table(Table $table): Table
@@ -83,7 +118,7 @@ class ProductResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\ImageColumn::make('product_image')
-                ->defaultImageUrl(url('/images/no-image.png')),
+                    ->defaultImageUrl(url('/images/no-image.png')),
 
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
