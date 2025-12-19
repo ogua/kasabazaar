@@ -36,7 +36,79 @@ class CreateShipment extends CreateRecord
     protected function getSteps(): array
     {
         return self::formSteps();
+    }
 
+    /**
+     * Helper method to get item schema based on device
+     */
+    protected static function getItemSchema(): array
+    {
+        $isMobile = request()->header('User-Agent') && 
+                    preg_match('/Mobile|Android|iPhone|iPad/i', request()->header('User-Agent'));
+
+        $schema = [
+            Forms\Components\Select::make('product_id')
+                ->label('Product')
+                ->required()
+                ->relationship('product', 'name')
+                ->preload()
+                ->searchable()
+                ->createOptionForm(ProductResource::formself())
+                ->editOptionForm(ProductResource::formself()),
+            Forms\Components\TextInput::make('quantity')
+                ->label('Qty')
+                ->required()
+                ->default(1)
+                ->numeric()
+                ->minValue(1),
+            Forms\Components\TextInput::make('item_cost')
+                ->required()
+                ->label('Value ($)')
+                ->default(0)
+                ->numeric()
+                ->prefix('$'),
+        ];
+
+        return $schema;
+    }
+
+    /**
+     * Create repeater component based on screen size
+     */
+    protected static function createItemsRepeater(string $name = 'pickupitems', ?string $relationship = null): Forms\Components\Repeater|TableRepeater
+    {
+        // Check if request is from mobile device
+        $isMobile = request()->header('User-Agent') && 
+                    preg_match('/Mobile|Android|iPhone|iPad/i', request()->header('User-Agent'));
+
+        if ($isMobile) {
+            // Use regular Repeater for mobile
+            $repeater = Forms\Components\Repeater::make($name)
+                ->label('')
+                ->live()
+                ->addActionLabel('+ Add Item')
+                ->defaultItems(1)
+                ->collapsible()
+                ->itemLabel(fn (array $state): ?string => 
+                    isset($state['product_id']) ? 'Item #' : 'New Item'
+                )
+                ->schema(self::getItemSchema())
+                ->columns(1); // Stack fields vertically on mobile
+        } else {
+            // Use TableRepeater for desktop
+            $repeater = TableRepeater::make($name)
+                ->label('')
+                ->live()
+                ->addActionLabel('+ Add Item')
+                ->defaultItems(1)
+                ->schema(self::getItemSchema());
+        }
+
+        if ($relationship) {
+            $repeater->relationship($relationship);
+        }
+
+        return $repeater;
     }
 
     public static function formSteps(): array
@@ -117,7 +189,7 @@ class CreateShipment extends CreateRecord
                     ->icon('heroicon-o-cube')
                     ->description('Add items and receivers')
                     ->schema([
-                        // Receiver Mode Selection - Quick toggle at the top
+                        // Receiver Mode Selection
                         Forms\Components\Section::make('How many receivers?')
                             ->description('Select based on your shipment needs')
                             ->schema([
@@ -134,7 +206,7 @@ class CreateShipment extends CreateRecord
                             ])
                             ->compact(),
 
-                        // SINGLE RECEIVER MODE - Streamlined fast entry
+                        // SINGLE RECEIVER MODE
                         Forms\Components\Section::make('Receiver Details')
                             ->description('Enter receiver information')
                             ->schema([
@@ -209,38 +281,11 @@ class CreateShipment extends CreateRecord
                             ->visible(fn($get) => $get('receiver_mode') === 'single')
                             ->collapsible(),
 
-                        // Items Section - For Single Receiver (items entered once, auto-copied)
+                        // Items Section - For Single Receiver (responsive)
                         Forms\Components\Section::make('Pickup Items')
                             ->description('Add all items - they will be assigned to the receiver above')
                             ->schema([
-                                TableRepeater::make('pickupitems')
-                                    ->label('')
-                                    ->live()
-                                    ->relationship()
-                                    ->addActionLabel('+ Add Item')
-                                    ->defaultItems(1)
-                                    ->schema([
-                                        Forms\Components\Select::make('product_id')
-                                            ->label('Product')
-                                            ->required()
-                                            ->relationship('product', 'name')
-                                            ->preload()
-                                            ->searchable()
-                                            ->createOptionForm(ProductResource::formself())
-                                            ->editOptionForm(ProductResource::formself()),
-                                        Forms\Components\TextInput::make('quantity')
-                                            ->label('Qty')
-                                            ->required()
-                                            ->default(1)
-                                            ->numeric()
-                                            ->minValue(1),
-                                        Forms\Components\TextInput::make('item_cost')
-                                            ->required()
-                                            ->label('Value ($)')
-                                            ->default(0)
-                                            ->numeric()
-                                            ->prefix('$'),
-                                    ]),
+                                self::createItemsRepeater('pickupitems', 'pickupitems'),
 
                                 // Summary
                                 Forms\Components\Grid::make(3)
@@ -269,7 +314,7 @@ class CreateShipment extends CreateRecord
                             ])
                             ->visible(fn($get) => $get('receiver_mode') === 'single'),
 
-                        // MULTIPLE RECEIVERS MODE - Full form with nested items
+                        // MULTIPLE RECEIVERS MODE
                         Forms\Components\Section::make('Receivers & Their Items')
                             ->description('Add receivers and assign items to each')
                             ->schema([
@@ -350,33 +395,10 @@ class CreateShipment extends CreateRecord
 
                                         Forms\Components\Section::make('Items for this Receiver')
                                             ->schema([
-                                                TableRepeater::make('items')
-                                                    ->label('')
-                                                    ->live()
-                                                    ->relationship()
-                                                    ->addActionLabel('+ Add Item')
-                                                    ->defaultItems(1)
+                                                self::createItemsRepeater('items', 'items')
                                                     ->schema([
                                                         Forms\Components\Hidden::make('box_no')->default(null),
-                                                        Forms\Components\Select::make('product_id')
-                                                            ->label('Product')
-                                                            ->required()
-                                                            ->relationship('product', 'name')
-                                                            ->preload()
-                                                            ->searchable()
-                                                            ->createOptionForm(ProductResource::formself())
-                                                            ->editOptionForm(ProductResource::formself()),
-                                                        Forms\Components\TextInput::make('quantity')
-                                                            ->label('Qty')
-                                                            ->required()
-                                                            ->default(1)
-                                                            ->numeric()
-                                                            ->minValue(1),
-                                                        Forms\Components\TextInput::make('item_cost')
-                                                            ->required()
-                                                            ->label('Value ($)')
-                                                            ->numeric()
-                                                            ->prefix('$'),
+                                                        ...self::getItemSchema(),
                                                     ]),
                                             ])
                                             ->compact()
@@ -559,7 +581,6 @@ class CreateShipment extends CreateRecord
                                     ->columnSpanFull(),
                             ]),
 
-                        // Hidden field to store receiver mode for processing
                         Forms\Components\Hidden::make('receiver_mode')->default('single'),
                     ]),
         ];
@@ -570,9 +591,6 @@ class CreateShipment extends CreateRecord
         return $this->getResource()::getUrl('index');
     }
 
-    /**
-     * Generate unique PIN and tracking number
-     */
     protected function generatePinAndSerial(): array
     {
         $pin = strtoupper(bin2hex(random_bytes(3)));
@@ -590,7 +608,6 @@ class CreateShipment extends CreateRecord
         $data['recorderd_by'] = Auth::id();
         $data['tracking_number'] = $this->generatePinAndSerial()['tracking_number'];
 
-        // Remove single receiver fields - we'll handle them in afterCreate
         unset($data['single_receiver_name']);
         unset($data['single_receiver_phone']);
         unset($data['single_receiver_email']);
@@ -610,11 +627,9 @@ class CreateShipment extends CreateRecord
         $shipment = $this->getRecord();
         $formData = $this->data;
 
-        // Check if single receiver mode was used
         $receiverMode = $formData['receiver_mode'] ?? 'single';
 
         if ($receiverMode === 'single' && !empty($formData['single_receiver_name'])) {
-            // Create the single receiver
             $receiver = Receiver::create([
                 'shipment_id' => $shipment->id,
                 'receiver_name' => $formData['single_receiver_name'],
@@ -628,7 +643,6 @@ class CreateShipment extends CreateRecord
                 'address' => $formData['single_receiver_address'] ?? null,
             ]);
 
-            // Copy pickup items to shipment items for this receiver
             $pickupItems = $shipment->pickupitems;
             foreach ($pickupItems as $pickupItem) {
                 ShipmentItem::create([
@@ -642,7 +656,6 @@ class CreateShipment extends CreateRecord
             }
         }
 
-        // Calculate totals
         $amountopay = $shipment->total;
         $paid = $shipment->payments->sum('amount');
 
@@ -652,14 +665,12 @@ class CreateShipment extends CreateRecord
 
         $left = $amountopay - $paid;
 
-        // Create invoice record
         Invoice::create([
             'shipment_id' => $shipment->id,
             'total_amount' => $shipment->total,
             'status' => $left < 1 ? 'paid' : 'partial',
         ]);
 
-        // Create initial shipment status update
         ShipmentUpdate::create([
             'shipment_id' => $shipment->id,
             'location' => $shipment->origin_branch_id ?? 'Origin',
@@ -667,13 +678,11 @@ class CreateShipment extends CreateRecord
             'remarks' => 'Shipment created - ' . ucfirst($shipment->status->value),
         ]);
 
-        // Prepare notification message
         $message = $this->buildNotificationMessage($shipment);
 
         $email = $shipment->client?->email;
         $phone = $shipment->client?->phone;
 
-        // Send notifications asynchronously
         if ($email || $phone) {
             Concurrency::defer([
                 fn() => $phone ? NotificationService::sendSmsToSender($phone, $message) : null,
@@ -681,16 +690,11 @@ class CreateShipment extends CreateRecord
             ]);
         }
 
-        // Show success notification with invoice options
         Notification::make()
             ->title('Shipment Created!')
             ->body("Tracking: {$shipment->tracking_number}")
             ->success()
             ->actions([
-                // \Filament\Notifications\Actions\Action::make('view_invoice')
-                //     ->label('View Invoice')
-                //     ->url(route('shipping-invoice', $shipment->id))
-                //     ->openUrlInNewTab(),
                 \Filament\Notifications\Actions\Action::make('download_pdf')
                     ->label('View Invoice')
                     ->url(route('shipping-invoice-pdf', $shipment->id))
@@ -700,9 +704,6 @@ class CreateShipment extends CreateRecord
             ->send();
     }
 
-    /**
-     * Build notification message for SMS/Email
-     */
     protected function buildNotificationMessage($shipment): string
     {
         $clientName = $shipment->client?->name ?? 'Customer';
@@ -718,9 +719,6 @@ class CreateShipment extends CreateRecord
             "Thank you for choosing Rose Door To Door Shipping!";
     }
 
-    /**
-     * Send invoice email to client
-     */
     protected function sendInvoiceToClient($shipment): void
     {
         try {
