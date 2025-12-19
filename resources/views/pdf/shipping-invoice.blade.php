@@ -337,17 +337,19 @@
         <div class="header">
             <div class="header-left">
                 @if(file_exists(public_path('images/kasabazaar-logo.png')))
-                    <img src="{{ URL::to('images/kasabazaar-logo.png') }}" alt="Logo" class="logo">
+                    <img src="{{ URL::to('images/kasabazaar-logo.png') }}" alt="Logo" class="logo" width="280">
                 @endif
+                
                 {{-- <div class="company-name">
                     <span class="rose">ROSE</span> DOOR TO DOOR SHIPPING AND DELIVERY CO
                 </div> --}}
-                <div class="company-info">
+
+                {{-- <div class="company-info">
                     <p><span class="location-label">GH</span> - Adako Jachie, Ejisu - Kumasi, Ghana</p>
                     <p>+233 509725073 / +233 50 9725081</p>
                     <p style="margin-top: 5px;"><span class="location-label">USA</span> - Westfield, Indiana - USA</p>
                     <p>+1 (773) 970-0129 / +1 (574) 440-7460</p>
-                </div>
+                </div> --}}
             </div>
             <div class="header-right">
                 <div class="amount-box">
