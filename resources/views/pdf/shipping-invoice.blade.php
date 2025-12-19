@@ -339,9 +339,9 @@
                 @if(file_exists(public_path('images/kasabazaar-logo.png')))
                     <img src="{{ URL::to('images/kasabazaar-logo.png') }}" alt="Logo" class="logo">
                 @endif
-                <div class="company-name">
+                {{-- <div class="company-name">
                     <span class="rose">ROSE</span> DOOR TO DOOR SHIPPING AND DELIVERY CO
-                </div>
+                </div> --}}
                 <div class="company-info">
                     <p><span class="location-label">GH</span> - Adako Jachie, Ejisu - Kumasi, Ghana</p>
                     <p>+233 509725073 / +233 50 9725081</p>
@@ -417,10 +417,10 @@
         </div>
 
         <!-- Tracking Info -->
-        <div class="tracking-info">
+        {{-- <div class="tracking-info">
             <span class="tracking-label">Tracking Number</span>
             <div class="tracking-number">{{ $shipping->tracking_number }}</div>
-        </div>
+        </div> --}}
 
         <!-- Pickup Items (if any) -->
         @if($shipping->pickupitems && $shipping->pickupitems->count() > 0)
