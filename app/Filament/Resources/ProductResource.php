@@ -11,6 +11,7 @@ use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Filament\Forms\Components\Hidden;
 use Illuminate\Database\Eloquent\Builder;
+use Filament\Tables\Columns\TextInputColumn;
 use App\Filament\Resources\ProductResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\ProductResource\RelationManagers;
@@ -135,7 +136,10 @@ class ProductResource extends Resource
                     ->numeric()
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('value')
+                // Tables\Columns\TextColumn::make('value')
+                //     ->numeric()
+                //     ->sortable(),
+                TextInputColumn::make('value')
                     ->numeric()
                     ->sortable(),
 
