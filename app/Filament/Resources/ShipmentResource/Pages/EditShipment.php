@@ -20,6 +20,22 @@ class EditShipment extends EditRecord
 
     protected static string $resource = ShipmentResource::class;
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        unset($data['single_receiver_name']);
+        unset($data['single_receiver_phone']);
+        unset($data['single_receiver_email']);
+        unset($data['single_receiver_id_type']);
+        unset($data['single_receiver_id_number']);
+        unset($data['single_receiver_country']);
+        unset($data['single_receiver_state']);
+        unset($data['single_receiver_city']);
+        unset($data['single_receiver_address']);
+        unset($data['receiver_mode']);
+
+        return $data;
+    }
+
     protected function getSteps(): array
     {
         return CreateShipment::formSteps();

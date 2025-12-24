@@ -20,6 +20,7 @@ use Filament\Facades\Filament;
 use Livewire\Attributes\Layout;
 use Filament\Resources\Resource;
 use libphonenumber\NumberFormat;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Wizard;
 use Filament\Tables\Actions\ActionGroup;
 use Illuminate\Database\Eloquent\Builder;
@@ -127,21 +128,25 @@ class ShipmentResource extends Resource
                     ->description('Add items and receivers')
                     ->schema([
                         // Receiver Mode Selection - Quick toggle at the top
-                        Forms\Components\Section::make('How many receivers?')
-                            ->description('Select based on your shipment needs')
-                            ->schema([
-                                Forms\Components\Radio::make('receiver_mode')
-                                    ->label('')
-                                    ->options([
-                                        'single' => 'Single Receiver - All items go to one person (fastest)',
-                                        'multiple' => 'Multiple Receivers - Items go to different people',
-                                    ])
-                                    ->default('single')
-                                    ->live()
-                                    ->inline()
-                                    ->columnSpanFull(),
-                            ])
-                            ->compact(),
+                        // Forms\Components\Section::make('How many receivers?')
+                        //     ->description('Select based on your shipment needs')
+                        //     ->schema([
+                        //         Forms\Components\Radio::make('receiver_mode')
+                        //             ->label('')
+                        //             ->options([
+                        //                 'single' => 'Single Receiver - All items go to one person (fastest)',
+                        //                 'multiple' => 'Multiple Receivers - Items go to different people',
+                        //             ])
+                        //             ->default('multiple')
+                        //             ->live()
+                        //             ->inline()
+                        //             ->columnSpanFull(),
+
+                        //         Hidden::make('receiver_mode')->default('multiple'),
+                        //     ])
+                        //     ->compact(),
+
+                         Hidden::make('receiver_mode')->default('multiple'),
 
                         // SINGLE RECEIVER MODE - Streamlined fast entry
                         Forms\Components\Section::make('Receiver Details')

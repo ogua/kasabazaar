@@ -16,6 +16,7 @@ use Filament\Facades\Filament;
 use App\Service\InvoiceService;
 use App\Service\NotificationService;
 use Illuminate\Support\Facades\Auth;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Wizard;
 use Filament\Notifications\Notification;
 use App\Filament\Resources\ClientResource;
@@ -186,21 +187,22 @@ class CreateShipment extends CreateRecord
                 ->description('Add items and receivers')
                 ->schema([
                     // Receiver Mode Selection
-                    Forms\Components\Section::make('How many receivers?')
-                        ->description('Select based on your shipment needs')
-                        ->schema([
-                            Forms\Components\Radio::make('receiver_mode')
-                                ->label('')
-                                ->options([
-                                    'single' => 'Single Receiver - All items go to one person (fastest)',
-                                    'multiple' => 'Multiple Receivers - Items go to different people',
-                                ])
-                                ->default('single')
-                                ->live()
-                                ->inline()
-                                ->columnSpanFull(),
-                        ])
-                        ->compact(),
+                    // Forms\Components\Section::make('How many receivers?')
+                    //     ->description('Select based on your shipment needs')
+                    //     ->schema([
+                    //         Forms\Components\Radio::make('receiver_mode')
+                    //             ->label('')
+                    //             ->options([
+                    //                 'single' => 'Single Receiver - All items go to one person (fastest)',
+                    //                 'multiple' => 'Multiple Receivers - Items go to different people',
+                    //             ])
+                    //             ->default('single')
+                    //             ->live()
+                    //             ->inline()
+                    //             ->columnSpanFull(),
+                    //     ])
+                    //     ->compact(),
+                    Hidden::make('receiver_mode')->default('multiple'),
 
                     // SINGLE RECEIVER MODE
                     Forms\Components\Section::make('Receiver Details')
@@ -470,15 +472,16 @@ class CreateShipment extends CreateRecord
                                         ->live()
                                         ->label(''),
                                 ]),
-                        ])
-                        ->visible(fn($get) => $get('receiver_mode') === 'multiple'),
+                            ]),
+                        //->visible(fn($get) => $get('receiver_mode') === 'multiple'),
                 ]),
 
             // Step 3: Payment (Only on Edit)
             Wizard\Step::make('Payment')
                 ->icon('heroicon-o-banknotes')
                 ->description('Record payments')
-                ->visible(fn($operation) => $operation === 'edit')
+                ->hidden()
+                //->visible(fn($operation) => $operation === 'edit')
                 ->schema([
                     Forms\Components\Section::make('Payment Records')
                         ->schema([
