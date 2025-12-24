@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Branch extends Model
 {
@@ -40,5 +40,9 @@ class Branch extends Model
 
     public function quotations() : HasMany {
         return $this->hasMany(Quotation::class);
+    }
+
+    public function messageTemplates(){
+        return $this->hasMany(MessageTemplate::class);
     }
 }
