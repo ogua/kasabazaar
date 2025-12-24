@@ -353,6 +353,93 @@
         .page-break {
             page-break-before: always;
         }
+
+        .signature-section {
+            margin-top: 30px;
+            display: table;
+            width: 100%;
+        }
+
+        .signature-box {
+            display: table-cell;
+            width: 48%;
+            padding: 15px;
+            vertical-align: top;
+        }
+
+        .signature-box.left {
+            padding-right: 20px;
+        }
+
+        .signature-box.right {
+            padding-left: 20px;
+        }
+
+        .signature-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 5px;
+        }
+
+        .signature-line {
+            border-bottom: 1px solid #333;
+            height: 40px;
+            margin-bottom: 5px;
+        }
+
+        .signature-label {
+            font-size: 10px;
+            color: #666;
+        }
+
+        .signature-image {
+            max-height: 60px;
+            margin-bottom: 5px;
+        }
+
+        .client-note-box {
+            background: #fffbeb;
+            border: 1px solid #f59e0b;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+
+        .client-note-title {
+            font-size: 11px;
+            font-weight: bold;
+            color: #b45309;
+            margin-bottom: 5px;
+        }
+
+        .client-note-content {
+            font-size: 11px;
+            color: #333;
+        }
+
+        .insurance-status {
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        .insurance-accepted {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #16a34a;
+        }
+
+        .insurance-declined {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #dc2626;
+        }
     </style>
 </head>
 
@@ -553,6 +640,27 @@
             </div>
         @endif
 
+        <!-- Client Note -->
+        @if ($shipping->client_note)
+            <div class="client-note-box">
+                <div class="client-note-title">Special Note from Client:</div>
+                <div class="client-note-content">{{ $shipping->client_note }}</div>
+            </div>
+        @endif
+
+        <!-- Insurance Status -->
+        <div style="margin-bottom: 15px;">
+            @if ($shipping->insurance_accepted)
+                <span class="insurance-status insurance-accepted">
+                    ✓ Insurance Accepted - Coverage: ${{ number_format($shipping->insurance ?? 0, 2) }}
+                </span>
+            @else
+                <span class="insurance-status insurance-declined">
+                    ✗ Insurance Declined - No coverage for damage or loss
+                </span>
+            @endif
+        </div>
+
         <!-- Totals & Payment Methods -->
         <div class="totals-section">
             <div class="totals-left" style="margin-right: 20px;">
@@ -598,16 +706,16 @@
                         <td class="total-value">${{ number_format($shipping->total, 2) }}</td>
                     </tr>
                     <tr>
-                        <td class="total-label">Tax (0%):</td>
-                        <td class="total-value">$0.00</td>
+                        <td class="total-label">VAT ({{ number_format($shipping->vat_percentage ?? 0, 1) }}%):</td>
+                        <td class="total-value">${{ number_format($shipping->vat ?? 0, 2) }}</td>
                     </tr>
                     <tr>
                         <td class="total-label">Discount:</td>
-                        <td class="total-value">${{ number_format($shipping->discount, 2) }}</td>
+                        <td class="total-value">${{ number_format($shipping->discount ?? 0, 2) }}</td>
                     </tr>
                     <tr>
                         <td class="total-label">Insurance:</td>
-                        <td class="total-value">${{ number_format($shipping->insurance, 2) }}</td>
+                        <td class="total-value">${{ number_format($shipping->insurance ?? 0, 2) }}</td>
                     </tr>
                     <tr class="grand-total">
                         <td class="total-label" style="color: white;">Grand Total:</td>
@@ -625,6 +733,32 @@
                         </tr>
                     @endif
                 </table>
+            </div>
+        </div>
+
+        <!-- Signature Section -->
+        <div class="signature-section">
+            <div class="signature-box left">
+                <div class="signature-title">Shipment Manager Signature</div>
+                @if (file_exists(public_path('images/shipping-signature.png')))
+                    <img src="{{ public_path('images/shipping-signature.png') }}" alt="Manager Signature" class="signature-image">
+                @else
+                    <div class="signature-line"></div>
+                @endif
+                <div class="signature-label">Authorized Signature</div>
+                <div class="signature-label" style="margin-top: 5px;">Date: {{ now()->format('j M Y') }}</div>
+            </div>
+            <div class="signature-box right">
+                <div class="signature-title">Client Signature</div>
+                <div class="signature-line"></div>
+                <div class="signature-label">Client Signature</div>
+                {{-- <div class="signature-label" style="margin-top: 10px;">
+                    <strong>Client Name:</strong> {{ $shipping->client?->name }}
+                </div>
+                <div class="signature-label">
+                    <strong>Email:</strong> {{ $shipping->client?->email }}
+                </div> --}}
+                <div class="signature-label" style="margin-top: 5px;">Date: {{ now()->format('j M Y') }}</div>
             </div>
         </div>
 

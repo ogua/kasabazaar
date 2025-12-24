@@ -817,6 +817,78 @@ class ShipmentResource extends Resource
                                     ->success()
                                     ->send();
                             }),
+
+                        Tables\Actions\Action::make('send_message')
+                            ->label('Send Message')
+                            ->icon('heroicon-m-chat-bubble-left-right')
+                            ->color('info')
+                            ->modalHeading('Send Message to Client')
+                            ->form([
+                                Forms\Components\Select::make('template_id')
+                                    ->label('Use Template')
+                                    ->options(\App\Models\MessageTemplate::where('is_active', true)->pluck('name', 'id'))
+                                    ->placeholder('Select a template or write custom message')
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, callable $set) {
+                                        if ($state) {
+                                            $template = \App\Models\MessageTemplate::find($state);
+                                            if ($template) {
+                                                $set('subject', $template->subject);
+                                                $set('body', $template->body);
+                                                $set('channel', $template->type);
+                                            }
+                                        }
+                                    }),
+
+                                Forms\Components\TextInput::make('subject')
+                                    ->label('Subject')
+                                    ->required()
+                                    ->placeholder('Message subject'),
+
+                                Forms\Components\RichEditor::make('body')
+                                    ->label('Message')
+                                    ->required()
+                                    ->placeholder('Write your message...'),
+
+                                Forms\Components\Select::make('channel')
+                                    ->label('Send Via')
+                                    ->options([
+                                        'email' => 'Email Only',
+                                        'sms' => 'SMS Only',
+                                        'both' => 'Both Email & SMS',
+                                    ])
+                                    ->default('email')
+                                    ->required()
+                                    ->native(false),
+                            ])
+                            ->action(function ($record, array $data) {
+                                \App\Service\ShipmentMessageService::sendCustomMessage(
+                                    $data['subject'],
+                                    $data['body'],
+                                    $data['channel'],
+                                    'shipment',
+                                    null,
+                                    $record->id
+                                );
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Message Sent')
+                                    ->success()
+                                    ->send();
+                            }),
+
+                        Tables\Actions\Action::make('copy_external_link')
+                            ->label('Client Form Link')
+                            ->icon('heroicon-m-link')
+                            ->color('warning')
+                            ->action(function ($record) {
+                                $url = route('external-shipment-form', $record->external_token);
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Link Copied!')
+                                    ->body($url)
+                                    ->success()
+                                    ->send();
+                            })
+                            ->visible(fn($record) => !$record->external_form_completed),
                     ]),
                 ],
                 position: ActionsPosition::BeforeColumns,

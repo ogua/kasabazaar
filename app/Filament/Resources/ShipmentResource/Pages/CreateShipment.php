@@ -114,14 +114,43 @@ class CreateShipment extends CreateRecord
                 ->icon('heroicon-o-user')
                 ->description('Client & route details')
                 ->schema([
-                    Forms\Components\Section::make('Client Details')
+                    Forms\Components\Section::make('Shipment Type & Reference')
                         ->schema([
+                            Forms\Components\Select::make('shipment_type')
+                                ->label('Shipment Type')
+                                ->options([
+                                    'new' => 'New Shipment (New Container)',
+                                    'existing' => 'Existing Shipment (Same Container)',
+                                ])
+                                ->default('new')
+                                ->required()
+                                ->live()
+                                ->afterStateUpdated(function ($state, callable $set) {
+                                    $refData = \App\Models\Shipment::generateShippingReference($state);
+                                    $set('shipping_reference', $refData['reference']);
+                                    $set('container_number', $refData['container_number']);
+                                    $set('client_sequence', $refData['client_sequence']);
+                                    $set('total_shipment_sequence', $refData['total_shipment_sequence']);
+                                })
+                                ->native(false)
+                                ->columnSpan(1),
+
                             Forms\Components\TextInput::make('shipping_reference')
                                 ->label('Shipping Reference')
                                 ->required()
-                                ->placeholder('e.g., SHP-001')
+                                ->disabled()
+                                ->dehydrated()
+                                ->default(function () {
+                                    $refData = \App\Models\Shipment::generateShippingReference('new');
+                                    return $refData['reference'];
+                                })
+                                ->helperText('Format: CON(Container#)-(Year)-(ClientSeq)-(TotalShipments)')
                                 ->columnSpan(1),
+                        ])
+                        ->columns(2),
 
+                    Forms\Components\Section::make('Client Details')
+                        ->schema([
                             Forms\Components\Select::make('client_id')
                                 ->label('Select Client (Sender)')
                                 ->required()
@@ -133,11 +162,18 @@ class CreateShipment extends CreateRecord
                                 ->createOptionForm(ClientResource::clientschema())
                                 ->editOptionForm(ClientResource::clientschema())
                                 ->preload()
-                                ->columnSpan(1),
+                                ->live()
+                                ->columnSpanFull(),
 
                             Forms\Components\Hidden::make('tracking_number'),
+                            Forms\Components\Hidden::make('container_number')->default(function () {
+                                $refData = \App\Models\Shipment::generateShippingReference('new');
+                                return $refData['container_number'];
+                            }),
+                            Forms\Components\Hidden::make('client_sequence'),
+                            Forms\Components\Hidden::make('total_shipment_sequence'),
                         ])
-                        ->columns(2),
+                        ->columns(1),
 
                     Forms\Components\Section::make('Shipping Route')
                         ->schema([
@@ -336,6 +372,46 @@ class CreateShipment extends CreateRecord
                                 ->live()
                                 ->itemLabel(fn(array $state): ?string => $state['receiver_name'] ?? 'New Receiver')
                                 ->schema([
+                                    // Previous Receiver Selection
+                                    Forms\Components\Select::make('previous_receiver')
+                                        ->label('Use Previous Receiver')
+                                        ->placeholder('Select from previous receivers or enter new')
+                                        ->options(function (callable $get) {
+                                            $clientId = $get('../../client_id');
+                                            if (!$clientId) {
+                                                return [];
+                                            }
+                                            return Receiver::whereHas('shipment', function ($query) use ($clientId) {
+                                                $query->where('client_id', $clientId);
+                                            })
+                                                ->get()
+                                                ->unique(fn ($r) => strtolower($r->receiver_name) . '-' . $r->receiver_phone)
+                                                ->mapWithKeys(fn ($r) => [
+                                                    $r->id => $r->receiver_name . ($r->receiver_phone ? " ({$r->receiver_phone})" : '')
+                                                ]);
+                                        })
+                                        ->searchable()
+                                        ->live()
+                                        ->afterStateUpdated(function ($state, callable $set) {
+                                            if ($state) {
+                                                $receiver = Receiver::find($state);
+                                                if ($receiver) {
+                                                    $set('receiver_name', $receiver->receiver_name);
+                                                    $set('receiver_phone', $receiver->receiver_phone);
+                                                    $set('receiver_email', $receiver->receiver_email);
+                                                    $set('country', $receiver->country);
+                                                    $set('state_region', $receiver->state_region);
+                                                    $set('city', $receiver->city);
+                                                    $set('address', $receiver->address);
+                                                    $set('receiver_id_type', $receiver->receiver_id_type);
+                                                    $set('receiver_id_number', $receiver->receiver_id_number);
+                                                }
+                                            }
+                                        })
+                                        ->dehydrated(false)
+                                        ->columnSpanFull()
+                                        ->helperText('Auto-populate from a previous shipment or enter new receiver details below'),
+
                                     Forms\Components\Grid::make(4)
                                         ->schema([
                                             Forms\Components\TextInput::make('receiver_name')
@@ -556,6 +632,37 @@ class CreateShipment extends CreateRecord
                 ->icon('heroicon-o-check-circle')
                 ->description('Review & save')
                 ->schema([
+                    Forms\Components\Section::make('Insurance')
+                        ->schema([
+                            Forms\Components\Toggle::make('insurance_accepted')
+                                ->label('Client Accepts Insurance')
+                                ->helperText('Does the client want their items to be insured?')
+                                ->live()
+                                ->afterStateUpdated(function ($state, callable $set) {
+                                    if (!$state) {
+                                        $set('insurance', 0);
+                                    }
+                                })
+                                ->default(false),
+
+                            Forms\Components\TextInput::make('insurance')
+                                ->label('Insurance Amount')
+                                ->prefix('$')
+                                ->numeric()
+                                ->live(onBlur: true)
+                                ->visible(fn ($get) => $get('insurance_accepted'))
+                                ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                    $subtotal = (float)($get('shipping_cost') ?? 0);
+                                    $discount = (float)($get('discount') ?? 0);
+                                    $insurance = (float)($state ?? 0);
+                                    $vat = (float)($get('vat') ?? 0);
+                                    $total = max($subtotal - $discount + $insurance + $vat, 0);
+                                    $set('total', $total);
+                                })
+                                ->default(0),
+                        ])
+                        ->columns(2),
+
                     Forms\Components\Section::make('Cost Summary')
                         ->schema([
                             Forms\Components\TextInput::make('shipping_cost')
@@ -567,7 +674,8 @@ class CreateShipment extends CreateRecord
                                     $subtotal = (float)($state ?? 0);
                                     $discount = (float)($get('discount') ?? 0);
                                     $insurance = (float)($get('insurance') ?? 0);
-                                    $total = max($subtotal - $discount + $insurance, 0);
+                                    $vat = (float)($get('vat') ?? 0);
+                                    $total = max($subtotal - $discount + $insurance + $vat, 0);
                                     $set('total', $total);
                                 })
                                 ->default(0)
@@ -583,23 +691,36 @@ class CreateShipment extends CreateRecord
                                     $subtotal = (float)($get('shipping_cost') ?? 0);
                                     $discount = (float)($state ?? 0);
                                     $insurance = (float)($get('insurance') ?? 0);
-                                    $total = max($subtotal - $discount + $insurance, 0);
+                                    $vat = (float)($get('vat') ?? 0);
+                                    $total = max($subtotal - $discount + $insurance + $vat, 0);
                                     $set('total', $total);
                                 })
                                 ->default(0),
 
-                            Forms\Components\TextInput::make('insurance')
-                                ->label('Insurance')
-                                ->prefix('$')
+                            Forms\Components\TextInput::make('vat_percentage')
+                                ->label('VAT %')
+                                ->suffix('%')
                                 ->numeric()
                                 ->live(onBlur: true)
                                 ->afterStateUpdated(function ($state, callable $set, callable $get) {
                                     $subtotal = (float)($get('shipping_cost') ?? 0);
+                                    $vatPercentage = (float)($state ?? 0);
+                                    $vat = $subtotal * ($vatPercentage / 100);
+                                    $set('vat', $vat);
+
                                     $discount = (float)($get('discount') ?? 0);
-                                    $insurance = (float)($state ?? 0);
-                                    $total = max($subtotal - $discount + $insurance, 0);
+                                    $insurance = (float)($get('insurance') ?? 0);
+                                    $total = max($subtotal - $discount + $insurance + $vat, 0);
                                     $set('total', $total);
                                 })
+                                ->default(0),
+
+                            Forms\Components\TextInput::make('vat')
+                                ->label('VAT Amount')
+                                ->prefix('$')
+                                ->numeric()
+                                ->disabled()
+                                ->dehydrated()
                                 ->default(0),
 
                             Forms\Components\TextInput::make('total')
@@ -612,6 +733,15 @@ class CreateShipment extends CreateRecord
                                 ->extraAttributes(['class' => 'font-bold text-xl']),
                         ])
                         ->columns(2),
+
+                    Forms\Components\Section::make('Client Note')
+                        ->schema([
+                            Forms\Components\Textarea::make('client_note')
+                                ->label('Special Note from Client')
+                                ->helperText('Any special instructions or notes from the client')
+                                ->rows(3)
+                                ->columnSpanFull(),
+                        ]),
 
                     Forms\Components\Section::make('Status')
                         ->schema([
@@ -674,6 +804,7 @@ class CreateShipment extends CreateRecord
     {
         $data['recorderd_by'] = Auth::id();
         $data['tracking_number'] = $this->generatePinAndSerial()['tracking_number'];
+        $data['external_token'] = \App\Models\Shipment::generateExternalToken();
 
         unset($data['single_receiver_name']);
         unset($data['single_receiver_phone']);

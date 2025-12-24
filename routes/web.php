@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebController;
 use App\Livewire\PaymentsuccessfulPage;
 use App\Http\Controllers\ShippingController;
+use App\Http\Controllers\ExternalShipmentController;
 
 Route::get('/', function () {
     //return view('welcome');
@@ -74,3 +75,25 @@ Route::get('/paid-successfully',PaymentsuccessfulPage::class)
 Route::get('/customer-feedback',CustomerFeedaback::class)
 ->name('customer-feedback');
 
+// External Shipment Form Routes (for clients to fill out their own details)
+Route::get('/shipment-form/{token}', [ExternalShipmentController::class, 'showForm'])
+    ->name('external-shipment-form');
+
+Route::post('/shipment-form/{token}', [ExternalShipmentController::class, 'submitForm'])
+    ->name('external-shipment-submit');
+
+Route::get('/shipment-form-states', [ExternalShipmentController::class, 'getStates'])
+    ->name('external-shipment-states');
+
+Route::get('/shipment-form-cities', [ExternalShipmentController::class, 'getCities'])
+    ->name('external-shipment-cities');
+
+Route::get('/shipment-form-expired', function () {
+    return view('external.shipment-form-expired');
+})->name('external-shipment-expired');
+
+// API Routes for internal use
+Route::prefix('api')->middleware('web')->group(function () {
+    Route::get('/previous-receivers', [\App\Http\Controllers\Api\ReceiverController::class, 'getPreviousReceivers'])
+        ->name('api.previous-receivers');
+});
