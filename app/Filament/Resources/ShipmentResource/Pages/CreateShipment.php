@@ -679,7 +679,7 @@ class CreateShipment extends CreateRecord
                                     $set('total', $total);
                                 })
                                 ->default(0)
-                                ->disabled()
+                                //->disabled()
                                 ->dehydrated(),
 
                             Forms\Components\TextInput::make('discount')
@@ -719,16 +719,18 @@ class CreateShipment extends CreateRecord
                                 ->label('VAT Amount')
                                 ->prefix('$')
                                 ->numeric()
-                                ->disabled()
+                               // ->readOnly()
                                 ->dehydrated()
+                                ->live()
                                 ->default(0),
 
                             Forms\Components\TextInput::make('total')
                                 ->label('Grand Total')
                                 ->prefix('$')
                                 ->numeric()
-                                ->disabled()
+                               // ->readOnly()
                                 ->dehydrated()
+                                ->live()
                                 ->default(0)
                                 ->extraAttributes(['class' => 'font-bold text-xl']),
                         ])
