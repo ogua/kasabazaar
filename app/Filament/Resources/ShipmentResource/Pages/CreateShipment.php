@@ -743,21 +743,22 @@ class CreateShipment extends CreateRecord
                                 ->label('Est. Shipping Date')
                                 ->required()
                                 ->live()
-                                ->afterStateUpdated(function ($state, callable $set, callable $get, string $operation) {
-                                    if ($operation === 'edit' && $state) {
+                                ->afterStateUpdated(function ($state, callable $set, callable $get, string $operation, $record) {
+                                    if ($operation === 'edit' && $state && $record) {
                                         // Get current reference to preserve container number
                                         $currentRef = $get('shipping_reference');
-                                        $containerNumber = 1;
+                                        $containerNumber = $record->container_number ?? 1;
 
-                                        // Extract container number from current reference (format: CON{num}-...)
-                                        if ($currentRef && preg_match('/^CON(\d+)-/', $currentRef, $matches)) {
+                                        // Extract container number from current reference if not in DB (format: CON{num}-...)
+                                        if (!$containerNumber && $currentRef && preg_match('/^CON(\d+)-/', $currentRef, $matches)) {
                                             $containerNumber = (int) $matches[1];
                                         }
 
-                                        // Regenerate reference with new date but preserve container number
-                                        $refData = \App\Models\Shipment::generateShippingReference('existing', $state);
+                                        // Regenerate reference with new date, excluding current shipment from counts
+                                        $refData = \App\Models\Shipment::generateShippingReference('existing', $state, $record->id);
 
                                         // Build new reference with original container number
+                                        // Format: CON{container}-{2-digit year}-{client seq 2 digits}-{shipment seq 3 digits}
                                         $date = \Carbon\Carbon::parse($state);
                                         $newReference = sprintf(
                                             'CON%d-%s-%02d-%03d',

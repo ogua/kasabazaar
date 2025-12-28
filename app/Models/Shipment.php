@@ -34,14 +34,17 @@ class Shipment extends Model
     /**
      * Generate shipping reference in format: CON(CN)-(Y)-(TC)-(TSY)
      * CN = Container Number
-     * Y = Year (from shipment date)
-     * TC = Total Clients served this year
-     * TSY = Total Shipments made (Year)
+     * Y = 2-digit Year (from shipment date)
+     * TC = Total Clients served this year (2 digits with leading zero)
+     * TSY = Total Shipments this year (3 digits with leading zeros)
+     *
+     * Example: CON2-26-04-004
      *
      * @param string $shipmentType 'new' or 'existing'
      * @param string|null $shipmentDate The shipment date to use for year calculation
+     * @param string|null $excludeShipmentId Exclude this shipment from counts (for edits)
      */
-    public static function generateShippingReference(string $shipmentType = 'new', ?string $shipmentDate = null): array
+    public static function generateShippingReference(string $shipmentType = 'new', ?string $shipmentDate = null, ?string $excludeShipmentId = null): array
     {
         // Use provided shipment date or current date
         $date = $shipmentDate ? \Carbon\Carbon::parse($shipmentDate) : now();
@@ -49,25 +52,40 @@ class Shipment extends Model
         $yearShort = $date->format('y');
 
         // Get the latest container number for that year
-        $latestContainer = self::whereYear('shipped_at', $currentYear)
-            ->whereNotNull('container_number')
-            ->max('container_number') ?? 0;
+        $latestContainerQuery = self::whereYear('shipped_at', $currentYear)
+            ->whereNotNull('container_number');
+
+        if ($excludeShipmentId) {
+            $latestContainerQuery->where('id', '!=', $excludeShipmentId);
+        }
+
+        $latestContainer = $latestContainerQuery->max('container_number') ?? 0;
 
         // Container number: increment for new shipment, keep same for existing
         $containerNumber = $shipmentType === 'new' ? $latestContainer + 1 : $latestContainer;
         if ($containerNumber === 0) $containerNumber = 1;
 
-        // Total clients served this year (unique clients)
-        $clientsThisYear = self::whereYear('shipped_at', $currentYear)
-            ->distinct('client_id')
-            ->count('client_id');
+        // Total clients served this year (unique clients) - this becomes the client sequence
+        $clientsQuery = self::whereYear('shipped_at', $currentYear);
+
+        if ($excludeShipmentId) {
+            $clientsQuery->where('id', '!=', $excludeShipmentId);
+        }
+
+        $clientsThisYear = $clientsQuery->distinct('client_id')->count('client_id');
         $clientSequence = $clientsThisYear + 1;
 
         // Total shipments made this year
-        $totalShipmentsThisYear = self::whereYear('shipped_at', $currentYear)->count();
+        $shipmentsQuery = self::whereYear('shipped_at', $currentYear);
+
+        if ($excludeShipmentId) {
+            $shipmentsQuery->where('id', '!=', $excludeShipmentId);
+        }
+
+        $totalShipmentsThisYear = $shipmentsQuery->count();
         $shipmentSequence = $totalShipmentsThisYear + 1;
 
-        // Format: CON(CN)-(Y)-(TC)-(TSY)
+        // Format: CON(CN)-(Y)-(TC)-(TSY) e.g. CON2-26-04-004
         $reference = sprintf(
             'CON%d-%s-%02d-%03d',
             $containerNumber,
