@@ -741,7 +741,7 @@
             <div class="signature-box left">
                 <div class="signature-title">Shipment Manager Signature</div>
                 @if (file_exists(public_path('images/shipping-signature.png')))
-                    <img src="{{ public_path('images/shipping-signature.png') }}" alt="Manager Signature" class="signature-image">
+                    <img src="{{ URL::to('images/shipping-signature.png') }}" alt="Manager Signature" class="signature-image">
                 @else
                     <div class="signature-line"></div>
                 @endif

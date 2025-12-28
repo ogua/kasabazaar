@@ -34,17 +34,22 @@ class Shipment extends Model
     /**
      * Generate shipping reference in format: CON(CN)-(Y)-(TC)-(TSY)
      * CN = Container Number
-     * Y = Year
+     * Y = Year (from shipment date)
      * TC = Total Clients served this year
      * TSY = Total Shipments made (Year)
+     *
+     * @param string $shipmentType 'new' or 'existing'
+     * @param string|null $shipmentDate The shipment date to use for year calculation
      */
-    public static function generateShippingReference(string $shipmentType = 'new'): array
+    public static function generateShippingReference(string $shipmentType = 'new', ?string $shipmentDate = null): array
     {
-        $currentYear = date('Y');
-        $yearShort = date('y');
+        // Use provided shipment date or current date
+        $date = $shipmentDate ? \Carbon\Carbon::parse($shipmentDate) : now();
+        $currentYear = $date->format('Y');
+        $yearShort = $date->format('y');
 
-        // Get the latest container number
-        $latestContainer = self::whereYear('created_at', $currentYear)
+        // Get the latest container number for that year
+        $latestContainer = self::whereYear('shipped_at', $currentYear)
             ->whereNotNull('container_number')
             ->max('container_number') ?? 0;
 
@@ -53,13 +58,13 @@ class Shipment extends Model
         if ($containerNumber === 0) $containerNumber = 1;
 
         // Total clients served this year (unique clients)
-        $clientsThisYear = self::whereYear('created_at', $currentYear)
+        $clientsThisYear = self::whereYear('shipped_at', $currentYear)
             ->distinct('client_id')
             ->count('client_id');
         $clientSequence = $clientsThisYear + 1;
 
         // Total shipments made this year
-        $totalShipmentsThisYear = self::whereYear('created_at', $currentYear)->count();
+        $totalShipmentsThisYear = self::whereYear('shipped_at', $currentYear)->count();
         $shipmentSequence = $totalShipmentsThisYear + 1;
 
         // Format: CON(CN)-(Y)-(TC)-(TSY)

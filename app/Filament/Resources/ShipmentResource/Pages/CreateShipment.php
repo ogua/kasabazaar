@@ -125,26 +125,20 @@ class CreateShipment extends CreateRecord
                                 ->default('new')
                                 ->required()
                                 ->live()
-                                ->afterStateUpdated(function ($state, callable $set) {
-                                    $refData = \App\Models\Shipment::generateShippingReference($state);
-                                    $set('shipping_reference', $refData['reference']);
-                                    $set('container_number', $refData['container_number']);
-                                    $set('client_sequence', $refData['client_sequence']);
-                                    $set('total_shipment_sequence', $refData['total_shipment_sequence']);
-                                })
+                                ->dehydrated(false)
                                 ->native(false)
+                                ->visible(fn (string $operation): bool => $operation === 'create')
                                 ->columnSpan(1),
 
                             Forms\Components\TextInput::make('shipping_reference')
                                 ->label('Shipping Reference')
-                                ->required()
-                                ->disabled()
+                                ->placeholder('Auto-generated on save')
+                                ->disabled(fn (string $operation): bool => $operation === 'create')
                                 ->dehydrated()
-                                ->default(function () {
-                                    $refData = \App\Models\Shipment::generateShippingReference('new');
-                                    return $refData['reference'];
-                                })
-                                ->helperText('Format: CON(Container#)-(Year)-(ClientSeq)-(TotalShipments)')
+                                ->helperText(fn (string $operation): string => $operation === 'create'
+                                    ? 'Will be generated from shipment date after saving'
+                                    : 'You can edit this reference if needed')
+                                ->columnSpanFull(fn (string $operation): bool => $operation === 'edit')
                                 ->columnSpan(1),
                         ])
                         ->columns(2),
@@ -166,10 +160,7 @@ class CreateShipment extends CreateRecord
                                 ->columnSpanFull(),
 
                             Forms\Components\Hidden::make('tracking_number'),
-                            Forms\Components\Hidden::make('container_number')->default(function () {
-                                $refData = \App\Models\Shipment::generateShippingReference('new');
-                                return $refData['container_number'];
-                            }),
+                            Forms\Components\Hidden::make('container_number'),
                             Forms\Components\Hidden::make('client_sequence'),
                             Forms\Components\Hidden::make('total_shipment_sequence'),
                         ])
@@ -747,6 +738,39 @@ class CreateShipment extends CreateRecord
 
                     Forms\Components\Section::make('Status')
                         ->schema([
+
+                            Forms\Components\DateTimePicker::make('shipped_at')
+                                ->label('Est. Shipping Date')
+                                ->required()
+                                ->live()
+                                ->afterStateUpdated(function ($state, callable $set, callable $get, string $operation) {
+                                    if ($operation === 'edit' && $state) {
+                                        // Get current reference to preserve container number
+                                        $currentRef = $get('shipping_reference');
+                                        $containerNumber = 1;
+
+                                        // Extract container number from current reference (format: CON{num}-...)
+                                        if ($currentRef && preg_match('/^CON(\d+)-/', $currentRef, $matches)) {
+                                            $containerNumber = (int) $matches[1];
+                                        }
+
+                                        // Regenerate reference with new date but preserve container number
+                                        $refData = \App\Models\Shipment::generateShippingReference('existing', $state);
+
+                                        // Build new reference with original container number
+                                        $date = \Carbon\Carbon::parse($state);
+                                        $newReference = sprintf(
+                                            'CON%d-%s-%02d-%03d',
+                                            $containerNumber,
+                                            $date->format('y'),
+                                            $refData['client_sequence'],
+                                            $refData['total_shipment_sequence']
+                                        );
+
+                                        $set('shipping_reference', $newReference);
+                                    }
+                                }),
+                                
                             Forms\Components\Select::make('payment_status')
                                 ->label('Payment Status')
                                 ->options([
@@ -764,9 +788,6 @@ class CreateShipment extends CreateRecord
                                 ->default('pickup')
                                 ->required()
                                 ->native(false),
-
-                            Forms\Components\DateTimePicker::make('shipped_at')
-                                ->label('Shipped Date'),
 
                             Forms\Components\DatePicker::make('estimated_delivery_date')
                                 ->label('Est. Delivery'),
@@ -807,6 +828,16 @@ class CreateShipment extends CreateRecord
         $data['recorderd_by'] = Auth::id();
         $data['tracking_number'] = $this->generatePinAndSerial()['tracking_number'];
         $data['external_token'] = \App\Models\Shipment::generateExternalToken();
+
+        // Generate shipping reference using the shipped_at date
+        $shipmentType = $this->data['shipment_type'] ?? 'new';
+        $shippedAt = $data['shipped_at'] ?? now();
+        $refData = \App\Models\Shipment::generateShippingReference($shipmentType, $shippedAt);
+
+        $data['shipping_reference'] = $refData['reference'];
+        $data['container_number'] = $refData['container_number'];
+        $data['client_sequence'] = $refData['client_sequence'];
+        $data['total_shipment_sequence'] = $refData['total_shipment_sequence'];
 
         unset($data['single_receiver_name']);
         unset($data['single_receiver_phone']);
