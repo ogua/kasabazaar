@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Complete Your Shipment - Rose Door To Door Shipping</title>
+    <link rel="manifest" href="/site.webmanifest">
+    <meta name="theme-color" content="#1e40af">
+    <link rel="icon" href="/images/kasabazaar-logo.png">
+    <link rel="apple-touch-icon" href="/images/kasabazaar-logo.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .receiver-card {
