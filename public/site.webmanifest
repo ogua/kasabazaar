@@ -1,7 +1,8 @@
 {
+    "id": "/admin",
     "name": "Kasabazaar - Door to Door Shipping",
-    "short_name": "Kasabazaar",
-    "description": "Kasabazaar Door to Door Shipping Management System - Track shipments, manage clients, and handle logistics efficiently.",
+    "short_name": "Rose Shipping",
+    "description": "Kasabazaar - Rose Door to Door Shipping Management System - Track shipments, manage clients, and handle logistics efficiently.",
     "start_url": "/admin",
     "display": "standalone",
     "background_color": "#ffffff",
@@ -10,44 +11,51 @@
     "scope": "/",
     "lang": "en",
     "categories": ["business", "logistics", "shipping"],
-    "icons": [      
+    "icons": [
         {
-        "src": "/images/web-app-manifest-192x192.png",
-        "sizes": "192x192",
-        "type": "image/png",
-        "purpose": "any"
+            "src": "/images/web-app-manifest-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
         },
         {
-        "src": "/images/web-app-manifest-512x512.png",
-        "sizes": "512x512",
-        "type": "image/png",
-        "purpose": "any"
+            "src": "/images/web-app-manifest-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/images/web-app-manifest-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/images/web-app-manifest-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
         }
     ],
-    "screenshots": [],
     "shortcuts": [
         {
             "name": "New Shipment",
             "short_name": "New Shipment",
             "description": "Create a new shipment",
-            "url": "/admin/shipments/create",
-            "icons": []
+            "url": "/admin/shipments/create"
         },
         {
             "name": "View Clients",
             "short_name": "Clients",
             "description": "View all clients",
-            "url": "/admin/clients",
-            "icons": []
+            "url": "/admin/clients"
         },
         {
             "name": "Track Shipment",
             "short_name": "Track",
             "description": "Track a shipment",
-            "url": "/tracking",
-            "icons": []
+            "url": "/tracking"
         }
     ],
-    "related_applications": [],
     "prefer_related_applications": false
 }
