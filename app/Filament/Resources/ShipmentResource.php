@@ -784,10 +784,10 @@ class ShipmentResource extends Resource
                             ->color('info')
                             ->url(fn($record) => route('shipping-receipt', $record), shouldOpenInNewTab: true),
 
-                        Tables\Actions\Action::make('Packing Slip')
-                            ->color('warning')
-                            ->icon('heroicon-m-inbox-stack')
-                            ->url(fn($record) => route('packing-slip', $record->id), shouldOpenInNewTab: true),
+                        // Tables\Actions\Action::make('Packing Slip')
+                        //     ->color('warning')
+                        //     ->icon('heroicon-m-inbox-stack')
+                        //     ->url(fn($record) => route('packing-slip', $record->id), shouldOpenInNewTab: true),
 
                         Tables\Actions\Action::make('Print Label')
                             ->label('Print Shipping Label')
@@ -812,20 +812,20 @@ class ShipmentResource extends Resource
                             ])
                             ->modalSubmitAction(false),
 
-                        Tables\Actions\Action::make('send_invoice')
-                            ->label('Email Invoice')
-                            ->icon('heroicon-m-envelope')
-                            ->color('gray')
-                            ->requiresConfirmation()
-                            ->modalHeading('Send Invoice')
-                            ->modalDescription(fn($record) => "Send to {$record->client?->email}?")
-                            ->action(function ($record) {
-                                \App\Service\InvoiceService::sendInvoiceEmail($record);
-                                \Filament\Notifications\Notification::make()
-                                    ->title('Invoice Sent')
-                                    ->success()
-                                    ->send();
-                            }),
+                        // Tables\Actions\Action::make('send_invoice')
+                        //     ->label('Email Invoice')
+                        //     ->icon('heroicon-m-envelope')
+                        //     ->color('gray')
+                        //     ->requiresConfirmation()
+                        //     ->modalHeading('Send Invoice')
+                        //     ->modalDescription(fn($record) => "Send to {$record->client?->email}?")
+                        //     ->action(function ($record) {
+                        //         \App\Service\InvoiceService::sendInvoiceEmail($record);
+                        //         \Filament\Notifications\Notification::make()
+                        //             ->title('Invoice Sent')
+                        //             ->success()
+                        //             ->send();
+                        //     }),
 
                         Tables\Actions\Action::make('send_message')
                             ->label('Send Message')
