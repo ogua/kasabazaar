@@ -22,6 +22,16 @@ class EditShipment extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        // Parse and sync shipping_reference fields if reference was edited
+        if (!empty($data['shipping_reference'])) {
+            $parsed = \App\Models\Shipment::parseShippingReference($data['shipping_reference']);
+            if ($parsed) {
+                $data['container_number'] = $parsed['container_number'];
+                $data['client_sequence'] = $parsed['container_seq_year'];
+                $data['total_shipment_sequence'] = $parsed['client_seq'];
+            }
+        }
+
         unset($data['single_receiver_name']);
         unset($data['single_receiver_phone']);
         unset($data['single_receiver_email']);
