@@ -25,6 +25,18 @@ class ShippingController extends Controller
     }
 
     /**
+     * Display shipping label view (for Brother QL-1110NWB printer)
+     * Label size: 4" x 6" (102mm x 152mm)
+     */
+    public function shippinglabel(Shipment $id)
+    {
+        $shipping = $id;
+        $shipping->load(['client', 'receivers.items.product', 'receivers.mcountry', 'receivers.mstate', 'receivers.mcity']);
+
+        return view('shipping-label', compact('shipping'));
+    }
+
+    /**
      * Display shipping invoice view (for printing)
      */
     public function shippinginvoice(Shipment $id)

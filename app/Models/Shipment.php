@@ -26,79 +26,162 @@ class Shipment extends Model
     // Automatically update related items after saving
     protected static function booted()
     {
+        // Before saving, sync the DB fields from the shipping_reference
+        static::saving(function ($shipping) {
+            if ($shipping->shipping_reference) {
+                $parsed = self::parseShippingReference($shipping->shipping_reference);
+                if ($parsed) {
+                    $shipping->container_number = $parsed['container_number'];
+                    $shipping->client_sequence = $parsed['container_seq_year'];
+                    $shipping->total_shipment_sequence = $parsed['client_seq'];
+                }
+            }
+        });
+
         static::saved(function ($shipping) {
             $shipping->updateItemsShipmentId();
         });
     }
 
     /**
-     * Generate shipping reference in format: CON(CN)-(Y)-(TC)-(TSY)
-     * CN = Container Number
-     * Y = 2-digit Year (from shipment date)
-     * TC = Total Clients served this year (2 digits with leading zero)
-     * TSY = Total Shipments this year (3 digits with leading zeros)
+     * Parse shipping reference to extract components
+     * Format: CON{N}-{YY}-C{CY}-{CS}
      *
-     * Example: CON2-26-04-004
+     * @param string $reference The shipping reference string
+     * @return array|null Array with container_number, year, container_seq_year, client_seq or null if invalid
+     */
+    public static function parseShippingReference(string $reference): ?array
+    {
+        // Pattern: CON49-25-C40-020 or CON49-25-C40-20
+        if (preg_match('/^CON(\d+)-(\d{2})-C(\d+)-(\d+)$/', $reference, $matches)) {
+            return [
+                'container_number' => (int) $matches[1],
+                'year' => $matches[2],
+                'container_seq_year' => (int) $matches[3],
+                'client_seq' => (int) $matches[4],
+            ];
+        }
+        return null;
+    }
+
+    /**
+     * Generate shipping reference in format: CON(CN)-(Y)-C(CY)-(CS)
+     * CN = Container Number (global, increments for new shipments, stays same for existing)
+     * Y = 2-digit Year (from shipment date)
+     * CY = Container sequence for the year (starts at 1 each year, increments for new containers)
+     * CS = Client sequence within that container (number of clients shipped in this container)
+     *
+     * Example: CON50-26-C1-1 means:
+     * - Container number 50
+     * - Year 2026
+     * - First container of 2026
+     * - First client in this container
      *
      * @param string $shipmentType 'new' or 'existing'
      * @param string|null $shipmentDate The shipment date to use for year calculation
      * @param string|null $excludeShipmentId Exclude this shipment from counts (for edits)
+     * @param string|null $existingShipmentId The existing shipment to use for container reference
      */
-    public static function generateShippingReference(string $shipmentType = 'new', ?string $shipmentDate = null, ?string $excludeShipmentId = null): array
-    {
+    public static function generateShippingReference(
+        string $shipmentType = 'new',
+        ?string $shipmentDate = null,
+        ?string $excludeShipmentId = null,
+        ?string $existingShipmentId = null
+    ): array {
         // Use provided shipment date or current date
         $date = $shipmentDate ? \Carbon\Carbon::parse($shipmentDate) : now();
         $currentYear = $date->format('Y');
         $yearShort = $date->format('y');
 
-        // Get the latest container number for that year
-        $latestContainerQuery = self::whereYear('shipped_at', $currentYear)
-            ->whereNotNull('container_number');
+        // Get the latest shipping reference to parse actual values
+        // This is more reliable than using DB fields which may have old/incorrect data
+        $latestShipmentQuery = self::whereNotNull('shipping_reference')
+            ->where('shipping_reference', 'like', 'CON%');
 
         if ($excludeShipmentId) {
-            $latestContainerQuery->where('id', '!=', $excludeShipmentId);
+            $latestShipmentQuery->where('id', '!=', $excludeShipmentId);
         }
 
-        $latestContainer = $latestContainerQuery->max('container_number') ?? 0;
+        // Find the highest container number by parsing all references
+        $allReferences = $latestShipmentQuery->pluck('shipping_reference')->toArray();
 
-        // Container number: increment for new shipment, keep same for existing
-        $containerNumber = $shipmentType === 'new' ? $latestContainer + 1 : $latestContainer;
-        if ($containerNumber === 0) $containerNumber = 1;
+        $maxContainerNumber = 0;
+        $maxContainerSeqThisYear = 0;
 
-        // Total clients served this year (unique clients) - this becomes the client sequence
-        $clientsQuery = self::whereYear('shipped_at', $currentYear);
-
-        if ($excludeShipmentId) {
-            $clientsQuery->where('id', '!=', $excludeShipmentId);
+        foreach ($allReferences as $ref) {
+            $parsed = self::parseShippingReference($ref);
+            if ($parsed) {
+                // Track highest global container number
+                if ($parsed['container_number'] > $maxContainerNumber) {
+                    $maxContainerNumber = $parsed['container_number'];
+                }
+                // Track highest container sequence for THIS year
+                if ($parsed['year'] === $yearShort && $parsed['container_seq_year'] > $maxContainerSeqThisYear) {
+                    $maxContainerSeqThisYear = $parsed['container_seq_year'];
+                }
+            }
         }
 
-        $clientsThisYear = $clientsQuery->distinct('client_id')->count('client_id');
-        $clientSequence = $clientsThisYear + 1;
+        if ($shipmentType === 'existing' && $existingShipmentId) {
+            // Use the existing shipment's container details
+            $existingShipment = self::find($existingShipmentId);
 
-        // Total shipments made this year
-        $shipmentsQuery = self::whereYear('shipped_at', $currentYear);
+            if ($existingShipment && $existingShipment->shipping_reference) {
+                $parsed = self::parseShippingReference($existingShipment->shipping_reference);
 
-        if ($excludeShipmentId) {
-            $shipmentsQuery->where('id', '!=', $excludeShipmentId);
+                if ($parsed) {
+                    $containerNumber = $parsed['container_number'];
+                    $containerSeqThisYear = $parsed['container_seq_year'];
+
+                    // Count how many shipments exist with the same container number and year
+                    $sameContainerRefs = array_filter($allReferences, function($ref) use ($containerNumber, $yearShort) {
+                        $p = self::parseShippingReference($ref);
+                        return $p && $p['container_number'] === $containerNumber && $p['year'] === $yearShort;
+                    });
+
+                    // Find the max client sequence in this container
+                    $maxClientSeq = 0;
+                    foreach ($sameContainerRefs as $ref) {
+                        $p = self::parseShippingReference($ref);
+                        if ($p && $p['client_seq'] > $maxClientSeq) {
+                            $maxClientSeq = $p['client_seq'];
+                        }
+                    }
+
+                    $shipmentSequence = $maxClientSeq + 1;
+                } else {
+                    // Fallback if parsing fails
+                    $containerNumber = $maxContainerNumber > 0 ? $maxContainerNumber : 1;
+                    $containerSeqThisYear = $maxContainerSeqThisYear > 0 ? $maxContainerSeqThisYear : 1;
+                    $shipmentSequence = 1;
+                }
+            } else {
+                // Fallback if existing shipment not found
+                $containerNumber = $maxContainerNumber > 0 ? $maxContainerNumber : 1;
+                $containerSeqThisYear = $maxContainerSeqThisYear > 0 ? $maxContainerSeqThisYear : 1;
+                $shipmentSequence = 1;
+            }
+        } else {
+            // New shipment = new container
+            $containerNumber = $maxContainerNumber + 1;
+            $containerSeqThisYear = $maxContainerSeqThisYear + 1;
+            $shipmentSequence = 1; // First client in new container
         }
 
-        $totalShipmentsThisYear = $shipmentsQuery->count();
-        $shipmentSequence = $totalShipmentsThisYear + 1;
-
-        // Format: CON(CN)-(Y)-(TC)-(TSY) e.g. CON2-26-04-004
+        // Format: CON(CN)-(Y)-C(CY)-(CS) e.g. CON50-26-C41-001
         $reference = sprintf(
-            'CON%d-%s-%02d-%03d',
+            'CON%d-%s-C%d-%03d',
             $containerNumber,
             $yearShort,
-            $clientSequence,
+            $containerSeqThisYear,
             $shipmentSequence
         );
 
         return [
             'reference' => $reference,
             'container_number' => $containerNumber,
-            'client_sequence' => $clientSequence,
-            'total_shipment_sequence' => $shipmentSequence,
+            'client_sequence' => $containerSeqThisYear, // Container sequence for the year
+            'total_shipment_sequence' => $shipmentSequence, // Client sequence in container
         ];
     }
 

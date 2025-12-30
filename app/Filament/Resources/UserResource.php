@@ -27,6 +27,8 @@ class UserResource extends Resource
 
     protected static bool $isScopedToTenant = false;
 
+    protected static ?int $navigationSort = 8;
+
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()

@@ -92,6 +92,11 @@ protected function getSavedNotification(): ?Notification
                     ->label('View Invoice')
                     ->url(route('shipping-invoice-pdf', $shipment->id))
                     ->openUrlInNewTab(),
+                \Filament\Notifications\Actions\Action::make('print_label')
+                    ->label('Print Shipping Label')
+                    ->url(route('shipping-label', $shipment->id))
+                    ->openUrlInNewTab()
+                    ->color('warning'),
             ])
             ->persistent()
             ->send();

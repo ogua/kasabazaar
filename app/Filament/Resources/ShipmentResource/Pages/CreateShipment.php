@@ -128,6 +128,32 @@ class CreateShipment extends CreateRecord
                                 ->dehydrated(false)
                                 ->native(false)
                                 ->visible(fn (string $operation): bool => $operation === 'create')
+                                ->afterStateUpdated(fn (callable $set) => $set('existing_shipment_id', null))
+                                ->columnSpan(1),
+
+                            Forms\Components\Select::make('existing_shipment_id')
+                                ->label('Select Existing Container/Shipment')
+                                ->placeholder('Choose an existing container to add to')
+                                ->options(function () {
+                                    // Get recent shipments with their container info, grouped by container
+                                    return \App\Models\Shipment::whereNotNull('container_number')
+                                        ->whereNotNull('shipping_reference')
+                                        ->orderBy('created_at', 'desc')
+                                        ->limit(50)
+                                        ->get()
+                                        ->mapWithKeys(fn ($shipment) => [
+                                            $shipment->id => $shipment->shipping_reference . ' - ' . ($shipment->client?->name ?? 'Unknown')
+                                        ]);
+                                })
+                                ->searchable()
+                                ->preload()
+                                ->live()
+                                ->dehydrated(false)
+                                ->visible(fn ($get, string $operation): bool =>
+                                    $operation === 'create' && $get('shipment_type') === 'existing'
+                                )
+                                ->required(fn ($get): bool => $get('shipment_type') === 'existing')
+                                ->helperText('Select the container/shipment you want to add this client to')
                                 ->columnSpan(1),
 
                             Forms\Components\TextInput::make('shipping_reference')
@@ -139,7 +165,9 @@ class CreateShipment extends CreateRecord
                                     ? 'Will be generated from shipment date after saving'
                                     : 'You can edit this reference if needed')
                                 ->columnSpanFull(fn (string $operation): bool => $operation === 'edit')
-                                ->columnSpan(1),
+                                ->columnSpan(fn ($get, string $operation): int =>
+                                    $operation === 'create' && $get('shipment_type') === 'existing' ? 2 : 1
+                                ),
                         ])
                         ->columns(2),
 
@@ -169,7 +197,7 @@ class CreateShipment extends CreateRecord
                     Forms\Components\Section::make('Shipping Route')
                         ->schema([
                             Forms\Components\Select::make('origin_branch_id')
-                                ->label('From')
+                                ->label('Shipping From (State)')
                                 ->required()
                                 ->options([
                                     'Michigan' => 'Michigan',
@@ -199,6 +227,7 @@ class CreateShipment extends CreateRecord
                                     'Ghana' => 'Ghana',
                                     'Others' => 'Others',
                                 ])
+                                ->default('Ghana')
                                 ->searchable()
                                 ->native(false),
                         ])
@@ -833,7 +862,14 @@ class CreateShipment extends CreateRecord
         // Generate shipping reference using the shipped_at date
         $shipmentType = $this->data['shipment_type'] ?? 'new';
         $shippedAt = $data['shipped_at'] ?? now();
-        $refData = \App\Models\Shipment::generateShippingReference($shipmentType, $shippedAt);
+        $existingShipmentId = $this->data['existing_shipment_id'] ?? null;
+
+        $refData = \App\Models\Shipment::generateShippingReference(
+            $shipmentType,
+            $shippedAt,
+            null, // excludeShipmentId (not editing)
+            $existingShipmentId // existing shipment to use for container reference
+        );
 
         $data['shipping_reference'] = $refData['reference'];
         $data['container_number'] = $refData['container_number'];
@@ -922,15 +958,27 @@ class CreateShipment extends CreateRecord
             ]);
         }
 
-        Notification::make()
+    }
+
+
+    protected function getCreatedNotification(): ?Notification
+    {
+        $shipment = $this->getRecord();
+
+        return Notification::make()
             ->title('Shipment Created!')
-            ->body("Tracking: {$shipment->tracking_number}")
+            ->body("Tracking: {$shipment->tracking_number} | Ref: {$shipment->shipping_reference}")
             ->success()
             ->actions([
                 \Filament\Notifications\Actions\Action::make('download_pdf')
                     ->label('View Invoice')
                     ->url(route('shipping-invoice-pdf', $shipment->id))
                     ->openUrlInNewTab(),
+                \Filament\Notifications\Actions\Action::make('print_label')
+                    ->label('Print Shipping Label')
+                    ->url(route('shipping-label', $shipment->id))
+                    ->openUrlInNewTab()
+                    ->color('warning'),
             ])
             ->persistent()
             ->send();

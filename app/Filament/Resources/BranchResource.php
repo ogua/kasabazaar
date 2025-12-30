@@ -2,16 +2,16 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\BranchResource\Pages;
-use App\Filament\Resources\BranchResource\RelationManagers;
-use App\Models\Branch;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables;
+use App\Models\Branch;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Filament\Resources\Resource;
 use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Resources\BranchResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Resources\BranchResource\RelationManagers;
 
 class BranchResource extends Resource
 {
@@ -19,7 +19,7 @@ class BranchResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-home-modern';
 
-    protected static ?int $sort = 1;
+    protected static ?int $navigationSort = 2;
 
     protected static bool $isScopedToTenant = false;
 

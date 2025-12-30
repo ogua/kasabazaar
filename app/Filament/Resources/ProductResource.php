@@ -23,6 +23,7 @@ class ProductResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     //protected static ?int $sort = 2;
+    protected static ?int $navigationSort = 6;
 
     protected static bool $isScopedToTenant = false;
 

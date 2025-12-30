@@ -2,28 +2,30 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\QuotationResource\Pages;
-use App\Filament\Resources\QuotationResource\RelationManagers;
+use Filament\Forms;
+use Filament\Tables;
 use App\Models\Client;
 use App\Models\Product;
-use App\Models\Quotation;
-use Filament\Forms;
 use Filament\Forms\Form;
+use App\Models\Quotation;
+use Filament\Tables\Table;
+use Filament\Resources\Resource;
+use Illuminate\Database\Eloquent\Builder;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\RepeatableEntry;
-use Filament\Infolists\Components\TextEntry;
-use Filament\Resources\Resource;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
-use Illuminate\Database\Eloquent\Builder;
+use App\Filament\Resources\QuotationResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Resources\QuotationResource\RelationManagers;
+use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 
 class QuotationResource extends Resource
 {
     protected static ?string $model = Quotation::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
+
+    protected static ?int $navigationSort = 7;
 
     public static function form(Form $form): Form
     {

@@ -43,6 +43,8 @@ class ShipmentResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-truck';
 
+    protected static ?int $navigationSort = 1;
+
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->orderBy('created_at', 'desc');
@@ -83,7 +85,7 @@ class ShipmentResource extends Resource
                         Forms\Components\Section::make('Shipping Route')
                             ->schema([
                                 Forms\Components\Select::make('origin_branch_id')
-                                    ->label('From')
+                                    ->label('Shipping From (State)')
                                     ->required()
                                     ->options([
                                         'Michigan' => 'Michigan',
@@ -114,6 +116,7 @@ class ShipmentResource extends Resource
                                         'Others' => 'Others',
                                     ])
                                     ->searchable()
+                                    ->default('Ghana')
                                     ->native(false),
                             ])
                             ->columns(2),
@@ -785,6 +788,12 @@ class ShipmentResource extends Resource
                             ->color('warning')
                             ->icon('heroicon-m-inbox-stack')
                             ->url(fn($record) => route('packing-slip', $record->id), shouldOpenInNewTab: true),
+
+                        Tables\Actions\Action::make('Print Label')
+                            ->label('Print Shipping Label')
+                            ->color('gray')
+                            ->icon('heroicon-m-tag')
+                            ->url(fn($record) => route('shipping-label', $record->id), shouldOpenInNewTab: true),
 
                         Tables\Actions\Action::make('payments')
                             ->label('Payments')

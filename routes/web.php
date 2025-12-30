@@ -45,6 +45,9 @@ Route::get('/news/{slug}',[WebController::class,'blogDetails'])
 Route::get('/packing-slip/{id}',[ShippingController::class,'packingslip'])
 ->name('packing-slip');
 
+Route::get('/shipping-label/{id}',[ShippingController::class,'shippinglabel'])
+->name('shipping-label');
+
 Route::get('/shipping-invoice/{id}',[ShippingController::class,'shippinginvoice'])
 ->name('shipping-invoice');
 
