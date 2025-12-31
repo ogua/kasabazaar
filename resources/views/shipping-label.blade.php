@@ -341,7 +341,7 @@
                 <div class="address-block from">
                     <div class="address-label">From</div>
                     <div class="address-name">{{ $shipping->client?->name ?? 'N/A' }}</div>
-                    <div class="address-details">{{ $shipping->origin_branch_id }}, USA @if($shipping->client?->phone) | {{ $shipping->client->phone }}@endif</div>
+                    <div class="address-details">{{ $shipping->origin_branch_id }}, USA </div>
                 </div>
 
                 <!-- To Address -->
@@ -351,9 +351,9 @@
                     <div class="address-details">
                         @if($receiver->address){{ $receiver->address }}, @endif{{ $receiver->mcity?->name ?? '' }}{{ $receiver->mcity && $receiver->mstate ? ', ' : '' }}{{ $receiver->mstate?->name ?? '' }}, {{ $receiver->mcountry?->name ?? $shipping->destination_branch_id }}
                     </div>
-                    @if($receiver->receiver_phone)
+                    {{-- @if($receiver->receiver_phone)
                     <div class="address-phone">Tel: {{ $receiver->receiver_phone }}</div>
-                    @endif
+                    @endif --}}
                 </div>
             </div>
 
