@@ -137,12 +137,13 @@ class ProductResource extends Resource
                     ->numeric()
                     ->sortable(),
 
-                // Tables\Columns\TextColumn::make('value')
-                //     ->numeric()
-                //     ->sortable(),
-                TextInputColumn::make('value')
+                Tables\Columns\TextColumn::make('value')
                     ->numeric()
                     ->sortable(),
+
+                // TextInputColumn::make('value')
+                //     ->numeric()
+                //     ->sortable(),
 
                 // Tables\Columns\TextColumn::make('branch_id')
                 //     ->searchable(),
