@@ -142,7 +142,7 @@ class CreateShipment extends CreateRecord
                                         ->limit(50)
                                         ->get()
                                         ->mapWithKeys(fn ($shipment) => [
-                                            $shipment->id => $shipment->shipping_reference . ' - ' . ($shipment->client?->name ?? 'Unknown')
+                                            $shipment->id => $shipment->shipping_reference
                                         ]);
                                 })
                                 ->searchable()

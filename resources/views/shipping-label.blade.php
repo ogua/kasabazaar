@@ -97,7 +97,7 @@
         /* Header */
         .label-header {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
             border-bottom: 2px solid #000;
             padding-bottom: 4px;
@@ -120,7 +120,8 @@
             font-size: 9px;
             font-weight: bold;
             color: #000;
-            max-width: 180px;
+            max-widtth: 180px;
+            text-align: center;
             line-height: 1.1;
         }
 
@@ -201,13 +202,13 @@
         }
 
         .address-name {
-            font-size: 11px;
+            font-size: 15px;
             font-weight: bold;
             color: #000;
         }
 
         .address-details {
-            font-size: 8px;
+            font-size: 10px;
             color: #333;
             line-height: 1.2;
         }
@@ -322,16 +323,12 @@
                     <img src="/images/kasabazaar-logo.png" alt="Logo" class="company-logo">
                     <div class="company-name">Rose Door to Door Shipping and Delivery Services</div>
                 </div>
-                <div class="reference-box">
-                    <div class="reference-label">Ref</div>
-                    <div class="reference-number">{{ $shipping->shipping_reference }}</div>
-                </div>
             </div>
 
             <!-- Tracking Section -->
             <div class="tracking-section">
                 <div class="tracking-label">Tracking Number</div>
-                <div class="tracking-number">{{ $shipping->tracking_number }}</div>
+                <div class="tracking-number">{{ $shipping->shipping_reference }}</div>
                 <div class="barcode-placeholder">*{{ $shipping->tracking_number }}*</div>
             </div>
 
@@ -391,6 +388,12 @@
                 <div class="info-item">
                     <div class="info-label">Date</div>
                     <div class="info-value">{{ $shipping->shipped_at ? \Carbon\Carbon::parse($shipping->shipped_at)->format('m/d/y') : now()->format('m/d/y') }}</div>
+                </div>
+            </div>
+            <div class="shipment-info">
+                <div class="info-item">
+                    <div class="info-label">Tel:</div>
+                    <div class="info-value"> +1 (773) 970-0129 / +1 (574) 440-7460</div>
                 </div>
             </div>
 
