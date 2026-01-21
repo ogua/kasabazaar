@@ -11,6 +11,8 @@ class Payment extends Model
 {
     use HasUuids;
 
+    protected $guarded = ['id'];
+
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);

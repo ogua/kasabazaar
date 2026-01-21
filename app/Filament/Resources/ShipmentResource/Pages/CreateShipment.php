@@ -572,32 +572,64 @@ class CreateShipment extends CreateRecord
                         //->visible(fn($get) => $get('receiver_mode') === 'multiple'),
                 ]),
 
-            // Step 3: Payment (Only on Edit)
+            // Step 3: Payment
             Wizard\Step::make('Payment')
                 ->icon('heroicon-o-banknotes')
                 ->description('Record payments')
-                ->hidden()
-                //->visible(fn($operation) => $operation === 'edit')
                 ->schema([
+                    Forms\Components\Section::make('Amount Summary')
+                        ->schema([
+                            Forms\Components\Grid::make(3)
+                                ->schema([
+                                    Forms\Components\Placeholder::make('subtotal_summary')
+                                        ->label('Subtotal')
+                                        ->content(fn($get) => '$' . number_format((float)($get('shipping_cost') ?? 0), 2)),
+
+                                    Forms\Components\Placeholder::make('total_summary')
+                                        ->label('Total Due')
+                                        ->content(fn($get) => '$' . number_format((float)($get('total') ?? 0), 2))
+                                        ->extraAttributes(['class' => 'text-lg font-bold']),
+
+                                    Forms\Components\Placeholder::make('payments_summary')
+                                        ->label('Payments Added')
+                                        ->content(function ($get) {
+                                            $payments = $get('Payments') ?? [];
+                                            $totalPayments = collect($payments)->sum(fn($p) => (float)($p['amount'] ?? 0));
+                                            return '$' . number_format($totalPayments, 2);
+                                        })
+                                        ->live()
+                                        ->extraAttributes(['class' => 'text-success-600 font-bold']),
+                                ]),
+                        ])
+                        ->collapsible(),
+
                     Forms\Components\Section::make('Payment Records')
+                        ->description('Add payments received for this shipment (optional - you can add payments later)')
                         ->schema([
                             Forms\Components\Repeater::make('Payments')
                                 ->label('')
                                 ->relationship('payments')
                                 ->addActionLabel('+ Add Payment')
                                 ->defaultItems(0)
+                                ->live()
+                                ->collapsible()
+                                ->itemLabel(fn(array $state): ?string =>
+                                    isset($state['paying_method']) && isset($state['amount'])
+                                        ? $state['paying_method'] . ' - $' . number_format((float)$state['amount'], 2)
+                                        : 'New Payment'
+                                )
                                 ->schema([
                                     Forms\Components\Grid::make(3)
                                         ->schema([
                                             Forms\Components\Hidden::make('branch_id')->default(Filament::getTenant()->id),
 
                                             Forms\Components\DateTimePicker::make('paid_on')
-                                                ->label('Date')
+                                                ->label('Payment Date')
                                                 ->default(now())
                                                 ->required(),
 
                                             Forms\Components\Select::make('paying_method')
-                                                ->label('Method')
+                                                ->label('Payment Method')
                                                 ->options([
                                                     'CASH' => 'Cash',
                                                     'Zelle' => 'Zelle',
@@ -616,33 +648,60 @@ class CreateShipment extends CreateRecord
                                                 ->label('Amount')
                                                 ->numeric()
                                                 ->prefix('$')
+                                                ->live(onBlur: true)
                                                 ->required(),
                                         ]),
 
                                     Forms\Components\Grid::make(2)
                                         ->schema([
                                             Forms\Components\TextInput::make('bankname')
-                                                ->label('Bank')
+                                                ->label('Bank Name')
                                                 ->visible(fn($get): bool => $get('paying_method') === 'BANK TRANSFER'),
 
                                             Forms\Components\TextInput::make('accountnumber')
-                                                ->label('Account #')
+                                                ->label('Account Number')
                                                 ->visible(fn($get): bool => $get('paying_method') === 'BANK TRANSFER'),
 
                                             Forms\Components\TextInput::make('cheque_no')
-                                                ->label('Cheque #')
+                                                ->label('Cheque Number')
                                                 ->visible(fn($get): bool => $get('paying_method') === 'CHEQUE')
                                                 ->columnSpanFull(),
                                         ]),
 
                                     Forms\Components\Hidden::make('user_id')->default(fn() => FacadesAuth::user()->id),
                                     Forms\Components\Hidden::make('change')->default(0),
-                                    Forms\Components\Hidden::make('payment_ref')->default(fn() => 'REF:' . date('YmdHis')),
+                                    Forms\Components\Hidden::make('payment_ref')->default(fn() => 'PAY-' . strtoupper(bin2hex(random_bytes(4)))),
+                                    Forms\Components\Hidden::make('payment_type')->default('credit'),
 
                                     Forms\Components\Textarea::make('payment_note')
-                                        ->label('Notes')
+                                        ->label('Payment Notes')
                                         ->rows(1)
                                         ->columnSpanFull(),
+                                ]),
+
+                            // Payment totals
+                            Forms\Components\Grid::make(2)
+                                ->schema([
+                                    Forms\Components\Placeholder::make('payment_total')
+                                        ->label('Total Payments')
+                                        ->content(function ($get) {
+                                            $payments = $get('Payments') ?? [];
+                                            $totalPayments = collect($payments)->sum(fn($p) => (float)($p['amount'] ?? 0));
+                                            return '$' . number_format($totalPayments, 2);
+                                        })
+                                        ->live(),
+
+                                    Forms\Components\Placeholder::make('balance_due')
+                                        ->label('Balance Due')
+                                        ->content(function ($get) {
+                                            $total = (float)($get('total') ?? 0);
+                                            $payments = $get('Payments') ?? [];
+                                            $totalPayments = collect($payments)->sum(fn($p) => (float)($p['amount'] ?? 0));
+                                            $balance = $total - $totalPayments;
+                                            return '$' . number_format($balance, 2);
+                                        })
+                                        ->live()
+                                        ->extraAttributes(['class' => 'text-lg font-bold']),
                                 ]),
                         ]),
                 ]),
@@ -929,14 +988,32 @@ class CreateShipment extends CreateRecord
 
         $shipment->total = $amountopay;
         $shipment->paid = $paid;
+
+        // Update payment status based on payments
+        if ($paid >= $amountopay && $amountopay > 0) {
+            $shipment->payment_status = 'paid';
+        } elseif ($paid > 0) {
+            $shipment->payment_status = 'partial';
+        } else {
+            $shipment->payment_status = 'pending';
+        }
+
         $shipment->save();
 
         $left = $amountopay - $paid;
 
+        // Determine invoice status
+        $invoiceStatus = 'pending';
+        if ($paid >= $amountopay && $amountopay > 0) {
+            $invoiceStatus = 'paid';
+        } elseif ($paid > 0) {
+            $invoiceStatus = 'partial';
+        }
+
         Invoice::create([
             'shipment_id' => $shipment->id,
             'total_amount' => $shipment->total,
-            'status' => $left < 1 ? 'paid' : 'partial',
+            'status' => $invoiceStatus,
         ]);
 
         ShipmentUpdate::create([

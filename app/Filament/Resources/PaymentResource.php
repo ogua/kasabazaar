@@ -100,54 +100,131 @@ class PaymentResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('shipment.shipping_reference')
+                    ->label('Shipment Ref')
+                    ->searchable()
+                    ->badge()
+                    ->color('info')
+                    ->url(fn($record) => $record->shipment_id
+                        ? \App\Filament\Resources\ShipmentResource::getUrl('edit', ['record' => $record->shipment_id])
+                        : null),
+
                 Tables\Columns\TextColumn::make('shipment.client.name')
-                ->label('Client')
-                ->searchable(),
+                    ->label('Client')
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('payment_ref')
-                    ->searchable(),
+                    ->label('Payment Ref')
+                    ->searchable()
+                    ->copyable(),
 
                 Tables\Columns\TextColumn::make('paying_method')
+                    ->label('Method')
                     ->searchable()
-                    ->badge(),
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'CASH' => 'success',
+                        'Zelle', 'Cash App' => 'info',
+                        'BANK TRANSFER' => 'primary',
+                        'CREDIT/DEBIT CARD' => 'warning',
+                        'CHEQUE' => 'gray',
+                        'PAYPAL' => 'info',
+                        'WAIVED' => 'danger',
+                        default => 'gray',
+                    }),
 
                 Tables\Columns\TextColumn::make('bankname')
-                    ->label('Bank name')
-                    ->description(fn($record) => $record->cheque_no)
-                    ->searchable(),
-                // Tables\Columns\TextColumn::make('cheque_no')
-                // ->searchable(),
+                    ->label('Bank/Details')
+                    ->description(fn($record) => $record->cheque_no ? 'Cheque: ' . $record->cheque_no : null)
+                    ->searchable()
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('amount')
                     ->numeric()
                     ->badge()
-                    ->prefix('$')
+                    ->color('success')
+                    ->formatStateUsing(fn($state) => '$' . number_format($state, 2))
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('paid_on')
-                    ->dateTime()
+                    ->label('Payment Date')
+                    ->dateTime('M d, Y H:i')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('enteredby.name')
-                ->label('Recorded By')
-                ->badge()
-                ->color('info')
-                ->placeholder('Online Payment')
-                ->searchable(),
+                    ->label('Recorded By')
+                    ->badge()
+                    ->color('info')
+                    ->placeholder('Online Payment')
+                    ->searchable()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('updated_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('paying_method')
+                    ->label('Payment Method')
+                    ->options([
+                        'CASH' => 'Cash',
+                        'Zelle' => 'Zelle',
+                        'Cash App' => 'Cash App',
+                        'BANK TRANSFER' => 'Bank Transfer',
+                        'CREDIT/DEBIT CARD' => 'Card',
+                        'CHEQUE' => 'Cheque',
+                        'PAYPAL' => 'PayPal',
+                        'WAIVED' => 'Waived',
+                    ]),
+                Tables\Filters\Filter::make('paid_on')
+                    ->form([
+                        Forms\Components\DatePicker::make('from')
+                            ->label('From Date'),
+                        Forms\Components\DatePicker::make('until')
+                            ->label('Until Date'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['from'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('paid_on', '>=', $date),
+                            )
+                            ->when(
+                                $data['until'],
+                                fn(Builder $query, $date): Builder => $query->whereDate('paid_on', '<=', $date),
+                            );
+                    }),
             ])
             ->actions([
-                //Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()
+                    ->modalWidth('lg'),
+                Tables\Actions\DeleteAction::make()
+                    ->after(function ($record) {
+                        // Update shipment totals after deleting payment
+                        if ($record->shipment) {
+                            $shipment = $record->shipment;
+                            $totalPaid = $shipment->payments()->sum('amount');
+                            $shipment->paid = $totalPaid;
+
+                            if ($totalPaid >= $shipment->total && $shipment->total > 0) {
+                                $shipment->payment_status = 'paid';
+                            } elseif ($totalPaid > 0) {
+                                $shipment->payment_status = 'partial';
+                            } else {
+                                $shipment->payment_status = 'pending';
+                            }
+
+                            $shipment->save();
+
+                            // Update invoice status
+                            if ($shipment->invoice) {
+                                $shipment->invoice->update([
+                                    'status' => $shipment->payment_status,
+                                ]);
+                            }
+                        }
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

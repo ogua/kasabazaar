@@ -65,21 +65,36 @@ class EditShipment extends EditRecord
 
     protected function afterSave(): void
     {
-        $records = $this->getRecord();
+        $shipment = $this->getRecord();
 
-       // $amountopay = $records->items->sum('item_cost');
-        $amountopay = $records->total;
-        $paid = $records->payments->sum('amount');
+        $amountopay = $shipment->total;
+        $paid = $shipment->payments->sum('amount');
 
-        $records->total = $amountopay;
-        $records->paid = $paid;
-        $records->save();
+        $shipment->total = $amountopay;
+        $shipment->paid = $paid;
 
-        $left = $amountopay - $paid;
+        // Update payment status based on payments
+        if ($paid >= $amountopay && $amountopay > 0) {
+            $shipment->payment_status = 'paid';
+        } elseif ($paid > 0) {
+            $shipment->payment_status = 'partial';
+        } else {
+            $shipment->payment_status = 'pending';
+        }
 
-        Invoice::where('shipment_id', $records->id)->update([
-            'total_amount' => $records->total,
-            'status' => $left < 1 ? 'paid' : 'unpaid',
+        $shipment->save();
+
+        // Determine invoice status
+        $invoiceStatus = 'pending';
+        if ($paid >= $amountopay && $amountopay > 0) {
+            $invoiceStatus = 'paid';
+        } elseif ($paid > 0) {
+            $invoiceStatus = 'partial';
+        }
+
+        Invoice::where('shipment_id', $shipment->id)->update([
+            'total_amount' => $shipment->total,
+            'status' => $invoiceStatus,
         ]);
     }
 
