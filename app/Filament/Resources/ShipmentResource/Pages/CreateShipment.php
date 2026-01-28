@@ -161,13 +161,10 @@ class CreateShipment extends CreateRecord
                                 ->placeholder('Auto-generated on save')
                                 ->disabled(fn (string $operation): bool => $operation === 'create')
                                 ->dehydrated()
-                                ->helperText(fn (string $operation): string => $operation === 'create'
-                                    ? 'Will be generated from shipment date after saving'
-                                    : 'You can edit this reference if needed')
-                                ->columnSpanFull(fn (string $operation): bool => $operation === 'edit')
-                                ->columnSpan(fn ($get, string $operation): int =>
-                                    $operation === 'create' && $get('shipment_type') === 'existing' ? 2 : 1
-                                ),
+                                // ->helperText(fn (string $operation): string => $operation === 'create'
+                                //     ? 'Will be generated from shipment date after saving'
+                                //     : 'You can edit this reference if needed')
+                                ->columnSpanFull(),
                         ])
                         ->columns(2),
 

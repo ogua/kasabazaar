@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d6b119bc40aaa133c434b488b298ede4",
+    "content-hash": "13a359592704bf738aebc197d9cbb4d3",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -9821,6 +9821,82 @@
                 "source": "https://github.com/webmozarts/assert/tree/1.11.0"
             },
             "time": "2022-06-03T18:03:27+00:00"
+        },
+        {
+            "name": "worksome/exchange",
+            "version": "v2.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/worksome/exchange.git",
+                "reference": "e135d8af3483d8b6199f964d506a17d9c1cb6664"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/worksome/exchange/zipball/e135d8af3483d8b6199f964d506a17d9c1cb6664",
+                "reference": "e135d8af3483d8b6199f964d506a17d9c1cb6664",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/contracts": "^11.0 || ^12.0",
+                "nunomaduro/termwind": "^2.0",
+                "php": "^8.2",
+                "spatie/laravel-package-tools": "^1.19"
+            },
+            "require-dev": {
+                "guzzlehttp/guzzle": "^7.5",
+                "larastan/larastan": "^3.1",
+                "nunomaduro/collision": "^7.10 || ^8.1.1",
+                "orchestra/testbench": "^9.12 || ^10.1",
+                "pestphp/pest": "^3.7",
+                "pestphp/pest-plugin-laravel": "^3.1",
+                "worksome/coding-style": "^3.2"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "Exchange": "Worksome\\Exchange\\Facades\\Exchange"
+                    },
+                    "providers": [
+                        "Worksome\\Exchange\\ExchangeServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Worksome\\Exchange\\": "src",
+                    "Worksome\\Exchange\\Database\\Factories\\": "database/factories"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Luke Downing",
+                    "email": "lukeraymonddowning@gmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Check Exchange Rates for any currency in Laravel.",
+            "homepage": "https://github.com/worksome/exchange",
+            "keywords": [
+                "exchange",
+                "laravel",
+                "worksome"
+            ],
+            "support": {
+                "issues": "https://github.com/worksome/exchange/issues",
+                "source": "https://github.com/worksome/exchange/tree/v2.2.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/worksome",
+                    "type": "github"
+                }
+            ],
+            "time": "2025-03-12T15:23:01+00:00"
         },
         {
             "name": "ysfkaya/filament-phone-input",

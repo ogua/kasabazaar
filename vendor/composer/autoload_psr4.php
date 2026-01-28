@@ -9,6 +9,8 @@ return array(
     'voku\\' => array($vendorDir . '/voku/portable-ascii/src/voku'),
     'libphonenumber\\' => array($vendorDir . '/giggsey/libphonenumber-for-php-lite/src'),
     'Ysfkaya\\FilamentPhoneInput\\' => array($vendorDir . '/ysfkaya/filament-phone-input/src'),
+    'Worksome\\Exchange\\Database\\Factories\\' => array($vendorDir . '/worksome/exchange/database/factories'),
+    'Worksome\\Exchange\\' => array($vendorDir . '/worksome/exchange/src'),
     'Whoops\\' => array($vendorDir . '/filp/whoops/src/Whoops'),
     'Webmozart\\Assert\\' => array($vendorDir . '/webmozart/assert/src'),
     'Unicodeveloper\\Paystack\\' => array($vendorDir . '/unicodeveloper/laravel-paystack/src'),

@@ -22,6 +22,7 @@
         "spatie/laravel-sitemap": "^7.3",
         "swisnl/filament-backgrounds": "^1.1",
         "unicodeveloper/laravel-paystack": "^1.2",
+        "worksome/exchange": "^2.2",
         "ysfkaya/filament-phone-input": "^3.1"
     },
     "require-dev": {
