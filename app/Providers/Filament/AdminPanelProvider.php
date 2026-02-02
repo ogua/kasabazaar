@@ -100,6 +100,18 @@ class AdminPanelProvider extends PanelProvider
                     ->shouldShowBrowserSessionsForm()
                     ->shouldShowAvatarForm(),
             ])
+            ->navigationGroups([
+                'Fleet Management',
+                'Finance',
+                'Payroll',
+                'Staff Management',
+                'Messaging',
+                'Customer Feedback',
+                'Reports',
+                'Website',
+                'Roles & Permissions',
+
+            ])
             ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn(): View => view('admin.staff-login-btn'))
             ->userMenuItems([
                 'profile' => MenuItem::make()

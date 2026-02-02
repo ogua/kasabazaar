@@ -278,6 +278,74 @@ class Shipment extends Model
         return $this->hasMany(ShipmentMessage::class, "shipment_id");
     }
 
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class, "shipment_id");
+    }
+
+    public function incomes(): HasMany
+    {
+        return $this->hasMany(Income::class, "shipment_id");
+    }
+
+    public function trips()
+    {
+        return $this->belongsToMany(Trip::class, 'trip_shipments')
+            ->withPivot(['delivery_status', 'delivery_notes', 'delivered_at', 'receiver_signature'])
+            ->withTimestamps();
+    }
+
+    /**
+     * Get total expenses in USD for this shipment
+     */
+    public function getTotalExpensesUsdAttribute(): float
+    {
+        return $this->expenses()->sum('amount_usd');
+    }
+
+    /**
+     * Get total expenses in GHS for this shipment
+     */
+    public function getTotalExpensesGhsAttribute(): float
+    {
+        return $this->expenses()->sum('amount_ghs');
+    }
+
+    /**
+     * Get net profit (revenue - expenses) in USD
+     */
+    public function getNetProfitUsdAttribute(): float
+    {
+        return $this->total - $this->total_expenses_usd;
+    }
+
+    /**
+     * Scope for filtering by container number (e.g., CON51)
+     */
+    public function scopeByContainer($query, string $containerNumber)
+    {
+        return $query->where('shipping_reference', 'like', "{$containerNumber}-%");
+    }
+
+    /**
+     * Scope for filtering by year
+     */
+    public function scopeByYear($query, int $year)
+    {
+        $yearSuffix = substr((string) $year, -2);
+        return $query->where('shipping_reference', 'like', "%-{$yearSuffix}-%");
+    }
+
+    /**
+     * Scope for filtering by container sequence (e.g., C2)
+     */
+    public function scopeByContainerSequence($query, int $year, int $sequence)
+    {
+        $yearSuffix = substr((string) $year, -2);
+        $seqCode = "C{$sequence}";
+        return $query->where('shipping_reference', 'like', "%-{$yearSuffix}-{$seqCode}-%");
+    }
+
     // Custom method to update shipment_id for related items
     public function updateItemsShipmentId()
     {

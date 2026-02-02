@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources\StaffResource\Pages;
 
-use App\Filament\Resources\StaffResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
+use App\Filament\Resources\StaffResource;
 
 class EditStaff extends EditRecord
 {
@@ -15,5 +15,10 @@ class EditStaff extends EditRecord
         return [
             Actions\DeleteAction::make(),
         ];
+    }
+
+        protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
     }
 }

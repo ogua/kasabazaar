@@ -28,6 +28,16 @@ class Branch extends Model
         return $this->hasMany(Client::class);
     }
 
+    public function staff(): HasMany
+    {
+        return $this->hasMany(Client::class);
+    }
+
+    public function vehicles(): HasMany
+    {
+        return $this->hasMany(Vehicle::class);
+    }
+
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
@@ -44,5 +54,30 @@ class Branch extends Model
 
     public function messageTemplates(){
         return $this->hasMany(MessageTemplate::class);
+    }
+
+    public function trips(): HasMany
+    {
+        return $this->hasMany(Trip::class);
+    }
+
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
+
+    public function payroll(): HasMany
+    {
+        return $this->hasMany(PayrollEntry::class);
+    }
+
+    // public function notifications(): HasMany
+    // {
+    //     return $this->hasMany(Notification::class);
+    // }
+
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class);
     }
 }
