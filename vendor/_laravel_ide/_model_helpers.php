@@ -4862,6 +4862,7 @@ namespace App\Models {
      * @property string $from_currency
      * @property string $id
      * @property-read \App\Models\User $recordedBy
+     * @property-read \App\Models\Branch $branch
      * @method static \Illuminate\Database\Eloquent\Builder<ExchangeRateLog>|ExchangeRateLog whereId($value)
      * @method static \Illuminate\Database\Eloquent\Builder<ExchangeRateLog>|ExchangeRateLog whereFromCurrency($value)
      * @method static \Illuminate\Database\Eloquent\Builder<ExchangeRateLog>|ExchangeRateLog whereToCurrency($value)
@@ -6780,7 +6781,7 @@ namespace App\Models {
      *
      * @property \Illuminate\Support\Carbon|null $updated_at
      * @property \Illuminate\Support\Carbon|null $created_at
-     * @property mixed $status
+     * @property string|null $status
      * @property float $total_amount
      * @property string $shipment_id
      * @property string $id
@@ -7724,7 +7725,7 @@ namespace App\Models {
      * @property \Illuminate\Support\Carbon|null $updated_at
      * @property \Illuminate\Support\Carbon|null $created_at
      * @property string|null $accountnumber
-     * @property string|null $paid_on
+     * @property \Illuminate\Support\Carbon|null $paid_on
      * @property string|null $bankname
      * @property string|null $payment_note
      * @property string|null $paying_method
@@ -7733,6 +7734,10 @@ namespace App\Models {
      * @property string|null $customer_stripe_id
      * @property string|null $cheque_no
      * @property float|null $change
+     * @property float|null $amount_ghs
+     * @property float|null $exchange_rate
+     * @property float|null $amount_usd
+     * @property string $currency
      * @property float|null $amount
      * @property float $balance
      * @property string|null $description
@@ -7758,6 +7763,10 @@ namespace App\Models {
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment whereDescription($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment whereBalance($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment whereAmount($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment whereCurrency($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment whereAmountUsd($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment whereExchangeRate($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment whereAmountGhs($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment whereChange($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment whereChequeNo($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Payment>|Payment whereCustomerStripeId($value)
@@ -8087,6 +8096,7 @@ namespace App\Models {
      * @property string $id
      * @property-read \App\Models\PayrollPeriod $payrollPeriod
      * @property-read \App\Models\Staff $staff
+     * @property-read \App\Models\Staff $employee
      * @method static \Illuminate\Database\Eloquent\Builder<PayrollEntry>|PayrollEntry whereId($value)
      * @method static \Illuminate\Database\Eloquent\Builder<PayrollEntry>|PayrollEntry wherePayrollPeriodId($value)
      * @method static \Illuminate\Database\Eloquent\Builder<PayrollEntry>|PayrollEntry whereStaffId($value)
@@ -11576,6 +11586,8 @@ namespace App\Models {
      * @property bool $is_received
      * @property mixed $payment_status
      * @property float $paid
+     * @property float|null $total_ghs
+     * @property float|null $exchange_rate_at_shipment
      * @property float $total
      * @property string|null $recorderd_by
      * @property string|null $delivered_at
@@ -11657,6 +11669,8 @@ namespace App\Models {
      * @method static \Illuminate\Database\Eloquent\Builder<Shipment>|Shipment whereDeliveredAt($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Shipment>|Shipment whereRecorderdBy($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Shipment>|Shipment whereTotal($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<Shipment>|Shipment whereExchangeRateAtShipment($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<Shipment>|Shipment whereTotalGhs($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Shipment>|Shipment wherePaid($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Shipment>|Shipment wherePaymentStatus($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Shipment>|Shipment whereIsReceived($value)

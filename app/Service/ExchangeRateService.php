@@ -14,36 +14,54 @@ class ExchangeRateService
 
     /**
      * Get current exchange rate
+     * PRIORITIZES MANUAL RATES - API fetching is disabled by default
      */
-    public function getCurrentRate(string $from = 'USD', string $to = 'GHS'): float
+    public function getCurrentRate(string $from = 'USD', string $to = 'GHS', bool $useApi = false): float
     {
         // Try to get from cache first (cache for 1 hour)
         $cacheKey = "exchange_rate_{$from}_{$to}";
 
-        return Cache::remember($cacheKey, 3600, function () use ($from, $to) {
-            // First check if we have a rate for today in the database
-            $todayRate = ExchangeRateLog::where('from_currency', $from)
+        return Cache::remember($cacheKey, 3600, function () use ($from, $to, $useApi) {
+            // PRIORITY 1: Check for manually entered rates for today or the most recent date
+            $manualRate = ExchangeRateLog::where('from_currency', $from)
                 ->where('to_currency', $to)
-                ->whereDate('rate_date', today())
+                ->where('rate_date', '<=', today())
+                ->whereIn('source', ['manual', 'bank', 'official']) // Prioritize manual sources
+                ->orderBy('rate_date', 'desc')
                 ->first();
 
-            if ($todayRate) {
-                return (float) $todayRate->rate;
+            if ($manualRate) {
+                logger()->info("Using manual exchange rate: {$manualRate->rate} from {$manualRate->rate_date}");
+                return (float) $manualRate->rate;
             }
 
-            // Try to fetch from API
-            $rate = $this->fetchRateFromApi($from, $to);
+            // PRIORITY 2: Check for any rate in the database (including API rates)
+            $anyRate = ExchangeRateLog::where('from_currency', $from)
+                ->where('to_currency', $to)
+                ->where('rate_date', '<=', today())
+                ->orderBy('rate_date', 'desc')
+                ->first();
 
-            if ($rate) {
-                // Log the rate
-                $this->logRate($rate, $from, $to, 'api');
-                return $rate;
+            if ($anyRate) {
+                logger()->info("Using database exchange rate: {$anyRate->rate} from {$anyRate->rate_date}");
+                return (float) $anyRate->rate;
             }
 
-            // Fallback to latest rate in database
-            $latestRate = ExchangeRateLog::getLatestRate($from, $to);
+            // PRIORITY 3: Only fetch from API if explicitly enabled
+            if ($useApi) {
+                $rate = $this->fetchRateFromApi($from, $to);
 
-            return $latestRate ?? 12.0; // Default fallback rate for USD to GHS
+                if ($rate) {
+                    // Log the rate but mark it as API
+                    $this->logRate($rate, $from, $to, 'api');
+                    logger()->info("Using API exchange rate: {$rate}");
+                    return $rate;
+                }
+            }
+
+            // PRIORITY 4: Default fallback rate
+            logger()->warning("No exchange rate found, using default fallback: 12.0");
+            return 12.0; // Default fallback rate for USD to GHS
         });
     }
 

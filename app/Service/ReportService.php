@@ -2,13 +2,13 @@
 
 namespace App\Service;
 
-use App\Models\Shipment;
-use App\Models\Expense;
-use App\Models\Income;
-use App\Models\Client;
-use App\Models\PayrollEntry;
-use App\Enums\IncomeStatus;
 use Carbon\Carbon;
+use App\Models\Client;
+use App\Models\Income;
+use App\Models\Expense;
+use App\Models\Shipment;
+use App\Enums\IncomeStatus;
+use App\Models\PayrollEntry;
 
 class ReportService
 {
@@ -29,90 +29,67 @@ class ReportService
     /**
      * Generate shipments by container report
      */
-    public function shipmentsByContainer(string $containerNumber): array
+    public function shipmentsByContainer(int $year, ?int $containerSequence = null)
     {
-        $shipments = Shipment::where('shipping_reference', 'like', "{$containerNumber}-%")
-            ->with(['client', 'receivers.items', 'expenses', 'payments'])
-            ->get();
+        $yearSuffix = substr((string) $year, -2);
 
-        return [
-            'container' => $containerNumber,
-            'total_shipments' => $shipments->count(),
-            'total_revenue' => $shipments->sum('total'),
-            'total_paid' => $shipments->sum('paid'),
-            'total_expenses' => $shipments->sum(fn ($s) => $s->expenses->sum('amount_usd')),
-            'net_profit' => $shipments->sum('total') - $shipments->sum(fn ($s) => $s->expenses->sum('amount_usd')),
-            'shipments' => $shipments->map(fn ($s) => [
-                'reference' => $s->shipping_reference,
-                'client' => [
-                    'name' => $s->client?->name,
-                    'phone' => $s->client?->phone,
-                ],
-                'receivers' => $s->receivers->map(fn ($r) => [
-                    'name' => $r->receiver_name ?: 'SELF',
-                    'contact' => $r->receiver_phone,
-                    'location' => $r->city,
-                    'items' => $r->items,
-                ]),
-                'status' => $s->status,
-                'total' => $s->total,
-                'paid' => $s->paid,
-                'expenses' => $s->expenses->sum('amount_usd'),
-            ]),
-        ];
+        $query = Shipment::where('shipping_reference', 'like', "%-{$yearSuffix}-%")
+            ->with(['client', 'receivers.items', 'expenses', 'payments']);
+
+        if ($containerSequence !== null) {
+            $query->where('client_sequence', $containerSequence);
+        }
+
+        return $query->get();
     }
 
     /**
      * Generate shipments by year report
      */
-    public function shipmentsByYear(int $year): array
+    public function shipmentsByYear(int $year)
     {
         $yearSuffix = substr((string) $year, -2);
 
-        $shipments = Shipment::where('shipping_reference', 'like', "%-{$yearSuffix}-%")
+        return Shipment::where('shipping_reference', 'like', "%-{$yearSuffix}-%")
             ->with(['client', 'expenses'])
             ->get();
-
-        $monthlyBreakdown = [];
-        for ($month = 1; $month <= 12; $month++) {
-            $monthShipments = $shipments->filter(fn ($s) => $s->created_at?->month === $month);
-            $monthlyBreakdown[$month] = [
-                'month' => Carbon::create($year, $month)->format('F'),
-                'count' => $monthShipments->count(),
-                'revenue' => $monthShipments->sum('total'),
-                'expenses' => $monthShipments->sum(fn ($s) => $s->expenses->sum('amount_usd')),
-            ];
-        }
-
-        return [
-            'year' => $year,
-            'total_shipments' => $shipments->count(),
-            'monthly_breakdown' => $monthlyBreakdown,
-            'total_revenue' => $shipments->sum('total'),
-            'total_expenses' => $shipments->sum(fn ($s) => $s->expenses->sum('amount_usd')),
-            'net_profit' => $shipments->sum('total') - $shipments->sum(fn ($s) => $s->expenses->sum('amount_usd')),
-        ];
     }
 
     /**
-     * Generate shipments by container sequence report
+     * Generate shipments by container sequence report (profit/loss)
      */
-    public function shipmentsByContainerSequence(int $year, int $sequence): array
+    public function shipmentsByContainerSequence(int $year, ?int $sequence = null)
     {
         $yearSuffix = substr((string) $year, -2);
-        $seqCode = "C{$sequence}";
 
-        $shipments = Shipment::where('shipping_reference', 'like', "%-{$yearSuffix}-{$seqCode}-%")
-            ->with(['client', 'receivers', 'expenses'])
-            ->get();
+        logger("Year Suffix: {$yearSuffix}, Sequence: " . ($sequence ?? 'null'));
 
-        return [
-            'year' => $year,
-            'container_sequence' => $seqCode,
-            'total_shipments' => $shipments->count(),
-            'total_revenue' => $shipments->sum('total'),
-            'shipments' => $shipments,
-        ];
+        $query = Shipment::where('shipping_reference', 'like', "%-{$yearSuffix}-%")
+            ->with(['client', 'receivers', 'expenses']);
+
+        if ($sequence !== null) {
+            $query->where('client_sequence', $sequence);
+        }
+
+        $shipments = $query->get();
+
+        logger($shipments);
+
+        // Group by container sequence
+        $grouped = $shipments->groupBy('client_sequence');
+
+        return $grouped->map(function ($containerShipments, $seq) {
+            $revenue = $containerShipments->sum('total');
+            $expenses = $containerShipments->sum(fn ($s) => $s->expenses->sum('amount_usd'));
+
+            return [
+                'container' => "C{$seq}",
+                'shipment_count' => $containerShipments->count(),
+                'revenue' => $revenue,
+                'expenses' => $expenses,
+                'profit' => $revenue - $expenses,
+            ];
+        })->values();
     }
 
     /**
@@ -331,5 +308,24 @@ class ReportService
             'aging' => $aging,
             'shipments' => $shipments,
         ];
+    }
+
+    /**
+     * Generate client shipment history report
+     */
+    public function clientShipmentHistory(int|string $clientId, ?string $startDate = null, ?string $endDate = null)
+    {
+        $query = Shipment::where('client_id', $clientId)
+            ->with(['client', 'receivers.items.product', 'expenses.category', 'payments']);
+
+        if ($startDate && $endDate) {
+            $query->whereBetween('created_at', [$startDate, $endDate]);
+        } elseif ($startDate) {
+            $query->where('created_at', '>=', $startDate);
+        } elseif ($endDate) {
+            $query->where('created_at', '<=', $endDate);
+        }
+
+        return $query->orderBy('created_at', 'desc')->get();
     }
 }

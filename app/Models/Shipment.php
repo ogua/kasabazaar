@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Receiver;
 use App\Enums\ShippingStatus;
+use App\Service\ExchangeRateService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -21,11 +22,31 @@ class Shipment extends Model
         'status' => ShippingStatus::class,
         'insurance_accepted' => 'boolean',
         'external_form_completed' => 'boolean',
+        'exchange_rate_at_shipment' => 'decimal:4',
+        'total' => 'decimal:2',
+        'total_ghs' => 'decimal:2',
     ];
 
     // Automatically update related items after saving
     protected static function booted()
     {
+        // Before creating, capture exchange rate
+        static::creating(function ($shipping) {
+            if (!$shipping->exchange_rate_at_shipment) {
+                try {
+                    $exchangeService = app(ExchangeRateService::class);
+                    $shipping->exchange_rate_at_shipment = $exchangeService->getCurrentRate('USD', 'GHS');
+                } catch (\Exception $e) {
+                    $shipping->exchange_rate_at_shipment = 12.0; // Fallback
+                }
+            }
+
+            // Calculate GHS equivalent
+            if ($shipping->total && $shipping->exchange_rate_at_shipment) {
+                $shipping->total_ghs = $shipping->total * $shipping->exchange_rate_at_shipment;
+            }
+        });
+
         // Before saving, sync the DB fields from the shipping_reference
         static::saving(function ($shipping) {
             if ($shipping->shipping_reference) {
@@ -35,6 +56,11 @@ class Shipment extends Model
                     $shipping->client_sequence = $parsed['container_seq_year'];
                     $shipping->total_shipment_sequence = $parsed['client_seq'];
                 }
+            }
+
+            // Recalculate GHS if total changes
+            if ($shipping->isDirty('total') && $shipping->exchange_rate_at_shipment) {
+                $shipping->total_ghs = $shipping->total * $shipping->exchange_rate_at_shipment;
             }
         });
 

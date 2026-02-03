@@ -42,6 +42,7 @@ return array(
     'b69d5f1f95cd1ed438c038b6cbcc45b5' => $vendorDir . '/filament/notifications/src/Testing/Autoload.php',
     '89e9938b64b06cc502d7ceca69a380fe' => $vendorDir . '/filament/filament/src/global_helpers.php',
     'ebb446bb6d02e998480945fbbb73dc64' => $vendorDir . '/filament/filament/src/helpers.php',
+    '2cffec82183ee1cea088009cef9a6fc3' => $vendorDir . '/ezyang/htmlpurifier/library/HTMLPurifier.composer.php',
     'bbd3f4c222c0dc01d51aaddd000c7145' => $vendorDir . '/pragmarx/ia-arr/src/Support/helpers.php',
     '5de818542d3f05537910d3201983c6e4' => $vendorDir . '/pragmarx/ia-arr/src/Support/alias.php',
     'd1bbbb1cdb91a23bb0785f5b4c1b000a' => $vendorDir . '/pragmarx/ia-collection/src/Support/helpers.php',

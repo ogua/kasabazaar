@@ -32,67 +32,127 @@ class PaymentResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('')
-                ->description('')
-                ->schema([
-                Forms\Components\TextInput::make('branch_id')
-                    ->maxLength(36)
-                    ->default(null),
-                Forms\Components\TextInput::make('user_id')
-                    ->maxLength(36)
-                    ->default(null),
-                Forms\Components\TextInput::make('shipment_id')
-                    ->maxLength(36)
-                    ->default(null),
-                Forms\Components\TextInput::make('account_id')
-                    ->maxLength(36)
-                    ->default(null),
-                Forms\Components\TextInput::make('payment_type'),
-                Forms\Components\TextInput::make('payment_ref')
-                    ->maxLength(255)
-                    ->default(null),
-                Forms\Components\TextInput::make('paying_type')
-                    ->maxLength(255)
-                    ->default(null),
-                Forms\Components\Textarea::make('description')
-                    ->columnSpanFull(),
-                Forms\Components\TextInput::make('balance')
-                    ->required()
-                    ->numeric()
-                    ->default(0.00),
-                Forms\Components\TextInput::make('amount')
-                    ->numeric()
-                    ->default(null),
-                Forms\Components\TextInput::make('change')
-                    ->numeric()
-                    ->default(null),
-                Forms\Components\TextInput::make('cheque_no')
-                    ->maxLength(255)
-                    ->default(null),
-                Forms\Components\TextInput::make('customer_stripe_id')
-                    ->maxLength(255)
-                    ->default(null),
-                Forms\Components\TextInput::make('charge_id')
-                    ->maxLength(255)
-                    ->default(null),
-                Forms\Components\TextInput::make('paypal_transaction_id')
-                    ->maxLength(255)
-                    ->default(null),
-                Forms\Components\TextInput::make('paying_method')
-                    ->maxLength(255)
-                    ->default(null),
-                Forms\Components\Textarea::make('payment_note')
-                    ->columnSpanFull(),
-                Forms\Components\TextInput::make('bankname')
-                    ->maxLength(255)
-                    ->default(null),
-                Forms\Components\DateTimePicker::make('paid_on'),
-                Forms\Components\TextInput::make('accountnumber')
-                    ->maxLength(255)
-                    ->default(null),
-                ])
-                ->columns(2),
+                Forms\Components\Section::make('Payment Details')
+                    ->schema([
+                        Forms\Components\Select::make('shipment_id')
+                            ->label('Shipment')
+                            ->relationship('shipment', 'shipping_reference')
+                            ->searchable()
+                            ->preload()
+                            ->required(),
 
+                        Forms\Components\DateTimePicker::make('paid_on')
+                            ->label('Payment Date')
+                            ->default(now())
+                            ->required(),
+
+                        Forms\Components\Select::make('paying_method')
+                            ->label('Payment Method')
+                            ->options([
+                                'CASH' => 'Cash',
+                                'Zelle' => 'Zelle',
+                                'Cash App' => 'Cash App',
+                                'BANK TRANSFER' => 'Bank Transfer',
+                                'CREDIT/DEBIT CARD' => 'Card',
+                                'CHEQUE' => 'Cheque',
+                                'PAYPAL' => 'PayPal',
+                                'WAIVED' => 'Waived',
+                            ])
+                            ->required()
+                            ->live()
+                            ->native(false),
+
+                        Forms\Components\TextInput::make('bankname')
+                            ->label('Bank Name')
+                            ->visible(fn($get): bool => $get('paying_method') === 'BANK TRANSFER'),
+
+                        Forms\Components\TextInput::make('accountnumber')
+                            ->label('Account Number')
+                            ->visible(fn($get): bool => $get('paying_method') === 'BANK TRANSFER'),
+
+                        Forms\Components\TextInput::make('cheque_no')
+                            ->label('Cheque Number')
+                            ->visible(fn($get): bool => $get('paying_method') === 'CHEQUE'),
+                    ])
+                    ->columns(2),
+
+                Forms\Components\Section::make('Amount & Exchange Rate')
+                    ->schema([
+                        Forms\Components\Select::make('currency')
+                            ->label('Currency')
+                            ->options([
+                                'USD' => 'USD - US Dollar',
+                                'GHS' => 'GHS - Ghana Cedis',
+                            ])
+                            ->default('USD')
+                            ->required()
+                            ->native(false),
+
+                        Forms\Components\TextInput::make('amount_usd')
+                            ->label('Amount (USD)')
+                            ->numeric()
+                            ->prefix('$')
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                $exchangeRate = (float)($get('exchange_rate') ?? 0);
+                                if ($state && $exchangeRate > 0) {
+                                    $set('amount_ghs', round($state * $exchangeRate, 2));
+                                }
+                                $set('amount', $state);
+                            })
+                            ->required(),
+
+                        Forms\Components\TextInput::make('exchange_rate')
+                            ->label('Exchange Rate (USD to GHS)')
+                            ->numeric()
+                            ->default(function () {
+                                try {
+                                    $service = app(\App\Service\ExchangeRateService::class);
+                                    return $service->getCurrentRate('USD', 'GHS');
+                                } catch (\Exception $e) {
+                                    return 12.0;
+                                }
+                            })
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                $amountUsd = (float)($get('amount_usd') ?? 0);
+                                if ($amountUsd && $state) {
+                                    $set('amount_ghs', round($amountUsd * $state, 2));
+                                }
+                            })
+                            ->helperText('Current exchange rate')
+                            ->suffix('GHS per USD')
+                            ->required(),
+
+                        Forms\Components\TextInput::make('amount_ghs')
+                            ->label('Amount (GHS)')
+                            ->numeric()
+                            ->prefix('GH₵')
+                            ->disabled()
+                            ->dehydrated()
+                            ->helperText('Calculated automatically'),
+
+                        Forms\Components\Hidden::make('amount')
+                            ->default(fn ($get) => $get('amount_usd')),
+
+                        Forms\Components\Textarea::make('payment_note')
+                            ->label('Notes')
+                            ->rows(2)
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(2),
+
+                Forms\Components\Section::make('System Fields')
+                    ->schema([
+                        Forms\Components\Hidden::make('branch_id'),
+                        Forms\Components\Hidden::make('user_id'),
+                        Forms\Components\Hidden::make('payment_ref')
+                            ->default(fn() => 'PAY-' . strtoupper(bin2hex(random_bytes(4)))),
+                        Forms\Components\Hidden::make('payment_type')->default('credit'),
+                        Forms\Components\Hidden::make('balance')->default(0),
+                        Forms\Components\Hidden::make('change')->default(0),
+                    ])
+                    ->collapsed(),
             ]);
     }
 
@@ -139,11 +199,25 @@ class PaymentResource extends Resource
                     ->searchable()
                     ->toggleable(),
 
-                Tables\Columns\TextColumn::make('amount')
+                Tables\Columns\TextColumn::make('amount_usd')
+                    ->label('Amount (USD)')
                     ->numeric()
                     ->badge()
                     ->color('success')
-                    ->formatStateUsing(fn($state) => '$' . number_format($state, 2))
+                    ->formatStateUsing(fn($state) => '$' . number_format($state ?? 0, 2))
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('exchange_rate')
+                    ->label('Rate')
+                    ->numeric(decimalPlaces: 4)
+                    ->toggleable()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('amount_ghs')
+                    ->label('Amount (GHS)')
+                    ->numeric()
+                    ->formatStateUsing(fn($state) => 'GH₵' . number_format($state ?? 0, 2))
+                    ->toggleable()
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('paid_on')

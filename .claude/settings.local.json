@@ -3,7 +3,9 @@
     "allow": [
       "Bash(php artisan:*)",
       "Bash(php -l:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(composer show:*)",
+      "Bash(composer require:*)"
     ]
   }
 }

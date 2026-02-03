@@ -619,6 +619,7 @@ class CreateShipment extends CreateRecord
                                     Forms\Components\Grid::make(3)
                                         ->schema([
                                             Forms\Components\Hidden::make('branch_id')->default(Filament::getTenant()->id),
+                                            Forms\Components\Hidden::make('currency')->default('USD'),
 
                                             Forms\Components\DateTimePicker::make('paid_on')
                                                 ->label('Payment Date')
@@ -641,12 +642,56 @@ class CreateShipment extends CreateRecord
                                                 ->required()
                                                 ->native(false),
 
-                                            Forms\Components\TextInput::make('amount')
-                                                ->label('Amount')
+                                            Forms\Components\TextInput::make('amount_usd')
+                                                ->label('Amount (USD)')
                                                 ->numeric()
                                                 ->prefix('$')
                                                 ->live(onBlur: true)
+                                                ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                                    $exchangeRate = (float)($get('exchange_rate') ?? 0);
+                                                    if ($state && $exchangeRate > 0) {
+                                                        $set('amount_ghs', round($state * $exchangeRate, 2));
+                                                    }
+                                                    // Keep backward compatibility with 'amount' field
+                                                    $set('amount', $state);
+                                                })
                                                 ->required(),
+                                        ]),
+
+                                    Forms\Components\Grid::make(3)
+                                        ->schema([
+                                            Forms\Components\TextInput::make('exchange_rate')
+                                                ->label('Exchange Rate (USD to GHS)')
+                                                ->numeric()
+                                                ->default(function () {
+                                                    try {
+                                                        $service = app(\App\Service\ExchangeRateService::class);
+                                                        return $service->getCurrentRate('USD', 'GHS');
+                                                    } catch (\Exception $e) {
+                                                        return 12.0;
+                                                    }
+                                                })
+                                                ->live(onBlur: true)
+                                                ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                                    $amountUsd = (float)($get('amount_usd') ?? 0);
+                                                    if ($amountUsd && $state) {
+                                                        $set('amount_ghs', round($amountUsd * $state, 2));
+                                                    }
+                                                })
+                                                ->helperText('Current exchange rate')
+                                                ->suffix('GHS per USD')
+                                                ->required(),
+
+                                            Forms\Components\TextInput::make('amount_ghs')
+                                                ->label('Amount (GHS)')
+                                                ->numeric()
+                                                ->prefix('GH₵')
+                                                ->disabled()
+                                                ->dehydrated()
+                                                ->helperText('Calculated automatically'),
+
+                                            Forms\Components\Hidden::make('amount')
+                                                ->default(fn ($get) => $get('amount_usd')),
                                         ]),
 
                                     Forms\Components\Grid::make(2)
@@ -857,16 +902,8 @@ class CreateShipment extends CreateRecord
                                     }
                                 }),
                                 
-                            Forms\Components\Select::make('payment_status')
-                                ->label('Payment Status')
-                                ->options([
-                                    'pending' => 'Pending',
-                                    'paid' => 'Paid',
-                                    'partial' => 'Partial',
-                                ])
-                                ->default('pending')
-                                ->required()
-                                ->native(false),
+                            Forms\Components\Hidden::make('payment_status')
+                                ->default('pending'),
 
                             Forms\Components\Select::make('status')
                                 ->label('Shipping Status')

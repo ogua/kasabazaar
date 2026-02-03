@@ -51,4 +51,9 @@ class PayrollEntry extends Model
     {
         return $this->belongsTo(Staff::class);
     }
+
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(Staff::class, 'staff_id');
+    }
 }

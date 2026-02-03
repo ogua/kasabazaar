@@ -35,6 +35,11 @@ class ExchangeRateLog extends Model
         return $log?->rate;
     }
 
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
     /**
      * Get rate for a specific date
      */
