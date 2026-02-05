@@ -7,8 +7,8 @@ use Filament\Tables;
 use App\Models\Staff;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
-use Filament\Resources\Resource;
 use App\Enums\EmploymentStatus;
+use Filament\Resources\Resource;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\StaffResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -68,9 +68,20 @@ class StaffResource extends Resource
                                     }
                                 }
                             }),
-                        Forms\Components\TextInput::make('position')
+                        Forms\Components\Select::make('position')
                             ->required()
-                            ->maxLength(255)
+                            ->options([
+                                'Shipping Manager' => 'Shipping Manager',
+                                'Administrative Officer' => 'Administrative Officer',
+                                'Cashier' => 'Cashier',
+                                'Clerk' => 'Clerk',
+                                'Security' => 'Security',
+                                'Cleaner' => 'Cleaner',
+                                'Warehouse Staff' => 'Warehouse Staff',
+                                'Driver' => 'Driver',
+                                'Other' => 'Other',
+                            ])
+                            ->default('Other')
                             ->helperText('Job title or position'),
                         Forms\Components\TextInput::make('salary')
                             ->numeric()
