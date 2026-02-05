@@ -202,7 +202,7 @@
         }
 
         .address-name {
-            font-size: 15px;
+            font-size: 25px;
             font-weight: bold;
             color: #000;
         }
@@ -371,7 +371,7 @@
                     @endif
                 </div>
                 <div class="items-total">
-                    {{ $receiver->items->sum('quantity') }} units | ${{ number_format($receiver->items->sum('item_cost'), 2) }}
+                    {{ $receiver->items->sum('quantity') }} units 
                 </div>
             </div>
 
