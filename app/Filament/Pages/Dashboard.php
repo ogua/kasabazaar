@@ -2,48 +2,24 @@
 
 namespace App\Filament\Pages;
 
-use App\Models\Shipment;
+use Filament\Pages\Dashboard as BaseDashboard;
 use Filament\Forms\Form;
-use Filament\Pages\Page;
+use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
-use Filament\Forms\Contracts\HasForms;
-use App\Filament\Widgets\TopStatesWidget;
 use Filament\Forms\Components\DatePicker;
-use App\Filament\Widgets\IncomeStatsWidget;
-use App\Filament\Widgets\ExpenseStatsWidget;
-use App\Filament\Widgets\PayrollStatsWidget;
-use App\Filament\Widgets\ManagementKPIWidget;
-use App\Filament\Widgets\ContainerProfitWidget;
 use Filament\Forms\Concerns\InteractsWithForms;
-use App\Filament\Widgets\ExpensesByCategoryChart;
-use App\Filament\Widgets\FinancialOverviewWidget;
-use App\Filament\Widgets\MonthlyExpenseIncomeChart;
+use App\Models\Shipment;
 
-class FinancialDashboard extends Page implements HasForms
+class Dashboard extends BaseDashboard implements HasForms
 {
     use InteractsWithForms;
 
-    protected static ?string $navigationIcon = 'heroicon-o-currency-dollar';
-
-    protected static string $view = 'filament.pages.financial-dashboard';
-
-    protected static ?string $navigationGroup = 'Reports';
-
-    protected static ?int $navigationSort = 1;
-
-    protected static ?string $title = 'Financial Dashboard';
-
-    protected static ?string $navigationLabel = 'Financial Dashboard';
+    protected static string $view = 'filament.pages.dashboard';
 
     public ?string $start_date = null;
     public ?string $end_date = null;
     public ?string $container_number = null;
-
-    public static function getNavigationBadge(): ?string
-    {
-        return 'Management';
-    }
 
     public function mount(): void
     {
@@ -63,7 +39,7 @@ class FinancialDashboard extends Page implements HasForms
         return $form
             ->schema([
                 Section::make('Dashboard Filters')
-                    ->description('Filter dashboard metrics by date range and specific shipment')
+                    ->description('Filter all dashboard metrics by date range and container')
                     ->schema([
                         DatePicker::make('start_date')
                             ->label('Start Date')
@@ -118,42 +94,10 @@ class FinancialDashboard extends Page implements HasForms
         $this->container_number = $data['container_number'] ?? null;
 
         // Dispatch event to refresh widgets
-        $this->dispatch('filtersUpdated', [
+        $this->dispatch('dashboardFiltersUpdated', [
             'start_date' => $this->start_date,
             'end_date' => $this->end_date,
             'container_number' => $this->container_number,
         ]);
-    }
-
-    protected function getHeaderWidgets(): array
-    {
-        //return [];
-        return [
-            FinancialOverviewWidget::class,
-            ManagementKPIWidget::class,
-            ContainerProfitWidget::class,
-            TopStatesWidget::class,
-        ];
-    }
-
-    protected function getFooterWidgets(): array
-    {
-        return [
-            ExpenseStatsWidget::class,
-            IncomeStatsWidget::class,
-            PayrollStatsWidget::class,
-            ExpensesByCategoryChart::class,
-            MonthlyExpenseIncomeChart::class,
-        ];
-    }
-
-    public function getHeaderWidgetsColumns(): int|array
-    {
-        return 1; // Full width for comprehensive widgets
-    }
-
-    public function getFooterWidgetsColumns(): int|array
-    {
-        return 3; // 3 columns for footer stats
     }
 }

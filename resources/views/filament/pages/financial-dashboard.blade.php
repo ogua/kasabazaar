@@ -1,4 +1,11 @@
 <x-filament-panels::page>
+    {{-- Date Range Filter --}}
+    <div class="mb-6">
+        <form wire:submit.prevent="updateDashboard">
+            {{ $this->form }}
+        </form>
+    </div>
+
     {{-- Financial Overview Stats --}}
     <x-filament-widgets::widgets
         :widgets="$this->getHeaderWidgets()"

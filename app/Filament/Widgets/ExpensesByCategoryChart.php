@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Models\Expense;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\On;
 
 class ExpensesByCategoryChart extends ChartWidget
 {
@@ -14,16 +15,46 @@ class ExpensesByCategoryChart extends ChartWidget
 
     protected int | string | array $columnSpan = 1;
 
+    public ?string $startDate = null;
+    public ?string $endDate = null;
+    public ?string $containerNumber = null;
+
+    public function mount(): void
+    {
+        $this->startDate = now()->startOfMonth()->format('Y-m-d');
+        $this->endDate = now()->format('Y-m-d');
+        $this->containerNumber = null;
+    }
+
+    #[On('dashboardFiltersUpdated')]
+    #[On('filtersUpdated')]
+    public function updateFilters($start_date, $end_date, $container_number = null): void
+    {
+        $this->startDate = $start_date;
+        $this->endDate = $end_date;
+        $this->containerNumber = $container_number;
+    }
+
     protected function getData(): array
     {
-        $data = Expense::select('expense_category_id', DB::raw('SUM(amount_usd) as total'))
+        $startDate = $this->startDate ?? now()->startOfMonth()->format('Y-m-d');
+        $endDate = $this->endDate ?? now()->format('Y-m-d');
+        $containerNumber = $this->containerNumber;
+
+        $query = Expense::select('expense_category_id', DB::raw('SUM(amount_usd) as total'))
             ->with('category')
-            ->whereMonth('expense_date', now()->month)
-            ->whereYear('expense_date', now()->year)
+            ->whereBetween('expense_date', [$startDate, $endDate])
             ->groupBy('expense_category_id')
             ->orderByDesc('total')
-            ->limit(6)
-            ->get();
+            ->limit(6);
+
+        if ($containerNumber) {
+            $query->whereHas('shipment', function ($q) use ($containerNumber) {
+                $q->where('container_number', $containerNumber);
+            });
+        }
+
+        $data = $query->get();
 
         $colors = [
             'rgb(59, 130, 246)',   // blue

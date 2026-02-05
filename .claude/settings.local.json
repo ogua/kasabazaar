@@ -5,7 +5,8 @@
       "Bash(php -l:*)",
       "Bash(find:*)",
       "Bash(composer show:*)",
-      "Bash(composer require:*)"
+      "Bash(composer require:*)",
+      "Bash(ls:*)"
     ]
   }
 }

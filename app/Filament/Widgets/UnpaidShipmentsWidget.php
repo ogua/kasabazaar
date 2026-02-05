@@ -10,12 +10,32 @@ use Filament\Tables\Table;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Livewire\Attributes\On;
 
 
 class UnpaidShipmentsWidget extends BaseWidget
 {
     protected static ?int $sort = 11;
     protected int | string | array $columnSpan = 'full';
+
+    public ?string $startDate = null;
+    public ?string $endDate = null;
+    public ?string $containerNumber = null;
+
+    public function mount(): void
+    {
+        $this->startDate = now()->startOfMonth()->format('Y-m-d');
+        $this->endDate = now()->format('Y-m-d');
+        $this->containerNumber = null;
+    }
+
+    #[On('dashboardFiltersUpdated')]
+    public function updateFilters($start_date, $end_date, $container_number = null): void
+    {
+        $this->startDate = $start_date;
+        $this->endDate = $end_date;
+        $this->containerNumber = $container_number;
+    }
 
     protected function getTableHeading(): ?string
     {
@@ -24,11 +44,19 @@ class UnpaidShipmentsWidget extends BaseWidget
 
     public function table(Table $table): Table
     {
+        $startDate = $this->startDate ?? now()->startOfMonth()->format('Y-m-d');
+        $endDate = $this->endDate ?? now()->format('Y-m-d');
+        $containerNumber = $this->containerNumber;
+
         return $table
             ->query(
                 Shipment::query()
                     ->with(['client', 'payments'])
                     ->whereRaw('(SELECT COALESCE(SUM(amount), 0) FROM payments WHERE shipments.id = payments.shipment_id AND payment_type = "credit") < total')
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->when($containerNumber, function ($query) use ($containerNumber) {
+                        $query->where('container_number', $containerNumber);
+                    })
                     ->orderBy('created_at', 'desc')
             )
             ->columns([

@@ -6,6 +6,7 @@ use App\Models\Expense;
 use App\Models\Payment;
 use App\Models\Shipment;
 use Filament\Widgets\Widget;
+use Livewire\Attributes\On;
 
 class ContainerProfitWidget extends Widget
 {
@@ -13,11 +14,41 @@ class ContainerProfitWidget extends Widget
     protected int | string | array $columnSpan = 'full';
     protected static string $view = 'filament.widgets.container-profit-widget';
 
+    public ?string $startDate = null;
+    public ?string $endDate = null;
+    public ?string $containerNumber = null;
+
+    public function mount(): void
+    {
+        $this->startDate = now()->startOfMonth()->format('Y-m-d');
+        $this->endDate = now()->format('Y-m-d');
+        $this->containerNumber = null;
+    }
+
+    #[On('dashboardFiltersUpdated')]
+    #[On('filtersUpdated')]
+    public function updateFilters($start_date, $end_date, $container_number = null): void
+    {
+        $this->startDate = $start_date;
+        $this->endDate = $end_date;
+        $this->containerNumber = $container_number;
+    }
+
     public function getContainerData(): array
     {
-        // Get unique container references from all shipments
-        $containers = Shipment::whereNotNull('shipping_reference')
-            ->get()
+        $startDate = $this->startDate ?? now()->startOfMonth()->format('Y-m-d');
+        $endDate = $this->endDate ?? now()->format('Y-m-d');
+        $containerNumber = $this->containerNumber;
+
+        // Get unique container references from shipments within date range
+        $query = Shipment::whereNotNull('shipping_reference')
+            ->whereBetween('created_at', [$startDate, $endDate]);
+
+        if ($containerNumber) {
+            $query->where('container_number', $containerNumber);
+        }
+
+        $containers = $query->get()
             ->map(function ($shipment) {
                 // Extract container reference (e.g., "CON51" from "CON51-26-C1-001")
                 if (preg_match('/^(CON\d+)/', $shipment->shipping_reference, $matches)) {
