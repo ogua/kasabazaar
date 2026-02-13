@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use Filament\Forms;
 use Livewire\Component;
+use App\Models\Shipment;
 use Filament\Forms\Form;
 use Livewire\WithFileUploads;
 use Livewire\Attributes\Layout;
@@ -20,20 +21,59 @@ class CustomerFeedaback extends Component implements HasForms
 
     public ?array $data = [];
     public bool $submitted = false;
+    public ?string $token = null;
+    public ?string $existingFeedbackId = null;
 
-    public function mount(): void
+    public function mount(?string $token = null): void
     {
-        $this->form->fill([
+        $this->token = $token;
+
+        $defaults = [
             'feedback_on' => 'Rose Shipment',
             'category' => 'Delivery Speed',
             'rating' => 5,
-        ]);
+            'type' => 'feedback',
+        ];
+
+        if ($token) {
+            $feedback = CustomerFeedback::where('complaint_token', $token)->first();
+            if ($feedback) {
+                $this->existingFeedbackId = $feedback->id;
+                $defaults['type'] = 'complaint';
+                $defaults['feedback_on'] = $feedback->feedback_on;
+
+                if ($feedback->customer_name !== 'Pending') {
+                    $defaults['customer_name'] = $feedback->customer_name;
+                }
+                $defaults['customer_email'] = $feedback->customer_email ?? '';
+                $defaults['customer_phone'] = $feedback->customer_phone ?? '';
+
+                if ($feedback->shipment) {
+                    $defaults['invoice_number'] = $feedback->shipment->shipping_reference ?? '';
+                    $defaults['tracking_number'] = $feedback->shipment->tracking_number ?? '';
+                }
+            }
+        }
+
+        $this->form->fill($defaults);
     }
 
     public function form(Form $form): Form
     {
         return $form
             ->schema([
+                Forms\Components\Section::make('Type')
+                    ->schema([
+                        Forms\Components\Select::make('type')
+                            ->label('Submission Type')
+                            ->options(CustomerFeedback::TYPES)
+                            ->default('feedback')
+                            ->required()
+                            ->native(false)
+                            ->disabled(fn () => !empty($this->token)),
+                    ])
+                    ->columns(2),
+
                 Forms\Components\Section::make('Service Information')
                     ->description('Tell us about which service you are providing feedback for')
                     ->schema([
@@ -49,7 +89,11 @@ class CustomerFeedaback extends Component implements HasForms
                             ->label('Invoice/Reference Number')
                             ->placeholder('Enter your invoice or reference number (optional)')
                             ->maxLength(255),
-                    ])->columns(2),
+                        Forms\Components\TextInput::make('tracking_number')
+                            ->label('Tracking Number')
+                            ->placeholder('Enter tracking number to link to shipment (optional)')
+                            ->maxLength(255),
+                    ])->columns(3),
 
                 Forms\Components\Section::make('Your Information')
                     ->description('Please provide your contact details')
@@ -67,8 +111,6 @@ class CustomerFeedaback extends Component implements HasForms
                             ->placeholder('Enter your email address'),
                         Forms\Components\TextInput::make('customer_phone')
                             ->label('Phone Number')
-                            //->tel()
-                            //->required()
                             ->maxLength(50)
                             ->placeholder('Enter your phone number'),
                     ])->columns(3),
@@ -78,23 +120,7 @@ class CustomerFeedaback extends Component implements HasForms
                     ->schema([
                         Forms\Components\Select::make('category')
                             ->label('Feedback Category')
-                            ->options([
-                                'Delivery Speed' => 'Delivery Speed',
-                                'Item Condition' => 'Item Condition',
-                                'Late Delivery' => 'Late Delivery',
-                                'Wrong Address' => 'Wrong Address',
-                                'Damaged Item' => 'Damaged Item',
-                                'Damaged Packaging' => 'Damaged Packaging',
-                                'Wrong Item Sent' => 'Wrong Item Sent',
-                                'Missing Item' => 'Missing Item',
-                                'Driver Conduct' => 'Driver Conduct',
-                                'Ignored Instructions' => 'Ignored Instructions',
-                                'Tricycle Maintenance' => 'Tricycle Maintenance',
-                                'Driver Safety' => 'Driver Safety',
-                                'Route Efficiency' => 'Route Efficiency',
-                                'Traffic Handling' => 'Traffic Handling',
-                                'Other' => 'Other',
-                            ])
+                            ->options(CustomerFeedback::CATEGORIES)
                             ->required()
                             ->searchable()
                             ->native(false),
@@ -135,7 +161,26 @@ class CustomerFeedaback extends Component implements HasForms
         $data = $this->form->getState();
         $data['status'] = 'pending';
 
-        CustomerFeedback::create($data);
+        // Try to link to shipment via tracking number
+        if (!empty($data['tracking_number'])) {
+            $shipment = Shipment::where('tracking_number', $data['tracking_number'])
+                ->orWhere('shipping_reference', $data['tracking_number'])
+                ->first();
+            if ($shipment) {
+                $data['shipment_id'] = $shipment->id;
+            }
+            unset($data['tracking_number']);
+        }
+
+        if ($this->existingFeedbackId) {
+            // Update existing complaint record
+            $feedback = CustomerFeedback::find($this->existingFeedbackId);
+            if ($feedback) {
+                $feedback->update($data);
+            }
+        } else {
+            CustomerFeedback::create($data);
+        }
 
         $this->submitted = true;
 
@@ -149,10 +194,13 @@ class CustomerFeedaback extends Component implements HasForms
     public function submitAnother(): void
     {
         $this->submitted = false;
+        $this->existingFeedbackId = null;
+        $this->token = null;
         $this->form->fill([
             'feedback_on' => 'Rose Shipment',
             'category' => 'Delivery Speed',
             'rating' => '5',
+            'type' => 'feedback',
         ]);
     }
 

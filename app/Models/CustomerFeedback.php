@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -19,11 +20,24 @@ class CustomerFeedback extends Model
         'attachments' => 'array',
         'meta' => 'array',
         'rating' => 'integer',
+        'resolved_at' => 'datetime',
     ];
 
     public const FEEDBACK_SOURCES = [
         'Rose Shipment' => 'Rose Shipment',
         'NeoRide Africa' => 'NeoRide Africa',
+    ];
+
+    public const TYPES = [
+        'feedback' => 'Feedback',
+        'complaint' => 'Complaint',
+    ];
+
+    public const PRIORITIES = [
+        'low' => 'Low',
+        'normal' => 'Normal',
+        'high' => 'High',
+        'urgent' => 'Urgent',
     ];
 
     public const CATEGORIES = [
@@ -58,6 +72,26 @@ class CustomerFeedback extends Model
     public function shipment(): BelongsTo
     {
         return $this->belongsTo(\App\Models\Shipment::class);
+    }
+
+    public static function generateComplaintToken(): string
+    {
+        do {
+            $token = Str::random(32);
+        } while (self::where('complaint_token', $token)->exists());
+
+        return $token;
+    }
+
+    public function getPriorityColorAttribute(): string
+    {
+        return match ($this->priority) {
+            'low' => 'gray',
+            'normal' => 'info',
+            'high' => 'warning',
+            'urgent' => 'danger',
+            default => 'gray',
+        };
     }
 
     public function getRatingStarsAttribute(): string

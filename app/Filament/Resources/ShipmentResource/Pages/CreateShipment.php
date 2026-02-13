@@ -6,9 +6,11 @@ use Filament\Forms;
 use App\Models\City;
 use App\Models\State;
 use Filament\Actions;
+use App\Models\Client;
 use App\Models\Country;
 use App\Models\Invoice;
 use App\Models\Receiver;
+use App\Models\Shipment;
 use App\Models\ShipmentItem;
 use App\Enums\ShippingStatus;
 use App\Models\ShipmentUpdate;
@@ -182,14 +184,31 @@ class CreateShipment extends CreateRecord
                                 ->editOptionForm(ClientResource::clientschema())
                                 ->preload()
                                 ->live()
-                                ->columnSpanFull(),
+                                ->afterStateUpdated(function ($state, callable $set) {
+                                    if ($state) {
+                                        $hasShipments = Shipment::where('client_id', $state)->exists();
+                                        $set('client_existence', $hasShipments ? 'returning-client' : 'new-client');
+                                    }
+                                })
+                                ->columnSpan(1),
+
+                            Forms\Components\Select::make('client_existence')
+                                ->label('Client Type')
+                                ->options([
+                                    'new-client' => 'New Client',
+                                    'returning-client' => 'Returning Client',
+                                ])
+                                ->default('new-client')
+                                ->required()
+                                ->native(false)
+                                ->columnSpan(1),
 
                             Forms\Components\Hidden::make('tracking_number'),
                             Forms\Components\Hidden::make('container_number'),
                             Forms\Components\Hidden::make('client_sequence'),
                             Forms\Components\Hidden::make('total_shipment_sequence'),
                         ])
-                        ->columns(1),
+                        ->columns(2),
 
                     Forms\Components\Section::make('Shipping Route')
                         ->schema([
@@ -389,6 +408,29 @@ class CreateShipment extends CreateRecord
                                 ->live()
                                 ->itemLabel(fn(array $state): ?string => $state['receiver_name'] ?? 'New Receiver')
                                 ->schema([
+                                    Forms\Components\Toggle::make('sender_is_receiver')
+                                        ->label('Sender is Receiver')
+                                        ->dehydrated(false)
+                                        ->live()
+                                        ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                            if ($state) {
+                                                $clientId = $get('../../client_id');
+                                                if ($clientId) {
+                                                    $client = Client::find($clientId);
+                                                    if ($client) {
+                                                        $set('receiver_name', $client->name);
+                                                        $set('receiver_phone', $client->phone);
+                                                        $set('receiver_email', $client->email);
+                                                        $set('country', $client->country);
+                                                        $set('state_region', $client->state_region);
+                                                        $set('city', $client->city);
+                                                        $set('address', $client->address);
+                                                    }
+                                                }
+                                            }
+                                        })
+                                        ->columnSpanFull(),
+
                                     // Previous Receiver Selection
                                     Forms\Components\Select::make('previous_receiver')
                                         ->label('Use Previous Receiver')

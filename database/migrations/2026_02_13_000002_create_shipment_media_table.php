@@ -1,0 +1,29 @@
+<?php
+
+use App\Models\Shipment;
+use App\Models\User;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('shipment_media', function (Blueprint $table) {
+            $table->uuid('id')->primary();
+            $table->foreignUuid('shipment_id')->constrained()->cascadeOnDelete();
+            $table->string('type'); // image, video
+            $table->string('file_path');
+            $table->string('stage'); // pickup, in-transit, delivery, post-delivery
+            $table->text('caption')->nullable();
+            $table->foreignUuid('uploaded_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('shipment_media');
+    }
+};

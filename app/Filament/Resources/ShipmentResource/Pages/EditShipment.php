@@ -46,6 +46,11 @@ class EditShipment extends EditRecord
         return $data;
     }
 
+    protected function hasSkippableSteps(): bool
+    {
+        return true;
+    }
+
     protected function getSteps(): array
     {
         return CreateShipment::formSteps();

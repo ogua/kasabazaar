@@ -78,6 +78,9 @@ Route::get('/paid-successfully',PaymentsuccessfulPage::class)
 Route::get('/customer-feedback',CustomerFeedaback::class)
 ->name('customer-feedback');
 
+Route::get('/complaint/{token?}', CustomerFeedaback::class)
+->name('complaint-form');
+
 // External Shipment Form Routes (for clients to fill out their own details)
 Route::get('/shipment-form/{token}', [ExternalShipmentController::class, 'showForm'])
     ->name('external-shipment-form');

@@ -28,7 +28,7 @@ class CustomerFeedbackResource extends Resource
 
     protected static ?string $navigationGroup = 'Customer Feedback';
 
-    protected static ?string $navigationLabel = 'Feedback';
+    protected static ?string $navigationLabel = 'Feedback & Complaints';
 
     protected static ?string $recordTitleAttribute = 'customer_name';
 
@@ -53,17 +53,34 @@ class CustomerFeedbackResource extends Resource
                     ->schema([
                         Forms\Components\Hidden::make('user_id')
                             ->default(fn () => Auth::id()),
+
+                        Forms\Components\Select::make('type')
+                            ->label('Type')
+                            ->options(CustomerFeedback::TYPES)
+                            ->default('feedback')
+                            ->required()
+                            ->native(false),
+
+                        Forms\Components\Select::make('priority')
+                            ->label('Priority')
+                            ->options(CustomerFeedback::PRIORITIES)
+                            ->default('normal')
+                            ->required()
+                            ->native(false),
+
                         Forms\Components\Select::make('shipment_id')
                             ->label('Related Shipment')
                             ->relationship('shipment', 'shipping_reference')
                             ->preload()
                             ->searchable()
                             ->placeholder('Select a shipment (optional)'),
+
                         Forms\Components\Select::make('feedback_on')
                             ->label('Service')
                             ->options(CustomerFeedback::FEEDBACK_SOURCES)
                             ->required()
                             ->native(false),
+
                         Forms\Components\TextInput::make('customer_name')
                             ->label('Customer Name')
                             ->required()
@@ -117,7 +134,7 @@ class CustomerFeedbackResource extends Resource
                     ])
                     ->columns(2),
 
-                Forms\Components\Section::make('Response')
+                Forms\Components\Section::make('Response & Resolution')
                     ->description('Staff response to customer feedback')
                     ->schema([
                         Forms\Components\Textarea::make('response')
@@ -128,6 +145,10 @@ class CustomerFeedbackResource extends Resource
                             ->label('Responded By')
                             ->disabled()
                             ->dehydrated(),
+                        Forms\Components\Textarea::make('resolution_notes')
+                            ->label('Resolution Notes')
+                            ->rows(3)
+                            ->columnSpanFull(),
                     ])
                     ->collapsed()
                     ->collapsible(),
@@ -138,10 +159,33 @@ class CustomerFeedbackResource extends Resource
     {
         return $table
             ->columns([
+                Tables\Columns\TextColumn::make('type')
+                    ->label('Type')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'complaint' => 'danger',
+                        'feedback' => 'info',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => ucfirst($state)),
+
                 Tables\Columns\TextColumn::make('customer_name')
                     ->label('Customer')
                     ->description(fn ($record) => $record->customer_email)
                     ->searchable(['customer_name', 'customer_email']),
+
+                Tables\Columns\TextColumn::make('priority')
+                    ->label('Priority')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'low' => 'gray',
+                        'normal' => 'info',
+                        'high' => 'warning',
+                        'urgent' => 'danger',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => ucfirst($state)),
+
                 Tables\Columns\TextColumn::make('feedback_on')
                     ->label('Service')
                     ->badge()
@@ -150,11 +194,13 @@ class CustomerFeedbackResource extends Resource
                         'NeoRide Africa' => 'success',
                         default => 'gray',
                     }),
+
                 Tables\Columns\TextColumn::make('category')
                     ->label('Category')
                     ->badge()
                     ->color('gray')
                     ->limit(20),
+
                 Tables\Columns\TextColumn::make('rating')
                     ->label('Rating')
                     ->formatStateUsing(fn ($state) => str_repeat('★', $state) . str_repeat('☆', 5 - $state))
@@ -164,6 +210,7 @@ class CustomerFeedbackResource extends Resource
                         default => 'danger',
                     })
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
@@ -172,17 +219,28 @@ class CustomerFeedbackResource extends Resource
                         'resolved' => 'success',
                         default => 'gray',
                     }),
+
+                Tables\Columns\TextColumn::make('shipment.shipping_reference')
+                    ->label('Shipment')
+                    ->placeholder('N/A')
+                    ->badge()
+                    ->color('info')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('invoice_number')
                     ->label('Invoice #')
                     ->placeholder('N/A')
                     ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('customer_phone')
                     ->label('Phone')
                     ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Submitted')
                     ->dateTime('M j, Y g:i A')
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
@@ -190,6 +248,10 @@ class CustomerFeedbackResource extends Resource
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
+                SelectFilter::make('type')
+                    ->options(CustomerFeedback::TYPES),
+                SelectFilter::make('priority')
+                    ->options(CustomerFeedback::PRIORITIES),
                 SelectFilter::make('status')
                     ->options(CustomerFeedback::STATUSES),
                 SelectFilter::make('feedback_on')
@@ -225,15 +287,63 @@ class CustomerFeedbackResource extends Resource
                             ->placeholder('Enter your response to the customer...')
                             ->required()
                             ->rows(5),
+                        Forms\Components\Textarea::make('resolution_notes')
+                            ->label('Resolution Notes (optional)')
+                            ->rows(3),
                     ])
                     ->action(function (array $data, CustomerFeedback $record): void {
-                        $record->update([
+                        $updateData = [
                             'response' => $data['response'],
                             'responded_by' => Auth::user()->name,
                             'status' => $data['status'],
-                        ]);
+                        ];
+
+                        if (!empty($data['resolution_notes'])) {
+                            $updateData['resolution_notes'] = $data['resolution_notes'];
+                        }
+
+                        if ($data['status'] === 'resolved') {
+                            $updateData['resolved_at'] = now();
+                        }
+
+                        $record->update($updateData);
                     })
                     ->successNotificationTitle('Response sent successfully'),
+
+                Tables\Actions\Action::make('generate_link')
+                    ->label('Complaint Link')
+                    ->icon('heroicon-o-link')
+                    ->color('warning')
+                    ->visible(fn (CustomerFeedback $record) => empty($record->complaint_token))
+                    ->action(function (CustomerFeedback $record) {
+                        $token = CustomerFeedback::generateComplaintToken();
+                        $record->update(['complaint_token' => $token]);
+
+                        $url = url('/complaint/' . $token);
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Complaint Link Generated')
+                            ->body($url)
+                            ->success()
+                            ->persistent()
+                            ->send();
+                    }),
+
+                Tables\Actions\Action::make('copy_link')
+                    ->label('Copy Link')
+                    ->icon('heroicon-o-clipboard')
+                    ->color('info')
+                    ->visible(fn (CustomerFeedback $record) => !empty($record->complaint_token))
+                    ->action(function (CustomerFeedback $record) {
+                        $url = url('/complaint/' . $record->complaint_token);
+
+                        \Filament\Notifications\Notification::make()
+                            ->title('Complaint Link')
+                            ->body($url)
+                            ->success()
+                            ->send();
+                    }),
+
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
@@ -266,6 +376,24 @@ class CustomerFeedbackResource extends Resource
 
                 Section::make('Feedback Details')
                     ->schema([
+                        TextEntry::make('type')
+                            ->label('Type')
+                            ->badge()
+                            ->color(fn (string $state): string => match ($state) {
+                                'complaint' => 'danger',
+                                'feedback' => 'info',
+                                default => 'gray',
+                            }),
+                        TextEntry::make('priority')
+                            ->label('Priority')
+                            ->badge()
+                            ->color(fn (string $state): string => match ($state) {
+                                'low' => 'gray',
+                                'normal' => 'info',
+                                'high' => 'warning',
+                                'urgent' => 'danger',
+                                default => 'gray',
+                            }),
                         TextEntry::make('feedback_on')
                             ->label('Service')
                             ->badge()
@@ -293,6 +421,11 @@ class CustomerFeedbackResource extends Resource
                                 'resolved' => 'success',
                                 default => 'gray',
                             }),
+                        TextEntry::make('shipment.shipping_reference')
+                            ->label('Related Shipment')
+                            ->placeholder('None')
+                            ->badge()
+                            ->color('info'),
                         TextEntry::make('comment')
                             ->label('Customer Comment')
                             ->columnSpanFull()
@@ -306,7 +439,7 @@ class CustomerFeedbackResource extends Resource
                     ])
                     ->columns(2),
 
-                Section::make('Response')
+                Section::make('Response & Resolution')
                     ->schema([
                         TextEntry::make('response')
                             ->label('Staff Response')
@@ -315,6 +448,14 @@ class CustomerFeedbackResource extends Resource
                         TextEntry::make('responded_by')
                             ->label('Responded By')
                             ->placeholder('Not yet responded'),
+                        TextEntry::make('resolution_notes')
+                            ->label('Resolution Notes')
+                            ->columnSpanFull()
+                            ->placeholder('No resolution notes'),
+                        TextEntry::make('resolved_at')
+                            ->label('Resolved At')
+                            ->dateTime('F j, Y g:i A')
+                            ->placeholder('Not resolved'),
                     ])
                     ->collapsed(fn ($record) => empty($record->response)),
 

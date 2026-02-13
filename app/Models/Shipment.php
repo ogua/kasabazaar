@@ -314,6 +314,16 @@ class Shipment extends Model
         return $this->hasMany(Income::class, "shipment_id");
     }
 
+    public function media(): HasMany
+    {
+        return $this->hasMany(ShipmentMedia::class, 'shipment_id');
+    }
+
+    public function pickupSchedules(): HasMany
+    {
+        return $this->hasMany(PickupSchedule::class, 'shipment_id');
+    }
+
     public function trips()
     {
         return $this->belongsToMany(Trip::class, 'trip_shipments')

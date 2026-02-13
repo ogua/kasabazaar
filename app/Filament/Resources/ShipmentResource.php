@@ -15,7 +15,9 @@ use App\Models\Shipment;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Enums\ShippingStatus;
+use App\Models\ShipmentMedia;
 use App\Models\ShipmentUpdate;
+use App\Models\CustomerFeedback;
 use Filament\Facades\Filament;
 use Livewire\Attributes\Layout;
 use Filament\Resources\Resource;
@@ -76,6 +78,24 @@ class ShipmentResource extends Resource
                                     //->editOptionForm(ClientResource::clientschema())
                                     ->preload()
                                     ->searchable()
+                                    ->live()
+                                    ->afterStateUpdated(function ($state, callable $set) {
+                                        if ($state) {
+                                            $hasShipments = Shipment::where('client_id', $state)->exists();
+                                            $set('client_existence', $hasShipments ? 'returning-client' : 'new-client');
+                                        }
+                                    })
+                                    ->columnSpan(1),
+
+                                Forms\Components\Select::make('client_existence')
+                                    ->label('Client Type')
+                                    ->options([
+                                        'new-client' => 'New Client',
+                                        'returning-client' => 'Returning Client',
+                                    ])
+                                    ->default('new-client')
+                                    ->required()
+                                    ->native(false)
                                     ->columnSpan(1),
 
                                 Forms\Components\Hidden::make('tracking_number'),
@@ -300,6 +320,29 @@ class ShipmentResource extends Resource
                                     ->cloneable()
                                     ->itemLabel(fn(array $state): ?string => $state['receiver_name'] ?? 'New Receiver')
                                     ->schema([
+                                        Forms\Components\Toggle::make('sender_is_receiver')
+                                            ->label('Sender is Receiver')
+                                            ->dehydrated(false)
+                                            ->live()
+                                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                                if ($state) {
+                                                    $clientId = $get('../../client_id');
+                                                    if ($clientId) {
+                                                        $client = Client::find($clientId);
+                                                        if ($client) {
+                                                            $set('receiver_name', $client->name);
+                                                            $set('receiver_phone', $client->phone);
+                                                            $set('receiver_email', $client->email);
+                                                            $set('country', $client->country);
+                                                            $set('state_region', $client->state_region);
+                                                            $set('city', $client->city);
+                                                            $set('address', $client->address);
+                                                        }
+                                                    }
+                                                }
+                                            })
+                                            ->columnSpanFull(),
+
                                         Forms\Components\Grid::make(4)
                                             ->schema([
                                                 Forms\Components\TextInput::make('receiver_name')
@@ -602,6 +645,20 @@ class ShipmentResource extends Resource
                     ->label('Sender')
                     ->searchable()
                     ->badge(),
+
+                Tables\Columns\TextColumn::make('client_existence')
+                    ->label('Client')
+                    ->badge()
+                    ->color(fn(string $state): string => match ($state) {
+                        'returning-client' => 'success',
+                        'new-client' => 'info',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn(string $state): string => match ($state) {
+                        'new-client' => 'New',
+                        'returning-client' => 'Returning',
+                        default => $state,
+                    }),
 
                 Tables\Columns\TextColumn::make('payment_status')
                     ->label('Payment')
@@ -1023,6 +1080,121 @@ class ShipmentResource extends Resource
                                 \Filament\Notifications\Notification::make()
                                     ->title('Message Sent')
                                     ->success()
+                                    ->send();
+                            }),
+
+                        Tables\Actions\Action::make('media_evidence')
+                            ->label('Media / Evidence')
+                            ->icon('heroicon-m-camera')
+                            ->color('purple')
+                            ->modalWidth('5xl')
+                            ->modalHeading('Shipment Media & Evidence')
+                            ->form([
+                                Forms\Components\Section::make('Existing Media')
+                                    ->schema([
+                                        Forms\Components\Placeholder::make('media_gallery')
+                                            ->label('')
+                                            ->content(function ($record) {
+                                                $media = $record->media()->latest()->get();
+                                                if ($media->isEmpty()) {
+                                                    return 'No media uploaded yet.';
+                                                }
+                                                $html = '<div class="grid grid-cols-3 gap-4">';
+                                                foreach ($media as $item) {
+                                                    $stageLabel = ShipmentMedia::STAGES[$item->stage] ?? $item->stage;
+                                                    $html .= '<div class="border rounded-lg p-2 dark:border-gray-700">';
+                                                    if ($item->type === 'image') {
+                                                        $html .= '<img src="' . asset('storage/' . $item->file_path) . '" class="w-full h-32 object-cover rounded mb-2" />';
+                                                    } else {
+                                                        $html .= '<div class="w-full h-32 bg-gray-100 dark:bg-gray-800 rounded mb-2 flex items-center justify-center"><span class="text-2xl">🎥</span></div>';
+                                                    }
+                                                    $html .= '<span class="text-xs font-medium">' . $stageLabel . '</span>';
+                                                    if ($item->caption) {
+                                                        $html .= '<p class="text-xs text-gray-500 mt-1">' . e($item->caption) . '</p>';
+                                                    }
+                                                    $html .= '</div>';
+                                                }
+                                                $html .= '</div>';
+                                                return new \Illuminate\Support\HtmlString($html);
+                                            }),
+                                    ])
+                                    ->collapsible(),
+
+                                Forms\Components\Section::make('Upload New Media')
+                                    ->schema([
+                                        Forms\Components\Select::make('media_stage')
+                                            ->label('Stage')
+                                            ->options(ShipmentMedia::STAGES)
+                                            ->required()
+                                            ->native(false),
+
+                                        Forms\Components\FileUpload::make('media_files')
+                                            ->label('Upload Images / Videos')
+                                            ->multiple()
+                                            ->directory('shipment-media')
+                                            ->acceptedFileTypes(['image/*', 'video/*'])
+                                            ->maxSize(51200) // 50MB
+                                            ->columnSpanFull(),
+
+                                        Forms\Components\TextInput::make('media_caption')
+                                            ->label('Caption (optional)')
+                                            ->placeholder('Describe these files...'),
+                                    ])
+                                    ->columns(2),
+                            ])
+                            ->action(function ($record, array $data) {
+                                if (!empty($data['media_files'])) {
+                                    foreach ($data['media_files'] as $filePath) {
+                                        $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+                                        $type = in_array($extension, ['mp4', 'mov', 'avi', 'webm', 'mkv']) ? 'video' : 'image';
+
+                                        ShipmentMedia::create([
+                                            'shipment_id' => $record->id,
+                                            'type' => $type,
+                                            'file_path' => $filePath,
+                                            'stage' => $data['media_stage'],
+                                            'caption' => $data['media_caption'] ?? null,
+                                            'uploaded_by' => auth()->id(),
+                                        ]);
+                                    }
+
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('Media Uploaded')
+                                        ->body(count($data['media_files']) . ' file(s) uploaded successfully.')
+                                        ->success()
+                                        ->send();
+                                }
+                            })
+                            ->modalSubmitActionLabel('Upload'),
+
+                        Tables\Actions\Action::make('complaint_link')
+                            ->label('Complaint Link')
+                            ->icon('heroicon-m-exclamation-triangle')
+                            ->color('danger')
+                            ->action(function ($record) {
+                                $token = CustomerFeedback::generateComplaintToken();
+
+                                CustomerFeedback::create([
+                                    'complaint_token' => $token,
+                                    'type' => 'complaint',
+                                    'shipment_id' => $record->id,
+                                    'feedback_on' => 'Rose Shipment',
+                                    'customer_name' => $record->client?->name ?? 'Pending',
+                                    'customer_email' => $record->client?->email ?? '',
+                                    'customer_phone' => $record->client?->phone ?? '',
+                                    'category' => 'Other',
+                                    'rating' => 3,
+                                    'status' => 'pending',
+                                    'priority' => 'normal',
+                                ]);
+
+                                $url = url('/complaint/' . $token);
+
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Complaint Link Generated')
+                                    ->body($url)
+                                    ->success()
+                                    ->persistent()
                                     ->send();
                             }),
 
