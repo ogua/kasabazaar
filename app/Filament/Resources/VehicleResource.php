@@ -38,6 +38,14 @@ class VehicleResource extends Resource
                             ->maxLength(100),
                         Forms\Components\TextInput::make('vehicle_type')
                             ->required(),
+                        Forms\Components\Select::make('ownership_type')
+                            ->label('Ownership')
+                            ->required()
+                            ->options([
+                                'Owned' => 'Company Owned',
+                                'Hired' => 'Hired Vehicle'
+                            ])
+                            ->searchable(),
                         Forms\Components\TextInput::make('model')
                             ->required()
                             ->maxLength(100),

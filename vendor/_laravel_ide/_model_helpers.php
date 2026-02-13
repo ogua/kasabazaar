@@ -15908,6 +15908,7 @@ namespace App\Models {
      * @property mixed $year
      * @property string|null $model
      * @property string|null $make
+     * @property string|null $ownership_type
      * @property string|null $vehicle_type
      * @property string $registration_number
      * @property string $branch_id
@@ -15921,6 +15922,7 @@ namespace App\Models {
      * @method static \Illuminate\Database\Eloquent\Builder<Vehicle>|Vehicle whereBranchId($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Vehicle>|Vehicle whereRegistrationNumber($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Vehicle>|Vehicle whereVehicleType($value)
+     * @method static \Illuminate\Database\Eloquent\Builder<Vehicle>|Vehicle whereOwnershipType($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Vehicle>|Vehicle whereMake($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Vehicle>|Vehicle whereModel($value)
      * @method static \Illuminate\Database\Eloquent\Builder<Vehicle>|Vehicle whereYear($value)
