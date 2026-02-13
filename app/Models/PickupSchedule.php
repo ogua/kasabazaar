@@ -41,7 +41,7 @@ class PickupSchedule extends Model
 
     public function assignedUser(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'assigned_to');
+        return $this->belongsTo(Staff::class, 'assigned_to');
     }
 
     public function getStatusColorAttribute(): string

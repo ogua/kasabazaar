@@ -3,8 +3,9 @@
 namespace App\Filament\Resources;
 
 use Filament\Forms;
-use Filament\Tables;
 use App\Models\User;
+use Filament\Tables;
+use App\Models\Staff;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Models\PickupSchedule;
@@ -70,7 +71,7 @@ class PickupScheduleResource extends Resource
 
                         Forms\Components\Select::make('assigned_to')
                             ->label('Assigned Staff')
-                            ->options(User::pluck('name', 'id'))
+                            ->options(Staff::pluck('name', 'id'))
                             ->searchable()
                             ->placeholder('Select staff member'),
 
