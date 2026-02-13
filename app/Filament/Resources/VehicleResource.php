@@ -101,7 +101,7 @@ class VehicleResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('registration_number')
-                    ->descriptionn(fn($record) => $record->ownership_type)
+                    ->description(fn($record) => $record->ownership_type)
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('make')
