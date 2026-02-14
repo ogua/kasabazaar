@@ -17,11 +17,12 @@ use Filament\Tables\Table;
 use App\Enums\ShippingStatus;
 use App\Models\ShipmentMedia;
 use App\Models\ShipmentUpdate;
-use App\Models\CustomerFeedback;
 use Filament\Facades\Filament;
 use Livewire\Attributes\Layout;
+use App\Models\CustomerFeedback;
 use Filament\Resources\Resource;
 use libphonenumber\NumberFormat;
+use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Wizard;
 use Filament\Tables\Actions\ActionGroup;
@@ -856,6 +857,7 @@ class ShipmentResource extends Resource
                             ->label('Payments')
                             ->color('success')
                             ->icon('heroicon-m-banknotes')
+                            ->visible(fn () =>Auth::user()?->hasAnyRole(['super_admin','CEO']))
                             ->modalWidth('4xl')
                             ->fillForm(fn($record) => [
                                 'total_amount' => $record->total,
@@ -1029,6 +1031,7 @@ class ShipmentResource extends Resource
                             ->label('Send Message')
                             ->icon('heroicon-m-chat-bubble-left-right')
                             ->color('info')
+                            ->visible(fn () =>Auth::user()?->hasAnyRole(['super_admin','CEO']))
                             ->modalHeading('Send Message to Client')
                             ->form([
                                 Forms\Components\Select::make('template_id')

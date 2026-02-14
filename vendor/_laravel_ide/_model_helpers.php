@@ -15908,7 +15908,7 @@ namespace App\Models {
      * @property mixed $year
      * @property string|null $model
      * @property string|null $make
-     * @property string|null $ownership_type
+     * @property string $ownership_type
      * @property string|null $vehicle_type
      * @property string $registration_number
      * @property string $branch_id
