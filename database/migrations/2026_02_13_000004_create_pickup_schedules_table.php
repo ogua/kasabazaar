@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
 {
@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignUuid('branch_id')->constrained()->cascadeOnDelete();
             $table->foreignUuid('client_id')->constrained()->cascadeOnDelete();
             $table->foreignUuid('shipment_id')->nullable()->constrained()->nullOnDelete();
-            $table->foreignUuid('assigned_to')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignUuid('assigned_to')->nullable()->constrained('staff')->nullOnDelete();
             $table->dateTime('scheduled_at');
             $table->string('pickup_location');
             $table->string('contact_phone')->nullable();

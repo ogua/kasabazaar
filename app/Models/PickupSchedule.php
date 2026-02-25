@@ -44,6 +44,11 @@ class PickupSchedule extends Model
         return $this->belongsTo(Staff::class, 'assigned_to');
     }
 
+    public function pickupItems()
+    {
+        return $this->hasMany(ScheduleItem::class,"pickup_schedule_id");
+    }
+
     public function getStatusColorAttribute(): string
     {
         return match ($this->status) {

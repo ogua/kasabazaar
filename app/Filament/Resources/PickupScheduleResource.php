@@ -24,6 +24,8 @@ class PickupScheduleResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    protected static bool $isScopedToTenant = false;
+
     public static function getNavigationBadge(): ?string
     {
         return static::getModel()::where('status', 'scheduled')
@@ -51,7 +53,15 @@ class PickupScheduleResource extends Resource
                             ->searchable()
                             ->preload()
                             ->required()
-                            ->createOptionForm(\App\Filament\Resources\ClientResource::clientschema()),
+                            ->live()
+                            ->createOptionForm(\App\Filament\Resources\ClientResource::clientschema())
+                            ->afterStateUpdated(function (callable $set, ?string $state) {
+                                if ($state) {
+                                    $client = \App\Models\Client::find($state);
+                                    $set('contact_phone', $client->phone);
+                                    $set('pickup_location', $client->address);
+                                }
+                            }),
 
                         Forms\Components\DateTimePicker::make('scheduled_at')
                             ->label('Scheduled Date & Time')
@@ -59,15 +69,9 @@ class PickupScheduleResource extends Resource
                             ->native(false)
                             ->minDate(now()->subDay()),
 
-                        Forms\Components\TextInput::make('pickup_location')
-                            ->label('Pickup Location / Address')
-                            ->required()
-                            ->placeholder('Enter pickup address'),
+                        Forms\Components\TextInput::make('pickup_location'),
 
-                        Forms\Components\TextInput::make('contact_phone')
-                            ->label('Contact Phone')
-                            ->tel()
-                            ->placeholder('Phone for pickup day'),
+                        Forms\Components\TextInput::make('contact_phone'),
 
                         Forms\Components\Select::make('assigned_to')
                             ->label('Assigned Staff')
@@ -82,12 +86,12 @@ class PickupScheduleResource extends Resource
                             ->required()
                             ->native(false),
 
-                        Forms\Components\Select::make('shipment_id')
-                            ->label('Linked Shipment (optional)')
-                            ->relationship('shipment', 'shipping_reference')
-                            ->searchable()
-                            ->preload()
-                            ->placeholder('Link to an existing shipment'),
+                        // Forms\Components\Select::make('shipment_id')
+                        //     ->label('Linked Shipment (optional)')
+                        //     ->relationship('shipment', 'shipping_reference')
+                        //     ->searchable()
+                        //     ->preload()
+                        //     ->placeholder('Link to an existing shipment'),
 
                         Forms\Components\Textarea::make('items_description')
                             ->label('Items Description')
@@ -95,13 +99,34 @@ class PickupScheduleResource extends Resource
                             ->rows(3)
                             ->columnSpanFull(),
 
-                        Forms\Components\Textarea::make('notes')
-                            ->label('Notes')
-                            ->placeholder('Any additional notes or instructions')
-                            ->rows(2)
-                            ->columnSpanFull(),
+                        Forms\Components\Repeater::make('pickupItems')
+                                ->relationship('pickupItems')
+                                ->label('Items Scheduled for Pickup')
+                                ->addActionLabel('+ Add Item')
+                                ->defaultItems(1)
+                                ->live()
+                                ->collapsible()
+                                ->schema([
+                                Forms\Components\Select::make('product_id')
+                                ->label('Item Name')
+                                ->required()
+                                ->relationship('product', 'name')
+                                ->preload()
+                                ->searchable()
+                                ->createOptionForm(ProductResource::productself())
+                                ->editOptionForm(ProductResource::productself()),
+
+                          
+                            Forms\Components\TextInput::make('quantity')
+                                ->label('Quantity')
+                                ->required()
+                                ->numeric()
+                                ->default(1)
+                                ->placeholder('e.g., 3'),
                     ])
                     ->columns(2),
+
+                ])
             ]);
     }
 
