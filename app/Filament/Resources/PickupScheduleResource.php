@@ -69,7 +69,8 @@ class PickupScheduleResource extends Resource
                             ->native(false)
                             ->minDate(now()->subDay()),
 
-                        Forms\Components\TextInput::make('pickup_location'),
+                        Forms\Components\TextInput::make('pickup_location')
+                        ->required(),
 
                         Forms\Components\TextInput::make('contact_phone'),
 
