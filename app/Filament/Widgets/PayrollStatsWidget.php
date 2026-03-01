@@ -7,6 +7,7 @@ use App\Models\PayrollEntry;
 use App\Models\Staff;
 use App\Enums\PayrollStatus;
 use App\Enums\PayrollEntryStatus;
+use App\Service\ExchangeRateService;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Livewire\Attributes\On;
@@ -49,10 +50,12 @@ class PayrollStatsWidget extends BaseWidget
 
         $pendingPayments = PayrollEntry::where('status', PayrollEntryStatus::Pending)->count();
 
-        // Payroll within date range
+        // Payroll within date range (net_salary is in GHS, convert to USD)
         $periodPayroll = PayrollEntry::whereHas('payrollPeriod', function ($query) use ($startDate, $endDate) {
             $query->whereBetween('pay_date', [$startDate, $endDate]);
         })->sum('net_salary');
+        $exchangeRate = app(ExchangeRateService::class)->getCurrentRate('USD', 'GHS');
+        $periodPayrollUsd = $exchangeRate > 0 ? $periodPayroll / $exchangeRate : 0;
 
         // Calculate days in period for label
         $days = \Carbon\Carbon::parse($startDate)->diffInDays(\Carbon\Carbon::parse($endDate)) + 1;
@@ -69,7 +72,7 @@ class PayrollStatsWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-clock')
                 ->color($pendingPayments > 0 ? 'warning' : 'success'),
 
-            Stat::make('Payroll ' . $periodLabel, '₵' . number_format($periodPayroll, 2))
+            Stat::make('Payroll ' . $periodLabel, '$' . number_format($periodPayrollUsd, 2))
                 ->description('Total net salaries')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('success'),

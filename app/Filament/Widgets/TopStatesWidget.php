@@ -59,10 +59,10 @@ class TopStatesWidget extends Widget
 
                 $paymentsReceived = Payment::where('payment_type', 'credit')
                     ->whereIn('shipment_id', $shipmentIds)
-                    ->sum('amount_ghs') ?: 0;
+                    ->sum('amount_usd') ?: 0;
 
-                $totalRevenueGhs = $shipments->sum('total_ghs') ?: 1;
-                $paymentRate = ($paymentsReceived / $totalRevenueGhs) * 100;
+                $totalRevenueUsd = $shipments->sum('total') ?: 1;
+                $paymentRate = ($paymentsReceived / $totalRevenueUsd) * 100;
 
                 $totalShipments = $filteredShipmentIds->count() ?: 1;
                 $marketShare = ($shipments->count() / $totalShipments) * 100;

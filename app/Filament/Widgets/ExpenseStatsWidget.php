@@ -98,10 +98,6 @@ class ExpenseStatsWidget extends BaseWidget
                 ->descriptionIcon($change >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($change >= 0 ? 'danger' : 'success'),
 
-            Stat::make('Expenses (GHS) ' . $periodLabel, '₵' . number_format($thisMonthExpensesGhs, 2))
-                ->description('Local currency total')
-                ->descriptionIcon('heroicon-m-currency-dollar'),
-
             Stat::make('Top Category', $topCategory?->category?->name ?? 'N/A')
                 ->description($topCategory ? '$' . number_format($topCategory->total, 2) : '')
                 ->descriptionIcon('heroicon-m-chart-pie'),

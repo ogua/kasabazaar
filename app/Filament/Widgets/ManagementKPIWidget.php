@@ -138,12 +138,13 @@ class ManagementKPIWidget extends BaseWidget
         }
         $outstandingReceivables = $outstandingQuery
             ->selectRaw('
-                SUM(shipments.total_ghs) - COALESCE(SUM(payments.amount_ghs), 0) as outstanding
+                SUM(shipments.total) - COALESCE(SUM(payments.amount_usd), COALESCE(SUM(payments.amount), 0)) as outstanding
             ')
             ->value('outstanding') ?: 0;
 
         // Total Debt/Receivables Ratio (Days Sales Outstanding equivalent)
-        $dailyRevenue = $monthRevenue / max($days, 1);
+        $monthRevenueUsd = $currentRate > 0 ? $monthRevenue / $currentRate : 0;
+        $dailyRevenue = $monthRevenueUsd / max($days, 1);
         $dso = $dailyRevenue > 0 ? $outstandingReceivables / $dailyRevenue : 0;
 
         // Expense to Revenue Ratio
@@ -166,7 +167,7 @@ class ManagementKPIWidget extends BaseWidget
 
         return [
             Stat::make('Avg. Shipment Value', '$' . number_format($avgShipmentValue, 2))
-                ->description('₵' . number_format($avgShipmentValue * $currentRate, 2) . ' at current rate')
+                ->description('Average value per shipment')
                 ->descriptionIcon('heroicon-m-calculator')
                 ->color('info')
                 ->chart($this->getShipmentValueTrend()),
@@ -197,8 +198,8 @@ class ManagementKPIWidget extends BaseWidget
             Stat::make('Revenue Growth', number_format(abs($revenueGrowth), 1) . '%')
                 ->description(
                     $revenueGrowth >= 0
-                        ? 'vs last month (+₵' . number_format($monthRevenue - $lastMonthRevenue, 2) . ')'
-                        : 'vs last month (-₵' . number_format($lastMonthRevenue - $monthRevenue, 2) . ')'
+                        ? 'vs last month (+$' . number_format($currentRate > 0 ? ($monthRevenue - $lastMonthRevenue) / $currentRate : 0, 2) . ')'
+                        : 'vs last month (-$' . number_format($currentRate > 0 ? ($lastMonthRevenue - $monthRevenue) / $currentRate : 0, 2) . ')'
                 )
                 ->descriptionIcon($revenueGrowth >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($revenueGrowth >= 0 ? 'success' : 'danger')
@@ -213,7 +214,7 @@ class ManagementKPIWidget extends BaseWidget
                 ->descriptionIcon($shipmentGrowth >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($shipmentGrowth >= 0 ? 'success' : 'danger'),
 
-            Stat::make('Outstanding Receivables', '₵' . number_format($outstandingReceivables, 2))
+            Stat::make('Outstanding Receivables', '$' . number_format($outstandingReceivables, 2))
                 ->description('Days Sales Outstanding: ' . number_format($dso, 1) . ' days')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color($dso <= 30 ? 'success' : ($dso <= 60 ? 'warning' : 'danger')),

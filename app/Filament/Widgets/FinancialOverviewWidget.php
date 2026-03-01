@@ -7,13 +7,13 @@ use App\Models\Expense;
 use App\Models\Payment;
 use App\Models\Shipment;
 use App\Enums\IncomeStatus;
+use Livewire\Attributes\On;
 use App\Models\PayrollEntry;
 use App\Enums\PayrollEntryStatus;
-use App\Service\ExchangeRateService;
 use Illuminate\Support\Facades\DB;
+use App\Service\ExchangeRateService;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
-use Livewire\Attributes\On;
 
 class FinancialOverviewWidget extends BaseWidget
 {
@@ -119,9 +119,11 @@ class FinancialOverviewWidget extends BaseWidget
 
         // Total Costs
         $totalCosts = $totalExpenses + $totalPayroll;
+        $totalCostsUsd = $currentRate > 0 ? $totalCosts / $currentRate : 0;
 
         // Net Profit/Loss
         $netProfit = $totalIncomeGhs - $totalCosts;
+        $netProfitUsd = $totalIncomeUsd - $totalCostsUsd;
 
         // 5. Unpaid Shipments
         $unpaidShipmentsData = DB::table('shipments')
@@ -144,9 +146,6 @@ class FinancialOverviewWidget extends BaseWidget
         $unpaidAmountUsd = $unpaidShipmentsData->sum(function ($item) {
             return $item->total - ($item->paid_amount_usd ?: 0);
         });
-        $unpaidAmountGhs = $unpaidShipmentsData->sum(function ($item) {
-            return ($item->total_ghs ?: 0) - ($item->paid_amount_ghs ?: 0);
-        });
 
         // Calculate days in period for label
         $days = \Carbon\Carbon::parse($startDate)->diffInDays(\Carbon\Carbon::parse($endDate)) + 1;
@@ -156,29 +155,29 @@ class FinancialOverviewWidget extends BaseWidget
         $filterLabel = $containerNumber ? ' [CON' . $containerNumber . ']' : '';
 
         return [
-            Stat::make('Total Income ' . $periodLabel . $filterLabel, '₵' . number_format($totalIncomeGhs, 2))
-                ->description("Shipment Payments: ₵" . number_format($shipmentIncomeGhs, 2) . " ($" . number_format($shipmentIncomeUsd, 2) . ") | External: ₵" . number_format($externalIncomeGhs, 2) . " ($" . number_format($externalIncomeUsd, 2) . ")")
+            Stat::make('Total Income ' . $periodLabel . $filterLabel, '$' . number_format($totalIncomeUsd, 2))
+                ->description("Shipment Payments: $" . number_format($shipmentIncomeUsd, 2) . " | External: $" . number_format($externalIncomeUsd, 2))
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('success')
                 ->chart($this->getIncomeChart($startDate, $endDate)),
 
-            Stat::make('Total Costs ' . $periodLabel, '₵' . number_format($totalCosts, 2))
-                ->description("Expenses: ₵" . number_format($totalExpenses, 2) . " | Payroll: ₵" . number_format($totalPayroll, 2))
+            Stat::make('Total Costs ' . $periodLabel, '$' . number_format($totalCostsUsd, 2))
+                ->description("Expenses: $" . number_format($currentRate > 0 ? $totalExpenses / $currentRate : 0, 2) . " | Payroll: $" . number_format($currentRate > 0 ? $totalPayroll / $currentRate : 0, 2))
                 ->descriptionIcon('heroicon-m-currency-dollar')
                 ->color('danger')
                 ->chart($this->getCostChart($startDate, $endDate)),
 
-            Stat::make('Net Profit/Loss ' . $periodLabel, '₵' . number_format($netProfit, 2))
+            Stat::make('Net Profit/Loss ' . $periodLabel, '$' . number_format($netProfitUsd, 2))
                 ->description(
-                    $netProfit >= 0
-                        ? 'Profitable: ' . number_format(($netProfit / ($totalIncomeGhs ?: 1)) * 100, 1) . '% margin'
-                        : 'Loss: ₵' . number_format(abs($netProfit), 2)
+                    $netProfitUsd >= 0
+                        ? 'Profitable: ' . number_format(($netProfitUsd / ($totalIncomeUsd ?: 1)) * 100, 1) . '% margin'
+                        : 'Loss: $' . number_format(abs($netProfitUsd), 2)
                 )
                 ->descriptionIcon($netProfit >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($netProfit >= 0 ? 'success' : 'danger'),
 
             Stat::make('Unpaid Shipments', $unpaidShipments)
-                ->description('Outstanding: $' . number_format($unpaidAmountUsd, 2) . ' (₵' . number_format($unpaidAmountGhs, 2) . ')')
+                ->description('Outstanding: $' . number_format($unpaidAmountUsd, 2))
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
                 ->color($unpaidShipments > 0 ? 'warning' : 'success')
                 ->url(route('filament.admin.resources.shipments.index', [
