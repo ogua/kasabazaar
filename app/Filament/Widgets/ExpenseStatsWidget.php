@@ -65,7 +65,7 @@ class ExpenseStatsWidget extends BaseWidget
             : 0;
 
         // Top category for the period
-        $topCategoryQuery = Expense::select('expense_category_id', DB::raw('SUM(amount_usd) as total'))
+        $topCategoryQuery = Expense::select('expense_category_id', DB::raw('SUM(amount_ghs) as total'))
             ->with('category')
             ->whereBetween('expense_date', [$startDate, $endDate])
             ->groupBy('expense_category_id')
@@ -93,17 +93,13 @@ class ExpenseStatsWidget extends BaseWidget
         $filterLabel = $containerNumber ? ' [CON' . $containerNumber . ']' : '';
 
         return [
-            Stat::make('Expenses (USD) ' . $periodLabel . $filterLabel, '$' . number_format($thisMonthExpenses, 2))
+            Stat::make('Expenses ' . $periodLabel . $filterLabel, '₵' . number_format($thisMonthExpensesGhs, 2))
                 ->description($change >= 0 ? abs(round($change, 1)) . '% increase' : abs(round($change, 1)) . '% decrease')
                 ->descriptionIcon($change >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($change >= 0 ? 'danger' : 'success'),
 
-            Stat::make('Expenses (GHS) ' . $periodLabel, '₵' . number_format($thisMonthExpensesGhs, 2))
-                ->description('Local currency total')
-                ->descriptionIcon('heroicon-m-currency-dollar'),
-
             Stat::make('Top Category', $topCategory?->category?->name ?? 'N/A')
-                ->description($topCategory ? '$' . number_format($topCategory->total, 2) : '')
+                ->description($topCategory ? '₵' . number_format($topCategory->total, 2) : '')
                 ->descriptionIcon('heroicon-m-chart-pie'),
         ];
     }

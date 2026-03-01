@@ -98,7 +98,6 @@ class FinancialOverviewWidget extends BaseWidget
 
         // Total Income in GHS
         $totalIncomeGhs = $shipmentIncomeGhs + $externalIncomeGhs;
-        $totalIncomeUsd = $shipmentIncomeUsd + $externalIncomeUsd;
 
         // 3. Expenses (all expenses including shipment-related)
         $expenseQuery = Expense::whereBetween('expense_date', [$startDate, $endDate]);
@@ -141,9 +140,6 @@ class FinancialOverviewWidget extends BaseWidget
             ->get();
 
         $unpaidShipments = $unpaidShipmentsData->count();
-        $unpaidAmountUsd = $unpaidShipmentsData->sum(function ($item) {
-            return $item->total - ($item->paid_amount_usd ?: 0);
-        });
         $unpaidAmountGhs = $unpaidShipmentsData->sum(function ($item) {
             return ($item->total_ghs ?: 0) - ($item->paid_amount_ghs ?: 0);
         });
@@ -157,7 +153,7 @@ class FinancialOverviewWidget extends BaseWidget
 
         return [
             Stat::make('Total Income ' . $periodLabel . $filterLabel, '₵' . number_format($totalIncomeGhs, 2))
-                ->description("Shipment Payments: ₵" . number_format($shipmentIncomeGhs, 2) . " ($" . number_format($shipmentIncomeUsd, 2) . ") | External: ₵" . number_format($externalIncomeGhs, 2) . " ($" . number_format($externalIncomeUsd, 2) . ")")
+                ->description("Shipment Payments: ₵" . number_format($shipmentIncomeGhs, 2) . " | External: ₵" . number_format($externalIncomeGhs, 2))
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('success')
                 ->chart($this->getIncomeChart($startDate, $endDate)),
@@ -178,7 +174,7 @@ class FinancialOverviewWidget extends BaseWidget
                 ->color($netProfit >= 0 ? 'success' : 'danger'),
 
             Stat::make('Unpaid Shipments', $unpaidShipments)
-                ->description('Outstanding: $' . number_format($unpaidAmountUsd, 2) . ' (₵' . number_format($unpaidAmountGhs, 2) . ')')
+                ->description('Outstanding: ₵' . number_format($unpaidAmountGhs, 2))
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
                 ->color($unpaidShipments > 0 ? 'warning' : 'success')
                 ->url(route('filament.admin.resources.shipments.index', [

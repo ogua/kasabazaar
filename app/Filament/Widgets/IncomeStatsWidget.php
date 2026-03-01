@@ -51,7 +51,7 @@ class IncomeStatsWidget extends BaseWidget
                 $query->where('container_number', $containerNumber);
             });
         }
-        $thisMonthIncome = $currentIncomeQuery->sum('amount_usd');
+        $thisMonthIncome = $currentIncomeQuery->sum('amount_ghs');
 
         // Previous period income
         $previousIncomeQuery = Income::whereBetween('income_date', [$prevStartDate, $prevEndDate])
@@ -62,7 +62,7 @@ class IncomeStatsWidget extends BaseWidget
                 $query->where('container_number', $containerNumber);
             });
         }
-        $lastMonthIncome = $previousIncomeQuery->sum('amount_usd');
+        $lastMonthIncome = $previousIncomeQuery->sum('amount_ghs');
 
         // Pending income (no date filter, but apply container filter)
         $pendingIncomeQuery = Income::where('status', IncomeStatus::Pending);
@@ -71,7 +71,7 @@ class IncomeStatsWidget extends BaseWidget
                 $query->where('container_number', $containerNumber);
             });
         }
-        $pendingIncome = $pendingIncomeQuery->sum('amount_usd');
+        $pendingIncome = $pendingIncomeQuery->sum('amount_ghs');
 
         $change = $lastMonthIncome > 0
             ? (($thisMonthIncome - $lastMonthIncome) / $lastMonthIncome) * 100
@@ -82,20 +82,20 @@ class IncomeStatsWidget extends BaseWidget
         $filterLabel = $containerNumber ? ' [CON' . $containerNumber . ']' : '';
 
         return [
-            Stat::make('External Income ' . $periodLabel . $filterLabel, '$' . number_format($thisMonthIncome, 2))
+            Stat::make('External Income ' . $periodLabel . $filterLabel, '₵' . number_format($thisMonthIncome, 2))
                 ->description($change >= 0 ? abs(round($change, 1)) . '% increase' : abs(round($change, 1)) . '% decrease')
                 ->descriptionIcon($change >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($change >= 0 ? 'success' : 'danger'),
 
-            Stat::make('Pending Income', '$' . number_format($pendingIncome, 2))
+            Stat::make('Pending Income', '₵' . number_format($pendingIncome, 2))
                 ->description('Awaiting receipt')
                 ->descriptionIcon('heroicon-m-clock')
                 ->color('warning'),
 
-            Stat::make('Total External Income (YTD)', '$' . number_format(
+            Stat::make('Total External Income (YTD)', '₵' . number_format(
                 Income::whereYear('income_date', now()->year)
                     ->where('status', IncomeStatus::Received)
-                    ->sum('amount_usd'),
+                    ->sum('amount_ghs'),
                 2
             ))
                 ->description('Year to date')

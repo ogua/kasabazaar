@@ -58,7 +58,7 @@ class ManagementKPIWidget extends BaseWidget
         if ($containerNumber) {
             $avgShipmentQuery->where('container_number', $containerNumber);
         }
-        $avgShipmentValue = $avgShipmentQuery->avg('total');
+        $avgShipmentValue = $avgShipmentQuery->avg('total_ghs');
 
         // Collection Efficiency (Payments received vs Revenue generated)
         $monthRevenueQuery = Shipment::whereBetween('created_at', [$startDate, $endDate]);
@@ -165,8 +165,8 @@ class ManagementKPIWidget extends BaseWidget
         $filterLabel = $containerNumber ? ' [CON' . $containerNumber . ']' : '';
 
         return [
-            Stat::make('Avg. Shipment Value', '$' . number_format($avgShipmentValue, 2))
-                ->description('₵' . number_format($avgShipmentValue * $currentRate, 2) . ' at current rate')
+            Stat::make('Avg. Shipment Value', '₵' . number_format($avgShipmentValue, 2))
+                ->description('$' . number_format($currentRate > 0 ? $avgShipmentValue / $currentRate : 0, 2) . ' USD equivalent')
                 ->descriptionIcon('heroicon-m-calculator')
                 ->color('info')
                 ->chart($this->getShipmentValueTrend()),
@@ -245,7 +245,7 @@ class ManagementKPIWidget extends BaseWidget
             if ($containerNumber) {
                 $query->where('container_number', $containerNumber);
             }
-            $avg = $query->avg('total') ?: 0;
+            $avg = $query->avg('total_ghs') ?: 0;
             $data[] = $avg;
         }
         return $data;

@@ -67,11 +67,11 @@ class MonthlyExpenseIncomeChart extends ChartWidget
             ->dateColumn('expense_date')
             ->between(start: $start, end: $end);
 
-        $expenses = $usePerMonth ? $expensesQuery->perMonth()->sum('amount_usd') : $expensesQuery->perDay()->sum('amount_usd');
+        $expenses = $usePerMonth ? $expensesQuery->perMonth()->sum('amount_ghs') : $expensesQuery->perDay()->sum('amount_ghs');
 
         $incomeQueryBuilder = Income::query()
             ->where('status', IncomeStatus::Received)
-            ->whereNotNull('amount_usd');
+            ->whereNotNull('amount_ghs');
 
         if ($containerNumber) {
             $incomeQueryBuilder->whereHas('shipment', function ($query) use ($containerNumber) {
@@ -83,11 +83,11 @@ class MonthlyExpenseIncomeChart extends ChartWidget
             ->dateColumn('income_date')
             ->between(start: $start, end: $end);
 
-        $externalIncomes = $usePerMonth ? $externalIncomesQuery->perMonth()->sum('amount_usd') : $externalIncomesQuery->perDay()->sum('amount_usd');
+        $externalIncomes = $usePerMonth ? $externalIncomesQuery->perMonth()->sum('amount_ghs') : $externalIncomesQuery->perDay()->sum('amount_ghs');
 
         $paymentQueryBuilder = Payment::query()
             ->where('payment_type', 'credit')
-            ->whereNotNull('amount_usd');
+            ->whereNotNull('amount_ghs');
 
         if ($containerNumber) {
             $paymentQueryBuilder->whereHas('shipment', function ($query) use ($containerNumber) {
@@ -99,7 +99,7 @@ class MonthlyExpenseIncomeChart extends ChartWidget
             ->dateColumn('paid_on')
             ->between(start: $start, end: $end);
 
-        $shipmentPayments = $usePerMonth ? $shipmentPaymentsQuery->perMonth()->sum('amount_usd') : $shipmentPaymentsQuery->perDay()->sum('amount_usd');
+        $shipmentPayments = $usePerMonth ? $shipmentPaymentsQuery->perMonth()->sum('amount_ghs') : $shipmentPaymentsQuery->perDay()->sum('amount_ghs');
 
         // Combine shipment payments and external income for total income
         $totalIncome = $shipmentPayments->map(function (TrendValue $value, $index) use ($externalIncomes) {
@@ -110,25 +110,25 @@ class MonthlyExpenseIncomeChart extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Expenses (USD)',
+                    'label' => 'Expenses (GHS)',
                     'data' => $expenses->map(fn (TrendValue $value) => $value->aggregate),
                     'backgroundColor' => 'rgba(239, 68, 68, 0.5)',
                     'borderColor' => 'rgb(239, 68, 68)',
                 ],
                 [
-                    'label' => 'Shipment Payments (USD)',
+                    'label' => 'Shipment Payments (GHS)',
                     'data' => $shipmentPayments->map(fn (TrendValue $value) => $value->aggregate),
                     'backgroundColor' => 'rgba(59, 130, 246, 0.5)',
                     'borderColor' => 'rgb(59, 130, 246)',
                 ],
                 [
-                    'label' => 'External Income (USD)',
+                    'label' => 'External Income (GHS)',
                     'data' => $externalIncomes->map(fn (TrendValue $value) => $value->aggregate),
                     'backgroundColor' => 'rgba(16, 185, 129, 0.5)',
                     'borderColor' => 'rgb(16, 185, 129)',
                 ],
                 [
-                    'label' => 'Total Income (USD)',
+                    'label' => 'Total Income (GHS)',
                     'data' => $totalIncome,
                     'backgroundColor' => 'rgba(34, 197, 94, 0.7)',
                     'borderColor' => 'rgb(34, 197, 94)',

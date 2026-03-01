@@ -76,6 +76,7 @@ class TopStatesWidget extends Widget
                     'total_revenue_usd' => $shipments->sum('total'),
                     'total_revenue_ghs' => $shipments->sum('total_ghs'),
                     'avg_shipment_value_usd' => $shipments->avg('total') ?: 0,
+                    'avg_shipment_value_ghs' => $shipments->avg('total_ghs') ?: 0,
                     'payments_received' => $paymentsReceived,
                     'payment_rate' => $paymentRate,
                     'payment_rate_class' => $paymentRate >= 80 ? 'success' : ($paymentRate >= 50 ? 'warning' : 'danger'),
