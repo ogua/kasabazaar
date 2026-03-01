@@ -63,7 +63,7 @@ class Dashboard extends BaseDashboard implements HasForms
                                 return Shipment::whereNotNull('container_number')
                                     ->select('container_number')
                                     ->selectRaw('COUNT(*) as shipment_count')
-                                    ->selectRaw('SUM(total_ghs) as total_amount')
+                                    ->selectRaw('SUM(total) as total_amount')
                                     ->selectRaw('MIN(created_at) as first_shipment')
                                     ->groupBy('container_number')
                                     ->orderBy('first_shipment', 'desc')
@@ -72,7 +72,7 @@ class Dashboard extends BaseDashboard implements HasForms
                                     ->mapWithKeys(function ($container) {
                                         $label = 'CON' . $container->container_number .
                                                 ' (' . $container->shipment_count . ' shipments, ' .
-                                                '₵' . number_format($container->total_amount, 2) . ')';
+                                                '$' . number_format($container->total_amount, 2) . ')';
                                         return [$container->container_number => $label];
                                     })
                                     ->toArray();

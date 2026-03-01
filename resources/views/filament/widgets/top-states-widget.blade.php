@@ -11,8 +11,9 @@
                         <th class="px-4 py-3 text-center font-semibold text-gray-700 dark:text-gray-300">#</th>
                         <th class="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">State/Region</th>
                         <th class="px-4 py-3 text-center font-semibold text-gray-700 dark:text-gray-300">Total Shipments</th>
+                        <th class="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300">Total Revenue (USD)</th>
                         <th class="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300">Total Revenue (GHS)</th>
-                        <th class="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300">Avg. Value (GHS)</th>
+                        <th class="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300">Avg. Value (USD)</th>
                         <th class="px-4 py-3 text-right font-semibold text-gray-700 dark:text-gray-300">Payments Received</th>
                         <th class="px-4 py-3 text-center font-semibold text-gray-700 dark:text-gray-300">Payment Rate</th>
                         <th class="px-4 py-3 text-center font-semibold text-gray-700 dark:text-gray-300">Market Share</th>
@@ -40,10 +41,13 @@
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-right text-gray-700 dark:text-gray-300">
+                                ${{ number_format($state['total_revenue_usd'], 2) }}
+                            </td>
+                            <td class="px-4 py-3 text-right text-gray-700 dark:text-gray-300">
                                 ₵{{ number_format($state['total_revenue_ghs'], 2) }}
                             </td>
                             <td class="px-4 py-3 text-right text-gray-700 dark:text-gray-300">
-                                ₵{{ number_format($state['avg_shipment_value_ghs'], 2) }}
+                                ${{ number_format($state['avg_shipment_value_usd'], 2) }}
                             </td>
                             <td class="px-4 py-3 text-right text-gray-700 dark:text-gray-300">
                                 ₵{{ number_format($state['payments_received'], 2) }}
@@ -68,7 +72,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                            <td colspan="9" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                                 No state data available
                             </td>
                         </tr>

@@ -31,41 +31,41 @@
                             </td>
                             <td class="px-4 py-3 text-right">
                                 <div class="font-semibold text-gray-900 dark:text-gray-100">
-                                    ₵{{ number_format($container['total_revenue_ghs'], 2) }}
-                                </div>
-                                <div class="text-xs text-gray-500 dark:text-gray-400">
                                     ${{ number_format($container['total_revenue_usd'], 2) }}
                                 </div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">
+                                    ₵{{ number_format($container['total_revenue_ghs'], 2) }}
+                                </div>
                             </td>
                             <td class="px-4 py-3 text-right">
                                 <div class="font-semibold text-gray-900 dark:text-gray-100">
-                                    ₵{{ number_format($container['payments_received_ghs'], 2) }}
-                                </div>
-                                <div class="text-xs text-gray-500 dark:text-gray-400">
                                     ${{ number_format($container['payments_received_usd'], 2) }}
                                 </div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">
+                                    ₵{{ number_format($container['payments_received_ghs'], 2) }}
+                                </div>
                             </td>
                             <td class="px-4 py-3 text-right">
                                 <div class="font-semibold text-gray-900 dark:text-gray-100">
-                                    ₵{{ number_format($container['expenses_ghs'], 2) }}
+                                    ${{ number_format($container['expenses_usd'], 2) }}
                                 </div>
                                 <div class="text-xs text-gray-500 dark:text-gray-400">
-                                    ${{ number_format($container['expenses_usd'], 2) }}
+                                    ₵{{ number_format($container['expenses_ghs'], 2) }}
                                 </div>
                             </td>
                             <td class="px-4 py-3 text-right">
                                 <div>
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold
-                                        @if($container['profit_loss_ghs'] >= 0)
+                                        @if($container['profit_loss_usd'] >= 0)
                                             bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200
                                         @else
                                             bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200
                                         @endif">
-                                        ₵{{ number_format($container['profit_loss_ghs'], 2) }}
+                                        ${{ number_format($container['profit_loss_usd'], 2) }}
                                     </span>
                                 </div>
                                 <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                    ${{ number_format($container['profit_loss_usd'], 2) }}
+                                    ₵{{ number_format($container['profit_loss_ghs'], 2) }}
                                 </div>
                             </td>
                             <td class="px-4 py-3 text-center">

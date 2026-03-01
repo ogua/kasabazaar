@@ -41,7 +41,7 @@ class ExpensesByCategoryChart extends ChartWidget
         $endDate = $this->endDate ?? now()->format('Y-m-d');
         $containerNumber = $this->containerNumber;
 
-        $query = Expense::select('expense_category_id', DB::raw('SUM(amount_ghs) as total'))
+        $query = Expense::select('expense_category_id', DB::raw('SUM(amount_usd) as total'))
             ->with('category')
             ->whereBetween('expense_date', [$startDate, $endDate])
             ->groupBy('expense_category_id')
@@ -68,7 +68,7 @@ class ExpensesByCategoryChart extends ChartWidget
         return [
             'datasets' => [
                 [
-                    'label' => 'Expenses (GHS)',
+                    'label' => 'Expenses (USD)',
                     'data' => $data->pluck('total')->toArray(),
                     'backgroundColor' => array_slice($colors, 0, $data->count()),
                 ],
