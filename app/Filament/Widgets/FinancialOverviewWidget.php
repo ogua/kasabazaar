@@ -28,7 +28,7 @@ class FinancialOverviewWidget extends BaseWidget
     {
         $this->startDate = now()->startOfMonth()->format('Y-m-d');
         $this->endDate = now()->format('Y-m-d');
-        $this->containerNumber = null;
+        $this->containerNumber = Shipment::whereNotNull('container_number')->max('container_number');
     }
 
     #[On('dateRangeUpdated')]
@@ -55,25 +55,26 @@ class FinancialOverviewWidget extends BaseWidget
         $exchangeService = app(ExchangeRateService::class);
         $currentRate = $exchangeService->getCurrentRate('USD', 'GHS');
 
-        // 1. Shipment Income (Payments received for shipments) - PROPERLY CALCULATED IN GHS
-        $shipmentPaymentsQuery = Payment::where('payment_type', 'credit')
-            ->whereBetween('paid_on', [$startDate, $endDate]);
+        // When a container is selected, filter by container only (no date constraint).
+        // When no container, filter by date range.
+        $byContainer = (bool) $containerNumber;
 
-        if ($containerNumber) {
-            // Filter by container - join with shipments table
+        // 1. Shipment Income
+        $shipmentPaymentsQuery = Payment::where('payment_type', 'credit');
+        if ($byContainer) {
             $shipmentPaymentsQuery->whereHas('shipment', function ($query) use ($containerNumber) {
                 $query->where('container_number', $containerNumber);
             });
+        } else {
+            $shipmentPaymentsQuery->whereBetween('paid_on', [$startDate, $endDate]);
         }
 
         $shipmentPayments = $shipmentPaymentsQuery->get();
 
-        // Calculate USD: use amount_usd if available, otherwise use amount field
         $shipmentIncomeUsd = $shipmentPayments->sum(function ($payment) {
             return $payment->amount_usd ?? $payment->amount ?? 0;
         });
 
-        // Calculate GHS: use amount_ghs if available, otherwise convert USD to GHS
         $shipmentIncomeGhs = $shipmentPayments->sum(function ($payment) use ($currentRate) {
             if ($payment->amount_ghs) {
                 return $payment->amount_ghs;
@@ -82,51 +83,51 @@ class FinancialOverviewWidget extends BaseWidget
             return $usd * $currentRate;
         });
 
-        // 2. External Income (Other income sources)
-        $externalIncomeQuery = Income::where('status', IncomeStatus::Received)
-            ->whereBetween('income_date', [$startDate, $endDate]);
-
-        if ($containerNumber) {
-            // Filter by container - join with shipments table
+        // 2. External Income
+        $externalIncomeQuery = Income::where('status', IncomeStatus::Received);
+        if ($byContainer) {
             $externalIncomeQuery->whereHas('shipment', function ($query) use ($containerNumber) {
                 $query->where('container_number', $containerNumber);
             });
+        } else {
+            $externalIncomeQuery->whereBetween('income_date', [$startDate, $endDate]);
         }
 
         $externalIncomeGhs = $externalIncomeQuery->sum('amount_ghs');
         $externalIncomeUsd = $externalIncomeQuery->sum('amount_usd');
 
-        // Total Income in GHS
         $totalIncomeGhs = $shipmentIncomeGhs + $externalIncomeGhs;
         $totalIncomeUsd = $shipmentIncomeUsd + $externalIncomeUsd;
 
-        // 3. Expenses (all expenses including shipment-related)
-        $expenseQuery = Expense::whereBetween('expense_date', [$startDate, $endDate]);
-
-        if ($containerNumber) {
-            // Filter by container - join with shipments table
+        // 3. Expenses
+        $expenseQuery = Expense::query();
+        if ($byContainer) {
             $expenseQuery->whereHas('shipment', function ($query) use ($containerNumber) {
                 $query->where('container_number', $containerNumber);
             });
+        } else {
+            $expenseQuery->whereBetween('expense_date', [$startDate, $endDate]);
         }
 
         $totalExpenses = $expenseQuery->sum('amount_ghs');
 
-        // 4. Payroll
-        $totalPayroll = PayrollEntry::whereHas('payrollPeriod', function ($query) use ($startDate, $endDate) {
-            $query->whereBetween('pay_date', [$startDate, $endDate]);
-        })->sum('net_salary');
+        // 4. Payroll (always date-based; not tied to containers)
+        $payrollQuery = PayrollEntry::query();
+        if (!$byContainer) {
+            $payrollQuery->whereHas('payrollPeriod', function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('pay_date', [$startDate, $endDate]);
+            });
+        }
+        $totalPayroll = $byContainer ? 0 : $payrollQuery->sum('net_salary');
 
-        // Total Costs
         $totalCosts = $totalExpenses + $totalPayroll;
         $totalCostsUsd = $currentRate > 0 ? $totalCosts / $currentRate : 0;
 
-        // Net Profit/Loss
         $netProfit = $totalIncomeGhs - $totalCosts;
         $netProfitUsd = $totalIncomeUsd - $totalCostsUsd;
 
-        // 5. Unpaid Shipments
-        $unpaidShipmentsData = DB::table('shipments')
+        // 5. Unpaid Shipments (scoped to container if selected)
+        $unpaidQuery = DB::table('shipments')
             ->leftJoin('payments', function($join) {
                 $join->on('payments.shipment_id', '=', 'shipments.id')
                     ->where('payments.payment_type', '=', 'credit');
@@ -139,33 +140,38 @@ class FinancialOverviewWidget extends BaseWidget
                 COALESCE(SUM(payments.amount_ghs), 0) as paid_amount_ghs
             ')
             ->groupBy('shipments.id', 'shipments.total', 'shipments.total_ghs')
-            ->havingRaw('COALESCE(paid_amount_usd, 0) < shipments.total')
-            ->get();
+            ->havingRaw('COALESCE(paid_amount_usd, 0) < shipments.total');
 
+        if ($byContainer) {
+            $unpaidQuery->where('shipments.container_number', $containerNumber);
+        }
+
+        $unpaidShipmentsData = $unpaidQuery->get();
         $unpaidShipments = $unpaidShipmentsData->count();
         $unpaidAmountUsd = $unpaidShipmentsData->sum(function ($item) {
             return $item->total - ($item->paid_amount_usd ?: 0);
         });
 
-        // Calculate days in period for label
-        $days = \Carbon\Carbon::parse($startDate)->diffInDays(\Carbon\Carbon::parse($endDate)) + 1;
-        $periodLabel = $days <= 31 ? "({$days} days)" : "(" . round($days / 30, 1) . " months)";
-
-        // Add container filter indicator
-        $filterLabel = $containerNumber ? ' [CON' . $containerNumber . ']' : '';
+        // Labels
+        if ($byContainer) {
+            $periodLabel = '(CON' . $containerNumber . ')';
+        } else {
+            $days = \Carbon\Carbon::parse($startDate)->diffInDays(\Carbon\Carbon::parse($endDate)) + 1;
+            $periodLabel = $days <= 31 ? "({$days} days)" : "(" . round($days / 30, 1) . " months)";
+        }
 
         return [
-            Stat::make('Total Income ' . $periodLabel . $filterLabel, '$' . number_format($totalIncomeUsd, 2))
+            Stat::make('Total Income ' . $periodLabel, '$' . number_format($totalIncomeUsd, 2))
                 ->description("Shipment Payments: $" . number_format($shipmentIncomeUsd, 2) . " | External: $" . number_format($externalIncomeUsd, 2))
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('success')
-                ->chart($this->getIncomeChart($startDate, $endDate)),
+                ->chart($byContainer ? [] : $this->getIncomeChart($startDate, $endDate)),
 
             Stat::make('Total Costs ' . $periodLabel, '$' . number_format($totalCostsUsd, 2))
-                ->description("Expenses: $" . number_format($currentRate > 0 ? $totalExpenses / $currentRate : 0, 2) . " | Payroll: $" . number_format($currentRate > 0 ? $totalPayroll / $currentRate : 0, 2))
+                ->description("Expenses: $" . number_format($currentRate > 0 ? $totalExpenses / $currentRate : 0, 2) . ($byContainer ? '' : " | Payroll: $" . number_format($currentRate > 0 ? $totalPayroll / $currentRate : 0, 2)))
                 ->descriptionIcon('heroicon-m-currency-dollar')
                 ->color('danger')
-                ->chart($this->getCostChart($startDate, $endDate)),
+                ->chart($byContainer ? [] : $this->getCostChart($startDate, $endDate)),
 
             Stat::make('Net Profit/Loss ' . $periodLabel, '$' . number_format($netProfitUsd, 2))
                 ->description(

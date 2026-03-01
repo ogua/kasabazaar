@@ -49,7 +49,7 @@ class FinancialDashboard extends Page implements HasForms
     {
         $this->start_date = now()->startOfMonth()->format('Y-m-d');
         $this->end_date = now()->format('Y-m-d');
-        $this->container_number = null;
+        $this->container_number = Shipment::whereNotNull('container_number')->max('container_number');
 
         $this->form->fill([
             'start_date' => $this->start_date,
