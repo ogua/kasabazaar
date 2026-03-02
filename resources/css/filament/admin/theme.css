@@ -1,0 +1,17 @@
+@import '/vendor/filament/filament/resources/css/theme.css';
+
+@config 'tailwind.config.js';
+
+/* ── Container cleared row highlighting ─────────────────────────────────── */
+tr.container-cleared > td {
+    background-color: rgb(240 253 244) !important; /* green-50  */
+}
+
+.dark tr.container-cleared > td {
+    background-color: rgb(5 46 22) !important; /* green-950 */
+}
+
+tr.container-cleared > td:first-child {
+    border-left: 4px solid rgb(74 222 128) !important; /* green-400 */
+}
+/* ─────────────────────────────────────────────────────────────────────────── */

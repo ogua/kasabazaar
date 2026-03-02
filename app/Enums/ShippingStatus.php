@@ -11,6 +11,7 @@ enum ShippingStatus : string implements HasLabel, HasColor
     case delivered = 'delivered';
     case cancelled = 'cancelled';
     case pending = 'pending';
+    case cleared = 'cleared';
 
     public function getLabel(): ?string
     {
@@ -25,6 +26,7 @@ enum ShippingStatus : string implements HasLabel, HasColor
             self::delivered => 'success',
             self::cancelled => 'danger',
             self::pending => 'danger',
+            self::cleared => 'success',
         };
 
     }

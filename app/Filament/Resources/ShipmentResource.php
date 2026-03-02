@@ -25,6 +25,7 @@ use libphonenumber\NumberFormat;
 use Illuminate\Support\Facades\Auth;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Wizard;
+use App\Models\ShipmentContainer;
 use Filament\Tables\Actions\ActionGroup;
 use Illuminate\Database\Eloquent\Builder;
 use PragmaRX\Countries\Package\Countries;
@@ -50,7 +51,10 @@ class ShipmentResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->orderBy('created_at', 'desc');
+        return parent::getEloquentQuery()
+            ->with('containerStatus')
+            ->orderBy('container_number', 'desc')
+            ->orderBy('created_at', 'desc');
     }
 
     public static function form(Form $form): Form
@@ -716,9 +720,40 @@ class ShipmentResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
+                    ->label('Shipment Status')
                     ->options(ShippingStatus::class),
+
                 Tables\Filters\SelectFilter::make('payment_status')
-                    ->options([]),
+                    ->label('Payment Status')
+                    ->options([
+                        'pending' => 'Pending',
+                        'partial' => 'Partial',
+                        'paid'    => 'Paid',
+                    ]),
+
+                Tables\Filters\SelectFilter::make('container_clearance')
+                    ->label('Container Clearance')
+                    ->options([
+                        'cleared'     => 'Cleared',
+                        'not_cleared' => 'Not Cleared / Pending',
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return match ($data['value'] ?? null) {
+                            'cleared' => $query->whereHas(
+                                'containerStatus',
+                                fn (Builder $q) => $q->where('is_cleared', true)
+                            ),
+                            'not_cleared' => $query->where(
+                                fn (Builder $q) => $q
+                                    ->whereDoesntHave('containerStatus')
+                                    ->orWhereHas(
+                                        'containerStatus',
+                                        fn (Builder $inner) => $inner->where('is_cleared', false)
+                                    )
+                            ),
+                            default => $query,
+                        };
+                    }),
             ])
             ->actions(
                 [
@@ -1222,7 +1257,37 @@ class ShipmentResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
-            ]);
+            ])
+            ->groups([
+                Tables\Grouping\Group::make('container_number')
+                    ->label('Container')
+                    ->getTitleFromRecordUsing(function (Shipment $record): string {
+                        $cn      = $record->container_number;
+                        $cleared = $record->containerStatus?->is_cleared;
+
+                        if (! $cn) {
+                            return 'No Container';
+                        }
+
+                        return $cleared
+                            ? "CON{$cn}   ✓  Cleared"
+                            : "CON{$cn}   ⏳  Pending Clearance";
+                    })
+                    ->getDescriptionFromRecordUsing(function (Shipment $record): string {
+                        $review = $record->containerStatus?->review;
+                        return $review ? "Note: {$review}" : '';
+                    })
+                    ->collapsible()
+                    ->orderQueryUsing(
+                        fn (Builder $query, string $direction) =>
+                            $query->orderBy('container_number', $direction)
+                    ),
+            ])
+            ->defaultGroup('container_number')
+            ->groupingSettingsInDropdownOnDesktop()
+            ->recordClasses(function (Shipment $record): string {
+                return $record->containerStatus?->is_cleared ? 'container-cleared' : '';
+            });
     }
 
     public static function getRelations(): array

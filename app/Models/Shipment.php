@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Receiver;
+use App\Models\ShipmentContainer;
 use App\Enums\ShippingStatus;
 use App\Service\ExchangeRateService;
 use Illuminate\Database\Eloquent\Model;
@@ -380,6 +381,14 @@ class Shipment extends Model
         $yearSuffix = substr((string) $year, -2);
         $seqCode = "C{$sequence}";
         return $query->where('shipping_reference', 'like', "%-{$yearSuffix}-{$seqCode}-%");
+    }
+
+    /**
+     * Get the container clearance record for this shipment's container.
+     */
+    public function containerStatus(): BelongsTo
+    {
+        return $this->belongsTo(ShipmentContainer::class, 'container_number', 'container_number');
     }
 
     // Custom method to update shipment_id for related items
