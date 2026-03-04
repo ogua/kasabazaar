@@ -37,7 +37,7 @@ class ReportService
             ->with(['client', 'receivers.items', 'expenses', 'payments']);
 
         if ($containerSequence !== null) {
-            $query->where('client_sequence', $containerSequence);
+            $query->where('container_number', $containerSequence);
         }
 
         return $query->get();

@@ -2,34 +2,55 @@
 
 namespace App\Console\Commands;
 
+use App\Service\ExchangeRateService;
 use Illuminate\Console\Command;
-use Worksome\Exchange\Facades\Exchange;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 
 class ExchangeRate extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'app:exchange-rate';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Command description';
+    protected $description = 'Fetch and update the USD → GHS exchange rate from open.er-api.com';
 
-    /**
-     * Execute the console command.
-     */
-    public function handle()
+    public function handle(ExchangeRateService $service): int
     {
-        $exchangeRates = Exchange::rates('USD', ['GBP', 'EUR', 'GHS']);
+        $this->info('Fetching USD/GHS exchange rate from open.er-api.com...');
 
-        $rates = $exchangeRates->getRates();
+        try {
+            $response = Http::timeout(15)->get('https://open.er-api.com/v6/latest/USD');
 
-        logger()->info('Exchange Rates:', $rates);
+            if (! $response->successful()) {
+                $this->error("API request failed with status: {$response->status()}");
+                return self::FAILURE;
+            }
+
+            $data = $response->json();
+
+            if (($data['result'] ?? '') !== 'success') {
+                $this->error('API returned an unsuccessful result.');
+                return self::FAILURE;
+            }
+
+            $ghsRate = $data['rates']['GHS'] ?? null;
+
+            if (! $ghsRate) {
+                $this->error('GHS rate not found in API response.');
+                return self::FAILURE;
+            }
+
+            // Persist the rate (updateOrCreate for today) and bust the 1-hour cache
+            $service->logRate((float) $ghsRate, 'USD', 'GHS', 'api');
+            Cache::forget('exchange_rate_USD_GHS');
+
+            $this->info("Rate updated successfully: 1 USD = {$ghsRate} GHS");
+            $this->line("API last updated: " . ($data['time_last_update_utc'] ?? 'N/A'));
+
+            return self::SUCCESS;
+        } catch (\Exception $e) {
+            $this->error("Failed to fetch exchange rate: {$e->getMessage()}");
+            logger()->error('app:exchange-rate failed — ' . $e->getMessage());
+            return self::FAILURE;
+        }
     }
 }

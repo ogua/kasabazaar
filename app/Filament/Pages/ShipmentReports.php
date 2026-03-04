@@ -6,16 +6,16 @@ use App\Models\Shipment;
 use Filament\Forms\Form;
 use Filament\Pages\Page;
 use App\Service\ReportService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ShipmentReportExport;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Contracts\HasForms;
+use Filament\Notifications\Notification;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Concerns\InteractsWithForms;
-use App\Exports\ShipmentReportExport;
-use Maatwebsite\Excel\Facades\Excel;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Filament\Notifications\Notification;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ShipmentReports extends Page implements HasForms
@@ -99,8 +99,8 @@ class ShipmentReports extends Page implements HasForms
                                 $yearShort = substr((string) $get('year'), -2);
                                 return Shipment::where('shipping_reference', 'like', "%-{$yearShort}-%")
                                     ->distinct()
-                                    ->pluck('client_sequence', 'client_sequence')
-                                    ->mapWithKeys(fn ($val) => [$val => "C{$val}"])
+                                    ->pluck('container_number', 'container_number')
+                                    ->mapWithKeys(fn ($val) => [$val => "CON{$val}"])
                                     ->toArray();
                             })
                             ->visible(fn ($get) => in_array($get('report_type'), ['by_container', 'profit_loss'])),

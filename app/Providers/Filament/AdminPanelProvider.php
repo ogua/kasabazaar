@@ -102,6 +102,7 @@ class AdminPanelProvider extends PanelProvider
                     ->shouldShowAvatarForm(),
             ])
             ->navigationGroups([
+                'Cashbook',
                 'Fleet Management',
                 'Finance',
                 'Payroll',
