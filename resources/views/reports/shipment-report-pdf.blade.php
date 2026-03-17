@@ -183,67 +183,126 @@
         @endforeach
     @elseif($reportType === 'profit_loss')
         {{-- Profit/Loss Report --}}
-        <table>
-            <thead>
-                <tr>
-                    <th>Container</th>
-                    <th class="text-right">Shipments</th>
-                    <th class="text-right">Revenue (USD)</th>
-                    <th class="text-right">Expenses (USD)</th>
-                    <th class="text-right">Profit (USD)</th>
-                    <th class="text-right">Margin %</th>
-                </tr>
-            </thead>
-            <tbody>
-                @php
-                    $totalRevenue = 0;
-                    $totalExpenses = 0;
-                    $totalProfit = 0;
-                @endphp
-                @foreach ($data as $row)
-                    @php
-                        $revenue = $row['revenue'] ?? 0;
-                        $expenses = $row['expenses'] ?? 0;
-                        $profit = $row['profit'] ?? 0;
-                        $margin = $revenue > 0 ? round(($profit / $revenue) * 100, 2) : 0;
-
-                        $totalRevenue += $revenue;
-                        $totalExpenses += $expenses;
-                        $totalProfit += $profit;
-                    @endphp
+        @php
+            $grandRevenue = 0;
+            $grandExpenses = 0;
+            $grandProfit = 0;
+            $grandPaid = 0;
+            $grandBalance = 0;
+        @endphp
+        @foreach ($data as $row)
+            @php
+                $revenue = $row['revenue'] ?? 0;
+                $expenses = $row['expenses'] ?? 0;
+                $profit = $row['profit'] ?? 0;
+                $margin = $revenue > 0 ? round(($profit / $revenue) * 100, 2) : 0;
+                $grandRevenue += $revenue;
+                $grandExpenses += $expenses;
+                $grandProfit += $profit;
+                $containerPaid = collect($row['clients'] ?? [])->sum('paid');
+                $containerBalance = collect($row['clients'] ?? [])->sum('balance');
+                $grandPaid += $containerPaid;
+                $grandBalance += $containerBalance;
+            @endphp
+            {{-- Container summary row --}}
+            <table style="margin-bottom: 0;">
+                <thead>
                     <tr>
+                        <th>Container</th>
+                        <th class="text-right">Shipments</th>
+                        <th class="text-right">Revenue (USD)</th>
+                        <th class="text-right">Expenses (USD)</th>
+                        <th class="text-right">Profit (USD)</th>
+                        <th class="text-right">Margin %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background-color:#f0f0f0; font-weight:bold;">
                         <td>{{ $row['container'] ?? 'N/A' }}</td>
                         <td class="text-right">{{ $row['shipment_count'] ?? 0 }}</td>
                         <td class="text-right">${{ number_format($revenue, 2) }}</td>
                         <td class="text-right">${{ number_format($expenses, 2) }}</td>
-                        <td class="text-right {{ $profit >= 0 ? 'positive' : 'negative' }}">
-                            ${{ number_format($profit, 2) }}</td>
+                        <td class="text-right {{ $profit >= 0 ? 'positive' : 'negative' }}">${{ number_format($profit, 2) }}</td>
                         <td class="text-right">{{ $margin }}%</td>
                     </tr>
-                @endforeach
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+            {{-- Client breakdown --}}
+            @if (!empty($row['clients']) && count($row['clients']) > 0)
+                <table style="margin-top:0; margin-bottom:20px; font-size:11px;">
+                    <thead>
+                        <tr style="background-color:#555;">
+                            <th style="padding-left:20px;">Client</th>
+                            <th class="text-right">Shipments</th>
+                            <th class="text-right">Total (USD)</th>
+                            <th class="text-right">Paid (USD)</th>
+                            <th class="text-right">Balance (USD)</th>
+                            <th class="text-right">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($row['clients'] as $client)
+                            @php
+                                $statusLabel = match($client['payment_status']) {
+                                    'paid' => 'PAID',
+                                    'partial' => 'PARTIAL',
+                                    default => 'UNPAID',
+                                };
+                                $statusColor = match($client['payment_status']) {
+                                    'paid' => 'green',
+                                    'partial' => 'orange',
+                                    default => 'red',
+                                };
+                            @endphp
+                            <tr>
+                                <td style="padding-left:20px;">
+                                    <strong>{{ $client['name'] }}</strong>
+                                    @if($client['phone'])
+                                        &nbsp;{{ $client['phone'] }}
+                                    @endif
+                                </td>
+                                <td class="text-right">{{ $client['shipment_count'] }}</td>
+                                <td class="text-right">${{ number_format($client['total'], 2) }}</td>
+                                <td class="text-right positive">${{ number_format($client['paid'], 2) }}</td>
+                                <td class="text-right {{ $client['balance'] > 0 ? 'negative' : 'positive' }}">${{ number_format($client['balance'], 2) }}</td>
+                                <td class="text-right" style="color:{{ $statusColor }}; font-weight:bold;">{{ $statusLabel }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+        @endforeach
 
         <div class="totals-section">
             <table>
                 <tr>
-                    <td><strong>Total Revenue:</strong></td>
-                    <td class="text-right">${{ number_format($totalRevenue, 2) }}</td>
+                    <td><strong>Total Shipment Revenue:</strong></td>
+                    <td class="text-right">${{ number_format($grandRevenue, 2) }}</td>
                 </tr>
                 <tr>
                     <td><strong>Total Expenses:</strong></td>
-                    <td class="text-right">${{ number_format($totalExpenses, 2) }}</td>
+                    <td class="text-right">${{ number_format($grandExpenses, 2) }}</td>
                 </tr>
                 <tr>
                     <td><strong>Net Profit:</strong></td>
-                    <td class="text-right {{ $totalProfit >= 0 ? 'positive' : 'negative' }}">
-                        <strong>${{ number_format($totalProfit, 2) }}</strong>
+                    <td class="text-right {{ $grandProfit >= 0 ? 'positive' : 'negative' }}">
+                        <strong>${{ number_format($grandProfit, 2) }}</strong>
                     </td>
                 </tr>
                 <tr>
                     <td><strong>Overall Margin:</strong></td>
                     <td class="text-right">
-                        <strong>{{ $totalRevenue > 0 ? round(($totalProfit / $totalRevenue) * 100, 2) : 0 }}%</strong>
+                        <strong>{{ $grandRevenue > 0 ? round(($grandProfit / $grandRevenue) * 100, 2) : 0 }}%</strong>
+                    </td>
+                </tr>
+                <tr style="border-top: 2px solid #333;">
+                    <td><strong>Total Collected from Clients:</strong></td>
+                    <td class="text-right positive"><strong>${{ number_format($grandPaid, 2) }}</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>Total Outstanding Balance:</strong></td>
+                    <td class="text-right {{ $grandBalance > 0 ? 'negative' : 'positive' }}">
+                        <strong>${{ number_format($grandBalance, 2) }}</strong>
                     </td>
                 </tr>
             </table>

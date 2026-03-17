@@ -8,12 +8,16 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class ShipmentReportExport implements FromCollection, WithHeadings, WithMapping, WithTitle, WithStyles
+class ShipmentReportExport implements FromCollection, WithHeadings, WithMapping, WithTitle, WithStyles, WithEvents
 {
     protected Collection $data;
     protected string $reportType;
+    protected array $containerRowNumbers = [];
 
     public function __construct(Collection $data, string $reportType)
     {
@@ -23,7 +27,19 @@ class ShipmentReportExport implements FromCollection, WithHeadings, WithMapping,
 
     public function collection()
     {
-        return $this->data;
+        if ($this->reportType !== 'profit_loss') {
+            return $this->data;
+        }
+
+        // Flatten: container summary row followed by its client rows
+        $rows = collect();
+        foreach ($this->data as $container) {
+            $rows->push(array_merge(['_type' => 'container'], $container));
+            foreach ($container['clients'] ?? [] as $client) {
+                $rows->push(array_merge(['_type' => 'client'], $client));
+            }
+        }
+        return $rows;
     }
 
     public function headings(): array
@@ -42,11 +58,13 @@ class ShipmentReportExport implements FromCollection, WithHeadings, WithMapping,
             ],
             'profit_loss' => [
                 'Container',
+                'Client',
+                'Phone',
                 'Shipments',
-                'Revenue (USD)',
-                'Expenses (USD)',
-                'Profit (USD)',
-                'Margin (%)'
+                'Revenue / Amount (USD)',
+                'Expenses / Paid (USD)',
+                'Profit / Balance (USD)',
+                'Margin / Status',
             ],
             default => ['Data']
         };
@@ -92,6 +110,19 @@ class ShipmentReportExport implements FromCollection, WithHeadings, WithMapping,
 
     protected function mapProfitLossRow($row): array
     {
+        if (($row['_type'] ?? '') === 'client') {
+            return [
+                '',
+                $row['name'] ?? 'N/A',
+                $row['phone'] ?? '',
+                $row['shipment_count'] ?? 0,
+                $row['total'] ?? 0,
+                $row['paid'] ?? 0,
+                $row['balance'] ?? 0,
+                strtoupper($row['payment_status'] ?? 'unpaid'),
+            ];
+        }
+
         $revenue = $row['revenue'] ?? 0;
         $expenses = $row['expenses'] ?? 0;
         $profit = $row['profit'] ?? 0;
@@ -99,11 +130,13 @@ class ShipmentReportExport implements FromCollection, WithHeadings, WithMapping,
 
         return [
             $row['container'] ?? 'N/A',
+            '',
+            '',
             $row['shipment_count'] ?? 0,
             $revenue,
             $expenses,
             $profit,
-            $margin
+            $margin . '%',
         ];
     }
 
@@ -121,6 +154,49 @@ class ShipmentReportExport implements FromCollection, WithHeadings, WithMapping,
     {
         return [
             1 => ['font' => ['bold' => true]],
+        ];
+    }
+
+    public function registerEvents(): array
+    {
+        if ($this->reportType !== 'profit_loss') {
+            return [];
+        }
+
+        return [
+            AfterSheet::class => function (AfterSheet $event) {
+                $sheet = $event->sheet->getDelegate();
+                $highestRow = $sheet->getHighestRow();
+
+                // Row 1 is heading; data starts at row 2
+                for ($row = 2; $row <= $highestRow; $row++) {
+                    $cellA = $sheet->getCell("A{$row}")->getValue();
+
+                    if (!empty($cellA)) {
+                        // Container summary row — gray background, bold
+                        $sheet->getStyle("A{$row}:H{$row}")->applyFromArray([
+                            'font' => ['bold' => true],
+                            'fill' => [
+                                'fillType' => Fill::FILL_SOLID,
+                                'startColor' => ['rgb' => 'E8E8E8'],
+                            ],
+                        ]);
+                    } else {
+                        // Client row — check status in column H
+                        $status = strtolower($sheet->getCell("H{$row}")->getValue());
+                        $color = match($status) {
+                            'paid' => '006400',
+                            'partial' => 'B8860B',
+                            default => 'CC0000',
+                        };
+                        $sheet->getStyle("H{$row}")->applyFromArray([
+                            'font' => ['bold' => true, 'color' => ['rgb' => $color]],
+                        ]);
+                        // Indent client name
+                        $sheet->getStyle("B{$row}")->getAlignment()->setIndent(2);
+                    }
+                }
+            },
         ];
     }
 }

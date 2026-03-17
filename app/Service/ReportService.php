@@ -68,7 +68,7 @@ class ReportService
             ->with(['client', 'receivers', 'expenses']);
 
         if ($sequence !== null) {
-            $query->where('client_sequence', $sequence);
+            $query->where('container_number', $sequence);
         }
 
         $shipments = $query->get();
@@ -76,18 +76,35 @@ class ReportService
         logger($shipments);
 
         // Group by container sequence
-        $grouped = $shipments->groupBy('client_sequence');
+        $grouped = $shipments->groupBy('container_number');
 
         return $grouped->map(function ($containerShipments, $seq) {
             $revenue = $containerShipments->sum('total');
             $expenses = $containerShipments->sum(fn ($s) => $s->expenses->sum('amount_usd'));
 
+            $clients = $containerShipments->groupBy('client_id')->map(function ($clientShipments) {
+                $client = $clientShipments->first()->client;
+                $total = $clientShipments->sum('total');
+                $paid = $clientShipments->sum('paid');
+                $balance = $total - $paid;
+                return [
+                    'name' => $client?->company_name ?? $client?->name ?? 'N/A',
+                    'phone' => $client?->phone ?? '',
+                    'shipment_count' => $clientShipments->count(),
+                    'total' => $total,
+                    'paid' => $paid,
+                    'balance' => $balance,
+                    'payment_status' => $balance <= 0 ? 'paid' : ($paid > 0 ? 'partial' : 'unpaid'),
+                ];
+            })->values();
+
             return [
-                'container' => "C{$seq}",
+                'container' => "CON{$seq}",
                 'shipment_count' => $containerShipments->count(),
                 'revenue' => $revenue,
                 'expenses' => $expenses,
                 'profit' => $revenue - $expenses,
+                'clients' => $clients,
             ];
         })->values();
     }

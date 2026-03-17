@@ -154,18 +154,19 @@
                                         <th class="px-4 py-2 text-right">Total (USD)</th>
                                         <th class="px-4 py-2 text-left">Date</th>
                                     @elseif($this->report_type === 'profit_loss')
-                                        <th class="px-4 py-2 text-left">Container</th>
+                                        <th class="px-4 py-2 text-left">Container / Client</th>
                                         <th class="px-4 py-2 text-right">Shipments</th>
-                                        <th class="px-4 py-2 text-right">Revenue (USD)</th>
-                                        <th class="px-4 py-2 text-right">Expenses (USD)</th>
-                                        <th class="px-4 py-2 text-right">Profit (USD)</th>
+                                        <th class="px-4 py-2 text-right">Revenue / Total (USD)</th>
+                                        <th class="px-4 py-2 text-right">Expenses / Paid (USD)</th>
+                                        <th class="px-4 py-2 text-right">Profit / Balance (USD)</th>
+                                        <th class="px-4 py-2 text-right">Margin / Status</th>
                                     @endif
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach($this->reportData as $row)
-                                    <tr class="border-b dark:border-gray-700">
-                                        @if($this->report_type === 'by_year')
+                                    @if($this->report_type === 'by_year')
+                                        <tr class="border-b dark:border-gray-700">
                                             <td class="px-4 py-2">{{ $row->shipping_reference ?? 'N/A' }}</td>
                                             <td class="px-4 py-2">{{ $row->client?->company_name ?? $row->client?->name ?? 'N/A' }}</td>
                                             <td class="px-4 py-2">
@@ -175,16 +176,58 @@
                                             </td>
                                             <td class="px-4 py-2 text-right">${{ number_format($row->total ?? 0, 2) }}</td>
                                             <td class="px-4 py-2">{{ $row->created_at?->format('M d, Y') ?? 'N/A' }}</td>
-                                        @elseif($this->report_type === 'profit_loss')
+                                        </tr>
+                                    @elseif($this->report_type === 'profit_loss')
+                                        @php
+                                            $rev = $row['revenue'] ?? 0;
+                                            $exp = $row['expenses'] ?? 0;
+                                            $pft = $row['profit'] ?? 0;
+                                            $mgn = $rev > 0 ? round(($pft / $rev) * 100, 2) : 0;
+                                        @endphp
+                                        {{-- Container summary row --}}
+                                        <tr class="border-b dark:border-gray-700 bg-gray-100 dark:bg-gray-900/50 font-semibold">
                                             <td class="px-4 py-2">{{ $row['container'] ?? 'N/A' }}</td>
                                             <td class="px-4 py-2 text-right">{{ $row['shipment_count'] ?? 0 }}</td>
-                                            <td class="px-4 py-2 text-right">${{ number_format($row['revenue'] ?? 0, 2) }}</td>
-                                            <td class="px-4 py-2 text-right">${{ number_format($row['expenses'] ?? 0, 2) }}</td>
-                                            <td class="px-4 py-2 text-right font-medium {{ ($row['profit'] ?? 0) >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                                                ${{ number_format($row['profit'] ?? 0, 2) }}
+                                            <td class="px-4 py-2 text-right">${{ number_format($rev, 2) }}</td>
+                                            <td class="px-4 py-2 text-right">${{ number_format($exp, 2) }}</td>
+                                            <td class="px-4 py-2 text-right {{ $pft >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                                ${{ number_format($pft, 2) }}
                                             </td>
-                                        @endif
-                                    </tr>
+                                            <td class="px-4 py-2 text-right">{{ $mgn }}%</td>
+                                        </tr>
+                                        {{-- Client breakdown rows --}}
+                                        @foreach($row['clients'] ?? [] as $client)
+                                            @php
+                                                $badgeColor = match($client['payment_status']) {
+                                                    'paid' => 'success',
+                                                    'partial' => 'warning',
+                                                    default => 'danger',
+                                                };
+                                                $badgeLabel = match($client['payment_status']) {
+                                                    'paid' => 'Paid',
+                                                    'partial' => 'Partial',
+                                                    default => 'Unpaid',
+                                                };
+                                            @endphp
+                                            <tr class="border-b border-gray-100 dark:border-gray-800 text-sm">
+                                                <td class="px-4 py-1.5 pl-8" colspan="2">
+                                                    <span class="font-medium">{{ $client['name'] }}</span>
+                                                    @if($client['phone'])
+                                                        <span class="text-xs text-gray-500 ml-2">{{ $client['phone'] }}</span>
+                                                    @endif
+                                                    <span class="text-xs text-gray-400 ml-1">({{ $client['shipment_count'] }} shipment{{ $client['shipment_count'] > 1 ? 's' : '' }})</span>
+                                                </td>
+                                                <td class="px-4 py-1.5 text-right">${{ number_format($client['total'], 2) }}</td>
+                                                <td class="px-4 py-1.5 text-right text-green-600 dark:text-green-400">${{ number_format($client['paid'], 2) }}</td>
+                                                <td class="px-4 py-1.5 text-right {{ $client['balance'] > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400' }}">
+                                                    ${{ number_format($client['balance'], 2) }}
+                                                </td>
+                                                <td class="px-4 py-1.5 text-right">
+                                                    <x-filament::badge :color="$badgeColor">{{ $badgeLabel }}</x-filament::badge>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    @endif
                                 @endforeach
                             </tbody>
                         </table>
@@ -192,25 +235,37 @@
                 @endif
 
                 @if($this->report_type === 'profit_loss')
+                    @php
+                        $totalRevenue = $this->reportData->sum(fn($item) => $item['revenue'] ?? 0);
+                        $totalExpenses = $this->reportData->sum(fn($item) => $item['expenses'] ?? 0);
+                        $totalProfit = $this->reportData->sum(fn($item) => $item['profit'] ?? 0);
+                        $totalPaid = $this->reportData->sum(fn($item) => collect($item['clients'] ?? [])->sum('paid'));
+                        $totalBalance = $this->reportData->sum(fn($item) => collect($item['clients'] ?? [])->sum('balance'));
+                    @endphp
                     <div class="mt-4 pt-4 border-t dark:border-gray-700">
-                        <div class="flex justify-end gap-8">
-                            @php
-                                $totalRevenue = $this->reportData->sum(fn($item) => $item['revenue'] ?? 0);
-                                $totalExpenses = $this->reportData->sum(fn($item) => $item['expenses'] ?? 0);
-                                $totalProfit = $this->reportData->sum(fn($item) => $item['profit'] ?? 0);
-                            @endphp
+                        <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
                             <div class="text-right">
-                                <div class="text-sm text-gray-500">Total Revenue</div>
-                                <div class="text-lg font-medium">${{ number_format($totalRevenue, 2) }}</div>
+                                <div class="text-xs text-gray-500 uppercase tracking-wide">Total Revenue</div>
+                                <div class="text-lg font-semibold">${{ number_format($totalRevenue, 2) }}</div>
                             </div>
                             <div class="text-right">
-                                <div class="text-sm text-gray-500">Total Expenses</div>
-                                <div class="text-lg font-medium">${{ number_format($totalExpenses, 2) }}</div>
+                                <div class="text-xs text-gray-500 uppercase tracking-wide">Total Expenses</div>
+                                <div class="text-lg font-semibold">${{ number_format($totalExpenses, 2) }}</div>
                             </div>
                             <div class="text-right">
-                                <div class="text-sm text-gray-500">Net Profit</div>
-                                <div class="text-lg font-medium {{ $totalProfit >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                <div class="text-xs text-gray-500 uppercase tracking-wide">Net Profit</div>
+                                <div class="text-lg font-semibold {{ $totalProfit >= 0 ? 'text-green-600' : 'text-red-600' }}">
                                     ${{ number_format($totalProfit, 2) }}
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xs text-gray-500 uppercase tracking-wide">Total Collected</div>
+                                <div class="text-lg font-semibold text-green-600">${{ number_format($totalPaid, 2) }}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xs text-gray-500 uppercase tracking-wide">Outstanding Balance</div>
+                                <div class="text-lg font-semibold {{ $totalBalance > 0 ? 'text-red-600' : 'text-green-600' }}">
+                                    ${{ number_format($totalBalance, 2) }}
                                 </div>
                             </div>
                         </div>
