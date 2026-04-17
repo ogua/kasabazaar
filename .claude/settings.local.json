@@ -6,7 +6,18 @@
       "Bash(find:*)",
       "Bash(composer show:*)",
       "Bash(composer require:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(php -r \":*)",
+      "Read(//d/Mobile/rdd-shipping/**)",
+      "Read(//d/Mobile/rdd-shipping/app/**)",
+      "Bash(npm install:*)",
+      "Bash(npm show:*)",
+      "Bash(node -e \"const v=require\\(''''fs''''\\).readFileSync\\(''''/dev/stdin'''',''''utf8''''\\); const arr=JSON.parse\\(v\\); console.log\\(arr.slice\\(-5\\).join\\(''''\\\\n''''\\)\\)\")",
+      "Bash(npx expo:*)",
+      "Bash(npx tsc:*)"
+    ],
+    "additionalDirectories": [
+      "D:\\Mobile\\rdd-shipping"
     ]
   }
 }

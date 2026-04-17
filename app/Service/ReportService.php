@@ -9,6 +9,9 @@ use App\Models\Expense;
 use App\Models\Shipment;
 use App\Enums\IncomeStatus;
 use App\Models\PayrollEntry;
+use App\Service\ExpenseService;
+use App\Service\IncomeService;
+use App\Service\PayrollService;
 
 class ReportService
 {
@@ -176,7 +179,7 @@ class ReportService
                 $q->where('branch_id', $branchId);
             }
         });
-        $payroll = $payrollQuery->sum('net_pay');
+        $payroll = $payrollQuery->sum('net_salary');
 
         $shipmentRevenue = $shipments->sum('total');
         $externalIncomeTotal = $externalIncome->sum('amount_usd');

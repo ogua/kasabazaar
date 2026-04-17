@@ -2,11 +2,29 @@
 
 namespace App\Models;
 
+use App\Models\Branch;
+use App\Models\City;
+use App\Models\Client;
+use App\Models\Country;
+use App\Models\Expense;
+use App\Models\Income;
+use App\Models\Invoice;
+use App\Models\Payment;
+use App\Models\PickupItems;
+use App\Models\PickupSchedule;
+use App\Models\Purchaseditem;
 use App\Models\Receiver;
+use App\Models\ShipmentItem;
 use App\Models\ShipmentContainer;
+use App\Models\ShipmentMedia;
+use App\Models\ShipmentMessage;
+use App\Models\ShipmentUpdate;
+use App\Models\State;
+use App\Models\Trip;
 use App\Enums\ShippingStatus;
 use App\Service\ExchangeRateService;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -272,6 +290,16 @@ class Shipment extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function originBranch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class, 'origin_branch_id');
+    }
+
+    public function destinationBranch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class, 'destination_branch_id');
     }
 
     public function invoice() : HasOne {

@@ -141,7 +141,7 @@ class CreateShipment extends CreateRecord
                                     return \App\Models\Shipment::whereNotNull('container_number')
                                         ->whereNotNull('shipping_reference')
                                         ->orderBy('created_at', 'desc')
-                                        ->limit(50)
+                                        //->limit(50)
                                         ->get()
                                         ->mapWithKeys(fn ($shipment) => [
                                             $shipment->id => $shipment->shipping_reference

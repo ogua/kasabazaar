@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Enums\PayrollEntryStatus;
+use App\Models\PayrollPeriod;
+use App\Models\Staff;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,7 +25,7 @@ class PayrollEntry extends Model
         'other_deductions' => 'decimal:2',
         'gross_pay' => 'decimal:2',
         'total_deductions' => 'decimal:2',
-        'net_pay' => 'decimal:2',
+        'net_salary' => 'decimal:2',
         'paid_at' => 'date',
         'status' => PayrollEntryStatus::class,
     ];
