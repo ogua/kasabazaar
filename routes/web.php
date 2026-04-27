@@ -39,6 +39,9 @@ Route::get('/news',[WebController::class,'ourblog'])
 Route::get('/news/{slug}',[WebController::class,'blogDetails'])
 ->name('blog-details');
 
+Route::get('/privacy',[WebController::class,'privacyPolicy'])
+->name('privacy-policy');
+
 // Route::get('/sitemap',[WebController::class,'sitemap'])
 // ->name('sitemap');
 

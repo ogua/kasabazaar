@@ -56,6 +56,11 @@ class WebController extends Controller
         $categories = BlogCategory::all();
         return view('web.blog-details', compact('blogplost','categories'));
     }
+
+    public function privacyPolicy()
+    {
+        return view('web.privacy-policy');
+    }
     
 
 
