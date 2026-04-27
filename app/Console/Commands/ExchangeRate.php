@@ -2,10 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\Service\ExchangeRateService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Cache;
+use App\Service\ExchangeRateService;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 
 class ExchangeRate extends Command
 {
@@ -38,6 +38,8 @@ class ExchangeRate extends Command
                 $this->error('GHS rate not found in API response.');
                 return self::FAILURE;
             }
+
+            logger("Fetched exchange rate from API: 1 USD = {$ghsRate} GHS");
 
             // Persist the rate (updateOrCreate for today) and bust the 1-hour cache
             $service->logRate((float) $ghsRate, 'USD', 'GHS', 'api');
