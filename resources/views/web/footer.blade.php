@@ -19,20 +19,19 @@
             <p class="mt-3"><strong>Email:</strong> <span>kasabazaar109@gmail.com</span></p>
           </div>
           <div class="mt-4 social-links d-flex">
-            <a href=""><i class="bi bi-twitter-x"></i></a>
-            <a href=""><i class="bi bi-facebook"></i></a>
-            <a href=""><i class="bi bi-instagram"></i></a>
-            <a href=""><i class="bi bi-linkedin"></i></a>
+            <a href="#" aria-label="Twitter/X"><i class="bi bi-twitter-x"></i></a>
+            <a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
+            <a href="#" aria-label="Instagram"><i class="bi bi-instagram"></i></a>
+            <a href="#" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
           </div>
         </div>
 
         <div class="col-lg-3 col-md-3 footer-links">
           <h4>Useful Links</h4>
           <ul>
-            <li><a href="#">Home</a></li>
-            <li><a href="#">About us</a></li>
-            <li><a href="#">Services</a></li>
-            <li><a href="#">Terms of service</a></li>
+            <li><a href="{{ route('home-page') }}">Home</a></li>
+            <li><a href="{{ route('about-us') }}">About us</a></li>
+            <li><a href="{{ route('our-services') }}">Services</a></li>
             <li><a href="{{ route('privacy-policy') }}">Privacy policy</a></li>
           </ul>
         </div>
@@ -60,7 +59,7 @@
     </div>
 
     <div class="container mt-4 text-center copyright">
-      <p>© <span>Copyright</span> <strong class="px-1 sitename">Welcome to Rose Door to Door Shipping and Delivery Service</strong> <span>All Rights Reserved</span></p>
+      <p>© {{ date('Y') }} <strong class="px-1 sitename">Rose Door to Door Shipping & Delivery Service</strong> — All Rights Reserved</p>
       <div class="credits">
         <!-- All the links in the footer should remain intact. -->
         <!-- You can delete the links only if you've purchased the pro version. -->

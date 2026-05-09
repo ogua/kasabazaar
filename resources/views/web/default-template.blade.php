@@ -4,9 +4,9 @@
 <head>
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
-  <title>Index - KasaBazaar Shipping & Logistics</title>
-  <meta name="description" content="">
-  <meta name="keywords" content="">
+  <title>@yield('heading', 'KasaBazaar Shipping & Logistics')</title>
+  <meta name="description" content="@yield('meta_description', 'Rose Door to Door Shipping & Delivery — reliable door-to-door shipping between the USA and Ghana. Air freight, sea freight, e-commerce deliveries and more.')">
+  <meta name="keywords" content="@yield('meta_keywords', 'shipping Ghana, door to door delivery, freight forwarding, air freight, sea freight, e-commerce shipping, KasaBazaar, Rose Door to Door')">
 
   <!-- Favicons -->
   <link rel="icon" href="assets/img/kasabazaar-logo.png" />
@@ -25,6 +25,9 @@
 
   <!-- Main CSS File -->
   <link href="{{ URL::to('assets/css/main.css') }}" rel="stylesheet">
+
+  <!-- Livewire Styles -->
+  @livewireStyles
 
   <!-- =======================================================
   * Template Name: UpConstruction
@@ -66,6 +69,9 @@
 
   <!-- Main JS File -->
   <script src="{{ URL::to('assets/js/main.js') }}"></script>
+
+  <!-- Livewire Scripts -->
+  @livewireScripts
 
 </body>
 

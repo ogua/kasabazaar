@@ -4,6 +4,9 @@
 
 @section('main-content')
 
+@include('web.mothers-day-overlay')
+@include('web.birthday-overlay')
+
 <!-- Hero Section -->
 <section id="hero" class="hero section dark-background">
 
@@ -41,13 +44,13 @@
         <img src="assets/img/hero-carousel/hero-carousel-5.jpg" alt="">
       </div> -->
 
-      <!-- <a class="carousel-control-prev" href="#hero-carousel" role="button" data-bs-slide="prev">
+      <a class="carousel-control-prev" href="#hero-carousel" role="button" data-bs-slide="prev">
         <span class="carousel-control-prev-icon bi bi-chevron-left" aria-hidden="true"></span>
       </a>
 
       <a class="carousel-control-next" href="#hero-carousel" role="button" data-bs-slide="next">
         <span class="carousel-control-next-icon bi bi-chevron-right" aria-hidden="true"></span>
-      </a> -->
+      </a>
 
     </div>
 
@@ -69,37 +72,7 @@
         </div>
   
         <div class="col-lg-5" data-aos="zoom-out" data-aos-delay="200">
-          <form action="forms/quote.php" method="post" class="php-email-form">
-            <h3>Get Your Personalized Quote</h3>
-            <p>Ready to ship? Fill out the form below to receive a customized quote tailored to your shipping needs. Our team is here to help you every step of the way!</p>
-            <div class="row gy-3">
-  
-              <div class="col-12">
-                <input type="text" name="name" class="form-control" placeholder="Your Name" required="">
-              </div>
-  
-              <div class="col-12 ">
-                <input type="email" class="form-control" name="email" placeholder="Your Email" required="">
-              </div>
-  
-              <div class="col-12">
-                <input type="text" class="form-control" name="phone" placeholder="Your Phone" required="">
-              </div>
-  
-              <div class="col-12">
-                <textarea class="form-control" name="message" rows="6" placeholder="Tell us about your shipment" required=""></textarea>
-              </div>
-  
-              <div class="text-center col-12">
-                <div class="loading">Loading</div>
-                <div class="error-message"></div>
-                <div class="sent-message">Your quote request has been successfully sent. Thank you for choosing Rose Door to Door Shipping and Delivery Service!</div>
-  
-                <button type="submit">Get a Quote</button>
-              </div>
-  
-            </div>
-          </form>
+          @livewire('quote-request-form')
         </div><!-- End Quote Form -->
   
       </div>

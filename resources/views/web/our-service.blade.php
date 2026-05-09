@@ -18,7 +18,7 @@
               </div>
               <h3>Air Freight Service</h3>
               <p>We provide fast and reliable air freight services, ensuring your shipments reach their destination quickly, no matter the distance.</p>
-              <a href="#" class="readmore stretched-link">Read more <i class="bi bi-arrow-right"></i></a>
+              <a href="{{ route('our-services') }}" class="readmore stretched-link">Read more <i class="bi bi-arrow-right"></i></a>
             </div>
           </div><!-- End Service Item -->
     
@@ -30,7 +30,7 @@
               </div>
               <h3>Sea Freight Service</h3>
               <p>We offer reliable sea freight solutions for bulk and oversized shipments, providing cost-effective options for international shipping.</p>
-              <a href="#" class="readmore stretched-link">Read more <i class="bi bi-arrow-right"></i></a>
+              <a href="{{ route('our-services') }}" class="readmore stretched-link">Read more <i class="bi bi-arrow-right"></i></a>
             </div>
           </div><!-- End Service Item -->
     
@@ -42,7 +42,7 @@
               </div>
               <h3>E-commerce Shipments</h3>
               <p>We handle shipments from top e-commerce platforms like Amazon, eBay, Wal-Mart, and Best Buy, delivering your online purchases directly to Ghana.</p>
-              <a href="#" class="readmore stretched-link">Read more <i class="bi bi-arrow-right"></i></a>
+              <a href="{{ route('our-services') }}" class="readmore stretched-link">Read more <i class="bi bi-arrow-right"></i></a>
             </div>
           </div><!-- End Service Item -->
     
@@ -54,7 +54,7 @@
               </div>
               <h3>Unbonded Warehouses</h3>
               <p>Coming soon: We will be introducing unbonded warehouse solutions to streamline the process of storing and shipping goods, offering more flexibility for international shipments.</p>
-              <a href="#" class="readmore stretched-link">Read more <i class="bi bi-arrow-right"></i></a>
+              <a href="{{ route('our-services') }}" class="readmore stretched-link">Read more <i class="bi bi-arrow-right"></i></a>
             </div>
           </div><!-- End Service Item -->
     

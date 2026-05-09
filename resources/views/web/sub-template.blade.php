@@ -50,7 +50,7 @@
         <h1>@yield('sub-heading')</h1>
         <nav class="breadcrumbs">
           <ol>
-            <li><a href="index.php">Home</a></li>
+            <li><a href="{{ route('home-page') }}">Home</a></li>
             <li class="current">@yield('sub-heading')</li>
           </ol>
         </nav>

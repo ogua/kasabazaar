@@ -6,59 +6,29 @@
 
 @section('main-content')
 
- <!-- Services Section -->
- <section id="services" class="services section light-background">
+ <!-- Tracking Section -->
+ <section id="tracking" class="services section light-background">
 
-  <!-- Section Title -->
   <div class="container section-title" data-aos="fade-up">
       <h2>Track Your Shipment</h2>
-  </div><!-- End Section Title -->
+      <p>Enter your tracking number or shipment reference below to get a real-time status update.</p>
+  </div>
 
-  <div class="container">
-
-      <div class="row gy-4">
-
-          <!-- Unbonded Warehouses (Coming Soon) -->
-          <div class="col-lg-12 col-md-12" data-aos="fade-up" data-aos-delay="400">
-              <div class="service-item position-relative">
+  <div class="container" data-aos="fade-up" data-aos-delay="100">
+      <div class="row justify-content-center">
+          <div class="col-lg-8">
+              <div class="service-item position-relative p-4">
                   <div class="icon">
-                      <i class="fa-solid fa-thumb-tack"></i>
+                      <i class="fa-solid fa-location-dot"></i>
                   </div>
-
-                  <div>
-                      <form action="#" method="post" class="php-email-form">
-                          <div class="row gy-3">
-
-                              <div class="col-6">
-                                  <label for="">Enter Tracking Number</label>
-                                  <input type="text" name="name" class="form-control" required="">
-                              </div>
-
-                              <div class="text-right col-12">
-                                  <div class="loading">Loading</div>
-                                  <div class="error-message"></div>
-                                  <div class="sent-message">Your quote request has been successfully sent.
-                                      Thank you for choosing KasaBazaar!</div>
-                                  <button type="submit" class="btn btn-danger">Track Now</button>
-                              </div>
-
-                          </div>
-                      </form>
-                  </div>
-
-
-                  <div id="tracking_information"></div>
-
+                  @livewire('shipment-tracker')
               </div>
-          </div><!-- End Service Item -->
-
+          </div>
       </div>
-
   </div>
 
 </section>
-
-<!-- /Services Section -->
+<!-- /Tracking Section -->
 
 <!-- Testimonials Section -->
   @include('web.testimonial')

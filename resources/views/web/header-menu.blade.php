@@ -1,7 +1,7 @@
 <header id="header" class="header d-flex align-items-center fixed-top">
     <div class="container-fluid container-xl position-relative d-flex align-items-center justify-content-between">
 
-      <a href="index.php" class="logo d-flex align-items-center">
+      <a href="{{ route('home-page') }}" class="logo d-flex align-items-center">
         <!-- Uncomment the line below if you also wish to use an image logo -->
          <img src="{{ URL::to('images/Kasabazaar-logo.jpg') }}" alt="">
          {{-- <img src="{{ URL::to('images/Kasabazaar-logo-w3.png') }}" alt=""> --}}
