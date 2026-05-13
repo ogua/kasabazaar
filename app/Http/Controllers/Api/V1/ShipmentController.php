@@ -54,9 +54,11 @@ class ShipmentController extends BaseApiController
 
         $branchId = $this->resolveBranch($request);
 
+        //logger($request->all());
+
         $request->validate([
             'client_id'                  => 'required|uuid|exists:clients,id',
-            'destination_branch_id'      => 'required|uuid|exists:branches,id',
+            'destination_branch_id'      => 'required',
             'shipment_type'              => 'sometimes|in:new,existing',
             'existing_shipment_id'       => 'required_if:shipment_type,existing|nullable|uuid|exists:shipments,id',
             'shipped_at'                 => 'nullable|date',
@@ -97,7 +99,7 @@ class ShipmentController extends BaseApiController
         $shipment = Shipment::create([
             'client_id'                 => $request->client_id,
             'branch_id'                 => $branchId,
-            'origin_branch_id'          => $branchId,
+            'origin_branch_id'          => $request->origin_branch_id,
             'destination_branch_id'     => $request->destination_branch_id,
             'shipping_reference'        => $refData['reference'],
             'tracking_number'           => strtoupper(\Illuminate\Support\Str::random(12)),
@@ -180,7 +182,7 @@ class ShipmentController extends BaseApiController
         $request->validate([
             'status'                   => 'sometimes|string',
             'payment_status'           => 'sometimes|in:pending,paid,partial',
-            'destination_branch_id'    => 'sometimes|uuid|exists:branches,id',
+            'destination_branch_id'    => 'sometimes',
             'estimated_delivery_date'  => 'nullable|date',
             'shipping_cost'            => 'nullable|numeric|min:0',
             'total'                    => 'nullable|numeric|min:0',
@@ -279,9 +281,11 @@ class ShipmentController extends BaseApiController
         $branchId = $this->resolveBranch($request);
         Shipment::where('branch_id', $branchId)->findOrFail($id);
 
+        logger($request->all());
+
         $request->validate([
             'file'    => 'required|file|mimes:jpg,jpeg,png,mp4,mov|max:51200',
-            'stage'   => 'nullable|in:pickup,in-transit,delivery,post-delivery',
+            'stage'   => 'nullable',
             'caption' => 'nullable|string|max:255',
         ]);
 

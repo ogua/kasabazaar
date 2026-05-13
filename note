@@ -1,5 +1,5 @@
 //link to public_html
-ln -s /home/u681407738/domains/rddshipping.com/kasabazaar/public public_html
+ln -s /home/u681407738/domains/sunrideafrica.com/testapp/public public_html
 
 //create a symlink
-ln -s /home/u681407738/domains/rddshipping.com/kasabazaar/storage/app/public /home/u681407738/domains/rddshipping.com/kasabazaar/public/storage
+ln -s /home/u681407738/domains/sunrideafrica.com/testapp/storage/app/public /home/u681407738/domains/sunrideafrica.com/testapp/public/storage
