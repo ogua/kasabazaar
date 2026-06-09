@@ -347,6 +347,8 @@ class ShipmentController extends BaseApiController
                 'name'  => $s->client->name,
                 'phone' => $s->client->phone,
             ] : null,
+            'origin_branch_id'   => $s->origin_branch_id,
+            'destination_branch_id' => $s->destination_branch_id,
             'origin_branch'      => $s->originBranch ? ['id' => $s->originBranch->id, 'name' => $s->originBranch->name] : null,
             'destination_branch' => $s->destinationBranch ? ['id' => $s->destinationBranch->id, 'name' => $s->destinationBranch->name] : null,
             'container_status'   => $s->containerStatus ? [
