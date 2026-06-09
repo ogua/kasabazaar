@@ -14,7 +14,8 @@ class PickupScheduleController extends BaseApiController
 {
     public function index(Request $request): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_any_pickup_schedule'), 403);
+        $u = auth()->user();
+        abort_unless($u->can('view_any_pickup_schedule') || $u->can('view_any_pickup::schedule'), 403);
 
         $branchId  = $this->resolveBranch($request);
         $query     = PickupSchedule::where('branch_id', $branchId)

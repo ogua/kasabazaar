@@ -20,6 +20,9 @@ class PaymentController extends BaseApiController
         $query     = Payment::where('branch_id', $branchId)
             ->with(['shipment:id,shipping_reference', 'enteredBy:id,name']);
 
+        if ($shipmentId = $request->input('shipment_id')) {
+            $query->where('shipment_id', $shipmentId);
+        }
         if ($from = $request->input('date_from')) {
             $query->whereDate('paid_on', '>=', $from);
         }
