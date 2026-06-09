@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Models\Branch;
+use App\Models\Shipment;
+use App\Models\User;
 use App\Service\ExchangeRateService;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -15,11 +18,13 @@ class Payment extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'paid_on' => 'datetime',
-        'amount' => 'decimal:2',
-        'amount_usd' => 'decimal:2',
+        'paid_on'       => 'datetime',
+        'amount'        => 'decimal:2',
+        'amount_usd'    => 'decimal:2',
+        'amount_ghs'    => 'decimal:2',
         'exchange_rate' => 'decimal:4',
-        'amount_ghs' => 'decimal:2',
+        'balance'       => 'decimal:2',
+        'change'        => 'decimal:2',
     ];
 
     protected static function booted()
@@ -73,9 +78,9 @@ class Payment extends Model
     }
 
 
-    public function enteredby(): BelongsTo
+    public function enteredBy(): BelongsTo
     {
-        return $this->belongsTo(User::class,"user_id");
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function scopeOfbranch($query)

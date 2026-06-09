@@ -19,9 +19,9 @@ class Quotation extends Model
         return $this->belongsTo(Branch::class);
     }
 
-    public function enteredby(): BelongsTo
+    public function enteredBy(): BelongsTo
     {
-        return $this->belongsTo(User::class,"recorderd_by");
+        return $this->belongsTo(User::class, 'recorderd_by');
     }
 
     public function client() : BelongsTo {

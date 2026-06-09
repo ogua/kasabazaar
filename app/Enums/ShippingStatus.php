@@ -7,7 +7,7 @@ use Filament\Support\Contracts\HasLabel;
 enum ShippingStatus : string implements HasLabel, HasColor
 {
     case pickup = 'pickup';
-    case shipped = 'Shipped';
+    case shipped = 'shipped';
     case delivered = 'delivered';
     case cancelled = 'cancelled';
     case pending = 'pending';

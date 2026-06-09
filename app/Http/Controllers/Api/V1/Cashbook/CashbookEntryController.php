@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Cashbook;
 
+use App\Enums\CashbookCostCenter;
 use App\Http\Controllers\Api\V1\BaseApiController;
 use App\Models\CashbookEntry;
 use Illuminate\Http\JsonResponse;
@@ -45,7 +46,7 @@ class CashbookEntryController extends BaseApiController
             'momo_debit'   => 'nullable|numeric|min:0',
             'bank_credit'  => 'nullable|numeric|min:0',
             'momo_credit'  => 'nullable|numeric|min:0',
-            'cost_center'  => 'required|string',
+            'cost_center'  => 'required|in:' . implode(',', array_column(CashbookCostCenter::cases(), 'value')),
             'month'        => 'nullable|integer|min:1|max:12',
             'year'         => 'nullable|integer|min:2000',
         ]);
@@ -92,7 +93,7 @@ class CashbookEntryController extends BaseApiController
             'momo_debit'  => 'nullable|numeric|min:0',
             'bank_credit' => 'nullable|numeric|min:0',
             'momo_credit' => 'nullable|numeric|min:0',
-            'cost_center' => 'sometimes|string',
+            'cost_center' => 'sometimes|in:' . implode(',', array_column(CashbookCostCenter::cases(), 'value')),
         ]);
 
         $data = $request->only(['date', 'pv_no', 'details', 'chq_ref', 'bank_debit', 'momo_debit', 'bank_credit', 'momo_credit', 'cost_center']);
@@ -120,44 +121,39 @@ class CashbookEntryController extends BaseApiController
 
     private function formatEntry(CashbookEntry $e): array
     {
-        return [
-            'id'                   => $e->id,
-            'date'                 => $e->date,
-            'pv_no'                => $e->pv_no,
-            'details'              => $e->details,
-            'chq_ref'              => $e->chq_ref,
-            'bank_debit'           => $e->bank_debit,
-            'momo_debit'           => $e->momo_debit,
-            'bank_credit'          => $e->bank_credit,
-            'momo_credit'          => $e->momo_credit,
-            'bank_balance'         => $e->bank_balance,
-            'momo_balance'         => $e->momo_balance,
-            'cost_center'          => $e->cost_center instanceof \BackedEnum ? $e->cost_center->value : $e->cost_center,
-            'month'                => $e->month,
-            'year'                 => $e->year,
-            // Analysis columns
-            'op_balance'           => $e->op_balance,
-            'sales'                => $e->sales,
-            'dir_transfer'         => $e->dir_transfer,
-            'shipping_fee'         => $e->shipping_fee,
-            'service_fee'          => $e->service_fee,
-            'momo_interest'        => $e->momo_interest,
-            'property_management'  => $e->property_management,
-            'refund'               => $e->refund,
-            'contra_receipt'       => $e->contra_receipt,
-            'import_duty'          => $e->import_duty,
-            'shipping_expenses'    => $e->shipping_expenses,
-            'salaries_wages'       => $e->salaries_wages,
-            'bank_charges'         => $e->bank_charges,
-            'ssnit'                => $e->ssnit,
-            'paye'                 => $e->paye,
-            'withholding_tax'      => $e->withholding_tax,
-            'momo_charges'         => $e->momo_charges,
-            'contra_payment'       => $e->contra_payment,
-            'transportation'       => $e->transportation,
-            'materials'            => $e->materials,
-            'donation'             => $e->donation,
-            'created_at'           => $e->created_at,
+        $analysisColumns = [
+            'op_balance', 'sales', 'dir_transfer', 'shipping_fee', 'service_fee',
+            'momo_interest', 'property_management', 'refund', 'contra_receipt',
+            'import_duty', 'shipping_expenses', 'salaries_wages', 'bank_charges',
+            'ssnit', 'paye', 'withholding_tax', 'momo_charges', 'contra_payment',
+            'transportation', 'materials', 'donation',
         ];
+
+        $base = [
+            'id'           => $e->id,
+            'date'         => $e->date,
+            'pv_no'        => $e->pv_no,
+            'details'      => $e->details,
+            'chq_ref'      => $e->chq_ref,
+            'bank_debit'   => $e->bank_debit,
+            'momo_debit'   => $e->momo_debit,
+            'bank_credit'  => $e->bank_credit,
+            'momo_credit'  => $e->momo_credit,
+            'bank_balance' => $e->bank_balance,
+            'momo_balance' => $e->momo_balance,
+            'cost_center'  => $e->cost_center instanceof \BackedEnum ? $e->cost_center->value : $e->cost_center,
+            'month'        => $e->month,
+            'year'         => $e->year,
+            'created_at'   => $e->created_at,
+        ];
+
+        // Only include analysis columns that have a non-null value
+        foreach ($analysisColumns as $col) {
+            if ($e->$col !== null) {
+                $base[$col] = $e->$col;
+            }
+        }
+
+        return $base;
     }
 }

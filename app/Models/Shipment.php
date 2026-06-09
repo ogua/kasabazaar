@@ -38,12 +38,16 @@ class Shipment extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'status' => ShippingStatus::class,
-        'insurance_accepted' => 'boolean',
-        'external_form_completed' => 'boolean',
+        'status'                   => ShippingStatus::class,
+        'insurance_accepted'       => 'boolean',
+        'external_form_completed'  => 'boolean',
+        'is_received'              => 'boolean',
+        'signed_received_form'     => 'boolean',
+        'is_disclaimer_agreed'     => 'boolean',
+        'is_agreement_agreed'      => 'boolean',
         'exchange_rate_at_shipment' => 'decimal:4',
-        'total' => 'decimal:2',
-        'total_ghs' => 'decimal:2',
+        'total'                    => 'decimal:2',
+        'total_ghs'                => 'decimal:2',
     ];
 
     // Automatically update related items after saving
@@ -351,6 +355,11 @@ class Shipment extends Model
     public function pickupSchedules(): HasMany
     {
         return $this->hasMany(PickupSchedule::class, 'shipment_id');
+    }
+
+    public function sourcePickup(): BelongsTo
+    {
+        return $this->belongsTo(PickupSchedule::class, 'pickup_schedule_id');
     }
 
     public function trips()

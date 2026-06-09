@@ -152,6 +152,39 @@ class VehicleController extends BaseApiController
         return $this->success($record, 'Maintenance record added.', 201);
     }
 
+    public function updateMaintenance(Request $request, string $vehicleId, string $maintenanceId): JsonResponse
+    {
+        abort_unless(auth()->user()->can('update_vehicle'), 403);
+
+        $branchId = $this->resolveBranch($request);
+        Vehicle::where('branch_id', $branchId)->findOrFail($vehicleId);
+
+        $request->validate([
+            'maintenance_type' => 'sometimes|string|max:100',
+            'cost'             => 'nullable|numeric|min:0',
+            'scheduled_date'   => 'sometimes|date',
+            'completed_date'   => 'nullable|date',
+            'notes'            => 'nullable|string',
+        ]);
+
+        $record = VehicleMaintenance::where('vehicle_id', $vehicleId)->findOrFail($maintenanceId);
+        $record->update($request->only(['maintenance_type', 'cost', 'scheduled_date', 'completed_date', 'notes']));
+
+        return $this->success($record->fresh(), 'Maintenance record updated.');
+    }
+
+    public function deleteMaintenance(Request $request, string $vehicleId, string $maintenanceId): JsonResponse
+    {
+        abort_unless(auth()->user()->can('delete_vehicle'), 403);
+
+        $branchId = $this->resolveBranch($request);
+        Vehicle::where('branch_id', $branchId)->findOrFail($vehicleId);
+
+        VehicleMaintenance::where('vehicle_id', $vehicleId)->findOrFail($maintenanceId)->delete();
+
+        return $this->success(null, 'Maintenance record deleted.');
+    }
+
     public function trips(Request $request, string $id): JsonResponse
     {
         abort_unless(auth()->user()->can('view_trip'), 403);

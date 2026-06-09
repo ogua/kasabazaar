@@ -9,6 +9,9 @@ use App\Models\ShipmentItem;
 use Illuminate\Http\Request;
 use App\Models\ShipmentMedia;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\TrackingResource;
+use App\Http\Requests\StoreShipmentRequest;
+use App\Http\Requests\UpdateShipmentRequest;
 use App\Http\Controllers\Api\V1\BaseApiController;
 
 class ShipmentController extends BaseApiController
@@ -48,45 +51,9 @@ class ShipmentController extends BaseApiController
         return $this->paginated($paginated, fn ($s) => $this->formatShipment($s));
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreShipmentRequest $request): JsonResponse
     {
-        abort_unless(auth()->user()->can('create_shipment'), 403);
-
         $branchId = $this->resolveBranch($request);
-
-        //logger($request->all());
-
-        $request->validate([
-            'client_id'                  => 'required|uuid|exists:clients,id',
-            'destination_branch_id'      => 'required',
-            'shipment_type'              => 'sometimes|in:new,existing',
-            'existing_shipment_id'       => 'required_if:shipment_type,existing|nullable|uuid|exists:shipments,id',
-            'shipped_at'                 => 'nullable|date',
-            'estimated_delivery_date'    => 'nullable|date',
-            'shipping_cost'              => 'nullable|numeric|min:0',
-            'exchange_rate_at_shipment'  => 'nullable|numeric|min:0',
-            'vat_percentage'             => 'nullable|numeric|min:0|max:1',
-            'insurance_accepted'         => 'nullable|boolean',
-            'insurance'                  => 'nullable|numeric|min:0',
-            'total'                      => 'nullable|numeric|min:0',
-            'paid'                       => 'nullable|numeric|min:0',
-            'payment_status'             => 'nullable|in:pending,paid,partial',
-            'receivers'                  => 'nullable|array',
-            'receivers.*.receiver_name'  => 'required_with:receivers|string',
-            'receivers.*.receiver_phone' => 'nullable|string',
-            'receivers.*.receiver_email' => 'nullable|email',
-            'receivers.*.country'        => 'nullable|string',
-            'receivers.*.state_region'   => 'nullable|string',
-            'receivers.*.city'           => 'nullable|string',
-            'receivers.*.address'        => 'nullable|string',
-            'receivers.*.receiver_id_type'   => 'nullable|string',
-            'receivers.*.receiver_id_number' => 'nullable|string',
-            'receivers.*.items'          => 'nullable|array',
-            'receivers.*.items.*.product_id' => 'nullable|uuid|exists:products,id',
-            'receivers.*.items.*.quantity'   => 'nullable|integer|min:1',
-            'receivers.*.items.*.item_cost'  => 'nullable|numeric|min:0',
-            'receivers.*.items.*.box_no'     => 'nullable|string',
-        ]);
 
         $shipmentType = $request->input('shipment_type', 'new');
         $refData      = Shipment::generateShippingReference(
@@ -114,7 +81,7 @@ class ShipmentController extends BaseApiController
             'insurance'                 => $request->input('insurance', 0),
             'total'                     => $request->input('total', $request->input('shipping_cost', 0)),
             'paid'                      => $request->input('paid', 0),
-            'recorderd_by'              => auth()->id(),
+            'recorded_by'               => auth()->id(),
             'external_token'            => Shipment::generateExternalToken(),
             'client_existence'          => $shipmentType,
         ]);
@@ -172,28 +139,10 @@ class ShipmentController extends BaseApiController
         return $this->success($this->formatShipmentDetail($shipment));
     }
 
-    public function update(Request $request, string $id): JsonResponse
+    public function update(UpdateShipmentRequest $request, string $id): JsonResponse
     {
-        abort_unless(auth()->user()->can('update_shipment'), 403);
-
         $branchId = $this->resolveBranch($request);
         $shipment = Shipment::where('branch_id', $branchId)->findOrFail($id);
-
-        $request->validate([
-            'status'                   => 'sometimes|string',
-            'payment_status'           => 'sometimes|in:pending,paid,partial',
-            'destination_branch_id'    => 'sometimes',
-            'estimated_delivery_date'  => 'nullable|date',
-            'shipping_cost'            => 'nullable|numeric|min:0',
-            'total'                    => 'nullable|numeric|min:0',
-            'paid'                     => 'nullable|numeric|min:0',
-            'vat_percentage'           => 'nullable|numeric|min:0|max:1',
-            'insurance_accepted'       => 'nullable|boolean',
-            'insurance'                => 'nullable|numeric|min:0',
-            'container_number'         => 'nullable|integer',
-            'is_received'              => 'nullable|boolean',
-            'delivered_at'             => 'nullable|date',
-        ]);
 
         $shipment->update($request->only([
             'status', 'payment_status', 'destination_branch_id',
@@ -225,9 +174,9 @@ class ShipmentController extends BaseApiController
 
         $trackings = Tracking::where('shipment_id', $id)
             ->orderBy('status_updated_at', 'asc')
-            ->get(['id', 'shipment_id', 'branch_id', 'status', 'description', 'status_updated_at']);
+            ->get();
 
-        return $this->success($trackings);
+        return $this->success(TrackingResource::collection($trackings));
     }
 
     public function addTracking(Request $request, string $id): JsonResponse
@@ -250,7 +199,7 @@ class ShipmentController extends BaseApiController
             'status_updated_at' => now(),
         ]);
 
-        return $this->success($tracking, 'Tracking update added.', 201);
+        return $this->success(new TrackingResource($tracking), 'Tracking update added.', 201);
     }
 
     public function media(Request $request, string $id): JsonResponse
@@ -361,7 +310,7 @@ class ShipmentController extends BaseApiController
 
         $trackings = Tracking::where('shipment_id', $shipment->id)
             ->orderBy('status_updated_at')
-            ->get(['status', 'description', 'status_updated_at']);
+            ->get();
 
         return $this->success([
             'shipping_reference'       => $shipment->shipping_reference,
@@ -371,7 +320,7 @@ class ShipmentController extends BaseApiController
             'delivered_at'             => $shipment->delivered_at,
             'origin_branch'            => $shipment->originBranch?->name,
             'destination_branch'       => $shipment->destinationBranch?->name,
-            'tracking_history'         => $trackings,
+            'tracking_history'         => TrackingResource::collection($trackings),
         ]);
     }
 

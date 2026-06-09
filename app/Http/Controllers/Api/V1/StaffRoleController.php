@@ -13,7 +13,11 @@ class StaffRoleController extends BaseApiController
     {
         abort_unless(auth()->user()->can('view_any_staff_role'), 403);
 
-        $roles = StaffRole::where('is_active', true)->orderBy('name')->get(['id', 'name', 'code', 'description', 'base_salary', 'is_active']);
+        $query = StaffRole::query();
+        if (!$request->boolean('include_inactive')) {
+            $query->where('is_active', true);
+        }
+        $roles = $query->orderBy('name')->get(['id', 'name', 'code', 'description', 'base_salary', 'is_active']);
 
         return $this->success($roles);
     }

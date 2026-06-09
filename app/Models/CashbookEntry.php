@@ -8,6 +8,9 @@ use App\Enums\IncomeLedgerType;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
+use App\Models\CashbookIncomeLedger;
+use App\Models\CashbookExpenditureLedger;
 
 class CashbookEntry extends Model
 {
@@ -51,24 +54,22 @@ class CashbookEntry extends Model
 
     protected static function booted(): void
     {
-        static::creating(function (CashbookEntry $entry) {
+        static::creating(function (self $entry) {
             $entry->computeRunningBalance();
             $entry->fillAnalysisColumn();
         });
 
-        static::updating(function (CashbookEntry $entry) {
+        static::updating(function (self $entry) {
             $entry->computeRunningBalance();
             $entry->fillAnalysisColumn();
         });
 
-        static::saved(function (CashbookEntry $entry) {
-            // Cascade rebalance all subsequent entries
+        static::saved(function (self $entry) {
             static::rebalanceAfter($entry);
-            // Update cumulative ledgers
             static::updateLedgers($entry->month, $entry->year);
         });
 
-        static::deleted(function (CashbookEntry $entry) {
+        static::deleted(function (self $entry) {
             static::rebalanceAfter($entry);
             static::updateLedgers($entry->month, $entry->year);
         });
@@ -121,46 +122,49 @@ class CashbookEntry extends Model
     /**
      * Recompute balance for all entries that come after the given entry.
      */
-    protected static function rebalanceAfter(CashbookEntry $pivot): void
+    protected static function rebalanceAfter(self $pivot): void
     {
-        $subsequent = static::withoutTrashed()
-            ->where(function ($q) use ($pivot) {
-                $q->where('date', '>', $pivot->date)
-                    ->orWhere(function ($q2) use ($pivot) {
-                        $q2->where('date', '=', $pivot->date)
-                            ->where('id', '>', $pivot->id);
-                    });
-            })
-            ->orderBy('date')
-            ->orderBy('created_at')
-            ->get();
+        DB::transaction(function () use ($pivot) {
+            $subsequent = static::withoutTrashed()
+                ->where(function ($q) use ($pivot) {
+                    $q->where('date', '>', $pivot->date)
+                        ->orWhere(function ($q2) use ($pivot) {
+                            $q2->where('date', '=', $pivot->date)
+                                ->where('id', '>', $pivot->id);
+                        });
+                })
+                ->orderBy('date')
+                ->orderBy('created_at')
+                ->lockForUpdate()
+                ->get();
 
-        $prev = static::withoutTrashed()
-            ->where(function ($q) use ($pivot) {
-                $q->where('date', '<', $pivot->date)
-                    ->orWhere(function ($q2) use ($pivot) {
-                        $q2->where('date', '=', $pivot->date)
-                            ->where('id', '<=', $pivot->id);
-                    });
-            })
-            ->orderByDesc('date')
-            ->orderByDesc('created_at')
-            ->first();
+            $prev = static::withoutTrashed()
+                ->where(function ($q) use ($pivot) {
+                    $q->where('date', '<', $pivot->date)
+                        ->orWhere(function ($q2) use ($pivot) {
+                            $q2->where('date', '=', $pivot->date)
+                                ->where('id', '<=', $pivot->id);
+                        });
+                })
+                ->orderByDesc('date')
+                ->orderByDesc('created_at')
+                ->lockForUpdate()
+                ->first();
 
-        $bankBal = $prev ? (float) $prev->bank_balance : 0;
-        $momoBal = $prev ? (float) $prev->momo_balance : 0;
+            $bankBal = $prev ? (float) $prev->bank_balance : 0;
+            $momoBal = $prev ? (float) $prev->momo_balance : 0;
 
-        foreach ($subsequent as $entry) {
-            $bankBal = round($bankBal + (float) $entry->bank_debit - (float) $entry->bank_credit, 2);
-            $momoBal = round($momoBal + (float) $entry->momo_debit - (float) $entry->momo_credit, 2);
-            // Use query builder to avoid recursive booted hooks
-            static::withoutEvents(function () use ($entry, $bankBal, $momoBal) {
-                $entry->updateQuietly([
-                    'bank_balance' => $bankBal,
-                    'momo_balance' => $momoBal,
-                ]);
-            });
-        }
+            foreach ($subsequent as $entry) {
+                $bankBal = round($bankBal + (float) $entry->bank_debit - (float) $entry->bank_credit, 2);
+                $momoBal = round($momoBal + (float) $entry->momo_debit - (float) $entry->momo_credit, 2);
+                static::withoutEvents(function () use ($entry, $bankBal, $momoBal) {
+                    $entry->updateQuietly([
+                        'bank_balance' => $bankBal,
+                        'momo_balance' => $momoBal,
+                    ]);
+                });
+            }
+        });
     }
 
     /**

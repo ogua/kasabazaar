@@ -14,10 +14,19 @@
       "Bash(npm show:*)",
       "Bash(node -e \"const v=require\\(''''fs''''\\).readFileSync\\(''''/dev/stdin'''',''''utf8''''\\); const arr=JSON.parse\\(v\\); console.log\\(arr.slice\\(-5\\).join\\(''''\\\\n''''\\)\\)\")",
       "Bash(npx expo:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "PowerShell(ls \"C:\\\\xampp\\\\htdocs\\\\Projects\\\\kasabazaar\\\\app\\\\Http\\\\Resources\" -ErrorAction SilentlyContinue; if \\(-not $?\\) { \"NOT FOUND\" })",
+      "PowerShell(ls \"C:\\\\xampp\\\\htdocs\\\\Projects\\\\kasabazaar\\\\app\\\\Http\\\\Controllers\\\\Api\\\\V1\\\\Customer\" -ErrorAction SilentlyContinue; if \\(-not $?\\) { \"NOT FOUND\" })",
+      "PowerShell(ls \"C:\\\\xampp\\\\htdocs\\\\Projects\\\\kasabazaar\\\\app\\\\Http\\\\Middleware\" -ErrorAction SilentlyContinue; if \\(-not $?\\) { \"NOT FOUND\" })",
+      "PowerShell(ls \"C:\\\\xampp\\\\htdocs\\\\Projects\\\\kasabazaar\\\\app\\\\Services\" -ErrorAction SilentlyContinue; if \\(-not $?\\) { \"NOT FOUND\" })",
+      "PowerShell(ls \"C:\\\\xampp\\\\htdocs\\\\Projects\\\\kasabazaar\\\\app\\\\Notifications\" -ErrorAction SilentlyContinue; if \\(-not $?\\) { \"NOT FOUND\" })"
     ],
     "additionalDirectories": [
       "D:\\Mobile\\rdd-shipping"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "mysql",
+    "chrome-devtools"
+  ]
 }

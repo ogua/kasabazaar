@@ -41,7 +41,7 @@ class DisclaimerForm extends Component implements HasForms
         $data = $this->form->getState();
 
         $shipment = Shipment::where('id',$this->record)->first();
-        $shipment->is_diclaimer_aggred = $data['disclaima_aggreed'];
+        $shipment->is_disclaimer_agreed = $data['disclaima_aggreed'];
         $shipment->save();
 
 

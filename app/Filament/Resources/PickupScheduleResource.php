@@ -12,6 +12,8 @@ use App\Models\PickupSchedule;
 use Filament\Facades\Filament;
 use Filament\Resources\Resource;
 use Filament\Tables\Filters\SelectFilter;
+use App\Services\PickupConversionService;
+use App\Filament\Resources\ProductResource;
 use App\Filament\Resources\PickupScheduleResource\Pages;
 
 class PickupScheduleResource extends Resource
@@ -174,7 +176,7 @@ class PickupScheduleResource extends Resource
                     })
                     ->formatStateUsing(fn (string $state): string => PickupSchedule::STATUSES[$state] ?? ucfirst($state)),
 
-                Tables\Columns\TextColumn::make('assignedUser.name')
+                Tables\Columns\TextColumn::make('assignedStaff.name')
                     ->label('Assigned To')
                     ->placeholder('Unassigned')
                     ->badge()
@@ -235,6 +237,32 @@ class PickupScheduleResource extends Resource
                             ->title('Status Updated')
                             ->success()
                             ->send();
+                    }),
+                Tables\Actions\Action::make('convert_to_shipment')
+                    ->label('Convert to Shipment')
+                    ->icon('heroicon-m-arrow-right-circle')
+                    ->color('success')
+                    ->visible(fn ($record) => $record->status === 'completed' && !$record->shipment_id)
+                    ->requiresConfirmation()
+                    ->modalHeading('Convert Pickup to Shipment')
+                    ->modalDescription(fn ($record) => "Create a new shipment from this pickup for {$record->client?->name}. The pickup will be marked as 'Converted'.")
+                    ->modalSubmitActionLabel('Convert')
+                    ->action(function ($record) {
+                        try {
+                            $shipment = app(PickupConversionService::class)->convert($record, auth()->user());
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('Pickup Converted')
+                                ->body("Shipment {$shipment->shipping_reference} created successfully.")
+                                ->success()
+                                ->send();
+                        } catch (\Exception $e) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('Conversion Failed')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
                     }),
                 Tables\Actions\DeleteAction::make(),
             ])

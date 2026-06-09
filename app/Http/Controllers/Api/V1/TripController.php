@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Trip;
 use App\Models\TripShipment;
+use App\Http\Requests\StoreTripRequest;
+use App\Http\Resources\TripResource;
 use App\Http\Controllers\Api\V1\BaseApiController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,33 +32,12 @@ class TripController extends BaseApiController
 
         $paginated = $query->latest('scheduled_date')->paginate((int) $request->input('per_page', 20));
 
-        return $this->paginated($paginated, fn ($t) => $this->formatTrip($t));
+        return $this->paginated($paginated, fn ($t) => new TripResource($t));
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreTripRequest $request): JsonResponse
     {
-        abort_unless(auth()->user()->can('create_trip'), 403);
-
         $branchId = $this->resolveBranch($request);
-
-        $request->validate([
-            'vehicle_id'          => 'required|uuid|exists:vehicles,id',
-            'driver_id'           => 'required|uuid|exists:staff,id',
-            'assistant_id'        => 'nullable|uuid|exists:staff,id',
-            'origin'              => 'required|string|max:255',
-            'destination'         => 'required|string|max:255',
-            'route_description'   => 'nullable|string',
-            'distance_km'         => 'nullable|numeric|min:0',
-            'scheduled_date'      => 'required|date',
-            'scheduled_departure' => 'nullable|date_format:Y-m-d H:i:s',
-            'scheduled_arrival'   => 'nullable|date_format:Y-m-d H:i:s',
-            'fuel_cost'           => 'nullable|numeric|min:0',
-            'toll_fees'           => 'nullable|numeric|min:0',
-            'driver_allowance'    => 'nullable|numeric|min:0',
-            'other_costs'         => 'nullable|numeric|min:0',
-            'start_mileage'       => 'nullable|integer|min:0',
-            'notes'               => 'nullable|string',
-        ]);
 
         $trip = Trip::create(array_merge(
             $request->only([
@@ -69,7 +50,7 @@ class TripController extends BaseApiController
         ));
 
         return $this->success(
-            $this->formatTrip($trip->load(['vehicle', 'driver', 'assistant'])),
+            new TripResource($trip->load(['vehicle', 'driver', 'assistant'])),
             'Trip created.',
             201
         );
@@ -84,11 +65,12 @@ class TripController extends BaseApiController
             ->with(['vehicle', 'driver', 'assistant'])
             ->findOrFail($id);
 
-        $data           = $this->formatTrip($trip);
-        $data['shipments_summary'] = [
-            'total'     => $trip->total_shipments,
-            'delivered' => $trip->delivered_count,
-        ];
+        $data = array_merge((new TripResource($trip))->resolve(), [
+            'shipments_summary' => [
+                'total'     => $trip->total_shipments,
+                'delivered' => $trip->delivered_count,
+            ],
+        ]);
 
         return $this->success($data);
     }
@@ -118,7 +100,7 @@ class TripController extends BaseApiController
             'vehicle_id', 'driver_id', 'assistant_id',
         ]));
 
-        return $this->success($this->formatTrip($trip->fresh(['vehicle', 'driver', 'assistant'])));
+        return $this->success(new TripResource($trip->fresh(['vehicle', 'driver', 'assistant'])));
     }
 
     public function destroy(Request $request, string $id): JsonResponse
@@ -161,6 +143,43 @@ class TripController extends BaseApiController
         return $this->success($tripShipments);
     }
 
+    public function assignShipment(Request $request, string $id): JsonResponse
+    {
+        abort_unless(auth()->user()->can('update_trip'), 403);
+
+        $branchId = $this->resolveBranch($request);
+        $trip     = Trip::where('branch_id', $branchId)->findOrFail($id);
+
+        $request->validate(['shipment_id' => 'required|uuid|exists:shipments,id']);
+
+        $shipmentId = $request->input('shipment_id');
+
+        $already = TripShipment::where('trip_id', $id)->where('shipment_id', $shipmentId)->exists();
+        if ($already) {
+            return $this->error('Shipment is already assigned to this trip.', 422);
+        }
+
+        $ts = TripShipment::create([
+            'trip_id'         => $trip->id,
+            'shipment_id'     => $shipmentId,
+            'delivery_status' => 'pending',
+        ]);
+
+        return $this->success(['id' => $ts->id, 'shipment_id' => $ts->shipment_id, 'delivery_status' => 'pending'], 'Shipment assigned to trip.', 201);
+    }
+
+    public function removeShipment(Request $request, string $id, string $shipmentId): JsonResponse
+    {
+        abort_unless(auth()->user()->can('update_trip'), 403);
+
+        $branchId = $this->resolveBranch($request);
+        Trip::where('branch_id', $branchId)->findOrFail($id);
+
+        TripShipment::where('trip_id', $id)->where('shipment_id', $shipmentId)->delete();
+
+        return $this->success(null, 'Shipment removed from trip.');
+    }
+
     public function updateDelivery(Request $request, string $id, string $shipmentId): JsonResponse
     {
         abort_unless(auth()->user()->can('update_trip'), 403);
@@ -199,34 +218,4 @@ class TripController extends BaseApiController
         ]);
     }
 
-    private function formatTrip(Trip $t): array
-    {
-        return [
-            'id'                  => $t->id,
-            'branch_id'           => $t->branch_id,
-            'trip_reference'      => $t->trip_reference,
-            'origin'              => $t->origin,
-            'destination'         => $t->destination,
-            'route_description'   => $t->route_description,
-            'distance_km'         => $t->distance_km,
-            'scheduled_date'      => $t->scheduled_date,
-            'scheduled_departure' => $t->scheduled_departure,
-            'scheduled_arrival'   => $t->scheduled_arrival,
-            'actual_departure'    => $t->actual_departure,
-            'actual_arrival'      => $t->actual_arrival,
-            'status'              => $t->status instanceof \BackedEnum ? $t->status->value : $t->status,
-            'fuel_cost'           => $t->fuel_cost,
-            'toll_fees'           => $t->toll_fees,
-            'driver_allowance'    => $t->driver_allowance,
-            'other_costs'         => $t->other_costs,
-            'total_cost'          => $t->total_cost,
-            'start_mileage'       => $t->start_mileage,
-            'end_mileage'         => $t->end_mileage,
-            'notes'               => $t->notes,
-            'created_at'          => $t->created_at,
-            'vehicle'             => $t->vehicle ? ['id' => $t->vehicle->id, 'registration_number' => $t->vehicle->registration_number, 'make' => $t->vehicle->make, 'model' => $t->vehicle->model] : null,
-            'driver'              => $t->driver ? ['id' => $t->driver->id, 'name' => $t->driver->name] : null,
-            'assistant'           => $t->assistant ? ['id' => $t->assistant->id, 'name' => $t->assistant->name] : null,
-        ];
-    }
 }

@@ -8,6 +8,7 @@ use App\Models\ClientRating;
 use Illuminate\Http\Request;
 use App\Models\ClientInteraction;
 use Illuminate\Http\JsonResponse;
+use App\Http\Resources\ClientResource;
 use App\Http\Controllers\Api\V1\BaseApiController;
 
 class ClientController extends BaseApiController
@@ -29,7 +30,7 @@ class ClientController extends BaseApiController
 
         $paginated = $query->latest()->paginate((int) $request->input('per_page', 20));
 
-        return $this->paginated($paginated, fn ($c) => $this->formatClient($c));
+        return $this->paginated($paginated, fn ($c) => new ClientResource($c));
     }
 
     public function store(Request $request): JsonResponse
@@ -55,7 +56,7 @@ class ClientController extends BaseApiController
             ['branch_id' => $branchId]
         ));
 
-        return $this->success($this->formatClient($client), 'Client created.', 201);
+        return $this->success(new ClientResource($client), 'Client created.', 201);
     }
 
     public function show(Request $request, string $id): JsonResponse
@@ -65,7 +66,7 @@ class ClientController extends BaseApiController
         $branchId = $this->resolveBranch($request);
         $client   = Client::where('branch_id', $branchId)->findOrFail($id);
 
-        return $this->success($this->formatClient($client));
+        return $this->success(new ClientResource($client));
     }
 
     public function update(Request $request, string $id): JsonResponse
@@ -89,7 +90,7 @@ class ClientController extends BaseApiController
 
         $client->update($request->only(['name', 'email', 'phone', 'country', 'state_region', 'city', 'address', 'id_type', 'id_number']));
 
-        return $this->success($this->formatClient($client->fresh()));
+        return $this->success(new ClientResource($client->fresh()));
     }
 
     public function destroy(Request $request, string $id): JsonResponse
@@ -167,21 +168,5 @@ class ClientController extends BaseApiController
         return $this->success($ratings);
     }
 
-    private function formatClient(Client $c): array
-    {
-        return [
-            'id'           => $c->id,
-            'branch_id'    => $c->branch_id,
-            'name'         => $c->name,
-            'email'        => $c->email,
-            'phone'        => $c->phone,
-            'country'      => $c->country,
-            'state_region' => $c->state_region,
-            'city'         => $c->city,
-            'address'      => $c->address,
-            'id_type'      => $c->id_type,
-            'id_number'    => $c->id_number,
-            'created_at'   => $c->created_at,
-        ];
-    }
+
 }

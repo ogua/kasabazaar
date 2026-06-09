@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Http\Requests\StorePickupScheduleRequest;
 use App\Http\Controllers\Api\V1\BaseApiController;
+use App\Http\Resources\ShipmentResource;
 use App\Models\PickupSchedule;
+use App\Services\PickupConversionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -15,7 +18,7 @@ class PickupScheduleController extends BaseApiController
 
         $branchId  = $this->resolveBranch($request);
         $query     = PickupSchedule::where('branch_id', $branchId)
-            ->with(['client:id,name,phone', 'assignedUser:id,name']);
+            ->with(['client:id,name,phone', 'assignedStaff:id,name']);
 
         if ($status = $request->input('status')) {
             $query->where('status', $status);
@@ -48,7 +51,7 @@ class PickupScheduleController extends BaseApiController
             ['branch_id' => $branchId, 'status' => 'scheduled']
         ));
 
-        return $this->success($this->formatSchedule($schedule->load(['client', 'assignedUser'])), 'Pickup schedule created.', 201);
+        return $this->success($this->formatSchedule($schedule->load(['client', 'assignedStaff'])), 'Pickup schedule created.', 201);
     }
 
     public function show(Request $request, string $id): JsonResponse
@@ -57,7 +60,7 @@ class PickupScheduleController extends BaseApiController
 
         $branchId = $this->resolveBranch($request);
         $schedule = PickupSchedule::where('branch_id', $branchId)
-            ->with(['client', 'assignedUser'])
+            ->with(['client', 'assignedStaff'])
             ->findOrFail($id);
 
         return $this->success($this->formatSchedule($schedule));
@@ -81,7 +84,35 @@ class PickupScheduleController extends BaseApiController
 
         $schedule->update($request->only(['assigned_to', 'scheduled_at', 'pickup_location', 'contact_phone', 'status', 'notes', 'items_description']));
 
-        return $this->success($this->formatSchedule($schedule->fresh(['client', 'assignedUser'])));
+        return $this->success($this->formatSchedule($schedule->fresh(['client', 'assignedStaff'])));
+    }
+
+    public function convert(Request $request, string $id): JsonResponse
+    {
+        abort_unless(auth()->user()->can('create_shipment'), 403);
+
+        $branchId = $this->resolveBranch($request);
+        $pickup   = PickupSchedule::where('branch_id', $branchId)->findOrFail($id);
+
+        if ($pickup->status !== 'completed') {
+            return $this->error('Only completed pickups can be converted to shipments.', 422);
+        }
+
+        if ($pickup->shipment_id) {
+            return $this->error('This pickup has already been converted to a shipment.', 409);
+        }
+
+        try {
+            $shipment = app(PickupConversionService::class)->convert($pickup, $request->user());
+        } catch (\Exception $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+
+        return $this->success(
+            (new ShipmentResource($shipment))->resolve(),
+            'Pickup converted to shipment successfully.',
+            201
+        );
     }
 
     private function formatSchedule(PickupSchedule $p): array
@@ -100,7 +131,7 @@ class PickupScheduleController extends BaseApiController
             'items_description'=> $p->items_description,
             'created_at'       => $p->created_at,
             'client'           => $p->client ? ['id' => $p->client->id, 'name' => $p->client->name, 'phone' => $p->client->phone] : null,
-            'assigned_staff'   => $p->assignedUser ? ['id' => $p->assignedUser->id, 'name' => $p->assignedUser->name] : null,
+            'assigned_staff'   => $p->assignedStaff ? ['id' => $p->assignedStaff->id, 'name' => $p->assignedStaff->name] : null,
         ];
     }
 }

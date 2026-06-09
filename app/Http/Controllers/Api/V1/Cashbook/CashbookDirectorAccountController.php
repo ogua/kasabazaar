@@ -35,10 +35,36 @@ class CashbookDirectorAccountController extends BaseApiController
             $request->only(['date', 'particulars', 'op_balance', 'debit', 'credit'])
         );
 
-        $record->cl_balance = round((float) $record->op_balance + (float) $record->debit - (float) $record->credit, 2);
-        $record->save();
-
         return $this->success($this->formatDirector($record), 'Director account entry created.', 201);
+    }
+
+    public function update(Request $request, string $id): JsonResponse
+    {
+        abort_unless(auth()->user()->can('update_cashbook_entry'), 403);
+
+        $record = CashbookDirectorAccount::findOrFail($id);
+
+        $request->validate([
+            'date'        => 'sometimes|date',
+            'particulars' => 'sometimes|string',
+            'op_balance'  => 'nullable|numeric',
+            'debit'       => 'nullable|numeric|min:0',
+            'credit'      => 'nullable|numeric|min:0',
+        ]);
+
+        $record->update($request->only(['date', 'particulars', 'op_balance', 'debit', 'credit']));
+
+        return $this->success($this->formatDirector($record->fresh()), 'Director account entry updated.');
+    }
+
+    public function destroy(string $id): JsonResponse
+    {
+        abort_unless(auth()->user()->can('delete_cashbook_entry'), 403);
+
+        $record = CashbookDirectorAccount::findOrFail($id);
+        $record->delete();
+
+        return $this->success(null, 'Director account entry deleted.');
     }
 
     private function formatDirector(CashbookDirectorAccount $d): array

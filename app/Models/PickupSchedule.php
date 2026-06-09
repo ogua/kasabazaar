@@ -5,6 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Branch;
+use App\Models\Client;
+use App\Models\Shipment;
+use App\Models\Staff;
+use App\Models\ScheduleItem;
+use App\Models\User;
 
 class PickupSchedule extends Model
 {
@@ -14,14 +21,16 @@ class PickupSchedule extends Model
 
     protected $casts = [
         'scheduled_at' => 'datetime',
+        'converted_at' => 'datetime',
     ];
 
     public const STATUSES = [
-        'scheduled' => 'Scheduled',
-        'confirmed' => 'Confirmed',
+        'scheduled'   => 'Scheduled',
+        'confirmed'   => 'Confirmed',
         'in-progress' => 'In Progress',
-        'completed' => 'Completed',
-        'cancelled' => 'Cancelled',
+        'completed'   => 'Completed',
+        'cancelled'   => 'Cancelled',
+        'converted'   => 'Converted',
     ];
 
     public function branch(): BelongsTo
@@ -39,25 +48,31 @@ class PickupSchedule extends Model
         return $this->belongsTo(Shipment::class);
     }
 
-    public function assignedUser(): BelongsTo
+    public function assignedStaff(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'assigned_to');
     }
 
-    public function pickupItems()
+    public function pickupItems(): HasMany
     {
-        return $this->hasMany(ScheduleItem::class,"pickup_schedule_id");
+        return $this->hasMany(ScheduleItem::class, 'pickup_schedule_id');
+    }
+
+    public function convertedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'converted_by');
     }
 
     public function getStatusColorAttribute(): string
     {
         return match ($this->status) {
-            'scheduled' => 'info',
-            'confirmed' => 'primary',
+            'scheduled'   => 'info',
+            'confirmed'   => 'primary',
             'in-progress' => 'warning',
-            'completed' => 'success',
-            'cancelled' => 'danger',
-            default => 'gray',
+            'completed'   => 'success',
+            'converted'   => 'success',
+            'cancelled'   => 'danger',
+            default       => 'gray',
         };
     }
 }

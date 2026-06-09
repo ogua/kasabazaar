@@ -9,6 +9,43 @@ use Illuminate\Http\Request;
 
 class PayrollEntryController extends BaseApiController
 {
+    public function store(Request $request): JsonResponse
+    {
+        abort_unless(auth()->user()->can('create_payroll_period'), 403);
+
+        $request->validate([
+            'payroll_period_id' => 'required|uuid|exists:payroll_periods,id',
+            'staff_id'          => 'required|uuid|exists:staff,id',
+            'base_salary'       => 'required|numeric|min:0',
+            'overtime'          => 'nullable|numeric|min:0',
+            'bonus'             => 'nullable|numeric|min:0',
+            'allowances'        => 'nullable|numeric|min:0',
+            'tax'               => 'nullable|numeric|min:0',
+            'ssnit'             => 'nullable|numeric|min:0',
+            'other_deductions'  => 'nullable|numeric|min:0',
+            'notes'             => 'nullable|string',
+        ]);
+
+        $exists = PayrollEntry::where('payroll_period_id', $request->payroll_period_id)
+            ->where('staff_id', $request->staff_id)
+            ->exists();
+
+        if ($exists) {
+            return $this->error('A payroll entry for this staff member already exists in this period.', 409);
+        }
+
+        $entry = PayrollEntry::create($request->only([
+            'payroll_period_id', 'staff_id', 'base_salary', 'overtime', 'bonus',
+            'allowances', 'tax', 'ssnit', 'other_deductions', 'notes',
+        ]));
+
+        return $this->success(
+            $this->formatEntry($entry->load(['staff:id,name,employee_id,position', 'payrollPeriod:id,name,pay_date,status'])),
+            'Payroll entry created.',
+            201
+        );
+    }
+
     public function show(Request $request, string $id): JsonResponse
     {
         abort_unless(auth()->user()->can('view_payroll_period'), 403);
@@ -33,19 +70,16 @@ class PayrollEntryController extends BaseApiController
             'tax'              => 'nullable|numeric|min:0',
             'ssnit'            => 'nullable|numeric|min:0',
             'other_deductions' => 'nullable|numeric|min:0',
-            'gross_pay'        => 'nullable|numeric|min:0',
-            'total_deductions' => 'nullable|numeric|min:0',
-            'net_salary'       => 'nullable|numeric|min:0',
             'status'           => 'sometimes|in:pending,approved,paid',
             'paid_at'          => 'nullable|date',
             'payment_reference'=> 'nullable|string',
             'notes'            => 'nullable|string',
         ]);
 
+        // gross_pay, total_deductions, net_salary are computed by PayrollEntry::booted()
         $data = $request->only([
             'base_salary', 'overtime', 'bonus', 'allowances', 'tax', 'ssnit',
-            'other_deductions', 'gross_pay', 'total_deductions', 'net_salary',
-            'status', 'paid_at', 'payment_reference', 'notes',
+            'other_deductions', 'status', 'paid_at', 'payment_reference', 'notes',
         ]);
 
         if ($request->input('status') === 'paid' && !$entry->paid_at) {

@@ -3,6 +3,11 @@
 namespace App\Models;
 
 use App\Enums\TripStatus;
+use App\Models\Branch;
+use App\Models\Shipment;
+use App\Models\Staff;
+use App\Models\TripShipment;
+use App\Models\Vehicle;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -17,12 +22,13 @@ class Trip extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'distance_km' => 'decimal:2',
+        'distance_km'         => 'decimal:2',
+        'scheduled_date'      => 'datetime',
         'scheduled_departure' => 'datetime',
-        'scheduled_arrival' => 'datetime',
-        'actual_departure' => 'datetime',
-        'actual_arrival' => 'datetime',
-        'status' => TripStatus::class,
+        'scheduled_arrival'   => 'datetime',
+        'actual_departure'    => 'datetime',
+        'actual_arrival'      => 'datetime',
+        'status'              => TripStatus::class,
         'fuel_cost' => 'decimal:2',
         'toll_fees' => 'decimal:2',
         'driver_allowance' => 'decimal:2',

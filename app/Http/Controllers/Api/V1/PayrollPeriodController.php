@@ -93,13 +93,15 @@ class PayrollPeriodController extends BaseApiController
         $period   = PayrollPeriod::where('branch_id', $branchId)->findOrFail($id);
 
         $request->validate([
-            'name'     => 'sometimes|string|max:100',
-            'status'   => 'sometimes|in:draft,processing,approved,paid,cancelled',
-            'pay_date' => 'sometimes|date',
-            'notes'    => 'nullable|string',
+            'name'       => 'sometimes|string|max:100',
+            'start_date' => 'sometimes|date',
+            'end_date'   => 'sometimes|date|after_or_equal:start_date',
+            'pay_date'   => 'sometimes|date',
+            'status'     => 'sometimes|in:draft,processing,approved,paid,cancelled',
+            'notes'      => 'nullable|string',
         ]);
 
-        $data = $request->only(['name', 'status', 'pay_date', 'notes', 'start_date', 'end_date']);
+        $data = $request->only(['name', 'start_date', 'end_date', 'pay_date', 'status', 'notes']);
 
         if ($request->input('status') === 'approved') {
             $data['approved_by'] = auth()->id();

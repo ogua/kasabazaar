@@ -3,7 +3,6 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Filament\Facades\Filament;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasTenants;
 use Filament\Panel;
@@ -19,6 +18,8 @@ use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 use App\Models\Branch;
 use App\Models\Client;
+use App\Models\Staff;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class User extends Authenticatable implements FilamentUser, HasTenants
 {
@@ -84,7 +85,12 @@ class User extends Authenticatable implements FilamentUser, HasTenants
 
     public function client(): BelongsTo
     {
-        return $this->belongsTo(Client::class,"client_id");
+        return $this->belongsTo(Client::class, 'client_id');
+    }
+
+    public function staff(): HasOne
+    {
+        return $this->hasOne(Staff::class, 'user_id');
     }
 
 }

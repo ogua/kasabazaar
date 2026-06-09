@@ -48,7 +48,7 @@ class StaffController extends BaseApiController
             'user_id'           => 'nullable|uuid|exists:users,id',
             'salary'            => 'nullable|numeric|min:0',
             'hire_date'         => 'nullable|date',
-            'employment_status' => 'nullable|in:active,inactive,terminated,on_leave',
+            'employment_status' => 'nullable|in:active,inactive,terminated,on_leave,resigned,probation',
             'notes'             => 'nullable|string',
         ]);
 
@@ -83,12 +83,14 @@ class StaffController extends BaseApiController
             'phone'             => 'nullable|string|max:30',
             'position'          => 'nullable|string|max:100',
             'staff_role_id'     => 'nullable|uuid|exists:staff_roles,id',
+            'user_id'           => 'nullable|uuid|exists:users,id',
             'salary'            => 'nullable|numeric|min:0',
-            'employment_status' => 'nullable|in:active,inactive,terminated,on_leave',
+            'hire_date'         => 'nullable|date',
+            'employment_status' => 'nullable|in:active,inactive,terminated,on_leave,resigned,probation',
             'notes'             => 'nullable|string',
         ]);
 
-        $staff->update($request->only(['name', 'email', 'phone', 'position', 'staff_role_id', 'salary', 'hire_date', 'employment_status', 'notes']));
+        $staff->update($request->only(['name', 'email', 'phone', 'position', 'staff_role_id', 'user_id', 'salary', 'hire_date', 'employment_status', 'notes']));
 
         return $this->success($this->formatStaff($staff->fresh('role')));
     }

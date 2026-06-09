@@ -39,10 +39,6 @@ class CashbookLoanController extends BaseApiController
 
         $loan = CashbookLoan::create($request->only(['lender_name', 'date', 'particulars', 'op_balance', 'debit', 'credit']));
 
-        // Auto-compute cl_balance
-        $loan->cl_balance = round((float) $loan->op_balance + (float) $loan->debit - (float) $loan->credit, 2);
-        $loan->save();
-
         return $this->success($this->formatLoan($loan), 'Loan entry created.', 201);
     }
 
@@ -62,9 +58,6 @@ class CashbookLoanController extends BaseApiController
         ]);
 
         $loan->update($request->only(['lender_name', 'date', 'particulars', 'op_balance', 'debit', 'credit']));
-
-        $loan->cl_balance = round((float) $loan->op_balance + (float) $loan->debit - (float) $loan->credit, 2);
-        $loan->saveQuietly();
 
         return $this->success($this->formatLoan($loan->fresh()));
     }

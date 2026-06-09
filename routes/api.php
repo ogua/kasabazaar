@@ -34,6 +34,15 @@ use App\Http\Controllers\Api\V1\Cashbook\CashbookLedgerController;
 use App\Http\Controllers\Api\V1\Cashbook\CashbookLoanController;
 use App\Http\Controllers\Api\V1\Cashbook\CashbookWHTController;
 use App\Http\Controllers\Api\V1\Cashbook\CashbookDirectorAccountController;
+use App\Http\Controllers\Api\V1\Customer\CustomerAuthController;
+use App\Http\Controllers\Api\V1\Customer\CustomerShipmentController;
+use App\Http\Controllers\Api\V1\Customer\CustomerPickupController;
+use App\Http\Controllers\Api\V1\Customer\CustomerInvoiceController;
+use App\Http\Controllers\Api\V1\Customer\CustomerPaymentController;
+use App\Http\Controllers\Api\V1\Customer\CustomerNotificationController;
+use App\Http\Controllers\Api\V1\Customer\CustomerComplaintController;
+use App\Http\Controllers\Api\V1\Customer\CustomerRatingController;
+use App\Http\Controllers\Api\V1\Customer\PaystackWebhookController;
 
 // ─── Legacy endpoint (keep for backwards compatibility) ──────────────────────
 Route::get('/user', fn (Request $request) => $request->user())->middleware('auth:sanctum');
@@ -43,7 +52,7 @@ Route::prefix('v1')->group(function () {
 
     // ── Public ──────────────────────────────────────────────────────────────
     Route::post('auth/login', [AuthController::class, 'login']);
-    Route::get('shipments/track/{tracking_number}', [ShipmentController::class, 'publicTrack']);
+    Route::middleware('throttle:60,1')->get('shipments/track/{tracking_number}', [ShipmentController::class, 'publicTrack']);
     Route::get('exchange-rates/current', [ExchangeRateController::class, 'current']);
 
     // ── Authenticated ────────────────────────────────────────────────────────
@@ -105,22 +114,28 @@ Route::prefix('v1')->group(function () {
 
         // Payroll
         Route::apiResource('payroll-periods', PayrollPeriodController::class);
-        Route::get('payroll-entries/{id}',  [PayrollEntryController::class, 'show']);
-        Route::put('payroll-entries/{id}',  [PayrollEntryController::class, 'update']);
+        Route::post('payroll-entries',       [PayrollEntryController::class, 'store']);
+        Route::get('payroll-entries/{id}',   [PayrollEntryController::class, 'show']);
+        Route::put('payroll-entries/{id}',   [PayrollEntryController::class, 'update']);
 
         // Vehicles
         Route::apiResource('vehicles', VehicleController::class);
-        Route::get('vehicles/{id}/maintenances',  [VehicleController::class, 'maintenances']);
-        Route::post('vehicles/{id}/maintenances', [VehicleController::class, 'addMaintenance']);
-        Route::get('vehicles/{id}/trips',         [VehicleController::class, 'trips']);
+        Route::get('vehicles/{id}/maintenances',                        [VehicleController::class, 'maintenances']);
+        Route::post('vehicles/{id}/maintenances',                       [VehicleController::class, 'addMaintenance']);
+        Route::put('vehicles/{id}/maintenances/{maintenanceId}',        [VehicleController::class, 'updateMaintenance']);
+        Route::delete('vehicles/{id}/maintenances/{maintenanceId}',     [VehicleController::class, 'deleteMaintenance']);
+        Route::get('vehicles/{id}/trips',                               [VehicleController::class, 'trips']);
 
         // Trips
         Route::apiResource('trips', TripController::class);
         Route::get('trips/{id}/shipments',                           [TripController::class, 'shipments']);
+        Route::post('trips/{id}/shipments',                          [TripController::class, 'assignShipment']);
+        Route::delete('trips/{id}/shipments/{shipmentId}',           [TripController::class, 'removeShipment']);
         Route::put('trips/{id}/shipments/{shipmentId}',              [TripController::class, 'updateDelivery']);
 
         // Pickup Schedules
         Route::apiResource('pickup-schedules', PickupScheduleController::class)->except(['destroy']);
+        Route::post('pickup-schedules/{id}/convert', [PickupScheduleController::class, 'convert']);
 
         // Containers (by UUID — existing)
         Route::apiResource('containers', ContainerController::class)->only(['index', 'show', 'update']);
@@ -151,8 +166,10 @@ Route::prefix('v1')->group(function () {
             Route::get('withholding-tax',     [CashbookWHTController::class, 'index']);
             Route::post('withholding-tax',    [CashbookWHTController::class, 'store']);
             Route::put('withholding-tax/{id}',[CashbookWHTController::class, 'update']);
-            Route::get('director-account',    [CashbookDirectorAccountController::class, 'index']);
-            Route::post('director-account',   [CashbookDirectorAccountController::class, 'store']);
+            Route::get('director-account',       [CashbookDirectorAccountController::class, 'index']);
+            Route::post('director-account',      [CashbookDirectorAccountController::class, 'store']);
+            Route::put('director-account/{id}',  [CashbookDirectorAccountController::class, 'update']);
+            Route::delete('director-account/{id}', [CashbookDirectorAccountController::class, 'destroy']);
         });
 
         // Branches
@@ -196,7 +213,11 @@ Route::prefix('v1')->group(function () {
             Route::get('income-categories',  [LookupController::class, 'incomeCategories']);
             Route::get('staff-roles',        [LookupController::class, 'staffRoles']);
             Route::get('exchange-rate',      [LookupController::class, 'exchangeRate']);
-            Route::get('previous-receivers', [LookupController::class, 'previousReceivers']);
+            Route::get('previous-receivers',    [LookupController::class, 'previousReceivers']);
+            Route::get('cashbook-cost-centers', [LookupController::class, 'cashbookCostCenters']);
+            Route::get('countries',             [LookupController::class, 'countries']);
+            Route::get('states',                [LookupController::class, 'states']);
+            Route::get('cities',                [LookupController::class, 'cities']);
         });
 
         // ── Driver (role-specific) ─────────────────────────────────────────
@@ -207,6 +228,53 @@ Route::prefix('v1')->group(function () {
             Route::get('trips/{id}',                                 [DriverController::class, 'tripDetail']);
             Route::put('trips/{id}/status',                          [DriverController::class, 'updateTripStatus']);
             Route::put('trips/{id}/shipments/{shipmentId}',          [DriverController::class, 'updateDelivery']);
+        });
+    });
+
+    // ─── Customer API ─────────────────────────────────────────────────────────
+    Route::prefix('customer')->group(function () {
+
+        // Public
+        Route::get('branches',             [CustomerAuthController::class, 'branches']);
+        Route::post('auth/register',       [CustomerAuthController::class, 'register']);
+        Route::post('auth/login',          [CustomerAuthController::class, 'login']);
+        Route::post('auth/forgot-password',[CustomerAuthController::class, 'forgotPassword']);
+        Route::post('auth/reset-password', [CustomerAuthController::class, 'resetPassword']);
+
+        // Paystack webhook (signature-verified, no auth)
+        Route::post('webhooks/paystack', [PaystackWebhookController::class, 'handle']);
+
+        // Authenticated customers
+        Route::middleware(['auth:sanctum', 'customer'])->group(function () {
+            Route::post('auth/logout',            [CustomerAuthController::class, 'logout']);
+            Route::get('auth/me',                 [CustomerAuthController::class, 'me']);
+            Route::put('auth/profile',            [CustomerAuthController::class, 'updateProfile']);
+            Route::put('auth/password',           [CustomerAuthController::class, 'changePassword']);
+
+            Route::get('shipments',               [CustomerShipmentController::class, 'index']);
+            Route::get('shipments/{id}',          [CustomerShipmentController::class, 'show']);
+
+            Route::get('pickups',                 [CustomerPickupController::class, 'index']);
+            Route::post('pickups',                [CustomerPickupController::class, 'store']);
+            Route::get('pickups/{id}',            [CustomerPickupController::class, 'show']);
+            Route::put('pickups/{id}',            [CustomerPickupController::class, 'update']);
+            Route::delete('pickups/{id}',         [CustomerPickupController::class, 'destroy']);
+
+            Route::get('invoices',                [CustomerInvoiceController::class, 'index']);
+            Route::get('invoices/{id}',           [CustomerInvoiceController::class, 'show']);
+
+            Route::get('payments',                [CustomerPaymentController::class, 'index']);
+            Route::post('payments/initiate',      [CustomerPaymentController::class, 'initiate']);
+            Route::post('payments/verify',        [CustomerPaymentController::class, 'verify']);
+
+            Route::post('device-tokens',          [CustomerNotificationController::class, 'storeDeviceToken']);
+            Route::delete('device-tokens',        [CustomerNotificationController::class, 'removeDeviceToken']);
+
+            Route::get('complaints',              [CustomerComplaintController::class, 'index']);
+            Route::post('complaints',             [CustomerComplaintController::class, 'store']);
+            Route::get('complaints/{id}',         [CustomerComplaintController::class, 'show']);
+
+            Route::post('ratings',                [CustomerRatingController::class, 'store']);
         });
     });
 });

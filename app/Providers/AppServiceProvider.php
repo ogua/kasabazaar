@@ -3,6 +3,10 @@
 namespace App\Providers;
 
 use App\Http\Responses\LoginResponse;
+use App\Models\Payment;
+use App\Models\Shipment;
+use App\Observers\PaymentObserver;
+use App\Observers\ShipmentObserver;
 use Illuminate\Foundation\AliasLoader;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\ServiceProvider;
@@ -30,5 +34,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Model::unguard();
+        Shipment::observe(ShipmentObserver::class);
+        Payment::observe(PaymentObserver::class);
     }
 }

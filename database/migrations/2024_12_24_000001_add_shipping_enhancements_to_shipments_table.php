@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('shipments', function (Blueprint $table) {
             // Insurance amount (add if not exists)
             if (!Schema::hasColumn('shipments', 'insurance')) {
-                $table->decimal('insurance', 10, 2)->default(0)->after('discount');
+                $table->decimal('insurance', 10, 2)->default(0);
             }
         });
 

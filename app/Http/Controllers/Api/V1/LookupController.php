@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\CashbookCostCenter;
 use App\Models\Branch;
+use App\Models\City;
 use App\Models\Client;
+use App\Models\Country;
 use App\Models\ExchangeRateLog;
+use App\Models\State;
 use App\Models\ExpenseCategory;
 use App\Models\IncomeCategory;
 use App\Models\Product;
@@ -126,6 +130,42 @@ class LookupController extends BaseApiController
             'source'        => $rate?->source ?? 'default',
             'updated_at'    => $rate?->created_at,
         ]);
+    }
+
+    public function cashbookCostCenters(): JsonResponse
+    {
+        $centers = array_map(fn ($case) => [
+            'value' => $case->value,
+            'label' => str_replace('_', ' ', $case->value),
+        ], CashbookCostCenter::cases());
+
+        return $this->success($centers);
+    }
+
+    public function countries(): JsonResponse
+    {
+        $countries = Country::orderBy('name')->get(['id', 'name', 'iso2']);
+        return $this->success($countries);
+    }
+
+    public function states(Request $request): JsonResponse
+    {
+        $countryId = $request->input('country_id');
+        if (!$countryId) {
+            return $this->success([]);
+        }
+        $states = State::where('country_id', $countryId)->orderBy('name')->get(['id', 'name', 'country_code']);
+        return $this->success($states);
+    }
+
+    public function cities(Request $request): JsonResponse
+    {
+        $stateId = $request->input('state_id');
+        if (!$stateId) {
+            return $this->success([]);
+        }
+        $cities = City::where('state_id', $stateId)->orderBy('name')->get(['id', 'name']);
+        return $this->success($cities);
     }
 
     public function previousReceivers(Request $request): JsonResponse

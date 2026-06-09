@@ -134,7 +134,7 @@ class ShipmentResource extends Resource
                         ->infolist([
                             RepeatableEntry::make('payments')
                                 ->label('')
-                                ->schema([TextEntry::make('shipment.client.name')->label('Client'), TextEntry::make('payment_ref'), TextEntry::make('paying_method'), TextEntry::make('amount')->prefix('$'), TextEntry::make('paid_on'), TextEntry::make('enteredby.name')->label('Recorded By')])
+                                ->schema([TextEntry::make('shipment.client.name')->label('Client'), TextEntry::make('payment_ref'), TextEntry::make('paying_method'), TextEntry::make('amount')->prefix('$'), TextEntry::make('paid_on'), TextEntry::make('enteredBy.name')->label('Recorded By')])
                                 ->columns(6),
                         ])
                         ->modalHeading('Payment Information')

@@ -220,7 +220,7 @@ class DeliveredShipmentResource extends Resource
                                     TextEntry::make('paying_method'),
                                     TextEntry::make('amount')->prefix('$'),
                                     TextEntry::make('paid_on'),
-                                    TextEntry::make('enteredby.name')->label('Recorded By'),
+                                    TextEntry::make('enteredBy.name')->label('Recorded By'),
                                 ])
                                 ->columns(6),
                         ])

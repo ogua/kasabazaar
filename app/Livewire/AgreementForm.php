@@ -43,7 +43,7 @@ class AgreementForm extends Component implements HasForms
         }
 
         $shipment = Shipment::where('id', $this->record)->first();
-        $shipment->is_agreement_aggred = $data['disclaima_aggreed'];
+        $shipment->is_agreement_agreed = $data['disclaima_aggreed'];
         $shipment->save();
 
         $secretKey = env('PAYSTACK_SECRET_KEY');

@@ -9,6 +9,7 @@ use App\Models\Income;
 use App\Http\Controllers\Api\V1\BaseApiController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends BaseApiController
 {
@@ -32,6 +33,11 @@ class DashboardController extends BaseApiController
             ->whereYear('income_date', $year)
             ->sum('amount_ghs');
 
+        $revenueThisMonthUsd = Income::where('branch_id', $branchId)
+            ->whereMonth('income_date', $month)
+            ->whereYear('income_date', $year)
+            ->sum('amount_usd');
+
         $activeTrips = Trip::where('branch_id', $branchId)
             ->whereIn('status', ['in_progress', 'loading', 'planned', 'scheduled'])
             ->count();
@@ -41,7 +47,7 @@ class DashboardController extends BaseApiController
             ->count();
 
         $inTransitShipments = Shipment::where('branch_id', $branchId)
-            ->where('status', 'Shipped')
+            ->where('status', 'shipped')
             ->count();
 
         $deliveredThisMonth = Shipment::where('branch_id', $branchId)
@@ -51,13 +57,14 @@ class DashboardController extends BaseApiController
             ->count();
 
         return $this->success([
-            'shipments_this_month'  => $shipmentsThisMonth,
-            'pending_payments_count'=> $pendingPaymentsCount,
-            'revenue_this_month_ghs'=> round((float) $revenueThisMonthGhs, 2),
-            'active_trips'          => $activeTrips,
-            'pending_shipments'     => $pendingShipments,
-            'in_transit_shipments'  => $inTransitShipments,
-            'delivered_this_month'  => $deliveredThisMonth,
+            'shipments_this_month' => $shipmentsThisMonth,
+            'pending_payments'     => $pendingPaymentsCount,
+            'revenue_ghs'          => round((float) $revenueThisMonthGhs, 2),
+            'revenue_usd'          => round((float) $revenueThisMonthUsd, 2),
+            'active_trips'         => $activeTrips,
+            'pending_shipments'    => $pendingShipments,
+            'in_transit_shipments' => $inTransitShipments,
+            'delivered_this_month' => $deliveredThisMonth,
         ]);
     }
 

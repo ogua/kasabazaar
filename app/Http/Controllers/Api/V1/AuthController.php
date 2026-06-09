@@ -7,7 +7,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 use App\Http\Controllers\Api\V1\BaseApiController;
 
 class AuthController extends BaseApiController
@@ -25,7 +24,7 @@ class AuthController extends BaseApiController
 
         /** @var User $user */
         $user = Auth::user();
-        $user->load('branches');
+        $user->load(['branches', 'staff.role']);
 
         $token = $user->createToken('mobile-app')->plainTextToken;
 
@@ -42,7 +41,7 @@ class AuthController extends BaseApiController
     {
         /** @var User $user */
         $user = $request->user();
-        $user->load('branches');
+        $user->load(['branches', 'staff.role']);
         return $this->success($this->formatUser($user));
     }
 
@@ -65,7 +64,7 @@ class AuthController extends BaseApiController
         }
 
         $user->update($data);
-        $user->load('branches');
+        $user->load(['branches', 'staff.role']);
 
         return $this->success($this->formatUser($user), 'Profile updated.');
     }
@@ -101,12 +100,22 @@ class AuthController extends BaseApiController
             'client_id'   => $user->client_id,
             'branch_id'   => $user->branch_id,
             'branches'    => $user->branches->map(fn ($b) => [
-                'id'   => $b->id,
-                'name' => $b->name,
-                'slug' => $b->slug,
+                'id'       => $b->id,
+                'name'     => $b->name,
+                'slug'     => $b->slug,
+                'location' => trim(collect([$b->state, $b->country])->filter()->implode(', ')),
             ])->values(),
             'permissions' => $user->getAllPermissions()->pluck('name')->values(),
             'roles'       => $user->getRoleNames()->values(),
+            'staff'       => $user->staff ? [
+                'id'          => $user->staff->id,
+                'employee_id' => $user->staff->employee_id,
+                'role'        => $user->staff->role ? [
+                    'id'   => $user->staff->role->id,
+                    'name' => $user->staff->role->name,
+                    'code' => $user->staff->role->code,
+                ] : null,
+            ] : null,
         ];
 
         if ($token) {

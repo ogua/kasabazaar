@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\Branch;
+use App\Http\Resources\BranchResource;
 use App\Http\Controllers\Api\V1\BaseApiController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,7 +14,7 @@ class BranchController extends BaseApiController
     {
         $user     = auth()->user();
         $branches = $user->branches()->orderBy('name')->get()
-            ->map(fn ($b) => $this->formatBranch($b));
+            ->map(fn ($b) => new BranchResource($b));
 
         return $this->success($branches);
     }
@@ -23,7 +24,7 @@ class BranchController extends BaseApiController
         $user   = auth()->user();
         $branch = Branch::whereIn('id', $user->branches()->pluck('branches.id'))->findOrFail($id);
 
-        return $this->success($this->formatBranch($branch));
+        return $this->success(new BranchResource($branch));
     }
 
     public function update(Request $request, string $id): JsonResponse
@@ -44,20 +45,7 @@ class BranchController extends BaseApiController
 
         $branch->update($request->only(['name', 'country', 'state', 'address', 'email', 'phone']));
 
-        return $this->success($this->formatBranch($branch->fresh()));
+        return $this->success(new BranchResource($branch->fresh()));
     }
 
-    private function formatBranch(Branch $b): array
-    {
-        return [
-            'id'      => $b->id,
-            'name'    => $b->name,
-            'slug'    => $b->slug,
-            'country' => $b->country,
-            'state'   => $b->state,
-            'address' => $b->address,
-            'email'   => $b->email,
-            'phone'   => $b->phone,
-        ];
-    }
 }

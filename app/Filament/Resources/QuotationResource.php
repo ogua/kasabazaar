@@ -170,7 +170,7 @@ class QuotationResource extends Resource
                                 ->state(fn($record) => number_format($record->total,2))
                                 ->prefix('$'),
 
-                                Tables\Columns\TextColumn::make('enteredby.name')
+                                Tables\Columns\TextColumn::make('enteredBy.name')
                                 ->label('Recorded By')
                                 ->searchable(),
                                 Tables\Columns\TextColumn::make('created_at')

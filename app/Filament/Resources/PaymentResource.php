@@ -225,7 +225,7 @@ class PaymentResource extends Resource
                     ->dateTime('M d, Y H:i')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('enteredby.name')
+                Tables\Columns\TextColumn::make('enteredBy.name')
                     ->label('Recorded By')
                     ->badge()
                     ->color('info')

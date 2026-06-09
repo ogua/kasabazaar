@@ -990,7 +990,7 @@ class CreateShipment extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['recorderd_by'] = Auth::id();
+        $data['recorded_by'] = Auth::id();
         $data['tracking_number'] = $this->generatePinAndSerial()['tracking_number'];
         $data['external_token'] = \App\Models\Shipment::generateExternalToken();
 
