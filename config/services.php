@@ -51,4 +51,14 @@ return [
         'sender' => env('MNOTIFY_API_SENDER_ID', 'RDDSHIP'),
     ],
 
+    'twilio' => [
+        'sid'   => env('TWILIO_SID'),
+        'token' => env('TWILIO_AUTH_TOKEN'),
+        'from'  => env('TWILIO_FROM'),
+    ],
+
+    'sms' => [
+        'default' => env('SMS_DRIVER', 'twilio'),
+    ],
+
 ];
