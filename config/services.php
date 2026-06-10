@@ -46,4 +46,9 @@ return [
         'server_key' => env('FCM_SERVER_KEY'),
     ],
 
+    'mnotify' => [
+        'key'    => env('MNOTIFY_API_V2_KEY'),
+        'sender' => env('MNOTIFY_API_SENDER_ID', 'RDDSHIP'),
+    ],
+
 ];

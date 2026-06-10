@@ -87,18 +87,19 @@ class CustomerAuthController extends CustomerBaseController
         $user = $request->user();
 
         $request->validate([
-            'name'    => 'sometimes|string|max:255',
-            'phone'   => 'nullable|string|max:30',
-            'country' => 'nullable|string|max:100',
-            'city'    => 'nullable|string|max:100',
-            'address' => 'nullable|string',
+            'name'         => 'sometimes|string|max:255',
+            'phone'        => 'nullable|string|max:30',
+            'country'      => 'nullable|string|max:100',
+            'state_region' => 'nullable|string|max:100',
+            'city'         => 'nullable|string|max:100',
+            'address'      => 'nullable|string',
         ]);
 
         $user->update($request->only(['name', 'phone']));
 
         if ($user->client_id) {
             Client::where('id', $user->client_id)->update(
-                $request->only(['name', 'phone', 'country', 'city', 'address'])
+                $request->only(['name', 'phone', 'country', 'state_region', 'city', 'address'])
             );
         }
 

@@ -78,8 +78,9 @@ class InvoiceService
 
         try {
             Mail::send('emails.invoice', [
-                'shipment' => $shipment,
+                'shipment'   => $shipment,
                 'clientName' => $shipment->client?->name,
+                'paymentUrl' => route('make-payment', $shipment->id),
             ], function ($message) use ($clientEmail, $shipment, $pdf, $filename) {
                 $message->to($clientEmail)
                     ->subject('Shipping Invoice - ' . $shipment->shipping_reference)

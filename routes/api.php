@@ -43,6 +43,9 @@ use App\Http\Controllers\Api\V1\Customer\CustomerNotificationController;
 use App\Http\Controllers\Api\V1\Customer\CustomerComplaintController;
 use App\Http\Controllers\Api\V1\Customer\CustomerRatingController;
 use App\Http\Controllers\Api\V1\Customer\PaystackWebhookController;
+use App\Http\Controllers\Api\V1\Customer\CustomerLookupController;
+use App\Http\Controllers\Api\V1\Customer\CustomerShipmentRequestController;
+use App\Http\Controllers\Api\V1\ShipmentRequestController;
 
 // ─── Legacy endpoint (keep for backwards compatibility) ──────────────────────
 Route::get('/user', fn (Request $request) => $request->user())->middleware('auth:sanctum');
@@ -220,6 +223,13 @@ Route::prefix('v1')->group(function () {
             Route::get('cities',                [LookupController::class, 'cities']);
         });
 
+        // Shipment Requests (client-submitted, staff review/approve)
+        Route::get('shipment-requests',                      [ShipmentRequestController::class, 'index']);
+        Route::get('shipment-requests/{id}',                 [ShipmentRequestController::class, 'show']);
+        Route::patch('shipment-requests/{id}/review',        [ShipmentRequestController::class, 'markUnderReview']);
+        Route::post('shipment-requests/{id}/approve',        [ShipmentRequestController::class, 'approve']);
+        Route::post('shipment-requests/{id}/reject',         [ShipmentRequestController::class, 'reject']);
+
         // ── Driver (role-specific) ─────────────────────────────────────────
         Route::prefix('driver')->group(function () {
             Route::get('profile',                                    [DriverController::class, 'profile']);
@@ -275,6 +285,23 @@ Route::prefix('v1')->group(function () {
             Route::get('complaints/{id}',         [CustomerComplaintController::class, 'show']);
 
             Route::post('ratings',                [CustomerRatingController::class, 'store']);
+
+            // Lookup (country/state/city/products/previous-receivers for pickers)
+            Route::prefix('lookup')->group(function () {
+                Route::get('countries',          [CustomerLookupController::class, 'countries']);
+                Route::get('states',             [CustomerLookupController::class, 'states']);
+                Route::get('cities',             [CustomerLookupController::class, 'cities']);
+                Route::get('products',           [CustomerLookupController::class, 'products']);
+                Route::get('previous-receivers', [CustomerLookupController::class, 'previousReceivers']);
+            });
+
+            // Shipment requests (client-submitted, pending staff approval)
+            Route::get('shipment-request-stats',    [CustomerShipmentRequestController::class, 'stats']);
+            Route::get('shipment-requests',         [CustomerShipmentRequestController::class, 'index']);
+            Route::post('shipment-requests',        [CustomerShipmentRequestController::class, 'store']);
+            Route::get('shipment-requests/{id}',    [CustomerShipmentRequestController::class, 'show']);
+            Route::put('shipment-requests/{id}',    [CustomerShipmentRequestController::class, 'update']);
+            Route::delete('shipment-requests/{id}', [CustomerShipmentRequestController::class, 'cancel']);
         });
     });
 });

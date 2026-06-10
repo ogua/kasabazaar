@@ -166,6 +166,15 @@
             <div class="tracking-number">{{ $shipment->tracking_number }}</div>
         </div>
 
+        @if(!empty($paymentUrl))
+        <div style="text-align: center; margin: 24px 0;">
+            <a href="{{ $paymentUrl }}" class="btn" style="background:#dc2626; font-size:16px; padding:14px 36px;">
+                Make Payment
+            </a>
+            <p style="font-size:12px; color:#666; margin-top:8px;">Click the button above to pay securely via Paystack</p>
+        </div>
+        @endif
+
         <div class="total-box">
             <div class="total-label">Total Amount</div>
             <div class="total-amount">${{ number_format($shipment->total, 2) }}</div>
