@@ -59,6 +59,16 @@ class BaseApiController extends Controller
         return $branchId;
     }
 
+    /**
+     * All branch ids the authenticated user belongs to.
+     * Use for id-based lookups so records in the user's other branches
+     * don't 404 just because a different branch is currently active.
+     */
+    protected function userBranchIds(): array
+    {
+        return auth()->user()->branches()->pluck('branches.id')->all();
+    }
+
     protected function isDriver(): bool
     {
         $user  = auth()->user();

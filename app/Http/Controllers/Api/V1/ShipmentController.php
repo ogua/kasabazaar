@@ -122,8 +122,7 @@ class ShipmentController extends BaseApiController
     {
         abort_unless(auth()->user()->can('view_shipment'), 403);
 
-        $branchId = $this->resolveBranch($request);
-        $shipment = Shipment::where('branch_id', $branchId)
+        $shipment = Shipment::whereIn('branch_id', $this->userBranchIds())
             ->with([
                 'client',
                 'originBranch:id,name',
@@ -141,8 +140,7 @@ class ShipmentController extends BaseApiController
 
     public function update(UpdateShipmentRequest $request, string $id): JsonResponse
     {
-        $branchId = $this->resolveBranch($request);
-        $shipment = Shipment::where('branch_id', $branchId)->findOrFail($id);
+        $shipment = Shipment::whereIn('branch_id', $this->userBranchIds())->findOrFail($id);
 
         $shipment->update($request->only([
             'status', 'payment_status', 'destination_branch_id',
@@ -158,8 +156,7 @@ class ShipmentController extends BaseApiController
     {
         abort_unless(auth()->user()->can('delete_shipment'), 403);
 
-        $branchId = $this->resolveBranch($request);
-        $shipment = Shipment::where('branch_id', $branchId)->findOrFail($id);
+        $shipment = Shipment::whereIn('branch_id', $this->userBranchIds())->findOrFail($id);
         $shipment->delete();
 
         return $this->success(null, 'Shipment deleted.');
@@ -169,8 +166,7 @@ class ShipmentController extends BaseApiController
     {
         abort_unless(auth()->user()->can('view_shipment'), 403);
 
-        $branchId = $this->resolveBranch($request);
-        $shipment = Shipment::where('branch_id', $branchId)->findOrFail($id);
+        $shipment = Shipment::whereIn('branch_id', $this->userBranchIds())->findOrFail($id);
 
         $trackings = Tracking::where('shipment_id', $id)
             ->orderBy('status_updated_at', 'asc')
@@ -184,7 +180,7 @@ class ShipmentController extends BaseApiController
         abort_unless(auth()->user()->can('update_shipment'), 403);
 
         $branchId = $this->resolveBranch($request);
-        $shipment = Shipment::where('branch_id', $branchId)->findOrFail($id);
+        $shipment = Shipment::whereIn('branch_id', $this->userBranchIds())->findOrFail($id);
 
         $request->validate([
             'status'      => 'required|string',
@@ -206,8 +202,7 @@ class ShipmentController extends BaseApiController
     {
         abort_unless(auth()->user()->can('view_shipment'), 403);
 
-        $branchId = $this->resolveBranch($request);
-        Shipment::where('branch_id', $branchId)->findOrFail($id);
+        Shipment::whereIn('branch_id', $this->userBranchIds())->findOrFail($id);
 
         $media = ShipmentMedia::where('shipment_id', $id)->get()->map(fn ($m) => [
             'id'          => $m->id,
@@ -227,8 +222,7 @@ class ShipmentController extends BaseApiController
     {
         abort_unless(auth()->user()->can('update_shipment'), 403);
 
-        $branchId = $this->resolveBranch($request);
-        Shipment::where('branch_id', $branchId)->findOrFail($id);
+        Shipment::whereIn('branch_id', $this->userBranchIds())->findOrFail($id);
 
         logger($request->all());
 
@@ -265,8 +259,7 @@ class ShipmentController extends BaseApiController
     {
         abort_unless(auth()->user()->can('view_shipment'), 403);
 
-        $branchId = $this->resolveBranch($request);
-        Shipment::where('branch_id', $branchId)->findOrFail($id);
+        Shipment::whereIn('branch_id', $this->userBranchIds())->findOrFail($id);
 
         $receivers = Receiver::where('shipment_id', $id)
             ->with('items.product')
