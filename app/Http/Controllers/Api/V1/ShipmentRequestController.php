@@ -45,9 +45,11 @@ class ShipmentRequestController extends BaseApiController
     public function approve(Request $request, string $id): JsonResponse
     {
         $request->validate([
-            'shipping_cost'   => 'nullable|numeric|min:0',
-            'vat_percentage'  => 'nullable|numeric|min:0',
-            'notes'           => 'nullable|string',
+            'shipping_cost'        => 'nullable|numeric|min:0',
+            'vat_percentage'       => 'nullable|numeric|min:0',
+            'notes'                => 'nullable|string',
+            'shipment_type'        => 'nullable|in:new,existing',
+            'existing_shipment_id' => 'nullable|uuid|required_if:shipment_type,existing',
         ]);
 
         $shipmentRequest = ShipmentRequest::with('client')->findOrFail($id);
@@ -60,7 +62,12 @@ class ShipmentRequestController extends BaseApiController
         $shipment = $service->approve(
             $shipmentRequest,
             auth()->user(),
-            $request->only('shipping_cost', 'vat_percentage', 'notes')
+            [
+                ...$request->only('shipping_cost', 'vat_percentage', 'notes'),
+                'shipment_type'        => $request->input('shipment_type', 'new'),
+                'existing_shipment_id' => $request->input('existing_shipment_id'),
+                'branch_id'            => $this->resolveBranch($request),
+            ]
         );
 
         return $this->success([

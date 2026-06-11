@@ -23,7 +23,14 @@ class ShipmentRequestApprovalService
         }
 
         return DB::transaction(function () use ($request, $approvedBy, $options) {
-            $refData = Shipment::generateShippingReference('new');
+            // new = open a new container, existing = join an existing shipment's container
+            $shipmentType = $options['shipment_type'] ?? 'new';
+            $refData      = Shipment::generateShippingReference(
+                $shipmentType,
+                null,
+                null,
+                $options['existing_shipment_id'] ?? null
+            );
 
             $clientExistence = Shipment::where('client_id', $request->client_id)->exists()
                 ? 'returning-client'
@@ -31,18 +38,33 @@ class ShipmentRequestApprovalService
 
             $client = $request->client ?? $request->load('client')->client;
 
+            // Default the cost to the sum of the requested items' estimated values
+            $itemsTotal = collect($request->receivers ?? [])
+                ->flatMap(fn ($r) => $r['items'] ?? [])
+                ->sum(fn ($i) => (float) ($i['estimated_value'] ?? 0) * (int) ($i['quantity'] ?? 1));
+
+            $shippingCost  = (float) ($options['shipping_cost'] ?? $itemsTotal);
+            $vatPercentage = (float) ($options['vat_percentage'] ?? 0);
+
+            // Shipment must live in the approving staff's active branch so it is
+            // visible in their branch-scoped views (avoids 404 after approval)
+            $branchId = $options['branch_id'] ?? $client->branch_id;
+
             $shipment = Shipment::create([
                 'client_id'             => $request->client_id,
-                'branch_id'             => $client->branch_id,
+                'branch_id'             => $branchId,
                 'status'                => 'pending',
                 'shipping_reference'    => $refData['reference'],
+                'tracking_number'       => strtoupper(\Illuminate\Support\Str::random(12)),
+                'external_token'        => Shipment::generateExternalToken(),
                 'client_note'           => $request->notes,
                 'recorded_by'           => $approvedBy->id,
                 'client_existence'      => $clientExistence,
-                'origin_branch_id'      => $client->branch_id,
-                'destination_branch_id' => $client->branch_id,
-                'shipping_cost'         => $options['shipping_cost'] ?? null,
-                'vat_percentage'        => $options['vat_percentage'] ?? null,
+                'origin_branch_id'      => $branchId,
+                'destination_branch_id' => $client->branch_id ?? $branchId,
+                'shipping_cost'         => $shippingCost,
+                'vat_percentage'        => $vatPercentage,
+                'total'                 => round($shippingCost * (1 + $vatPercentage / 100), 2),
             ]);
 
             foreach ($request->receivers as $index => $receiverData) {
