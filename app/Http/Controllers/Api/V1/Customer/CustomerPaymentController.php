@@ -114,6 +114,8 @@ class CustomerPaymentController extends CustomerBaseController
             'payment_reference'  => $p->payment_reference,
             'paid_on'            => $p->paid_on,
             'shipment'           => $p->shipment ? ['id' => $p->shipment->id, 'shipping_reference' => $p->shipment->shipping_reference] : null,
+            'invoice_url'        => $p->shipment_id ? url("/shipping-invoice-download/{$p->shipment_id}") : null,
+            'receipt_url'        => $p->shipment_id ? url("/shipping-receipt/{$p->shipment_id}") : null,
         ];
     }
 }

@@ -2,11 +2,56 @@
 
 namespace App\Service;
 
+use App\Models\Payment;
 use App\Service\SystemSetting;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 
 class NotificationService
 {
+    public static function sendPaymentConfirmation(Payment $payment): void
+    {
+        $shipment = $payment->shipment;
+        if (!$shipment) return;
+
+        $client = $shipment->client;
+        if (!$client) return;
+
+        $invoiceUrl = url("/shipping-invoice-download/{$shipment->id}");
+        $receiptUrl = url("/shipping-receipt/{$shipment->id}");
+
+        if ($client->email) {
+            try {
+                Mail::send('emails.payment_received', [
+                    'clientName'  => $client->name,
+                    'amountUsd'   => number_format($payment->amount_usd, 2),
+                    'amountGhs'   => $payment->amount_ghs ? number_format($payment->amount_ghs, 2) : null,
+                    'method'      => $payment->paying_method,
+                    'reference'   => $payment->payment_reference ?? $payment->payment_ref,
+                    'paidOn'      => $payment->paid_on
+                                       ? \Carbon\Carbon::parse($payment->paid_on)->format('j M Y, g:i A')
+                                       : now()->format('j M Y'),
+                    'shipmentRef' => $shipment->shipping_reference,
+                    'invoiceUrl'  => $invoiceUrl,
+                    'receiptUrl'  => $receiptUrl,
+                ], fn ($msg) => $msg
+                    ->to($client->email)
+                    ->subject('Payment Confirmed – ' . $shipment->shipping_reference)
+                );
+            } catch (\Throwable $e) {
+                logger()->error('Payment email failed: ' . $e->getMessage());
+            }
+        }
+
+        if ($client->phone) {
+            $msg = "Payment confirmed! USD {$payment->amount_usd} for shipment "
+                 . "{$shipment->shipping_reference} via {$payment->paying_method}. "
+                 . "Download invoice: {$invoiceUrl}";
+            self::sendSmsToSender($client->phone, $msg);
+        }
+    }
+
+
     public static function sendMailToSender($email, $message)
     {
         logger($email . '' . $message);

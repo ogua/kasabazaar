@@ -8,6 +8,8 @@ use App\Models\Payment;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use Filament\Resources\Resource;
+use App\Service\NotificationService;
+use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\PaymentResource\Pages;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -271,6 +273,21 @@ class PaymentResource extends Resource
                     }),
             ])
             ->actions([
+                Tables\Actions\Action::make('send_receipt')
+                    ->label('Send Receipt')
+                    ->icon('heroicon-o-envelope')
+                    ->color('info')
+                    ->requiresConfirmation()
+                    ->modalHeading('Send Receipt to Client')
+                    ->modalDescription('This will send the payment confirmation email and SMS to the client.')
+                    ->action(function ($record) {
+                        try {
+                            NotificationService::sendPaymentConfirmation($record);
+                            Notification::make()->title('Receipt sent to client.')->success()->send();
+                        } catch (\Throwable $e) {
+                            Notification::make()->title('Failed: ' . $e->getMessage())->danger()->send();
+                        }
+                    }),
                 Tables\Actions\ViewAction::make()
                     ->modalWidth('lg'),
                 Tables\Actions\DeleteAction::make()

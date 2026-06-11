@@ -39,6 +39,8 @@ class PaymentResource extends JsonResource
                 'id'   => $this->enteredBy->id,
                 'name' => $this->enteredBy->name,
             ] : null),
+            'invoice_url'    => $this->shipment_id ? url("/shipping-invoice-download/{$this->shipment_id}") : null,
+            'receipt_url'    => $this->shipment_id ? url("/shipping-receipt/{$this->shipment_id}") : null,
         ];
     }
 }

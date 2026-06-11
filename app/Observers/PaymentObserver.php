@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\Payment;
 use App\Models\User;
 use App\Notifications\PaymentReceived;
+use App\Service\NotificationService;
 use App\Services\PushNotificationService;
 
 class PaymentObserver
@@ -38,5 +39,8 @@ class PaymentObserver
             "Your payment of USD {$payment->amount_usd} has been recorded.",
             ['payment_id' => $payment->id, 'type' => 'payment_received']
         );
+
+        // Email + SMS confirmation with receipt/invoice links
+        NotificationService::sendPaymentConfirmation($payment);
     }
 }
