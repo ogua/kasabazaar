@@ -11,7 +11,7 @@ class PayrollEntryController extends BaseApiController
 {
     public function store(Request $request): JsonResponse
     {
-        abort_unless(auth()->user()->can('create_payroll_period'), 403);
+        abort_unless(auth()->user()->can('create_payroll::period'), 403);
 
         $request->validate([
             'payroll_period_id' => 'required|uuid|exists:payroll_periods,id',
@@ -48,7 +48,7 @@ class PayrollEntryController extends BaseApiController
 
     public function show(Request $request, string $id): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_payroll_period'), 403);
+        abort_unless(auth()->user()->can('view_payroll::period'), 403);
 
         $entry = PayrollEntry::with(['staff:id,name,employee_id,position', 'payrollPeriod:id,name,pay_date,status'])
             ->findOrFail($id);
@@ -58,7 +58,7 @@ class PayrollEntryController extends BaseApiController
 
     public function update(Request $request, string $id): JsonResponse
     {
-        abort_unless(auth()->user()->can('update_payroll_period'), 403);
+        abort_unless(auth()->user()->can('update_payroll::period'), 403);
 
         $entry = PayrollEntry::findOrFail($id);
 

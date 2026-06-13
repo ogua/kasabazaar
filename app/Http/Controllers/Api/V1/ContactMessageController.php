@@ -11,7 +11,7 @@ class ContactMessageController extends BaseApiController
 {
     public function index(Request $request): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_any_contact_message'), 403);
+        abort_unless(auth()->user()->can('view_any_contact::message'), 403);
 
         $query = ContactMessage::query();
 
@@ -34,7 +34,7 @@ class ContactMessageController extends BaseApiController
 
     public function show(Request $request, string $id): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_contact_message'), 403);
+        abort_unless(auth()->user()->can('view_contact::message'), 403);
 
         $message = ContactMessage::findOrFail($id);
 
@@ -55,7 +55,7 @@ class ContactMessageController extends BaseApiController
 
     public function update(Request $request, string $id): JsonResponse
     {
-        abort_unless(auth()->user()->can('update_contact_message'), 403);
+        abort_unless(auth()->user()->can('update_contact::message'), 403);
 
         $message = ContactMessage::findOrFail($id);
 

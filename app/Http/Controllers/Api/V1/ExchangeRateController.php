@@ -22,7 +22,7 @@ class ExchangeRateController extends BaseApiController
 
     public function store(Request $request): JsonResponse
     {
-        abort_unless(auth()->user()->can('create_exchange_rate_log'), 403);
+        abort_unless(auth()->user()->can('create_exchange::rate::log'), 403);
 
         $request->validate([
             'from_currency' => 'required|string|max:10',

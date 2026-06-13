@@ -12,7 +12,7 @@ class PayrollPeriodController extends BaseApiController
 {
     public function index(Request $request): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_any_payroll_period'), 403);
+        abort_unless(auth()->user()->can('view_any_payroll::period'), 403);
 
         $branchId  = $this->resolveBranch($request);
         $paginated = PayrollPeriod::where('branch_id', $branchId)
@@ -24,7 +24,7 @@ class PayrollPeriodController extends BaseApiController
 
     public function store(Request $request): JsonResponse
     {
-        abort_unless(auth()->user()->can('create_payroll_period'), 403);
+        abort_unless(auth()->user()->can('create_payroll::period'), 403);
 
         $branchId = $this->resolveBranch($request);
 
@@ -46,7 +46,7 @@ class PayrollPeriodController extends BaseApiController
 
     public function show(Request $request, string $id): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_payroll_period'), 403);
+        abort_unless(auth()->user()->can('view_payroll::period'), 403);
 
         $branchId = $this->resolveBranch($request);
         $period   = PayrollPeriod::where('branch_id', $branchId)->findOrFail($id);
@@ -87,7 +87,7 @@ class PayrollPeriodController extends BaseApiController
 
     public function update(Request $request, string $id): JsonResponse
     {
-        abort_unless(auth()->user()->can('update_payroll_period'), 403);
+        abort_unless(auth()->user()->can('update_payroll::period'), 403);
 
         $branchId = $this->resolveBranch($request);
         $period   = PayrollPeriod::where('branch_id', $branchId)->findOrFail($id);
@@ -115,7 +115,7 @@ class PayrollPeriodController extends BaseApiController
 
     public function destroy(Request $request, string $id): JsonResponse
     {
-        abort_unless(auth()->user()->can('delete_payroll_period'), 403);
+        abort_unless(auth()->user()->can('delete_payroll::period'), 403);
 
         $branchId = $this->resolveBranch($request);
         $period   = PayrollPeriod::where('branch_id', $branchId)->findOrFail($id);

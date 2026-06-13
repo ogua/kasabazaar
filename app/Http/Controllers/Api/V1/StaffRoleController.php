@@ -11,7 +11,7 @@ class StaffRoleController extends BaseApiController
 {
     public function index(Request $request): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_any_staff_role'), 403);
+        abort_unless(auth()->user()->can('view_any_staff::role'), 403);
 
         $query = StaffRole::query();
         if (!$request->boolean('include_inactive')) {
@@ -24,7 +24,7 @@ class StaffRoleController extends BaseApiController
 
     public function store(Request $request): JsonResponse
     {
-        abort_unless(auth()->user()->can('create_staff_role'), 403);
+        abort_unless(auth()->user()->can('create_staff::role'), 403);
 
         $request->validate([
             'name'        => 'required|string|max:100',
@@ -41,7 +41,7 @@ class StaffRoleController extends BaseApiController
 
     public function show(Request $request, string $id): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_staff_role'), 403);
+        abort_unless(auth()->user()->can('view_staff::role'), 403);
 
         $role = StaffRole::findOrFail($id);
 

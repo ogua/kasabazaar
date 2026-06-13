@@ -108,7 +108,7 @@ class StaffController extends BaseApiController
 
     public function payrollEntries(Request $request, string $id): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_any_payroll_period'), 403);
+        abort_unless(auth()->user()->can('view_any_payroll::period'), 403);
 
         $branchId = $this->resolveBranch($request);
         Staff::where('branch_id', $branchId)->findOrFail($id);

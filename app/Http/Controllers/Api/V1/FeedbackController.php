@@ -11,7 +11,7 @@ class FeedbackController extends BaseApiController
 {
     public function index(Request $request): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_any_customer_feedback'), 403);
+        abort_unless(auth()->user()->can('view_any_customer::feedback'), 403);
 
         $query = CustomerFeedback::query();
 
@@ -29,7 +29,7 @@ class FeedbackController extends BaseApiController
 
     public function show(Request $request, string $id): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_customer_feedback'), 403);
+        abort_unless(auth()->user()->can('view_customer::feedback'), 403);
 
         $feedback = CustomerFeedback::findOrFail($id);
 
@@ -38,7 +38,7 @@ class FeedbackController extends BaseApiController
 
     public function update(Request $request, string $id): JsonResponse
     {
-        abort_unless(auth()->user()->can('update_customer_feedback'), 403);
+        abort_unless(auth()->user()->can('update_customer::feedback'), 403);
 
         $feedback = CustomerFeedback::findOrFail($id);
 

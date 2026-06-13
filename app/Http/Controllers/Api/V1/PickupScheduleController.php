@@ -32,7 +32,7 @@ class PickupScheduleController extends BaseApiController
 
     public function store(Request $request): JsonResponse
     {
-        abort_unless(auth()->user()->can('create_pickup_schedule'), 403);
+        abort_unless(auth()->user()->can('create_pickup::schedule'), 403);
 
         $branchId = $this->resolveBranch($request);
 
@@ -57,7 +57,7 @@ class PickupScheduleController extends BaseApiController
 
     public function show(Request $request, string $id): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_pickup_schedule'), 403);
+        abort_unless(auth()->user()->can('view_pickup::schedule'), 403);
 
         $branchId = $this->resolveBranch($request);
         $schedule = PickupSchedule::where('branch_id', $branchId)
@@ -69,7 +69,7 @@ class PickupScheduleController extends BaseApiController
 
     public function update(Request $request, string $id): JsonResponse
     {
-        abort_unless(auth()->user()->can('update_pickup_schedule'), 403);
+        abort_unless(auth()->user()->can('update_pickup::schedule'), 403);
 
         $branchId = $this->resolveBranch($request);
         $schedule = PickupSchedule::where('branch_id', $branchId)->findOrFail($id);
