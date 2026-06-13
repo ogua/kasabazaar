@@ -34,9 +34,11 @@ class CustomerPaymentController extends CustomerBaseController
 
         $response = Http::withToken(config('services.paystack.secret_key'))
             ->post(config('services.paystack.payment_url') . '/transaction/initialize', [
-                'email'     => $user->email,
-                'amount'    => $amountKobo,
-                'currency'  => 'GHS',
+                'email'        => $user->email,
+                'amount'       => $amountKobo,
+                'currency'     => 'GHS',
+                // Bounces the in-app browser back into the mobile app when payment completes
+                'callback_url' => route('app-payment-complete'),
                 'metadata'  => [
                     'shipment_id' => $shipment->id,
                     'user_id'     => $user->id,

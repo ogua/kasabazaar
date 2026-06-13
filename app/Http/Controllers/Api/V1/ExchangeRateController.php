@@ -11,7 +11,7 @@ class ExchangeRateController extends BaseApiController
 {
     public function index(Request $request): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_any_exchange_rate_log'), 403);
+        abort_unless(auth()->user()->can('view_any_exchange::rate::log'), 403);
 
         $paginated = ExchangeRateLog::with('recordedBy:id,name')
             ->latest()

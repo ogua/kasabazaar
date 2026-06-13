@@ -78,6 +78,27 @@ Route::get('/make-payment-agreement/{record}',AgreementForm::class)
 Route::get('/paid-successfully',PaymentsuccessfulPage::class)
 ->name('paid-successfully');
 
+// Paystack redirects here after a payment made from the mobile app.
+// Serves a tiny page that immediately deep-links back into the app so the
+// in-app auth-session browser closes itself. Scheme matches the customer
+// app's "scheme" in app.json.
+Route::get('/app/payment-complete', function (\Illuminate\Http\Request $request) {
+    $reference = $request->query('reference', $request->query('trxref', ''));
+    $deepLink  = 'rddshippingclient://pay?reference=' . urlencode($reference);
+
+    return response(
+        '<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1">'
+        . '<meta http-equiv="refresh" content="0;url=' . e($deepLink) . '">'
+        . '<title>Payment Complete</title>'
+        . '<style>body{font-family:sans-serif;text-align:center;padding:48px 24px;color:#333}a{display:inline-block;margin-top:16px;padding:12px 24px;background:#A0043C;color:#fff;border-radius:10px;text-decoration:none;font-weight:700}</style>'
+        . '</head><body>'
+        . '<h2>Payment complete ✅</h2><p>Returning you to the app…</p>'
+        . '<a href="' . e($deepLink) . '">Open the app</a>'
+        . '<script>window.location.href=' . json_encode($deepLink) . ';</script>'
+        . '</body></html>'
+    );
+})->name('app-payment-complete');
+
 Route::get('/customer-feedback',CustomerFeedaback::class)
 ->name('customer-feedback');
 
