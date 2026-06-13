@@ -26,7 +26,7 @@ class FinancialReportController extends BaseApiController
 
     public function financialDashboard(Request $request): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_any_report'), 403);
+        abort_unless(auth()->user()->can('view_any_shipment'), 403);
 
         $start  = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
         $end    = $request->input('end_date',   now()->format('Y-m-d'));
@@ -145,7 +145,7 @@ class FinancialReportController extends BaseApiController
 
     public function expenses(Request $request): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_any_report'), 403);
+        abort_unless(auth()->user()->can('view_any_shipment'), 403);
 
         $start   = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
         $end     = $request->input('end_date',   now()->format('Y-m-d'));
@@ -232,7 +232,7 @@ class FinancialReportController extends BaseApiController
 
     public function exportExpenses(Request $request)
     {
-        abort_unless(auth()->user()->can('view_any_report'), 403);
+        abort_unless(auth()->user()->can('view_any_shipment'), 403);
 
         $start  = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
         $end    = $request->input('end_date',   now()->format('Y-m-d'));
@@ -256,7 +256,7 @@ class FinancialReportController extends BaseApiController
 
     public function incomes(Request $request): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_any_report'), 403);
+        abort_unless(auth()->user()->can('view_any_shipment'), 403);
 
         $start   = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
         $end     = $request->input('end_date',   now()->format('Y-m-d'));
@@ -349,7 +349,7 @@ class FinancialReportController extends BaseApiController
 
     public function exportIncomes(Request $request)
     {
-        abort_unless(auth()->user()->can('view_any_report'), 403);
+        abort_unless(auth()->user()->can('view_any_shipment'), 403);
 
         $start  = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
         $end    = $request->input('end_date',   now()->format('Y-m-d'));
@@ -373,7 +373,7 @@ class FinancialReportController extends BaseApiController
 
     public function payroll(Request $request): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_any_report'), 403);
+        abort_unless(auth()->user()->can('view_any_shipment'), 403);
 
         $start   = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
         $end     = $request->input('end_date',   now()->format('Y-m-d'));
@@ -452,7 +452,7 @@ class FinancialReportController extends BaseApiController
 
     public function exportPayroll(Request $request)
     {
-        abort_unless(auth()->user()->can('view_any_report'), 403);
+        abort_unless(auth()->user()->can('view_any_shipment'), 403);
 
         $start  = $request->input('start_date', now()->startOfMonth()->format('Y-m-d'));
         $end    = $request->input('end_date',   now()->format('Y-m-d'));
@@ -476,7 +476,7 @@ class FinancialReportController extends BaseApiController
 
     public function shipments(Request $request): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_any_report'), 403);
+        abort_unless(auth()->user()->can('view_any_shipment'), 403);
 
         $type     = $request->input('report_type');
         $year     = (int) $request->input('year', now()->year);
@@ -515,7 +515,7 @@ class FinancialReportController extends BaseApiController
 
     public function exportShipments(Request $request)
     {
-        abort_unless(auth()->user()->can('view_any_report'), 403);
+        abort_unless(auth()->user()->can('view_any_shipment'), 403);
 
         $type   = $request->input('report_type', 'by_year');
         $format = $request->input('format', 'pdf');
@@ -562,7 +562,7 @@ class FinancialReportController extends BaseApiController
 
     public function profitLossSummary(Request $request): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_any_report'), 403);
+        abort_unless(auth()->user()->can('view_any_shipment'), 403);
 
         $start    = Carbon::parse($request->input('start_date', now()->startOfMonth()));
         $end      = Carbon::parse($request->input('end_date',   now()));
@@ -573,7 +573,7 @@ class FinancialReportController extends BaseApiController
 
     public function clientGrowth(Request $request): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_any_report'), 403);
+        abort_unless(auth()->user()->can('view_any_shipment'), 403);
 
         $year = (int) $request->input('year', now()->year);
         return $this->success($this->reportService->clientGrowthReport($year));
@@ -581,7 +581,7 @@ class FinancialReportController extends BaseApiController
 
     public function receivablesAging(Request $request): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_any_report'), 403);
+        abort_unless(auth()->user()->can('view_any_shipment'), 403);
 
         $branchId = $request->input('branch_id');
         $result   = $this->reportService->receivablesAgingReport($branchId);
@@ -595,7 +595,7 @@ class FinancialReportController extends BaseApiController
 
     public function containerDetail(Request $request, string $reference): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_any_report'), 403);
+        abort_unless(auth()->user()->can('view_any_shipment'), 403);
 
         $detail = $this->reportService->containerShipmentDetail($reference);
 

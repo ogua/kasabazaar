@@ -11,7 +11,7 @@ class ReportController extends BaseApiController
 {
     public function index(Request $request): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_any_report'), 403);
+        abort_unless(auth()->user()->can('view_any_shipment'), 403);
 
         $branchId  = $this->resolveBranch($request);
         $paginated = Report::where('branch_id', $branchId)
@@ -32,7 +32,7 @@ class ReportController extends BaseApiController
 
     public function show(Request $request, string $id): JsonResponse
     {
-        abort_unless(auth()->user()->can('view_report'), 403);
+        abort_unless(auth()->user()->can('view_shipment'), 403);
 
         $branchId = $this->resolveBranch($request);
         $report   = Report::where('branch_id', $branchId)->findOrFail($id);
