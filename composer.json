@@ -22,6 +22,7 @@
         "solution-forest/filament-simplelightbox": "^0.0.10",
         "spatie/laravel-pdf": "^1.5",
         "spatie/laravel-sitemap": "^7.3",
+        "stripe/stripe-php": "^20.2",
         "swisnl/filament-backgrounds": "^1.1",
         "unicodeveloper/laravel-paystack": "^1.2",
         "worksome/exchange": "^2.2",
@@ -29,6 +30,7 @@
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
+        "laravel/boost": "^1.1",
         "laravel/pail": "^1.1",
         "laravel/pint": "^1.13",
         "laravel/sail": "^1.26",

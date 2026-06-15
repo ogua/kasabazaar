@@ -73,7 +73,7 @@ class AuthController extends BaseApiController
     {
         $request->validate([
             'current_password' => 'required|string',
-            'password'         => 'required|string|min:6|confirmed',
+            'password'         => 'required|string|min:8|confirmed',
         ]);
 
         /** @var User $user */

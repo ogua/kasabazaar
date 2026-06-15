@@ -36,10 +36,10 @@ return [
     ],
 
     'paystack' => [
-        'public_key'     => env('PAYSTACK_PUBLIC_KEY'),
-        'secret_key'     => env('PAYSTACK_SECRET_KEY'),
+        'public_key' => env('PAYSTACK_PUBLIC_KEY'),
+        'secret_key' => env('PAYSTACK_SECRET_KEY'),
         'webhook_secret' => env('PAYSTACK_WEBHOOK_SECRET'),
-        'payment_url'    => env('PAYSTACK_PAYMENT_URL', 'https://api.paystack.co'),
+        'payment_url' => env('PAYSTACK_PAYMENT_URL', 'https://api.paystack.co'),
     ],
 
     'fcm' => [
@@ -47,18 +47,24 @@ return [
     ],
 
     'mnotify' => [
-        'key'    => env('MNOTIFY_API_V2_KEY'),
+        'key' => env('MNOTIFY_API_V2_KEY'),
         'sender' => env('MNOTIFY_API_SENDER_ID', 'RDDSHIP'),
     ],
 
     'twilio' => [
-        'sid'   => env('TWILIO_SID'),
+        'sid' => env('TWILIO_SID'),
         'token' => env('TWILIO_AUTH_TOKEN'),
-        'from'  => env('TWILIO_FROM'),
+        'from' => env('TWILIO_FROM'),
     ],
 
     'sms' => [
         'default' => env('SMS_DRIVER', 'twilio'),
+    ],
+
+    'stripe' => [
+        'secret_key' => env('STRIPE_SECRET_KEY'),
+        'publishable_key' => env('STRIPE_PUBLISHABLE_KEY'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
 ];

@@ -16,4 +16,9 @@ abstract class CustomerBaseController extends BaseApiController
     {
         return Client::findOrFail($this->clientId());
     }
+
+    protected function customerBranchId(): string
+    {
+        return auth()->user()->branch_id;
+    }
 }

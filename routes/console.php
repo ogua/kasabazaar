@@ -10,6 +10,11 @@ Artisan::command('inspire', function () {
 
 // Fetch latest USD → GHS exchange rate from open.er-api.com daily.
 // The free-tier API resets at ~00:02 UTC; run at 00:05 UTC to get fresh data.
+Schedule::command('app:cleanup-expired-ecommerce-carts')
+    ->daily()
+    ->withoutOverlapping()
+    ->runInBackground();
+
 Schedule::command('app:exchange-rate')
     ->dailyAt('00:05')
     ->withoutOverlapping()

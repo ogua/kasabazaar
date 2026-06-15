@@ -2,33 +2,32 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Auth\RegisterBranch;
+use App\Models\Branch;
+use Filament\Http\Middleware\Authenticate;
+use Filament\Http\Middleware\DisableBladeIconComponents;
+use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\MenuItem;
 use Filament\Pages;
 use Filament\Panel;
-use Filament\Widgets;
-use App\Models\Branch;
 use Filament\PanelProvider;
-use Filament\Navigation\MenuItem;
 use Filament\Support\Colors\Color;
 use Filament\View\PanelsRenderHook;
+use Filament\Widgets;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\Auth;
-use Filament\Http\Middleware\Authenticate;
-use App\Filament\Pages\Auth\RegisterBranch;
-use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
+use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Swis\Filament\Backgrounds\ImageProviders\MyImages;
-use Filament\Http\Middleware\DisableBladeIconComponents;
-use Swis\Filament\Backgrounds\FilamentBackgroundsPlugin;
-use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
-use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Joaopaulolndev\FilamentEditProfile\FilamentEditProfilePlugin;
 use Joaopaulolndev\FilamentEditProfile\Pages\EditProfilePage;
 use SolutionForest\FilamentSimpleLightBox\SimpleLightBoxPlugin;
-use Joaopaulolndev\FilamentEditProfile\FilamentEditProfilePlugin;
+use Swis\Filament\Backgrounds\FilamentBackgroundsPlugin;
+use Swis\Filament\Backgrounds\ImageProviders\MyImages;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -46,7 +45,7 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogo(asset('images/kasabazaar-logo.png'))
             ->brandLogoHeight('4rem')
             ->favicon(asset('images/kasabazaar-logo.png'))
-            //->spa()
+            // ->spa()
             ->colors([
                 'primary' => Color::hex('#A0043C'),
                 'info' => Color::hex('#003151'),
@@ -60,7 +59,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
-                //Widgets\FilamentInfoWidget::class,
+                // Widgets\FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
@@ -82,22 +81,22 @@ class AdminPanelProvider extends PanelProvider
             ->plugins([
                 \BezhanSalleh\FilamentShield\FilamentShieldPlugin::make(),
                 FilamentBackgroundsPlugin::make()
-                ->imageProvider(
-                    MyImages::make()
-                        ->directory('images/backgrounds')
-                ),
+                    ->imageProvider(
+                        MyImages::make()
+                            ->directory('images/backgrounds')
+                    ),
                 SimpleLightBoxPlugin::make(),
                 FilamentEditProfilePlugin::make()
                     ->slug('my-profile')
                     ->setTitle('Profile')
                     ->setNavigationLabel('Profile')
-                    //->setNavigationGroup('Group Profile')
+                    // ->setNavigationGroup('Group Profile')
                     ->setIcon('heroicon-o-user')
                     ->setSort(10)
                    // ->canAccess(fn () => Auth::user()->id === 1)
                     ->shouldRegisterNavigation(false)
                     ->shouldShowDeleteAccountForm(false)
-                    //->shouldShowSanctumTokens()
+                    // ->shouldShowSanctumTokens()
                     ->shouldShowBrowserSessionsForm()
                     ->shouldShowAvatarForm(),
             ])
@@ -111,20 +110,20 @@ class AdminPanelProvider extends PanelProvider
                 'Customer Feedback',
                 'Reports',
                 'Website',
+                'E-Commerce',
                 'Roles & Permissions',
 
             ])
-            ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn(): View => view('admin.staff-login-btn'))
+            ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn (): View => view('admin.staff-login-btn'))
             ->userMenuItems([
                 'profile' => MenuItem::make()
-                    ->label(fn() => Auth::user()->name)
+                    ->label(fn () => Auth::user()->name)
                     ->url(fn (): string => EditProfilePage::getUrl())
                     ->icon('heroicon-m-user-circle'),
-                    // //If you are using tenancy need to check with the visible method where ->company() is the relation between the user and tenancy model as you called
-                    // ->visible(function (): bool {
-                    //     return Auth::user()->company()->exists();
-                    // }),
-            ])
-            ;
-        }
+                // //If you are using tenancy need to check with the visible method where ->company() is the relation between the user and tenancy model as you called
+                // ->visible(function (): bool {
+                //     return Auth::user()->company()->exists();
+                // }),
+            ]);
     }
+}

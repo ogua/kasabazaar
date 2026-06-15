@@ -27,8 +27,10 @@ class CustomerAuthController extends CustomerBaseController
         ]);
 
         $user = DB::transaction(function () use ($request) {
+            $branchId = $request->branch_id ?? Branch::query()->value('id');
+
             $client = Client::create([
-                'branch_id'    => $request->branch_id ?? 'dd7d9d43-203f-11f0-b310-68c6ac62cf59',
+                'branch_id'    => $branchId,
                 'name'         => $request->name,
                 'email'        => $request->email,
                 'phone'        => $request->phone,
@@ -43,7 +45,7 @@ class CustomerAuthController extends CustomerBaseController
                 'phone'     => $request->phone,
                 'password'  => Hash::make($request->password),
                 'client_id' => $client->id,
-                'branch_id' => $request->branch_id ?? 'dd7d9d43-203f-11f0-b310-68c6ac62cf59',
+                'branch_id' => $branchId,
                 'role'      => 'customer',
             ]);
         });
