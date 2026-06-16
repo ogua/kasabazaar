@@ -2,17 +2,17 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms;
-use Filament\Tables;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
-use App\Models\ShipmentRequest;
-use Filament\Resources\Resource;
-use Filament\Tables\Actions\Action;
 use App\Enums\ShipmentRequestStatus;
-use Filament\Notifications\Notification;
-use App\Services\ShipmentRequestApprovalService;
 use App\Filament\Resources\ShipmentRequestResource\Pages;
+use App\Models\ShipmentRequest;
+use App\Services\ShipmentRequestApprovalService;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Table;
 
 class ShipmentRequestResource extends Resource
 {
@@ -22,7 +22,7 @@ class ShipmentRequestResource extends Resource
 
     protected static ?string $navigationLabel = 'Shipment Requests';
 
-    //protected static ?string $navigationGroup = 'Operations';
+    // protected static ?string $navigationGroup = 'Operations';
 
     protected static ?int $navigationSort = 1;
 
@@ -131,10 +131,28 @@ class ShipmentRequestResource extends Resource
                         Forms\Components\Textarea::make('notes')
                             ->label('Staff Notes')
                             ->nullable(),
+                        Forms\Components\Select::make('shipment_type')
+                            ->label('Shipment Type')
+                            ->options([
+                                'new' => 'New Shipment',
+                                'existing' => 'Add to Existing Shipment',
+                            ])
+                            ->default('new')
+                            ->live(),
+                        Forms\Components\Select::make('existing_shipment_id')
+                            ->label('Existing Shipment')
+                            ->options(fn () => \App\Models\Shipment::query()
+                                ->whereIn('status', ['pending', 'pickup'])
+                                ->orderByDesc('created_at')
+                                ->limit(100)
+                                ->pluck('shipping_reference', 'id'))
+                            ->searchable()
+                            ->visible(fn (Forms\Get $get) => $get('shipment_type') === 'existing')
+                            ->requiredIf('shipment_type', 'existing'),
                     ])
                     ->action(function ($record, array $data) {
                         try {
-                            $service  = new ShipmentRequestApprovalService();
+                            $service = new ShipmentRequestApprovalService;
                             $shipment = $service->approve($record->load('client'), auth()->user(), $data);
                             Notification::make()
                                 ->title('Request Approved')
@@ -158,10 +176,10 @@ class ShipmentRequestResource extends Resource
                     ])
                     ->action(function ($record, array $data) {
                         $record->update([
-                            'status'           => 'rejected',
+                            'status' => 'rejected',
                             'rejection_reason' => $data['rejection_reason'],
-                            'reviewed_by'      => auth()->id(),
-                            'reviewed_at'      => now(),
+                            'reviewed_by' => auth()->id(),
+                            'reviewed_at' => now(),
                         ]);
                         Notification::make()->title('Request Rejected')->warning()->send();
                     }),
@@ -175,7 +193,7 @@ class ShipmentRequestResource extends Resource
     {
         return [
             'index' => Pages\ListShipmentRequests::route('/'),
-            'view'  => Pages\ViewShipmentRequest::route('/{record}'),
+            'view' => Pages\ViewShipmentRequest::route('/{record}'),
         ];
     }
 }
