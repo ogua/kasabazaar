@@ -63,7 +63,7 @@ Route::prefix('v1')->group(function () {
     Route::get('exchange-rates/current', [ExchangeRateController::class, 'current']);
 
     // ── Authenticated ────────────────────────────────────────────────────────
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'active'])->group(function () {
 
         // Auth
         Route::post('auth/logout', [AuthController::class, 'logout']);
@@ -261,7 +261,7 @@ Route::prefix('v1')->group(function () {
         Route::post('webhooks/paystack', [PaystackWebhookController::class, 'handle']);
 
         // Authenticated customers
-        Route::middleware(['auth:sanctum', 'customer'])->group(function () {
+        Route::middleware(['auth:sanctum', 'active', 'customer'])->group(function () {
             Route::post('auth/logout', [CustomerAuthController::class, 'logout']);
             Route::get('auth/me', [CustomerAuthController::class, 'me']);
             Route::put('auth/profile', [CustomerAuthController::class, 'updateProfile']);
@@ -319,7 +319,7 @@ Route::prefix('v1')->group(function () {
         Route::post('webhooks/stripe', [EcommerceStripeWebhookController::class, 'handle']);
 
         // Customer marketplace
-        Route::middleware(['auth:sanctum', 'customer'])->group(function () {
+        Route::middleware(['auth:sanctum', 'active', 'customer'])->group(function () {
             Route::get('home', [EcommerceCustomer\EcommerceHomeController::class, 'index']);
 
             Route::get('categories', [EcommerceCustomer\EcommerceCategoryBrowseController::class, 'index']);
@@ -352,7 +352,7 @@ Route::prefix('v1')->group(function () {
         });
 
         // Staff admin marketplace
-        Route::middleware('auth:sanctum')->prefix('staff')->group(function () {
+        Route::middleware(['auth:sanctum', 'active'])->prefix('staff')->group(function () {
             Route::apiResource('categories', Admin\EcommerceCategoryController::class);
             Route::patch('categories/{id}/toggle-active', [Admin\EcommerceCategoryController::class, 'toggleActive']);
             Route::post('categories/{id}/image', [Admin\EcommerceCategoryController::class, 'uploadImage']);

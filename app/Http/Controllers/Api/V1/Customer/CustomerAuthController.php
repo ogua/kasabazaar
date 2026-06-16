@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\Api\V1\Customer;
 
-use App\Models\User;
+use App\Enums\UserStatus;
 use App\Models\Branch;
 use App\Models\Client;
-use Illuminate\Http\Request;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
@@ -16,37 +17,37 @@ class CustomerAuthController extends CustomerBaseController
     public function register(Request $request): JsonResponse
     {
         $request->validate([
-            'name'      => 'required|string|max:255',
-            'email'     => 'required|email|unique:users,email',
-            'phone'     => 'nullable|string|max:30',
-            'password'  => 'required|string|min:8|confirmed',
-            //'branch_id' => 'required|uuid|exists:branches,id',
-            'country'   => 'nullable|string|max:100',
-            'city'      => 'nullable|string|max:100',
-            'address'   => 'nullable|string',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'phone' => 'nullable|string|max:30',
+            'password' => 'required|string|min:8|confirmed',
+            // 'branch_id' => 'required|uuid|exists:branches,id',
+            'country' => 'nullable|string|max:100',
+            'city' => 'nullable|string|max:100',
+            'address' => 'nullable|string',
         ]);
 
         $user = DB::transaction(function () use ($request) {
             $branchId = $request->branch_id ?? Branch::query()->value('id');
 
             $client = Client::create([
-                'branch_id'    => $branchId,
-                'name'         => $request->name,
-                'email'        => $request->email,
-                'phone'        => $request->phone,
-                'country'      => $request->country,
-                'city'         => $request->city,
-                'address'      => $request->address,
+                'branch_id' => $branchId,
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'country' => $request->country,
+                'city' => $request->city,
+                'address' => $request->address,
             ]);
 
             return User::create([
-                'name'      => $request->name,
-                'email'     => $request->email,
-                'phone'     => $request->phone,
-                'password'  => Hash::make($request->password),
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'password' => Hash::make($request->password),
                 'client_id' => $client->id,
                 'branch_id' => $branchId,
-                'role'      => 'customer',
+                'role' => 'customer',
             ]);
         });
 
@@ -54,28 +55,32 @@ class CustomerAuthController extends CustomerBaseController
 
         return $this->success([
             'token' => $token,
-            'user'  => $this->formatUser($user->load('client')),
+            'user' => $this->formatUser($user->load('client')),
         ], 'Registration successful.', 201);
     }
 
     public function login(Request $request): JsonResponse
     {
         $request->validate([
-            'email'    => 'required|email',
+            'email' => 'required|email',
             'password' => 'required|string',
         ]);
 
         $user = User::where('email', $request->email)->whereNotNull('client_id')->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (! $user || ! Hash::check($request->password, $user->password)) {
             return $this->error('Invalid credentials.', 401);
+        }
+
+        if ($user->status !== UserStatus::Active) {
+            return $this->error('Your account has been deactivated.', 401);
         }
 
         $token = $user->createToken('customer-app')->plainTextToken;
 
         return $this->success([
             'token' => $token,
-            'user'  => $this->formatUser($user->load('client')),
+            'user' => $this->formatUser($user->load('client')),
         ], 'Login successful.');
     }
 
@@ -89,12 +94,12 @@ class CustomerAuthController extends CustomerBaseController
         $user = $request->user();
 
         $request->validate([
-            'name'         => 'sometimes|string|max:255',
-            'phone'        => 'nullable|string|max:30',
-            'country'      => 'nullable|string|max:100',
+            'name' => 'sometimes|string|max:255',
+            'phone' => 'nullable|string|max:30',
+            'country' => 'nullable|string|max:100',
             'state_region' => 'nullable|string|max:100',
-            'city'         => 'nullable|string|max:100',
-            'address'      => 'nullable|string',
+            'city' => 'nullable|string|max:100',
+            'address' => 'nullable|string',
         ]);
 
         $user->update($request->only(['name', 'phone']));
@@ -112,12 +117,12 @@ class CustomerAuthController extends CustomerBaseController
     {
         $request->validate([
             'current_password' => 'required|string',
-            'password'         => 'required|string|min:8|confirmed',
+            'password' => 'required|string|min:8|confirmed',
         ]);
 
         $user = $request->user();
 
-        if (!Hash::check($request->current_password, $user->password)) {
+        if (! Hash::check($request->current_password, $user->password)) {
             return $this->error('Current password is incorrect.', 422);
         }
 
@@ -129,6 +134,7 @@ class CustomerAuthController extends CustomerBaseController
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
+
         return $this->success(null, 'Logged out.');
     }
 
@@ -149,8 +155,8 @@ class CustomerAuthController extends CustomerBaseController
     public function resetPassword(Request $request): JsonResponse
     {
         $request->validate([
-            'token'    => 'required|string',
-            'email'    => 'required|email',
+            'token' => 'required|string',
+            'email' => 'required|email',
             'password' => 'required|string|min:8|confirmed',
         ]);
 
@@ -180,8 +186,8 @@ class CustomerAuthController extends CustomerBaseController
             ->orderBy('name')
             ->get()
             ->map(fn ($b) => [
-                'id'       => $b->id,
-                'name'     => $b->name,
+                'id' => $b->id,
+                'name' => $b->name,
                 'location' => trim(collect([$b->state, $b->country])->filter()->implode(', ')),
             ]);
 
@@ -191,21 +197,21 @@ class CustomerAuthController extends CustomerBaseController
     private function formatUser(User $user): array
     {
         return [
-            'id'        => $user->id,
-            'name'      => $user->name,
-            'email'     => $user->email,
-            'phone'     => $user->phone,
-            'avatar'    => $user->avatar,
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'avatar' => $user->avatar,
             'client_id' => $user->client_id,
-            'client'    => $user->client ? [
-                'id'           => $user->client->id,
-                'branch_id'    => $user->client->branch_id,
-                'name'         => $user->client->name,
-                'email'        => $user->client->email,
-                'phone'        => $user->client->phone,
-                'country'      => $user->client->country,
-                'city'         => $user->client->city,
-                'address'      => $user->client->address,
+            'client' => $user->client ? [
+                'id' => $user->client->id,
+                'branch_id' => $user->client->branch_id,
+                'name' => $user->client->name,
+                'email' => $user->client->email,
+                'phone' => $user->client->phone,
+                'country' => $user->client->country,
+                'city' => $user->client->city,
+                'address' => $user->client->address,
             ] : null,
         ];
     }

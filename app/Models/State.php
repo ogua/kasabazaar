@@ -5,12 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\Country;
-use App\Models\City;
 
 class State extends Model
 {
-    protected $table = 'states';
+    public $timestamps = false;
+
+    protected $fillable = ['country_id', 'name', 'country_code'];
 
     public function country(): BelongsTo
     {

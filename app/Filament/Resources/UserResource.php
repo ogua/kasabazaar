@@ -2,20 +2,18 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms;
-use App\Models\User;
-use Filament\Tables;
-use App\Models\Branch;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
-use Filament\Facades\Filament;
-use Filament\Resources\Resource;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Validation\Rules\Password;
+use App\Enums\UserStatus;
 use App\Filament\Resources\UserResource\Pages;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Filament\Resources\UserResource\RelationManagers;
+use App\Models\Branch;
+use App\Models\User;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules\Password;
 
 class UserResource extends Resource
 {
@@ -32,8 +30,8 @@ class UserResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-        //->where('role',"branch_personnel")
-        ->orderBy('created_at','desc');
+        // ->where('role',"branch_personnel")
+            ->orderBy('created_at', 'desc');
     }
 
     public static function form(Form $form): Form
@@ -59,13 +57,18 @@ class UserResource extends Resource
                             ->preload()
                             ->searchable(),
 
-                            Forms\Components\Select::make('role')
+                        Forms\Components\Select::make('role')
                             ->options([
                                 'customer' => 'Customer',
                                 'admin' => 'Admin',
                                 'branch_personnel' => 'Branch Personnel',
                             ])
                             ->searchable(),
+
+                        Forms\Components\Select::make('status')
+                            ->options(UserStatus::class)
+                            ->default(UserStatus::Active)
+                            ->required(),
 
                         Forms\Components\TextInput::make('email')
                             ->required()
@@ -78,8 +81,8 @@ class UserResource extends Resource
                         // ->columnSpanFull(),
 
                         Forms\Components\Select::make('branches')
-                        ->label('Branch')
-                        ->relationship()
+                            ->label('Branch')
+                            ->relationship()
                             ->options(
                                 Branch::all()->pluck('name', 'id')
                             )
@@ -88,82 +91,85 @@ class UserResource extends Resource
                             ->searchable(),
 
                         Forms\Components\TextInput::make('password')
-                        ->label('Password')
-                        ->password()
-                        ->revealable(filament()->arePasswordsRevealable())
-                        ->required(fn (string $context): bool => $context === 'create')
-                        ->rule(Password::default())
-                        ->dehydrateStateUsing(fn ($state) => Hash::make($state))
-                        ->dehydrated(fn ($state) => filled($state))
-                        ->same('passwordConfirmation')
-                        ->live(onBlur: true)
-                        ->validationAttribute(__('filament-panels::pages/auth/register.form.password.validation_attribute')),
-                        
+                            ->label('Password')
+                            ->password()
+                            ->revealable(filament()->arePasswordsRevealable())
+                            ->required(fn (string $context): bool => $context === 'create')
+                            ->rule(Password::default())
+                            ->dehydrateStateUsing(fn ($state) => Hash::make($state))
+                            ->dehydrated(fn ($state) => filled($state))
+                            ->same('passwordConfirmation')
+                            ->live(onBlur: true)
+                            ->validationAttribute(__('filament-panels::pages/auth/register.form.password.validation_attribute')),
+
                         Forms\Components\TextInput::make('passwordConfirmation')
-                        ->label(__('filament-panels::pages/auth/register.form.password_confirmation.label'))
-                        ->password()
-                        ->revealable(filament()->arePasswordsRevealable())
-                        ->visible(fn ($get): bool => filled($get("password")))
-                        ->required(fn ($get): bool => filled($get("password")))
-                        ->dehydrated(false),
-                        
+                            ->label(__('filament-panels::pages/auth/register.form.password_confirmation.label'))
+                            ->password()
+                            ->revealable(filament()->arePasswordsRevealable())
+                            ->visible(fn ($get): bool => filled($get('password')))
+                            ->required(fn ($get): bool => filled($get('password')))
+                            ->dehydrated(false),
+
                     ])
                     ->columns(2),
             ]);
     }
 
-
-        public static function table(Table $table): Table
-        {
-            return $table
+    public static function table(Table $table): Table
+    {
+        return $table
             ->recordUrl('')
             ->columns([
                 Tables\Columns\ImageColumn::make('avatar'),
                 Tables\Columns\TextColumn::make('name')
-                ->searchable(),
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('email')
-                ->searchable(),
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('roles.name')
-                ->badge(),
+                    ->badge(),
                 Tables\Columns\TextColumn::make('branches.name')
-                ->badge()
-                ->color('info')
-                ->searchable(),
+                    ->badge()
+                    ->color('info')
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
-                ->dateTime()
-                ->sortable()
-                ->toggleable(isToggledHiddenByDefault: true),
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
-                ->dateTime()
-                ->sortable()
-                ->toggleable(isToggledHiddenByDefault: true),
-                ])
-                ->filters([
-                    //
-                    ])
-                    ->actions([
-                        Tables\Actions\EditAction::make(),
-                        ])
-                        ->bulkActions([
-                            Tables\Actions\BulkActionGroup::make([
-                                Tables\Actions\DeleteBulkAction::make(),
-                            ]),
-                        ]);
-                    }
+                    ->dateTime()
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+            ])
+            ->filters([
+                Tables\Filters\SelectFilter::make('status')
+                    ->options(UserStatus::class),
+            ])
+            ->actions([
+                Tables\Actions\EditAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make(),
+                ]),
+            ]);
+    }
 
-                    public static function getRelations(): array
-                    {
-                        return [
-                            //
-                        ];
-                    }
+    public static function getRelations(): array
+    {
+        return [
+            //
+        ];
+    }
 
-                    public static function getPages(): array
-                    {
-                        return [
-                            'index' => Pages\ListUsers::route('/'),
-                            'create' => Pages\CreateUser::route('/create'),
-                            'edit' => Pages\EditUser::route('/{record}/edit'),
-                        ];
-                    }
-                }
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListUsers::route('/'),
+            'create' => Pages\CreateUser::route('/create'),
+            'edit' => Pages\EditUser::route('/{record}/edit'),
+        ];
+    }
+}

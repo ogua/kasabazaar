@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\UserStatus;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasTenants;
 use Filament\Panel;
@@ -11,20 +12,18 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
-use App\Models\Branch;
-use App\Models\Client;
-use App\Models\Staff;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class User extends Authenticatable implements FilamentUser, HasTenants
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, HasUuids, HasApiTokens;
+    use HasApiTokens, HasFactory, HasUuids, Notifiable;
+
     use HasRoles;
 
     /**
@@ -54,9 +53,9 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'status' => UserStatus::class,
         ];
     }
-
 
     public function branches(): BelongsToMany
     {
@@ -80,7 +79,7 @@ class User extends Authenticatable implements FilamentUser, HasTenants
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return true;
+        return $this->status === UserStatus::Active;
     }
 
     public function client(): BelongsTo
@@ -92,5 +91,4 @@ class User extends Authenticatable implements FilamentUser, HasTenants
     {
         return $this->hasOne(Staff::class, 'user_id');
     }
-
 }
