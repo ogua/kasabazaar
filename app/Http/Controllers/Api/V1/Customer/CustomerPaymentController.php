@@ -24,37 +24,37 @@ class CustomerPaymentController extends CustomerBaseController
     {
         $request->validate([
             'shipment_id' => 'required|uuid|exists:shipments,id',
-            'amount_usd'  => 'required|numeric|min:0.01',
+            'amount_usd' => 'required|numeric|min:0.01',
         ]);
 
         $shipment = Shipment::where('client_id', $this->clientId())->findOrFail($request->shipment_id);
 
-        $user        = $request->user();
-        $amountKobo  = (int) round($request->amount_usd * 100); // Paystack uses smallest currency unit
+        $user = $request->user();
+        $amountKobo = (int) round($request->amount_usd * 100); // Paystack uses smallest currency unit
 
         $response = Http::withToken(config('services.paystack.secret_key'))
-            ->post(config('services.paystack.payment_url') . '/transaction/initialize', [
-                'email'        => $user->email,
-                'amount'       => $amountKobo,
-                'currency'     => 'GHS',
+            ->post(config('services.paystack.payment_url').'/transaction/initialize', [
+                'email' => $user->email,
+                'amount' => $amountKobo,
+                'currency' => 'GHS',
                 // Bounces the in-app browser back into the mobile app when payment completes
                 'callback_url' => route('app-payment-complete'),
-                'metadata'  => [
+                'metadata' => [
                     'shipment_id' => $shipment->id,
-                    'user_id'     => $user->id,
-                    'client_id'   => $this->clientId(),
-                    'amount_usd'  => $request->amount_usd,
+                    'user_id' => $user->id,
+                    'client_id' => $this->clientId(),
+                    'amount_usd' => $request->amount_usd,
                 ],
             ]);
 
-        if (!$response->successful() || !$response->json('status')) {
+        if (! $response->successful() || ! $response->json('status')) {
             return $this->error($response->json('message') ?? 'Failed to initiate payment.', 502);
         }
 
         return $this->success([
             'authorization_url' => $response->json('data.authorization_url'),
-            'reference'         => $response->json('data.reference'),
-            'access_code'       => $response->json('data.access_code'),
+            'reference' => $response->json('data.reference'),
+            'access_code' => $response->json('data.access_code'),
         ], 'Payment initiated.');
     }
 
@@ -63,38 +63,38 @@ class CustomerPaymentController extends CustomerBaseController
         $request->validate(['reference' => 'required|string']);
 
         $response = Http::withToken(config('services.paystack.secret_key'))
-            ->get(config('services.paystack.payment_url') . '/transaction/verify/' . $request->reference);
+            ->get(config('services.paystack.payment_url').'/transaction/verify/'.$request->reference);
 
-        if (!$response->successful() || $response->json('data.status') !== 'success') {
+        if (! $response->successful() || $response->json('data.status') !== 'success') {
             return $this->error('Payment verification failed.', 422);
         }
 
-        $data       = $response->json('data');
-        $metadata   = $data['metadata'] ?? [];
+        $data = $response->json('data');
+        $metadata = $data['metadata'] ?? [];
         $shipmentId = $metadata['shipment_id'] ?? null;
-        $amountUsd  = $metadata['amount_usd'] ?? 0;
+        $amountUsd = $metadata['amount_usd'] ?? 0;
 
         if ($shipmentId) {
             $shipment = Shipment::where('client_id', $this->clientId())->find($shipmentId);
 
             if ($shipment) {
                 $exchangeRate = $shipment->exchange_rate_at_shipment ?? 1;
-                $amountGhs    = round($data['amount'] / 100, 2);
+                $amountGhs = round($data['amount'] / 100, 2);
 
                 $payment = Payment::create([
-                    'shipment_id'    => $shipmentId,
-                    'branch_id'      => $shipment->branch_id,
-                    'amount_usd'     => $amountUsd,
-                    'amount_ghs'     => $amountGhs,
-                    'paying_method'  => 'paystack',
-                    'payment_reference' => $data['reference'],
-                    'paid_on'        => now(),
-                    'entered_by'     => auth()->id(),
+                    'shipment_id' => $shipmentId,
+                    'branch_id' => $shipment->branch_id,
+                    'amount_usd' => $amountUsd,
+                    'amount_ghs' => $amountGhs,
+                    'paying_method' => 'paystack',
+                    'payment_ref' => $data['reference'],
+                    'paid_on' => now(),
+                    'user_id' => auth()->id(),
                 ]);
 
                 $paidTotal = $shipment->payments()->sum('amount_usd');
                 $shipment->update([
-                    'paid'           => $paidTotal,
+                    'paid' => $paidTotal,
                     'payment_status' => $paidTotal >= $shipment->total ? 'paid' : 'partial',
                 ]);
 
@@ -108,16 +108,16 @@ class CustomerPaymentController extends CustomerBaseController
     private function formatPayment(Payment $p): array
     {
         return [
-            'id'                 => $p->id,
-            'shipment_id'        => $p->shipment_id,
-            'amount_usd'         => $p->amount_usd,
-            'amount_ghs'         => $p->amount_ghs,
-            'paying_method'      => $p->paying_method,
-            'payment_reference'  => $p->payment_reference,
-            'paid_on'            => $p->paid_on,
-            'shipment'           => $p->shipment ? ['id' => $p->shipment->id, 'shipping_reference' => $p->shipment->shipping_reference] : null,
-            'invoice_url'        => $p->shipment_id ? url("/shipping-invoice-download/{$p->shipment_id}") : null,
-            'receipt_url'        => $p->shipment_id ? url("/shipping-receipt/{$p->shipment_id}") : null,
+            'id' => $p->id,
+            'shipment_id' => $p->shipment_id,
+            'amount_usd' => $p->amount_usd,
+            'amount_ghs' => $p->amount_ghs,
+            'paying_method' => $p->paying_method,
+            'payment_reference' => $p->payment_ref,
+            'paid_on' => $p->paid_on,
+            'shipment' => $p->shipment ? ['id' => $p->shipment->id, 'shipping_reference' => $p->shipment->shipping_reference] : null,
+            'invoice_url' => $p->shipment_id ? url("/shipping-invoice-download/{$p->shipment_id}") : null,
+            'receipt_url' => $p->shipment_id ? url("/shipping-receipt/{$p->shipment_id}") : null,
         ];
     }
 }
