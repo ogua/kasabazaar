@@ -2,17 +2,17 @@
 
 namespace App\Filament\Resources;
 
-use App\Enums\ShipmentRequestStatus;
-use App\Filament\Resources\ShipmentRequestResource\Pages;
-use App\Models\ShipmentRequest;
-use App\Services\ShipmentRequestApprovalService;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Notifications\Notification;
-use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Actions\Action;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
+use App\Models\ShipmentRequest;
+use Filament\Resources\Resource;
+use Filament\Tables\Actions\Action;
+use App\Enums\ShipmentRequestStatus;
+use Filament\Notifications\Notification;
+use App\Services\ShipmentRequestApprovalService;
+use App\Filament\Resources\ShipmentRequestResource\Pages;
 
 class ShipmentRequestResource extends Resource
 {
@@ -119,6 +119,13 @@ class ShipmentRequestResource extends Resource
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->visible(fn ($record) => in_array($record->status->value, ['submitted', 'under_review']))
+                    ->fillForm(function ($record) {
+                        return [
+                            'shipping_cost' => $record->shipping_cost,
+                            'vat_percentage' => $record->vat_percentage ?? 0,
+                            'notes' => $record->notes,
+                        ];
+                    })
                     ->form([
                         Forms\Components\TextInput::make('shipping_cost')
                             ->numeric()
@@ -127,6 +134,7 @@ class ShipmentRequestResource extends Resource
                         Forms\Components\TextInput::make('vat_percentage')
                             ->numeric()
                             ->suffix('%')
+                            ->default(0)
                             ->nullable(),
                         Forms\Components\Textarea::make('notes')
                             ->label('Staff Notes')
