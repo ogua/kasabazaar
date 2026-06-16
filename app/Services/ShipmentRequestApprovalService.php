@@ -25,7 +25,7 @@ class ShipmentRequestApprovalService
         return DB::transaction(function () use ($request, $approvedBy, $options) {
             // new = open a new container, existing = join an existing shipment's container
             $shipmentType = $options['shipment_type'] ?? 'new';
-            $refData      = Shipment::generateShippingReference(
+            $refData = Shipment::generateShippingReference(
                 $shipmentType,
                 null,
                 null,
@@ -43,7 +43,7 @@ class ShipmentRequestApprovalService
                 ->flatMap(fn ($r) => $r['items'] ?? [])
                 ->sum(fn ($i) => (float) ($i['estimated_value'] ?? 0) * (int) ($i['quantity'] ?? 1));
 
-            $shippingCost  = (float) ($options['shipping_cost'] ?? $itemsTotal);
+            $shippingCost = (float) ($options['shipping_cost'] ?? $itemsTotal);
             $vatPercentage = (float) ($options['vat_percentage'] ?? 0);
 
             // Shipment must live in the approving staff's active branch so it is
@@ -51,35 +51,35 @@ class ShipmentRequestApprovalService
             $branchId = $options['branch_id'] ?? $client->branch_id;
 
             $shipment = Shipment::create([
-                'client_id'             => $request->client_id,
-                'branch_id'             => $branchId,
-                'status'                => 'pending',
-                'shipping_reference'    => $refData['reference'],
-                'tracking_number'       => strtoupper(\Illuminate\Support\Str::random(12)),
-                'external_token'        => Shipment::generateExternalToken(),
-                'client_note'           => $request->notes,
-                'recorded_by'           => $approvedBy->id,
-                'client_existence'      => $clientExistence,
-                'origin_branch_id'      => $branchId,
+                'client_id' => $request->client_id,
+                'branch_id' => $branchId,
+                'status' => 'pending',
+                'shipping_reference' => $refData['reference'],
+                'tracking_number' => Shipment::generateTrackingNumber(),
+                'external_token' => Shipment::generateExternalToken(),
+                'client_note' => $request->notes,
+                'recorded_by' => $approvedBy->id,
+                'client_existence' => $clientExistence,
+                'origin_branch_id' => $branchId,
                 'destination_branch_id' => $client->branch_id ?? $branchId,
-                'shipping_cost'         => $shippingCost,
-                'vat_percentage'        => $vatPercentage,
-                'total'                 => round($shippingCost * (1 + $vatPercentage / 100), 2),
+                'shipping_cost' => $shippingCost,
+                'vat_percentage' => $vatPercentage,
+                'total' => round($shippingCost * (1 + $vatPercentage / 100), 2),
             ]);
 
             foreach ($request->receivers as $index => $receiverData) {
                 $receiver = Receiver::create([
-                    'shipment_id'    => $shipment->id,
-                    'receiver_name'  => $receiverData['name'],
+                    'shipment_id' => $shipment->id,
+                    'receiver_name' => $receiverData['name'],
                     'receiver_phone' => $receiverData['phone'] ?? null,
-                    'country'        => $receiverData['country'] ?? null,
-                    'state_region'   => $receiverData['state_region'] ?? null,
-                    'city'           => $receiverData['city'] ?? null,
-                    'address'        => $receiverData['address'] ?? null,
+                    'country' => $receiverData['country'] ?? null,
+                    'state_region' => $receiverData['state_region'] ?? null,
+                    'city' => $receiverData['city'] ?? null,
+                    'address' => $receiverData['address'] ?? null,
                 ]);
 
                 foreach ($receiverData['items'] ?? [] as $itemIndex => $itemData) {
-                    $product = !empty($itemData['product_id'])
+                    $product = ! empty($itemData['product_id'])
                         ? (Product::find($itemData['product_id']) ?? Product::firstOrCreate(
                             ['name' => $itemData['description']],
                             ['branch_id' => null, 'category' => 'general', 'value' => $itemData['estimated_value'] ?? 0]
@@ -92,17 +92,17 @@ class ShipmentRequestApprovalService
                     ShipmentItem::create([
                         'shipment_id' => $shipment->id,
                         'receiver_id' => $receiver->id,
-                        'product_id'  => $product->id,
-                        'quantity'    => $itemData['quantity'] ?? 1,
-                        'box_no'      => 'R' . ($index + 1) . '-' . ($itemIndex + 1),
-                        'item_cost'   => $itemData['estimated_value'] ?? 0,
+                        'product_id' => $product->id,
+                        'quantity' => $itemData['quantity'] ?? 1,
+                        'box_no' => 'R'.($index + 1).'-'.($itemIndex + 1),
+                        'item_cost' => $itemData['estimated_value'] ?? 0,
                     ]);
                 }
             }
 
             $request->update([
                 'shipment_id' => $shipment->id,
-                'status'      => 'approved',
+                'status' => 'approved',
                 'reviewed_by' => $approvedBy->id,
                 'reviewed_at' => now(),
             ]);
@@ -117,7 +117,8 @@ class ShipmentRequestApprovalService
             if ($clientUser) {
                 try {
                     $clientUser->notify(new ShipmentRequestApproved($request, $shipment));
-                } catch (\Throwable) {}
+                } catch (\Throwable) {
+                }
             }
 
             // Email + SMS to client
@@ -131,19 +132,20 @@ class ShipmentRequestApprovalService
                         ['shipment' => $shipment, 'client' => $client, 'paymentUrl' => $paymentUrl],
                         function ($m) use ($client, $shipment, $pdf) {
                             $m->to($client->email)
-                                ->subject('Your Shipment Has Been Approved – ' . $shipment->shipping_reference)
-                                ->attachData($pdf->output(), 'invoice-' . $shipment->shipping_reference . '.pdf', [
+                                ->subject('Your Shipment Has Been Approved – '.$shipment->shipping_reference)
+                                ->attachData($pdf->output(), 'invoice-'.$shipment->shipping_reference.'.pdf', [
                                     'mime' => 'application/pdf',
                                 ]);
                         }
                     );
-                } catch (\Throwable) {}
+                } catch (\Throwable) {
+                }
             }
 
             if ($client->phone) {
                 NotificationService::sendSmsToSender(
                     $client->phone,
-                    "Hi {$client->name}, your shipment request has been approved! " .
+                    "Hi {$client->name}, your shipment request has been approved! ".
                     "Ref: {$shipment->shipping_reference}. Pay here: {$paymentUrl}"
                 );
             }

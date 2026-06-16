@@ -2,33 +2,13 @@
 
 namespace App\Models;
 
-use App\Models\Branch;
-use App\Models\City;
-use App\Models\Client;
-use App\Models\Country;
-use App\Models\Expense;
-use App\Models\Income;
-use App\Models\Invoice;
-use App\Models\Payment;
-use App\Models\PickupItems;
-use App\Models\PickupSchedule;
-use App\Models\Purchaseditem;
-use App\Models\Receiver;
-use App\Models\ShipmentItem;
-use App\Models\ShipmentContainer;
-use App\Models\ShipmentMedia;
-use App\Models\ShipmentMessage;
-use App\Models\ShipmentUpdate;
-use App\Models\State;
-use App\Models\Trip;
 use App\Enums\ShippingStatus;
 use App\Service\ExchangeRateService;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 class Shipment extends Model
@@ -38,16 +18,16 @@ class Shipment extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'status'                   => ShippingStatus::class,
-        'insurance_accepted'       => 'boolean',
-        'external_form_completed'  => 'boolean',
-        'is_received'              => 'boolean',
-        'signed_received_form'     => 'boolean',
-        'is_disclaimer_agreed'     => 'boolean',
-        'is_agreement_agreed'      => 'boolean',
+        'status' => ShippingStatus::class,
+        'insurance_accepted' => 'boolean',
+        'external_form_completed' => 'boolean',
+        'is_received' => 'boolean',
+        'signed_received_form' => 'boolean',
+        'is_disclaimer_agreed' => 'boolean',
+        'is_agreement_agreed' => 'boolean',
         'exchange_rate_at_shipment' => 'decimal:4',
-        'total'                    => 'decimal:2',
-        'total_ghs'                => 'decimal:2',
+        'total' => 'decimal:2',
+        'total_ghs' => 'decimal:2',
     ];
 
     // Automatically update related items after saving
@@ -55,7 +35,7 @@ class Shipment extends Model
     {
         // Before creating, capture exchange rate
         static::creating(function ($shipping) {
-            if (!$shipping->exchange_rate_at_shipment) {
+            if (! $shipping->exchange_rate_at_shipment) {
                 try {
                     $exchangeService = app(ExchangeRateService::class);
                     $shipping->exchange_rate_at_shipment = $exchangeService->getCurrentRate('USD', 'GHS');
@@ -96,7 +76,7 @@ class Shipment extends Model
      * Parse shipping reference to extract components
      * Format: CON{N}-{YY}-C{CY}-{CS}
      *
-     * @param string $reference The shipping reference string
+     * @param  string  $reference  The shipping reference string
      * @return array|null Array with container_number, year, container_seq_year, client_seq or null if invalid
      */
     public static function parseShippingReference(string $reference): ?array
@@ -110,6 +90,7 @@ class Shipment extends Model
                 'client_seq' => (int) $matches[4],
             ];
         }
+
         return null;
     }
 
@@ -126,10 +107,10 @@ class Shipment extends Model
      * - First container of 2026
      * - First client in this container
      *
-     * @param string $shipmentType 'new' or 'existing'
-     * @param string|null $shipmentDate The shipment date to use for year calculation
-     * @param string|null $excludeShipmentId Exclude this shipment from counts (for edits)
-     * @param string|null $existingShipmentId The existing shipment to use for container reference
+     * @param  string  $shipmentType  'new' or 'existing'
+     * @param  string|null  $shipmentDate  The shipment date to use for year calculation
+     * @param  string|null  $excludeShipmentId  Exclude this shipment from counts (for edits)
+     * @param  string|null  $existingShipmentId  The existing shipment to use for container reference
      */
     public static function generateShippingReference(
         string $shipmentType = 'new',
@@ -183,8 +164,9 @@ class Shipment extends Model
                     $containerSeqThisYear = $parsed['container_seq_year'];
 
                     // Count how many shipments exist with the same container number and year
-                    $sameContainerRefs = array_filter($allReferences, function($ref) use ($containerNumber, $yearShort) {
+                    $sameContainerRefs = array_filter($allReferences, function ($ref) use ($containerNumber, $yearShort) {
                         $p = self::parseShippingReference($ref);
+
                         return $p && $p['container_number'] === $containerNumber && $p['year'] === $yearShort;
                     });
 
@@ -235,6 +217,19 @@ class Shipment extends Model
     }
 
     /**
+     * Generate unique tracking number in format KBZ + 7-digit zero-padded number.
+     * e.g. KBZ0047823
+     */
+    public static function generateTrackingNumber(): string
+    {
+        do {
+            $number = 'KBZ'.str_pad((string) mt_rand(0, 9_999_999), 7, '0', STR_PAD_LEFT);
+        } while (self::where('tracking_number', $number)->exists());
+
+        return $number;
+    }
+
+    /**
      * Generate unique external token for client self-service form
      */
     public static function generateExternalToken(): string
@@ -258,38 +253,36 @@ class Shipment extends Model
             ->distinct()
             ->get();
     }
-    
 
     public function items()
     {
-        return $this->hasMany(ShipmentItem::class,"shipment_id");
+        return $this->hasMany(ShipmentItem::class, 'shipment_id');
     }
 
     public function puchaseditems()
     {
-        return $this->hasMany(Purchaseditem::class,"shipment_id");
+        return $this->hasMany(Purchaseditem::class, 'shipment_id');
     }
 
     public function pickupitems()
     {
-        return $this->hasMany(PickupItems::class,"shipment_id");
+        return $this->hasMany(PickupItems::class, 'shipment_id');
     }
 
     public function statusupdate()
     {
-        return $this->hasMany(ShipmentUpdate::class,"shipment_id");
+        return $this->hasMany(ShipmentUpdate::class, 'shipment_id');
     }
 
     public function payments()
     {
-        return $this->hasMany(Payment::class,"shipment_id");
+        return $this->hasMany(Payment::class, 'shipment_id');
     }
 
     public function receivers()
     {
-        return $this->hasMany(Receiver::class,"shipment_id");
+        return $this->hasMany(Receiver::class, 'shipment_id');
     }
-
 
     public function branch(): BelongsTo
     {
@@ -306,45 +299,44 @@ class Shipment extends Model
         return $this->belongsTo(Branch::class, 'destination_branch_id');
     }
 
-    public function invoice() : HasOne {
-        return $this->hasOne(Invoice::class,"shipment_id");
+    public function invoice(): HasOne
+    {
+        return $this->hasOne(Invoice::class, 'shipment_id');
     }
 
     public function client(): BelongsTo
     {
-        return $this->belongsTo(Client::class,"client_id");
+        return $this->belongsTo(Client::class, 'client_id');
     }
 
     public function mcity(): BelongsTo
     {
-        return $this->belongsTo(City::class,"city");
+        return $this->belongsTo(City::class, 'city');
     }
-
 
     public function mstate(): BelongsTo
     {
-        return $this->belongsTo(State::class,"state_region");
+        return $this->belongsTo(State::class, 'state_region');
     }
-
 
     public function mcountry(): BelongsTo
     {
-        return $this->belongsTo(Country::class,"country");
+        return $this->belongsTo(Country::class, 'country');
     }
 
     public function messages(): HasMany
     {
-        return $this->hasMany(ShipmentMessage::class, "shipment_id");
+        return $this->hasMany(ShipmentMessage::class, 'shipment_id');
     }
 
     public function expenses(): HasMany
     {
-        return $this->hasMany(Expense::class, "shipment_id");
+        return $this->hasMany(Expense::class, 'shipment_id');
     }
 
     public function incomes(): HasMany
     {
-        return $this->hasMany(Income::class, "shipment_id");
+        return $this->hasMany(Income::class, 'shipment_id');
     }
 
     public function media(): HasMany
@@ -407,6 +399,7 @@ class Shipment extends Model
     public function scopeByYear($query, int $year)
     {
         $yearSuffix = substr((string) $year, -2);
+
         return $query->where('shipping_reference', 'like', "%-{$yearSuffix}-%");
     }
 
@@ -417,6 +410,7 @@ class Shipment extends Model
     {
         $yearSuffix = substr((string) $year, -2);
         $seqCode = "C{$sequence}";
+
         return $query->where('shipping_reference', 'like', "%-{$yearSuffix}-{$seqCode}-%");
     }
 
