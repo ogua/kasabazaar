@@ -7,9 +7,9 @@ use Filament\Tables;
 use Filament\Forms\Form;
 use Filament\Tables\Table;
 use App\Models\ShipmentRequest;
-use App\Enums\ShipmentRequestStatus;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\Action;
+use App\Enums\ShipmentRequestStatus;
 use Filament\Notifications\Notification;
 use App\Services\ShipmentRequestApprovalService;
 use App\Filament\Resources\ShipmentRequestResource\Pages;
@@ -22,7 +22,7 @@ class ShipmentRequestResource extends Resource
 
     protected static ?string $navigationLabel = 'Shipment Requests';
 
-    protected static ?string $navigationGroup = 'Operations';
+    //protected static ?string $navigationGroup = 'Operations';
 
     protected static ?int $navigationSort = 3;
 
