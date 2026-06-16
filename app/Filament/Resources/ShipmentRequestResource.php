@@ -24,7 +24,7 @@ class ShipmentRequestResource extends Resource
 
     //protected static ?string $navigationGroup = 'Operations';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 1;
 
     protected static bool $isScopedToTenant = false;
 
