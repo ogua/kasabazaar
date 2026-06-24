@@ -151,6 +151,7 @@ Route::prefix('v1')->group(function () {
         // Shipment-containers (by container_number — for mobile Container Status modal)
         Route::get('shipment-containers', [ContainerController::class, 'containerNumbers']);
         Route::put('shipment-containers/{containerNumber}', [ContainerController::class, 'updateByNumber']);
+        Route::post('shipment-containers/{containerNumber}/bulk-status', [ContainerController::class, 'bulkStatusUpdate']);
 
         // Customer Feedback
         Route::get('feedback', [FeedbackController::class, 'index']);
@@ -249,6 +250,7 @@ Route::prefix('v1')->group(function () {
     Route::prefix('customer')->group(function () {
 
         // Public
+        Route::get('config', [CustomerAuthController::class, 'config']);
         Route::get('branches', [CustomerAuthController::class, 'branches']);
         Route::middleware('throttle:10,1')->group(function () {
             Route::post('auth/register', [CustomerAuthController::class, 'register']);
@@ -263,6 +265,7 @@ Route::prefix('v1')->group(function () {
         // Authenticated customers
         Route::middleware(['auth:sanctum', 'active', 'customer'])->group(function () {
             Route::post('auth/logout', [CustomerAuthController::class, 'logout']);
+            Route::delete('auth/account', [CustomerAuthController::class, 'deleteAccount']);
             Route::get('auth/me', [CustomerAuthController::class, 'me']);
             Route::put('auth/profile', [CustomerAuthController::class, 'updateProfile']);
             Route::put('auth/password', [CustomerAuthController::class, 'changePassword']);

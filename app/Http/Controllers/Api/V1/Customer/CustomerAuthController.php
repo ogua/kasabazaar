@@ -6,6 +6,7 @@ use App\Enums\UserStatus;
 use App\Models\Branch;
 use App\Models\Client;
 use App\Models\User;
+use App\Service\SystemSetting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -57,6 +58,13 @@ class CustomerAuthController extends CustomerBaseController
             'token' => $token,
             'user' => $this->formatUser($user->load('client')),
         ], 'Registration successful.', 201);
+    }
+
+    public function config(): JsonResponse
+    {
+        return $this->success([
+            'minimum_app_version' => SystemSetting::get('minimum_customer_app_version', '1.0.0'),
+        ]);
     }
 
     public function login(Request $request): JsonResponse
@@ -136,6 +144,21 @@ class CustomerAuthController extends CustomerBaseController
         $request->user()->currentAccessToken()->delete();
 
         return $this->success(null, 'Logged out.');
+    }
+
+    public function deleteAccount(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        DB::transaction(function () use ($user) {
+            $user->tokens()->delete();
+            if ($user->client_id) {
+                Client::where('id', $user->client_id)->delete();
+            }
+            $user->delete();
+        });
+
+        return $this->success(null, 'Account deleted.');
     }
 
     public function forgotPassword(Request $request): JsonResponse
