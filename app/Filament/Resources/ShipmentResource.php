@@ -892,7 +892,7 @@ class ShipmentResource extends Resource
                             ->label('Payments')
                             ->color('success')
                             ->icon('heroicon-m-banknotes')
-                            ->visible(fn () =>Auth::user()?->hasAnyRole(['super_admin','CEO']))
+                            ->visible(fn () =>Auth::user()?->hasAnyRole(['super_admin','CEO','Accountant']))
                             ->modalWidth('4xl')
                             ->fillForm(fn($record) => [
                                 'total_amount' => $record->total,
