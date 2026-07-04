@@ -2,18 +2,16 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms;
-use Filament\Tables;
-use App\Models\Payment;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
-use Filament\Resources\Resource;
-use App\Service\NotificationService;
-use Filament\Notifications\Notification;
-use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\PaymentResource\Pages;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Filament\Resources\PaymentResource\RelationManagers;
+use App\Models\Payment;
+use App\Service\NotificationService;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class PaymentResource extends Resource
 {
@@ -66,15 +64,15 @@ class PaymentResource extends Resource
 
                         Forms\Components\TextInput::make('bankname')
                             ->label('Bank Name')
-                            ->visible(fn($get): bool => $get('paying_method') === 'BANK TRANSFER'),
+                            ->visible(fn ($get): bool => $get('paying_method') === 'BANK TRANSFER'),
 
                         Forms\Components\TextInput::make('accountnumber')
                             ->label('Account Number')
-                            ->visible(fn($get): bool => $get('paying_method') === 'BANK TRANSFER'),
+                            ->visible(fn ($get): bool => $get('paying_method') === 'BANK TRANSFER'),
 
                         Forms\Components\TextInput::make('cheque_no')
                             ->label('Cheque Number')
-                            ->visible(fn($get): bool => $get('paying_method') === 'CHEQUE'),
+                            ->visible(fn ($get): bool => $get('paying_method') === 'CHEQUE'),
                     ])
                     ->columns(2),
 
@@ -96,7 +94,7 @@ class PaymentResource extends Resource
                             ->prefix('$')
                             ->live(onBlur: true)
                             ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                $exchangeRate = (float)($get('exchange_rate') ?? 0);
+                                $exchangeRate = (float) ($get('exchange_rate') ?? 0);
                                 if ($state && $exchangeRate > 0) {
                                     $set('amount_ghs', round($state * $exchangeRate, 2));
                                 }
@@ -110,6 +108,7 @@ class PaymentResource extends Resource
                             ->default(function () {
                                 try {
                                     $service = app(\App\Service\ExchangeRateService::class);
+
                                     return $service->getCurrentRate('USD', 'GHS');
                                 } catch (\Exception $e) {
                                     return 12.0;
@@ -117,7 +116,7 @@ class PaymentResource extends Resource
                             })
                             ->live(onBlur: true)
                             ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                $amountUsd = (float)($get('amount_usd') ?? 0);
+                                $amountUsd = (float) ($get('amount_usd') ?? 0);
                                 if ($amountUsd && $state) {
                                     $set('amount_ghs', round($amountUsd * $state, 2));
                                 }
@@ -149,7 +148,7 @@ class PaymentResource extends Resource
                         Forms\Components\Hidden::make('branch_id'),
                         Forms\Components\Hidden::make('user_id'),
                         Forms\Components\Hidden::make('payment_ref')
-                            ->default(fn() => 'PAY-' . strtoupper(bin2hex(random_bytes(4)))),
+                            ->default(fn () => 'PAY-'.strtoupper(bin2hex(random_bytes(4)))),
                         Forms\Components\Hidden::make('payment_type')->default('credit'),
                         Forms\Components\Hidden::make('balance')->default(0),
                         Forms\Components\Hidden::make('change')->default(0),
@@ -167,7 +166,7 @@ class PaymentResource extends Resource
                     ->searchable()
                     ->badge()
                     ->color('info')
-                    ->url(fn($record) => $record->shipment_id
+                    ->url(fn ($record) => $record->shipment_id
                         ? \App\Filament\Resources\ShipmentResource::getUrl('edit', ['record' => $record->shipment_id])
                         : null),
 
@@ -184,7 +183,7 @@ class PaymentResource extends Resource
                     ->label('Method')
                     ->searchable()
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
+                    ->color(fn (string $state): string => match ($state) {
                         'CASH' => 'success',
                         'Zelle', 'Cash App' => 'info',
                         'BANK TRANSFER' => 'primary',
@@ -197,7 +196,7 @@ class PaymentResource extends Resource
 
                 Tables\Columns\TextColumn::make('bankname')
                     ->label('Bank/Details')
-                    ->description(fn($record) => $record->cheque_no ? 'Cheque: ' . $record->cheque_no : null)
+                    ->description(fn ($record) => $record->cheque_no ? 'Cheque: '.$record->cheque_no : null)
                     ->searchable()
                     ->toggleable(),
 
@@ -206,7 +205,7 @@ class PaymentResource extends Resource
                     ->numeric()
                     ->badge()
                     ->color('success')
-                    ->formatStateUsing(fn($state) => '$' . number_format($state ?? 0, 2))
+                    ->formatStateUsing(fn ($state) => '$'.number_format($state ?? 0, 2))
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('exchange_rate')
@@ -218,7 +217,7 @@ class PaymentResource extends Resource
                 Tables\Columns\TextColumn::make('amount_ghs')
                     ->label('Amount (GHS)')
                     ->numeric()
-                    ->formatStateUsing(fn($state) => 'GH₵' . number_format($state ?? 0, 2))
+                    ->formatStateUsing(fn ($state) => 'GH₵'.number_format($state ?? 0, 2))
                     ->toggleable()
                     ->sortable(),
 
@@ -264,15 +263,20 @@ class PaymentResource extends Resource
                         return $query
                             ->when(
                                 $data['from'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('paid_on', '>=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('paid_on', '>=', $date),
                             )
                             ->when(
                                 $data['until'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('paid_on', '<=', $date),
+                                fn (Builder $query, $date): Builder => $query->whereDate('paid_on', '<=', $date),
                             );
                     }),
             ])
             ->actions([
+                Tables\Actions\Action::make('print_receipt')
+                    ->label('Print Receipt')
+                    ->icon('heroicon-m-printer')
+                    ->color('info')
+                    ->url(fn ($record) => route('payment-receipt', $record->id), shouldOpenInNewTab: true),
                 Tables\Actions\Action::make('send_receipt')
                     ->label('Send Receipt')
                     ->icon('heroicon-o-envelope')
@@ -285,7 +289,7 @@ class PaymentResource extends Resource
                             NotificationService::sendPaymentConfirmation($record);
                             Notification::make()->title('Receipt sent to client.')->success()->send();
                         } catch (\Throwable $e) {
-                            Notification::make()->title('Failed: ' . $e->getMessage())->danger()->send();
+                            Notification::make()->title('Failed: '.$e->getMessage())->danger()->send();
                         }
                     }),
                 Tables\Actions\ViewAction::make()

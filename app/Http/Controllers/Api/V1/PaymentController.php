@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Models\Payment;
-use App\Models\Shipment;
 use App\Http\Requests\StorePaymentRequest;
 use App\Http\Resources\PaymentResource;
-use App\Http\Controllers\Api\V1\BaseApiController;
+use App\Models\Payment;
+use App\Models\Shipment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -16,8 +15,8 @@ class PaymentController extends BaseApiController
     {
         abort_unless(auth()->user()->can('view_any_payment'), 403);
 
-        $branchId  = $this->resolveBranch($request);
-        $query     = Payment::where('branch_id', $branchId)
+        $branchId = $this->resolveBranch($request);
+        $query = Payment::where('branch_id', $branchId)
             ->with(['shipment:id,shipping_reference', 'enteredBy:id,name']);
 
         if ($shipmentId = $request->input('shipment_id')) {
@@ -47,19 +46,19 @@ class PaymentController extends BaseApiController
                 'accountnumber', 'paid_on',
             ]),
             [
-                'branch_id'   => $branchId,
-                'user_id'     => auth()->id(),
-                'payment_ref' => 'PAY-' . strtoupper(\Illuminate\Support\Str::random(10)),
-                'paid_on'     => $request->input('paid_on', now()),
+                'branch_id' => $branchId,
+                'user_id' => auth()->id(),
+                'payment_ref' => 'PAY-'.strtoupper(\Illuminate\Support\Str::random(10)),
+                'paid_on' => $request->input('paid_on', now()),
             ]
         ));
 
         // Update shipment paid amount and payment_status
         if ($payment->shipment_id) {
-            $shipment   = Shipment::find($payment->shipment_id);
+            $shipment = Shipment::find($payment->shipment_id);
             if ($shipment) {
                 $totalPaid = Payment::where('shipment_id', $shipment->id)->sum('amount');
-                $status    = $totalPaid >= $shipment->total ? 'paid'
+                $status = $totalPaid >= $shipment->total ? 'paid'
                     : ($totalPaid > 0 ? 'partial' : 'pending');
                 $shipment->update(['paid' => $totalPaid, 'payment_status' => $status]);
             }
@@ -73,12 +72,14 @@ class PaymentController extends BaseApiController
         abort_unless(auth()->user()->can('view_payment'), 403);
 
         $branchId = $this->resolveBranch($request);
-        $payment  = Payment::where('branch_id', $branchId)
-            ->with(['shipment:id,shipping_reference', 'enteredBy:id,name'])
+        $payment = Payment::where('branch_id', $branchId)
+            ->with([
+                'shipment' => fn ($q) => $q->select('id', 'shipping_reference', 'total', 'paid', 'payment_status', 'client_id')
+                    ->with('client:id,name,phone,email'),
+                'enteredBy:id,name',
+            ])
             ->findOrFail($id);
 
         return $this->success(new PaymentResource($payment));
     }
-
-
 }

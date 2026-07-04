@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Shipment;
+use App\Filament\Client\Pages\PageSuccessfully;
+use App\Models\Payment;
 use App\Models\Quotation;
-use Illuminate\Http\Request;
+use App\Models\Shipment;
 use App\Service\InvoiceService;
 use Matscode\Paystack\Transaction;
-use App\Http\Controllers\Controller;
 use Unicodeveloper\Paystack\Facades\Paystack;
-use App\Filament\Client\Pages\PageSuccessfully;
 
 class ShippingController extends Controller
 {
@@ -75,6 +74,16 @@ class ShippingController extends Controller
     }
 
     /**
+     * Display receipt for a single payment
+     */
+    public function paymentReceipt(Payment $payment)
+    {
+        $payment->load(['shipment.client', 'shipment.payments']);
+
+        return view('payment-receipt', ['payment' => $payment, 'shipping' => $payment->shipment]);
+    }
+
+    /**
      * Send invoice email to client
      */
     public function sendinvoiceemail(Shipment $id)
@@ -82,7 +91,7 @@ class ShippingController extends Controller
         $success = InvoiceService::sendInvoiceEmail($id);
 
         if ($success) {
-            return back()->with('success', 'Invoice sent successfully to ' . $id->client?->email);
+            return back()->with('success', 'Invoice sent successfully to '.$id->client?->email);
         }
 
         return back()->with('error', 'Failed to send invoice. Please check the client email address.');
