@@ -22,3 +22,13 @@ Schedule::command('app:exchange-rate')
     ->onFailure(function () {
         logger()->error('Scheduled app:exchange-rate command failed.');
     });
+
+// Generate year-end interest drafts for the previous year every January 2nd.
+// Drafts require accountant review at Investors > Pending Interest Postings.
+Schedule::command('app:post-year-end-investment-interest')
+    ->yearlyOn(1, 2, '02:00')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->onFailure(function () {
+        logger()->error('Scheduled app:post-year-end-investment-interest command failed.');
+    });

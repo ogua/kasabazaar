@@ -1017,7 +1017,7 @@ class ShipmentResource extends Resource
                                     ]);
 
                                     // Update shipment paid amount
-                                    $totalPaid = $record->payments()->sum('amount') + $data['new_amount'];
+                                    $totalPaid = $record->payments()->sum('amount');
                                     $record->paid = $totalPaid;
 
                                     // Update payment status

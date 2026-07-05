@@ -32,6 +32,13 @@ use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\FeedbackController;
 use App\Http\Controllers\Api\V1\FinancialReportController;
 use App\Http\Controllers\Api\V1\IncomeController;
+use App\Http\Controllers\Api\V1\Investment\InvestmentPaystackWebhookController;
+use App\Http\Controllers\Api\V1\Investment\InvestmentStripeWebhookController;
+use App\Http\Controllers\Api\V1\Investment\InvestmentTransferWebhookController;
+use App\Http\Controllers\Api\V1\Investor\InvestorCompanyPerformanceController;
+use App\Http\Controllers\Api\V1\Investor\InvestorDocumentController;
+use App\Http\Controllers\Api\V1\Investor\InvestorInvestmentController;
+use App\Http\Controllers\Api\V1\Investor\InvestorWithdrawalRequestController;
 use App\Http\Controllers\Api\V1\InvoiceController;
 use App\Http\Controllers\Api\V1\LookupController;
 use App\Http\Controllers\Api\V1\PaymentController;
@@ -244,6 +251,23 @@ Route::prefix('v1')->group(function () {
             Route::put('trips/{id}/status', [DriverController::class, 'updateTripStatus']);
             Route::put('trips/{id}/shipments/{shipmentId}', [DriverController::class, 'updateDelivery']);
         });
+
+        // ── Investor (role-specific) ────────────────────────────────────────
+        Route::prefix('investor')->middleware('investor')->group(function () {
+            Route::get('investments', [InvestorInvestmentController::class, 'index']);
+            Route::get('investments/{id}', [InvestorInvestmentController::class, 'show']);
+            Route::get('investments/{id}/transactions', [InvestorInvestmentController::class, 'transactions']);
+            Route::get('investments/{id}/agreement', [InvestorDocumentController::class, 'agreement']);
+
+            Route::get('withdrawal-requests', [InvestorWithdrawalRequestController::class, 'index']);
+            Route::post('withdrawal-requests', [InvestorWithdrawalRequestController::class, 'store']);
+            Route::get('withdrawal-requests/{id}', [InvestorWithdrawalRequestController::class, 'show']);
+
+            Route::get('agreement', [InvestorDocumentController::class, 'combinedAgreement']);
+            Route::get('statements', [InvestorDocumentController::class, 'statements']);
+
+            Route::get('company-performance', [InvestorCompanyPerformanceController::class, 'index']);
+        });
     });
 
     // ─── Customer API ─────────────────────────────────────────────────────────
@@ -390,5 +414,12 @@ Route::prefix('v1')->group(function () {
             Route::get('reports/products', [Admin\EcommerceSalesReportController::class, 'productPerformance']);
             Route::get('reports/low-stock', [Admin\EcommerceSalesReportController::class, 'lowStock']);
         });
+    });
+
+    // ─── Investment Webhooks (signature-verified, no Sanctum) ────────────────
+    Route::prefix('investments')->group(function () {
+        Route::post('webhooks/paystack', [InvestmentPaystackWebhookController::class, 'handle']);
+        Route::post('webhooks/stripe', [InvestmentStripeWebhookController::class, 'handle']);
+        Route::post('webhooks/paystack-transfer', [InvestmentTransferWebhookController::class, 'handle']);
     });
 });

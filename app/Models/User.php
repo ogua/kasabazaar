@@ -87,6 +87,11 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         return $this->belongsTo(Client::class, 'client_id');
     }
 
+    public function investor(): BelongsTo
+    {
+        return $this->belongsTo(Investor::class, 'investor_id');
+    }
+
     public function staff(): HasOne
     {
         return $this->hasOne(Staff::class, 'user_id');

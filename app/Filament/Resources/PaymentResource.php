@@ -272,6 +272,12 @@ class PaymentResource extends Resource
                     }),
             ])
             ->actions([
+                Tables\Actions\Action::make('print_invoice')
+                    ->label('Print Invoice')
+                    ->icon('heroicon-m-receipt-percent')
+                    ->color('success')
+                    ->visible(fn ($record) => (bool) $record->shipment_id)
+                    ->url(fn ($record) => route('shipping-invoice', $record->shipment_id), shouldOpenInNewTab: true),
                 Tables\Actions\Action::make('print_receipt')
                     ->label('Print Receipt')
                     ->icon('heroicon-m-printer')

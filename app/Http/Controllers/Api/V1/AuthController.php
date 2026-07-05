@@ -31,7 +31,7 @@ class AuthController extends BaseApiController
             return $this->error('Your account has been deactivated.', 401);
         }
 
-        $user->load(['branches', 'staff.role']);
+        $user->load(['branches', 'staff.role', 'investor']);
 
         $token = $user->createToken('mobile-app')->plainTextToken;
 
@@ -49,7 +49,7 @@ class AuthController extends BaseApiController
     {
         /** @var User $user */
         $user = $request->user();
-        $user->load(['branches', 'staff.role']);
+        $user->load(['branches', 'staff.role', 'investor']);
 
         return $this->success($this->formatUser($user));
     }
@@ -107,6 +107,12 @@ class AuthController extends BaseApiController
             'avatar' => $user->avatar ? asset('storage/'.$user->avatar) : null,
             'role' => $user->role,
             'client_id' => $user->client_id,
+            'investor_id' => $user->investor_id,
+            'investor' => $user->investor ? [
+                'id' => $user->investor->id,
+                'name' => $user->investor->name,
+                'status' => $user->investor->status,
+            ] : null,
             'branch_id' => $user->branch_id,
             'branches' => $user->branches->map(fn ($b) => [
                 'id' => $b->id,

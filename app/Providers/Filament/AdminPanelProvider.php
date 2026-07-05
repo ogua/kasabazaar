@@ -111,6 +111,7 @@ class AdminPanelProvider extends PanelProvider
                 'Reports',
                 'Website',
                 'E-Commerce',
+                'Investors',
                 'Roles & Permissions',
 
             ])

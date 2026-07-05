@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ExternalShipmentController;
+use App\Http\Controllers\InvestmentController;
 use App\Http\Controllers\ShippingController;
 use App\Http\Controllers\WebController;
 use App\Livewire\AgreementForm;
@@ -71,6 +72,26 @@ Route::get('/payment-receipt/{payment}', [ShippingController::class, 'paymentRec
 
 Route::get('/print-quotation/{record}', [ShippingController::class, 'printquotation'])
     ->name('print-quotation');
+
+// Signed (not session-authenticated) so both the Filament portals and the mobile
+// app's in-app browser — which has no shared session cookie — can open the same
+// links. Every place that generates these URLs must use URL::signedRoute().
+Route::middleware('signed')->group(function () {
+    Route::get('/investment-agreement/{investment}', [InvestmentController::class, 'agreement'])
+        ->name('investment-agreement');
+
+    Route::get('/investment-agreement/{investment}/download', [InvestmentController::class, 'agreementDownload'])
+        ->name('investment-agreement-download');
+
+    Route::get('/investor/{investor}/investment-agreement', [InvestmentController::class, 'combinedAgreement'])
+        ->name('investment-agreement-combined');
+
+    Route::get('/investment-statement/{statement}', [InvestmentController::class, 'annualStatement'])
+        ->name('investment-annual-statement');
+
+    Route::get('/investment-statement/{statement}/download', [InvestmentController::class, 'annualStatementDownload'])
+        ->name('investment-annual-statement-download');
+});
 
 Route::get('/make-payment/{record}', DisclaimerForm::class)
     ->name('make-payment');
