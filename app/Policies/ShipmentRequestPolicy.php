@@ -2,8 +2,13 @@
 
 namespace App\Policies;
 
+<<<<<<< HEAD
 use App\Models\ShipmentRequest;
 use App\Models\User;
+=======
+use App\Models\User;
+use App\Models\ShipmentRequest;
+>>>>>>> e6fd8d59 (ecommerce files)
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class ShipmentRequestPolicy

@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\EcommerceOrderShipment;
 use App\Models\User;
+use App\Models\EcommerceOrderShipment;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class EcommerceOrderShipmentPolicy

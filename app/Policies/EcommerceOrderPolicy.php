@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\EcommerceOrder;
 use App\Models\User;
+use App\Models\EcommerceOrder;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class EcommerceOrderPolicy

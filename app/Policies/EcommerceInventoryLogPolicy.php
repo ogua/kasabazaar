@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\EcommerceInventoryLog;
 use App\Models\User;
+use App\Models\EcommerceInventoryLog;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class EcommerceInventoryLogPolicy

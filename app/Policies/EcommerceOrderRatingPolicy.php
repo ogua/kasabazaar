@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\EcommerceOrderRating;
 use App\Models\User;
+use App\Models\EcommerceOrderRating;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class EcommerceOrderRatingPolicy
