@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Enums\UserStatus;
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\Branch;
+use App\Models\Investor;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -62,6 +63,7 @@ class UserResource extends Resource
                                 'customer' => 'Customer',
                                 'admin' => 'Admin',
                                 'branch_personnel' => 'Branch Personnel',
+                                'investor' => 'Investor',
                             ])
                             ->searchable(),
 
@@ -88,6 +90,14 @@ class UserResource extends Resource
                             )
                             ->preload()
                             ->multiple()
+                            ->searchable(),
+
+                        Forms\Components\Select::make('investor_id')
+                            ->label('Linked Investor')
+                            ->relationship('investor', 'name')
+                            ->options(Investor::pluck('name', 'id'))
+                            ->helperText('Link this login to an Investor record to grant access to the Investor portal and mobile app.')
+                            ->preload()
                             ->searchable(),
 
                         Forms\Components\TextInput::make('password')
@@ -133,6 +143,12 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('branches.name')
                     ->badge()
                     ->color('info')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('investor.name')
+                    ->label('Investor')
+                    ->badge()
+                    ->color('warning')
+                    ->toggleable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
