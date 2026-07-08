@@ -26,6 +26,14 @@ class InvestorDocumentController extends InvestorBaseController
         ]);
     }
 
+    public function statement(): JsonResponse
+    {
+        return $this->success([
+            'url' => URL::temporarySignedRoute('investment-account-statement', now()->addDay(), $this->investorId()),
+            'download_url' => URL::temporarySignedRoute('investment-account-statement-download', now()->addDay(), $this->investorId()),
+        ]);
+    }
+
     public function statements(): JsonResponse
     {
         $statements = InvestmentAnnualStatement::where('investor_id', $this->investorId())

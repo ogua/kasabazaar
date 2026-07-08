@@ -32,3 +32,15 @@ Schedule::command('app:post-year-end-investment-interest')
     ->onFailure(function () {
         logger()->error('Scheduled app:post-year-end-investment-interest command failed.');
     });
+
+// Runs ~2 weeks after year-end interest drafts are generated above, giving staff
+// time to review and post that year's interest so the statement's ledger reflects
+// finalized figures. Creates draft records only — staff add business updates and
+// send from Investors > Annual Statements.
+Schedule::command('app:generate-annual-investment-statements')
+    ->yearlyOn(1, 15, '02:00')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->onFailure(function () {
+        logger()->error('Scheduled app:generate-annual-investment-statements command failed.');
+    });

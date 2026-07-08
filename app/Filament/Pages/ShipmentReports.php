@@ -2,21 +2,20 @@
 
 namespace App\Filament\Pages;
 
+use App\Exports\ShipmentReportExport;
 use App\Models\Shipment;
-use Filament\Forms\Form;
-use Filament\Pages\Page;
 use App\Service\ReportService;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Form;
+use Filament\Notifications\Notification;
+use Filament\Pages\Page;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\ShipmentReportExport;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Contracts\HasForms;
-use Filament\Notifications\Notification;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ShipmentReports extends Page implements HasForms
 {
@@ -33,10 +32,15 @@ class ShipmentReports extends Page implements HasForms
     protected static ?string $title = 'Shipment Reports';
 
     public ?string $report_type = null;
+
     public ?int $year = null;
+
     public ?int $container_sequence = null;
+
     public ?string $client_id = null;
+
     public ?string $start_date = null;
+
     public ?string $end_date = null;
 
     public ?Collection $reportData = null;
@@ -60,6 +64,7 @@ class ShipmentReports extends Page implements HasForms
                             ->options([
                                 'by_container' => 'Shipments by Container',
                                 'by_year' => 'Shipments by Year',
+                                'by_date_range' => 'Shipments by Date Range',
                                 'profit_loss' => 'Profit/Loss by Container',
                                 'client_shipments' => 'Client Shipment History',
                             ])
@@ -87,6 +92,7 @@ class ShipmentReports extends Page implements HasForms
                                 for ($y = now()->year; $y >= 2020; $y--) {
                                     $years[$y] = $y;
                                 }
+
                                 return $years;
                             })
                             ->visible(fn ($get) => in_array($get('report_type'), ['by_container', 'by_year', 'profit_loss']))
@@ -95,8 +101,11 @@ class ShipmentReports extends Page implements HasForms
                         Select::make('container_sequence')
                             ->label('Container Sequence')
                             ->options(function ($get) {
-                                if (!$get('year')) return [];
+                                if (! $get('year')) {
+                                    return [];
+                                }
                                 $yearShort = substr((string) $get('year'), -2);
+
                                 return Shipment::where('shipping_reference', 'like', "%-{$yearShort}-%")
                                     ->distinct()
                                     ->pluck('container_number', 'container_number')
@@ -107,11 +116,13 @@ class ShipmentReports extends Page implements HasForms
 
                         DatePicker::make('start_date')
                             ->label('Start Date')
-                            ->visible(fn ($get) => $get('report_type') === 'client_shipments'),
+                            ->visible(fn ($get) => in_array($get('report_type'), ['client_shipments', 'by_date_range']))
+                            ->required(fn ($get) => $get('report_type') === 'by_date_range'),
 
                         DatePicker::make('end_date')
                             ->label('End Date')
-                            ->visible(fn ($get) => $get('report_type') === 'client_shipments'),
+                            ->visible(fn ($get) => in_array($get('report_type'), ['client_shipments', 'by_date_range']))
+                            ->required(fn ($get) => $get('report_type') === 'by_date_range'),
                     ])
                     ->columns(4),
             ]);
@@ -128,6 +139,10 @@ class ShipmentReports extends Page implements HasForms
                 $data['container_sequence'] ?? null
             ),
             'by_year' => $reportService->shipmentsByYear($data['year']),
+            'by_date_range' => $reportService->shipmentsByDateRange(
+                $data['start_date'] ?? null,
+                $data['end_date'] ?? null
+            ),
             'profit_loss' => $reportService->shipmentsByContainerSequence(
                 $data['year'],
                 $data['container_sequence'] ?? null
@@ -143,12 +158,13 @@ class ShipmentReports extends Page implements HasForms
 
     public function exportPdf()
     {
-        if (!$this->reportData || $this->reportData->count() === 0) {
+        if (! $this->reportData || $this->reportData->count() === 0) {
             Notification::make()
                 ->warning()
                 ->title('No data to export')
                 ->body('Please generate a report first.')
                 ->send();
+
             return;
         }
 
@@ -158,6 +174,7 @@ class ShipmentReports extends Page implements HasForms
         $title = match ($reportType) {
             'by_container' => 'Shipments by Container Report',
             'by_year' => 'Shipments by Year Report',
+            'by_date_range' => 'Shipments by Date Range Report',
             'profit_loss' => 'Profit/Loss Report',
             'client_shipments' => 'Client Shipment History Report',
             default => 'Shipment Report'
@@ -169,9 +186,11 @@ class ShipmentReports extends Page implements HasForms
             'title' => $title,
             'year' => $data['year'] ?? null,
             'containerSequence' => $data['container_sequence'] ?? null,
+            'startDate' => $data['start_date'] ?? null,
+            'endDate' => $data['end_date'] ?? null,
         ]);
 
-        $filename = str_replace(' ', '_', strtolower($title)) . '_' . now()->format('Y-m-d') . '.pdf';
+        $filename = str_replace(' ', '_', strtolower($title)).'_'.now()->format('Y-m-d').'.pdf';
 
         return response()->streamDownload(function () use ($pdf) {
             echo $pdf->output();
@@ -180,12 +199,13 @@ class ShipmentReports extends Page implements HasForms
 
     public function exportExcel()
     {
-        if (!$this->reportData || $this->reportData->count() === 0) {
+        if (! $this->reportData || $this->reportData->count() === 0) {
             Notification::make()
                 ->warning()
                 ->title('No data to export')
                 ->body('Please generate a report first.')
                 ->send();
+
             return;
         }
 
@@ -195,12 +215,13 @@ class ShipmentReports extends Page implements HasForms
         $title = match ($reportType) {
             'by_container' => 'Shipments_by_Container',
             'by_year' => 'Shipments_by_Year',
+            'by_date_range' => 'Shipments_by_Date_Range',
             'profit_loss' => 'Profit_Loss_Report',
             'client_shipments' => 'Client_Shipment_History',
             default => 'Shipment_Report'
         };
 
-        $filename = $title . '_' . now()->format('Y-m-d') . '.xlsx';
+        $filename = $title.'_'.now()->format('Y-m-d').'.xlsx';
 
         return Excel::download(
             new ShipmentReportExport($this->reportData, $reportType),
@@ -210,12 +231,13 @@ class ShipmentReports extends Page implements HasForms
 
     public function exportWord()
     {
-        if (!$this->reportData || $this->reportData->count() === 0) {
+        if (! $this->reportData || $this->reportData->count() === 0) {
             Notification::make()
                 ->warning()
                 ->title('No data to export')
                 ->body('Please generate a report first.')
                 ->send();
+
             return;
         }
 
@@ -225,6 +247,7 @@ class ShipmentReports extends Page implements HasForms
         $title = match ($reportType) {
             'by_container' => 'Shipments by Container Report',
             'by_year' => 'Shipments by Year Report',
+            'by_date_range' => 'Shipments by Date Range Report',
             'profit_loss' => 'Profit/Loss Report',
             'client_shipments' => 'Client Shipment History Report',
             default => 'Shipment Report'
@@ -237,6 +260,8 @@ class ShipmentReports extends Page implements HasForms
             'title' => $title,
             'year' => $data['year'] ?? null,
             'containerSequence' => $data['container_sequence'] ?? null,
+            'startDate' => $data['start_date'] ?? null,
+            'endDate' => $data['end_date'] ?? null,
         ])->render();
 
         // Create Word document structure
@@ -244,7 +269,7 @@ class ShipmentReports extends Page implements HasForms
 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
 <head>
     <meta charset="utf-8">
-    <title>' . $title . '</title>
+    <title>'.$title.'</title>
     <!--[if gte mso 9]>
     <xml>
         <w:WordDocument>
@@ -255,16 +280,16 @@ class ShipmentReports extends Page implements HasForms
     </xml>
     <![endif]-->
 </head>
-<body>' . $html . '</body>
+<body>'.$html.'</body>
 </html>';
 
-        $filename = str_replace(' ', '_', strtolower($title)) . '_' . now()->format('Y-m-d') . '.doc';
+        $filename = str_replace(' ', '_', strtolower($title)).'_'.now()->format('Y-m-d').'.doc';
 
         return response()->streamDownload(function () use ($wordContent) {
             echo $wordContent;
         }, $filename, [
             'Content-Type' => 'application/vnd.ms-word',
-            'Content-Disposition' => 'attachment;filename="' . $filename . '"'
+            'Content-Disposition' => 'attachment;filename="'.$filename.'"',
         ]);
     }
 }

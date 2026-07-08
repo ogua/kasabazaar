@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1\Investment;
 
+use App\Enums\InvestmentWebhookEventStatus;
 use App\Http\Controllers\Controller;
+use App\Models\InvestmentWebhookEvent;
 use App\Service\InvestmentPaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -27,16 +29,48 @@ class InvestmentStripeWebhookController extends Controller
             return response('Bad request.', 400);
         }
 
-        if ($event->type !== 'payment_intent.succeeded') {
+        if ($event->type !== 'checkout.session.completed') {
             return response('ok');
         }
 
-        $paymentIntentId = $event->data->object->id;
+        $session = $event->data->object;
+
+        if (($session->metadata['type'] ?? '') !== 'investment_deposit') {
+            InvestmentWebhookEvent::create([
+                'gateway' => 'stripe',
+                'event_type' => $event->type,
+                'reference' => $session->id,
+                'status' => InvestmentWebhookEventStatus::ignored,
+                'payload' => $event->toArray(),
+            ]);
+
+            return response('ok');
+        }
+
+        $sessionId = $session->id;
 
         try {
-            $this->paymentService->verifyAndRecordStripe($paymentIntentId);
+            $investment = $this->paymentService->verifyAndRecordStripe($sessionId);
+
+            InvestmentWebhookEvent::create([
+                'gateway' => 'stripe',
+                'event_type' => $event->type,
+                'reference' => $sessionId,
+                'investment_id' => $investment->id,
+                'status' => InvestmentWebhookEventStatus::processed,
+                'payload' => $event->toArray(),
+            ]);
         } catch (\Throwable $e) {
-            Log::error('Investment Stripe webhook error: '.$e->getMessage(), ['payment_intent_id' => $paymentIntentId]);
+            Log::error('Investment Stripe webhook error: '.$e->getMessage(), ['session_id' => $sessionId]);
+
+            InvestmentWebhookEvent::create([
+                'gateway' => 'stripe',
+                'event_type' => $event->type,
+                'reference' => $sessionId,
+                'status' => InvestmentWebhookEventStatus::failed,
+                'error_message' => $e->getMessage(),
+                'payload' => $event->toArray(),
+            ]);
         }
 
         return response('ok');

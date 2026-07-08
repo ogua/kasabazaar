@@ -255,15 +255,18 @@ Route::prefix('v1')->group(function () {
         // ── Investor (role-specific) ────────────────────────────────────────
         Route::prefix('investor')->middleware('investor')->group(function () {
             Route::get('investments', [InvestorInvestmentController::class, 'index']);
+            Route::post('investments', [InvestorInvestmentController::class, 'store']);
             Route::get('investments/{id}', [InvestorInvestmentController::class, 'show']);
             Route::get('investments/{id}/transactions', [InvestorInvestmentController::class, 'transactions']);
             Route::get('investments/{id}/agreement', [InvestorDocumentController::class, 'agreement']);
+            Route::post('investments/{id}/verify', [InvestorInvestmentController::class, 'verify']);
 
             Route::get('withdrawal-requests', [InvestorWithdrawalRequestController::class, 'index']);
             Route::post('withdrawal-requests', [InvestorWithdrawalRequestController::class, 'store']);
             Route::get('withdrawal-requests/{id}', [InvestorWithdrawalRequestController::class, 'show']);
 
             Route::get('agreement', [InvestorDocumentController::class, 'combinedAgreement']);
+            Route::get('statement', [InvestorDocumentController::class, 'statement']);
             Route::get('statements', [InvestorDocumentController::class, 'statements']);
 
             Route::get('company-performance', [InvestorCompanyPerformanceController::class, 'index']);

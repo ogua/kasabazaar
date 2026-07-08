@@ -2,21 +2,20 @@
 
 namespace App\Service;
 
-use Carbon\Carbon;
-use App\Models\Client;
-use App\Models\Income;
-use App\Models\Expense;
-use App\Models\Shipment;
 use App\Enums\IncomeStatus;
+use App\Models\Client;
+use App\Models\Expense;
+use App\Models\Income;
 use App\Models\PayrollEntry;
-use App\Service\ExpenseService;
-use App\Service\IncomeService;
-use App\Service\PayrollService;
+use App\Models\Shipment;
+use Carbon\Carbon;
 
 class ReportService
 {
     protected ExpenseService $expenseService;
+
     protected IncomeService $incomeService;
+
     protected PayrollService $payrollService;
 
     public function __construct(
@@ -59,13 +58,31 @@ class ReportService
     }
 
     /**
+     * Generate shipments by date range report (across all clients)
+     */
+    public function shipmentsByDateRange(?string $startDate = null, ?string $endDate = null)
+    {
+        $query = Shipment::with(['client', 'receivers.items.product', 'expenses', 'payments']);
+
+        if ($startDate && $endDate) {
+            $query->whereBetween('created_at', [$startDate, Carbon::parse($endDate)->endOfDay()]);
+        } elseif ($startDate) {
+            $query->where('created_at', '>=', $startDate);
+        } elseif ($endDate) {
+            $query->where('created_at', '<=', Carbon::parse($endDate)->endOfDay());
+        }
+
+        return $query->orderBy('created_at', 'desc')->get();
+    }
+
+    /**
      * Generate shipments by container sequence report (profit/loss)
      */
     public function shipmentsByContainerSequence(int $year, ?int $sequence = null)
     {
         $yearSuffix = substr((string) $year, -2);
 
-        logger("Year Suffix: {$yearSuffix}, Sequence: " . ($sequence ?? 'null'));
+        logger("Year Suffix: {$yearSuffix}, Sequence: ".($sequence ?? 'null'));
 
         $query = Shipment::where('shipping_reference', 'like', "%-{$yearSuffix}-%")
             ->with(['client', 'receivers', 'expenses']);
@@ -90,6 +107,7 @@ class ReportService
                 $total = $clientShipments->sum('total');
                 $paid = $clientShipments->sum('paid');
                 $balance = $total - $paid;
+
                 return [
                     'name' => $client?->company_name ?? $client?->name ?? 'N/A',
                     'phone' => $client?->phone ?? '',
@@ -123,7 +141,7 @@ class ReportService
             ->with(['client', 'receivers.items.product', 'expenses.category', 'payments'])
             ->first();
 
-        if (!$shipment) {
+        if (! $shipment) {
             return ['error' => 'Shipment not found'];
         }
 

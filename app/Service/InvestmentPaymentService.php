@@ -35,22 +35,25 @@ class InvestmentPaymentService
 
     /**
      * Initiate a Paystack checkout for the investment's GHS-equivalent principal.
-     * Mirrors EcommercePaymentService::initiatePaystack().
+     * $callbackUrl is only meaningful for a browser-based caller (Filament) whose
+     * session survives the redirect round-trip — the mobile app ignores it and
+     * verifies explicitly using the returned reference once its in-app browser closes.
      */
-    public function initiatePaystack(Investment $investment, string $email): array
+    public function initiatePaystack(Investment $investment, string $email, ?string $callbackUrl = null): array
     {
         $amountPesewas = (int) round((float) $investment->principal_amount_ghs * 100);
 
         $response = Http::withToken(config('services.paystack.secret_key'))
-            ->post(config('services.paystack.payment_url').'/transaction/initialize', [
+            ->post(config('services.paystack.payment_url').'/transaction/initialize', array_filter([
                 'email' => $email,
                 'amount' => $amountPesewas,
                 'currency' => 'GHS',
+                'callback_url' => $callbackUrl,
                 'metadata' => [
                     'type' => 'investment_deposit',
                     'investment_id' => $investment->id,
                 ],
-            ]);
+            ]));
 
         if (! $response->successful() || ! $response->json('status')) {
             throw new \RuntimeException($response->json('message') ?? 'Failed to initiate Paystack payment.');
@@ -60,26 +63,37 @@ class InvestmentPaymentService
 
         return [
             'gateway' => 'paystack',
-            'authorization_url' => $response->json('data.authorization_url'),
+            'url' => $response->json('data.authorization_url'),
             'reference' => $response->json('data.reference'),
-            'access_code' => $response->json('data.access_code'),
         ];
     }
 
     /**
-     * Initiate a Stripe PaymentIntent for the investment's USD principal.
-     * Mirrors EcommercePaymentService::initiateStripe().
+     * Initiate a hosted Stripe Checkout Session for the investment's USD principal.
+     * Uses Checkout (not a raw PaymentIntent) so both Filament and the mobile app
+     * can complete payment via a plain browser redirect with no Stripe SDK needed.
      */
-    public function initiateStripe(Investment $investment, string $email): array
+    public function initiateStripe(Investment $investment, string $email, string $successUrl, string $cancelUrl): array
     {
         $stripe = new StripeClient(config('services.stripe.secret_key'));
 
         $amountCents = (int) round((float) $investment->principal_amount * 100);
 
-        $intent = $stripe->paymentIntents->create([
-            'amount' => $amountCents,
-            'currency' => 'usd',
-            'receipt_email' => $email,
+        $session = $stripe->checkout->sessions->create([
+            'mode' => 'payment',
+            'customer_email' => $email,
+            'success_url' => $successUrl,
+            'cancel_url' => $cancelUrl,
+            'line_items' => [[
+                'quantity' => 1,
+                'price_data' => [
+                    'currency' => 'usd',
+                    'unit_amount' => $amountCents,
+                    'product_data' => [
+                        'name' => "Investment — {$investment->reference}",
+                    ],
+                ],
+            ]],
             'metadata' => [
                 'type' => 'investment_deposit',
                 'investment_id' => $investment->id,
@@ -90,8 +104,8 @@ class InvestmentPaymentService
 
         return [
             'gateway' => 'stripe',
-            'client_secret' => $intent->client_secret,
-            'payment_intent_id' => $intent->id,
+            'url' => $session->url,
+            'reference' => $session->id,
         ];
     }
 
@@ -116,23 +130,23 @@ class InvestmentPaymentService
         return $this->markPaid($investment, 'paystack', $reference);
     }
 
-    public function verifyAndRecordStripe(string $paymentIntentId): Investment
+    public function verifyAndRecordStripe(string $sessionId): Investment
     {
         $stripe = new StripeClient(config('services.stripe.secret_key'));
-        $intent = $stripe->paymentIntents->retrieve($paymentIntentId);
+        $session = $stripe->checkout->sessions->retrieve($sessionId);
 
-        if ($intent->status !== 'succeeded') {
-            throw new \RuntimeException('Stripe payment not yet succeeded.');
+        if ($session->payment_status !== 'paid') {
+            throw new \RuntimeException('Stripe payment not yet completed.');
         }
 
-        $investmentId = $intent->metadata['investment_id'] ?? null;
+        $investmentId = $session->metadata['investment_id'] ?? null;
         $investment = Investment::findOrFail($investmentId);
 
         if ($investment->status === InvestmentStatus::active) {
             return $investment;
         }
 
-        return $this->markPaid($investment, 'stripe', $paymentIntentId);
+        return $this->markPaid($investment, 'stripe', $sessionId);
     }
 
     private function markPaid(Investment $investment, string $gateway, string $reference): Investment

@@ -63,4 +63,21 @@ class InvestorPanelScopingTest extends TestCase
         // Already authenticated for the investor panel guard, so login page redirects to dashboard.
         $response->assertStatus(302);
     }
+
+    public function test_inactive_investor_is_blocked_from_the_portal(): void
+    {
+        $investor = Investor::create(['name' => 'Inactive Portal Investor', 'status' => 'inactive']);
+
+        $user = User::create([
+            'name' => 'Inactive Portal User',
+            'email' => 'investor-inactive-portal-'.uniqid().'@example.com',
+            'password' => bcrypt('password'),
+            'investor_id' => $investor->id,
+            'status' => 'active',
+        ]);
+
+        $response = $this->actingAs($user)->get('/investor/investments');
+
+        $response->assertStatus(403);
+    }
 }

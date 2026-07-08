@@ -4,19 +4,21 @@ namespace App\Exports;
 
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\WithStyles;
-use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class ShipmentReportExport implements FromCollection, WithHeadings, WithMapping, WithTitle, WithStyles, WithEvents
+class ShipmentReportExport implements FromCollection, WithEvents, WithHeadings, WithMapping, WithStyles, WithTitle
 {
     protected Collection $data;
+
     protected string $reportType;
+
     protected array $containerRowNumbers = [];
 
     public function __construct(Collection $data, string $reportType)
@@ -39,13 +41,14 @@ class ShipmentReportExport implements FromCollection, WithHeadings, WithMapping,
                 $rows->push(array_merge(['_type' => 'client'], $client));
             }
         }
+
         return $rows;
     }
 
     public function headings(): array
     {
         return match ($this->reportType) {
-            'by_container', 'by_year' => [
+            'by_container', 'by_year', 'by_date_range', 'client_shipments' => [
                 'Reference',
                 'Client',
                 'Client Phone',
@@ -54,7 +57,7 @@ class ShipmentReportExport implements FromCollection, WithHeadings, WithMapping,
                 'Items',
                 'Status',
                 'Total (USD)',
-                'Date'
+                'Date',
             ],
             'profit_loss' => [
                 'Container',
@@ -73,7 +76,7 @@ class ShipmentReportExport implements FromCollection, WithHeadings, WithMapping,
     public function map($row): array
     {
         return match ($this->reportType) {
-            'by_container', 'by_year' => $this->mapShipmentRow($row),
+            'by_container', 'by_year', 'by_date_range', 'client_shipments' => $this->mapShipmentRow($row),
             'profit_loss' => $this->mapProfitLossRow($row),
             default => [$row]
         };
@@ -82,15 +85,15 @@ class ShipmentReportExport implements FromCollection, WithHeadings, WithMapping,
     protected function mapShipmentRow($shipment): array
     {
         $receivers = $shipment->receivers ?? collect();
-        $receiverNames = $receivers->map(fn($r) => $r->receiver_name ?: 'SELF')->join(', ');
-        $locations = $receivers->map(fn($r) => $r->city ?? $r->address ?? 'N/A')->unique()->join(', ');
+        $receiverNames = $receivers->map(fn ($r) => $r->receiver_name ?: 'SELF')->join(', ');
+        $locations = $receivers->map(fn ($r) => $r->city ?? $r->address ?? 'N/A')->unique()->join(', ');
 
         $allItems = [];
         foreach ($receivers as $receiver) {
             foreach ($receiver->items ?? [] as $item) {
                 $itemName = $item->product?->name ?? $item->description ?? 'N/A';
                 $qty = $item->quantity > 1 ? " ({$item->quantity})" : '';
-                $allItems[] = $itemName . $qty;
+                $allItems[] = $itemName.$qty;
             }
         }
         $itemsList = implode(', ', $allItems);
@@ -104,7 +107,7 @@ class ShipmentReportExport implements FromCollection, WithHeadings, WithMapping,
             $itemsList ?: 'No items',
             $shipment->status?->getLabel() ?? 'Unknown',
             $shipment->total ?? 0,
-            $shipment->created_at?->format('Y-m-d') ?? 'N/A'
+            $shipment->created_at?->format('Y-m-d') ?? 'N/A',
         ];
     }
 
@@ -136,7 +139,7 @@ class ShipmentReportExport implements FromCollection, WithHeadings, WithMapping,
             $revenue,
             $expenses,
             $profit,
-            $margin . '%',
+            $margin.'%',
         ];
     }
 
@@ -145,6 +148,8 @@ class ShipmentReportExport implements FromCollection, WithHeadings, WithMapping,
         return match ($this->reportType) {
             'by_container' => 'Shipments by Container',
             'by_year' => 'Shipments by Year',
+            'by_date_range' => 'Shipments by Date Range',
+            'client_shipments' => 'Client Shipment History',
             'profit_loss' => 'Profit Loss Report',
             default => 'Report'
         };
@@ -172,7 +177,7 @@ class ShipmentReportExport implements FromCollection, WithHeadings, WithMapping,
                 for ($row = 2; $row <= $highestRow; $row++) {
                     $cellA = $sheet->getCell("A{$row}")->getValue();
 
-                    if (!empty($cellA)) {
+                    if (! empty($cellA)) {
                         // Container summary row — gray background, bold
                         $sheet->getStyle("A{$row}:H{$row}")->applyFromArray([
                             'font' => ['bold' => true],
@@ -184,7 +189,7 @@ class ShipmentReportExport implements FromCollection, WithHeadings, WithMapping,
                     } else {
                         // Client row — check status in column H
                         $status = strtolower($sheet->getCell("H{$row}")->getValue());
-                        $color = match($status) {
+                        $color = match ($status) {
                             'paid' => '006400',
                             'partial' => 'B8860B',
                             default => 'CC0000',

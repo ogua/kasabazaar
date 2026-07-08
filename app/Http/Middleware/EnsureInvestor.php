@@ -19,6 +19,13 @@ class EnsureInvestor
             ], 403);
         }
 
+        if ($user->investor?->status !== 'active') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Your investor account is currently inactive. Please contact us for assistance.',
+            ], 403);
+        }
+
         return $next($request);
     }
 }

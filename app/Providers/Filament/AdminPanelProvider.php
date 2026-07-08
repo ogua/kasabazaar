@@ -3,6 +3,7 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\RegisterBranch;
+use App\Http\Middleware\RedirectToInvestorPanel;
 use App\Models\Branch;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -74,6 +75,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                RedirectToInvestorPanel::class,
             ])
             ->tenantMiddleware([
                 \BezhanSalleh\FilamentShield\Middleware\SyncShieldTenant::class,

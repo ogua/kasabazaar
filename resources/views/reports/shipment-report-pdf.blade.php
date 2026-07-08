@@ -130,10 +130,14 @@
         @if (isset($year))
             <p>Year: {{ $year }}</p>
         @endif
+        @if (!empty($startDate) || !empty($endDate))
+            <p>Period: {{ $startDate ? \Carbon\Carbon::parse($startDate)->format('M d, Y') : 'Start' }}
+                &mdash; {{ $endDate ? \Carbon\Carbon::parse($endDate)->format('M d, Y') : 'Present' }}</p>
+        @endif
         <p>Generated: {{ now()->format('M d, Y H:i:s') }}</p>
     </div>
 
-    @if ($reportType === 'by_container' || $reportType === 'by_year')
+    @if ($reportType === 'by_container' || $reportType === 'by_year' || $reportType === 'by_date_range' || $reportType === 'client_shipments')
         {{-- Container/Year Report --}}
         @foreach ($data as $shipment)
             <div class="shipment-block">

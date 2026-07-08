@@ -5,6 +5,7 @@ namespace App\Filament\Investor\Resources;
 use App\Filament\Investor\Resources\InvestmentResource\Pages;
 use App\Filament\Investor\Resources\InvestmentResource\RelationManagers\TransactionsRelationManager;
 use App\Models\Investment;
+use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -41,6 +42,11 @@ class InvestmentResource extends Resource
         return $record->investor_id === auth()->user()->investor_id;
     }
 
+    public static function canCreate(): bool
+    {
+        return filled(auth()->user()?->investor_id);
+    }
+
     public static function getNavigationBadge(): ?string
     {
         return (string) static::getModel()::where('investor_id', auth()->user()->investor_id)
@@ -50,7 +56,30 @@ class InvestmentResource extends Resource
 
     public static function form(Form $form): Form
     {
-        return $form->schema([]);
+        return $form
+            ->schema([
+                Forms\Components\Section::make('New Investment')
+                    ->description('Choose an amount and a payment method. You\'ll be taken to a secure checkout to complete the deposit — your investment activates automatically once payment is confirmed.')
+                    ->schema([
+                        Forms\Components\TextInput::make('principal_amount')
+                            ->label('Amount to Invest')
+                            ->numeric()
+                            ->prefix('USD')
+                            ->minValue(0.01)
+                            ->required(),
+
+                        Forms\Components\Select::make('deposit_gateway')
+                            ->label('Payment Method')
+                            ->options([
+                                'paystack' => 'Paystack (Mobile Money / Ghana Card / Bank)',
+                                'stripe' => 'Stripe (Card, International)',
+                            ])
+                            ->default('paystack')
+                            ->required(),
+                    ])
+                    ->columns(1)
+                    ->visible(fn (?Investment $record) => $record === null),
+            ]);
     }
 
     public static function table(Table $table): Table
@@ -82,6 +111,7 @@ class InvestmentResource extends Resource
                     ->label('Agreement')
                     ->icon('heroicon-o-document-text')
                     ->color('gray')
+                    ->visible(fn (Investment $record) => $record->status->value === 'active')
                     ->url(fn (Investment $record) => URL::temporarySignedRoute('investment-agreement', now()->addDay(), $record))
                     ->openUrlInNewTab(),
             ])
@@ -99,6 +129,7 @@ class InvestmentResource extends Resource
     {
         return [
             'index' => Pages\ListInvestments::route('/'),
+            'create' => Pages\CreateInvestment::route('/create'),
             'view' => Pages\ViewInvestment::route('/{record}'),
         ];
     }

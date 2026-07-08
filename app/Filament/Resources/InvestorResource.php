@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\URL;
 
 class InvestorResource extends Resource
 {
@@ -141,6 +142,13 @@ class InvestorResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+
+                Tables\Actions\Action::make('downloadStatement')
+                    ->label('Download Statement')
+                    ->icon('heroicon-o-document-text')
+                    ->color('gray')
+                    ->url(fn (Investor $record) => URL::temporarySignedRoute('investment-account-statement', now()->addDay(), $record))
+                    ->openUrlInNewTab(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

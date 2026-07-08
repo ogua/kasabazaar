@@ -57,7 +57,7 @@
                     Report Results
                 </x-slot>
 
-                @if($this->report_type === 'by_container' || $this->report_type === 'client_shipments')
+                @if($this->report_type === 'by_container' || $this->report_type === 'client_shipments' || $this->report_type === 'by_date_range')
                     {{-- PDF-Style Container Report --}}
                     <div class="space-y-6">
                         @foreach($this->reportData as $shipment)

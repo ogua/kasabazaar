@@ -11,6 +11,7 @@ use App\Models\Investment;
 use App\Service\InvestmentInterestService;
 use App\Service\InvestmentPaymentService;
 use Carbon\Carbon;
+use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -132,6 +133,15 @@ class InvestmentResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->badge(),
 
+                Tables\Columns\TextColumn::make('created_at')
+                    ->label('Age')
+                    ->since()
+                    ->color(fn (Investment $record) => self::isStuckPendingPayment($record) ? 'danger' : null)
+                    ->tooltip(fn (Investment $record) => self::isStuckPendingPayment($record)
+                        ? 'Stuck: checkout started but no payment webhook was ever recorded. Check Webhook Events or resend the payment link.'
+                        : null)
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('deposit_gateway')
                     ->label('Deposit Via')
                     ->badge()
@@ -153,6 +163,12 @@ class InvestmentResource extends Resource
                         'withdrawn' => 'Withdrawn',
                         'closed' => 'Closed',
                     ]),
+
+                Tables\Filters\Filter::make('stuck_pending_payment')
+                    ->label('Stuck (pending payment)')
+                    ->query(fn ($query) => $query
+                        ->where('status', InvestmentStatus::pending_payment->value)
+                        ->where('created_at', '<', now()->subHours(config('investment.stuck_pending_payment_hours')))),
             ])
             ->actions([
                 Action::make('generatePaymentLink')
@@ -160,17 +176,27 @@ class InvestmentResource extends Resource
                     ->icon('heroicon-o-link')
                     ->color('warning')
                     ->visible(fn (Investment $record) => $record->status === InvestmentStatus::pending_payment
-                        && $record->deposit_gateway === 'paystack')
+                        && in_array($record->deposit_gateway, ['paystack', 'stripe']))
                     ->action(function (Investment $record) {
                         try {
-                            $result = app(InvestmentPaymentService::class)->initiatePaystack(
-                                $record,
-                                $record->investor->email ?? config('mail.from.address')
-                            );
+                            $email = $record->investor->email ?? config('mail.from.address');
+                            $service = app(InvestmentPaymentService::class);
+
+                            $viewUrl = route('filament.admin.resources.investments.view', [
+                                'tenant' => Filament::getTenant(),
+                                'record' => $record,
+                            ]);
+                            $indexUrl = route('filament.admin.resources.investments.index', [
+                                'tenant' => Filament::getTenant(),
+                            ]);
+
+                            $result = $record->deposit_gateway === 'stripe'
+                                ? $service->initiateStripe($record, $email, $viewUrl, $indexUrl)
+                                : $service->initiatePaystack($record, $email, $viewUrl);
 
                             Notification::make()
                                 ->title('Payment link generated')
-                                ->body($result['authorization_url'])
+                                ->body($result['url'])
                                 ->success()
                                 ->persistent()
                                 ->send();
@@ -268,6 +294,12 @@ class InvestmentResource extends Resource
             TransactionsRelationManager::class,
             RateOverridesRelationManager::class,
         ];
+    }
+
+    private static function isStuckPendingPayment(Investment $record): bool
+    {
+        return $record->status === InvestmentStatus::pending_payment
+            && $record->created_at->lt(now()->subHours(config('investment.stuck_pending_payment_hours')));
     }
 
     public static function getPages(): array

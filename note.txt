@@ -1,1 +1,16 @@
 ssh -p 65002 u681407738@46.202.199.203
+
+Investers
+
+name:
+
+invested: 40,000
+Profit return: 6 months.
+
+Investment :
+
+contract: date, expiry
+
+
+accountant calculate n input their return 
+in the first 6month or 1yr

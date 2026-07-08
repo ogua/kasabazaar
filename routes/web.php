@@ -91,6 +91,12 @@ Route::middleware('signed')->group(function () {
 
     Route::get('/investment-statement/{statement}/download', [InvestmentController::class, 'annualStatementDownload'])
         ->name('investment-annual-statement-download');
+
+    Route::get('/investor/{investor}/investment-account-statement', [InvestmentController::class, 'accountStatement'])
+        ->name('investment-account-statement');
+
+    Route::get('/investor/{investor}/investment-account-statement/download', [InvestmentController::class, 'accountStatementDownload'])
+        ->name('investment-account-statement-download');
 });
 
 Route::get('/make-payment/{record}', DisclaimerForm::class)

@@ -4,128 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <title>Investment Agreement - {{ $investor->name }}</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'DejaVu Sans', Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.5;
-            color: #222;
-        }
-
-        .container {
-            padding: 20px;
-        }
-
-        .header {
-            text-align: center;
-            border-bottom: 3px solid #A0043C;
-            padding-bottom: 12px;
-            margin-bottom: 20px;
-        }
-
-        .header .company-name {
-            font-size: 18px;
-            font-weight: bold;
-            color: #A0043C;
-        }
-
-        .header .doc-title {
-            font-size: 14px;
-            margin-top: 4px;
-            color: #333;
-        }
-
-        .section {
-            margin-bottom: 16px;
-        }
-
-        .section h2 {
-            font-size: 13px;
-            color: #A0043C;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 4px;
-            margin-bottom: 8px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 8px;
-        }
-
-        th, td {
-            border: 1px solid #ddd;
-            padding: 6px 8px;
-            text-align: left;
-        }
-
-        th {
-            background: #f3f4f6;
-        }
-
-        .text-right {
-            text-align: right;
-        }
-
-        .valuation-box {
-            background: #fdf2f6;
-            border: 1px solid #A0043C;
-            border-radius: 6px;
-            padding: 12px;
-            margin: 12px 0;
-        }
-
-        .valuation-box .row {
-            display: table;
-            width: 100%;
-            padding: 3px 0;
-        }
-
-        .valuation-box .label {
-            display: table-cell;
-            width: 60%;
-        }
-
-        .valuation-box .value {
-            display: table-cell;
-            width: 40%;
-            text-align: right;
-            font-weight: bold;
-        }
-
-        .signature-block {
-            display: table;
-            width: 100%;
-            margin-top: 40px;
-        }
-
-        .signature-column {
-            display: table-cell;
-            width: 50%;
-            vertical-align: top;
-        }
-
-        .signature-line {
-            border-top: 1px solid #333;
-            margin-top: 40px;
-            padding-top: 4px;
-            width: 90%;
-        }
-    </style>
 </head>
 
 <body>
     <div class="container">
-        <div class="header">
-            <div class="company-name">KasaBazaar LLC d/b/a Rose Door to Door Shipping &amp; Delivery Services</div>
-            <div class="doc-title">Investment Agreement — {{ $investor->name }}</div>
-        </div>
+        @include('pdf.partials.investment-pdf-header', [
+            'docTitle' => 'Investment Agreement',
+            'docSubtitle' => $investor->name,
+        ])
 
         <div class="section">
             <p>This Investment Agreement ("Agreement") is entered into between KasaBazaar LLC d/b/a Rose Door to Door

@@ -7,6 +7,7 @@ use App\Models\InvestmentAnnualStatement;
 use App\Models\Investor;
 use App\Service\AnnualInvestmentStatementService;
 use App\Service\InvestmentAgreementService;
+use App\Service\InvestmentStatementService;
 
 class InvestmentController extends Controller
 {
@@ -33,5 +34,15 @@ class InvestmentController extends Controller
     public function annualStatementDownload(InvestmentAnnualStatement $statement)
     {
         return AnnualInvestmentStatementService::downloadPdf($statement);
+    }
+
+    public function accountStatement(Investor $investor)
+    {
+        return InvestmentStatementService::streamPdf($investor);
+    }
+
+    public function accountStatementDownload(Investor $investor)
+    {
+        return InvestmentStatementService::downloadPdf($investor);
     }
 }
