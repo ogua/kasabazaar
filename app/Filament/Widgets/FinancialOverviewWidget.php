@@ -2,26 +2,28 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Income;
-use App\Models\Expense;
-use App\Models\Payment;
-use App\Models\Shipment;
 use App\Enums\IncomeStatus;
-use Livewire\Attributes\On;
+use App\Models\Expense;
+use App\Models\Income;
+use App\Models\Payment;
 use App\Models\PayrollEntry;
-use App\Enums\PayrollEntryStatus;
-use Illuminate\Support\Facades\DB;
+use App\Models\Shipment;
 use App\Service\ExchangeRateService;
-use Filament\Widgets\StatsOverviewWidget\Stat;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
+use Filament\Widgets\StatsOverviewWidget\Stat;
+use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\On;
 
 class FinancialOverviewWidget extends BaseWidget
 {
     protected static ?int $sort = 1;
-    protected int | string | array $columnSpan = 'full';
+
+    protected int|string|array $columnSpan = 'full';
 
     public ?string $startDate = null;
+
     public ?string $endDate = null;
+
     public ?string $containerNumber = null;
 
     public function mount(): void
@@ -80,6 +82,7 @@ class FinancialOverviewWidget extends BaseWidget
                 return $payment->amount_ghs;
             }
             $usd = $payment->amount_usd ?? $payment->amount ?? 0;
+
             return $usd * $currentRate;
         });
 
@@ -113,7 +116,7 @@ class FinancialOverviewWidget extends BaseWidget
 
         // 4. Payroll (always date-based; not tied to containers)
         $payrollQuery = PayrollEntry::query();
-        if (!$byContainer) {
+        if (! $byContainer) {
             $payrollQuery->whereHas('payrollPeriod', function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('pay_date', [$startDate, $endDate]);
             });
@@ -128,7 +131,7 @@ class FinancialOverviewWidget extends BaseWidget
 
         // 5. Unpaid Shipments (scoped to container if selected)
         $unpaidQuery = DB::table('shipments')
-            ->leftJoin('payments', function($join) {
+            ->leftJoin('payments', function ($join) {
                 $join->on('payments.shipment_id', '=', 'shipments.id')
                     ->where('payments.payment_type', '=', 'credit');
             })
@@ -154,44 +157,44 @@ class FinancialOverviewWidget extends BaseWidget
 
         // Labels
         if ($byContainer) {
-            $periodLabel = '(CON' . $containerNumber . ')';
+            $periodLabel = '(CON'.$containerNumber.')';
         } else {
             $days = \Carbon\Carbon::parse($startDate)->diffInDays(\Carbon\Carbon::parse($endDate)) + 1;
-            $periodLabel = $days <= 31 ? "({$days} days)" : "(" . round($days / 30, 1) . " months)";
+            $periodLabel = $days <= 31 ? "({$days} days)" : '('.round($days / 30, 1).' months)';
         }
 
         return [
-            Stat::make('Total Income ' . $periodLabel, '$' . number_format($totalIncomeUsd, 2))
-                ->description("Shipment Payments: $" . number_format($shipmentIncomeUsd, 2) . " | External: $" . number_format($externalIncomeUsd, 2))
+            Stat::make('Total Income '.$periodLabel, '$'.number_format($totalIncomeUsd, 2))
+                ->description('Shipment Payments: $'.number_format($shipmentIncomeUsd, 2).' | External: $'.number_format($externalIncomeUsd, 2))
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color('success')
                 ->chart($byContainer ? [] : $this->getIncomeChart($startDate, $endDate)),
 
-            Stat::make('Total Costs ' . $periodLabel, '$' . number_format($totalCostsUsd, 2))
-                ->description("Expenses: $" . number_format($currentRate > 0 ? $totalExpenses / $currentRate : 0, 2) . ($byContainer ? '' : " | Payroll: $" . number_format($currentRate > 0 ? $totalPayroll / $currentRate : 0, 2)))
+            Stat::make('Total Costs '.$periodLabel, '$'.number_format($totalCostsUsd, 2))
+                ->description('Expenses: $'.number_format($currentRate > 0 ? $totalExpenses / $currentRate : 0, 2).($byContainer ? '' : ' | Payroll: $'.number_format($currentRate > 0 ? $totalPayroll / $currentRate : 0, 2)))
                 ->descriptionIcon('heroicon-m-currency-dollar')
                 ->color('danger')
                 ->chart($byContainer ? [] : $this->getCostChart($startDate, $endDate)),
 
-            Stat::make('Net Profit/Loss ' . $periodLabel, '$' . number_format($netProfitUsd, 2))
+            Stat::make('Net Profit/Loss '.$periodLabel, '$'.number_format($netProfitUsd, 2))
                 ->description(
                     $netProfitUsd >= 0
-                        ? 'Profitable: ' . number_format(($netProfitUsd / ($totalIncomeUsd ?: 1)) * 100, 1) . '% margin'
-                        : 'Loss: $' . number_format(abs($netProfitUsd), 2)
+                        ? 'Profitable: '.number_format(($netProfitUsd / ($totalIncomeUsd ?: 1)) * 100, 1).'% margin'
+                        : 'Loss: $'.number_format(abs($netProfitUsd), 2)
                 )
                 ->descriptionIcon($netProfit >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($netProfit >= 0 ? 'success' : 'danger'),
 
             Stat::make('Unpaid Shipments', $unpaidShipments)
-                ->description('Outstanding: $' . number_format($unpaidAmountUsd, 2))
+                ->description('Outstanding: $'.number_format($unpaidAmountUsd, 2))
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
-                ->color($unpaidShipments > 0 ? 'warning' : 'success')
-                ->url(route('filament.admin.resources.shipments.index', [
-                    'tenant' => \Filament\Facades\Filament::getTenant(),
-                    'tableFilters' => ['payment_status' => ['value' => 'unpaid']]
-                ])),
+                ->color($unpaidShipments > 0 ? 'warning' : 'success'),
+            // ->url(route('filament.admin.resources.shipments.index', [
+            //     'tenant' => \Filament\Facades\Filament::getTenant(),
+            //     'tableFilters' => ['payment_status' => ['value' => 'unpaid']]
+            // ])),
 
-            Stat::make('Current Exchange Rate', '$1 = ₵' . number_format($currentRate, 2))
+            Stat::make('Current Exchange Rate', '$1 = ₵'.number_format($currentRate, 2))
                 ->description('USD to GHS conversion rate')
                 ->descriptionIcon('heroicon-m-currency-dollar')
                 ->color('info'),
@@ -226,6 +229,7 @@ class FinancialOverviewWidget extends BaseWidget
                     return $payment->amount_ghs;
                 }
                 $usd = $payment->amount_usd ?? $payment->amount ?? 0;
+
                 return $usd * $exchangeService->getCurrentRate('USD', 'GHS');
             });
 
@@ -236,6 +240,7 @@ class FinancialOverviewWidget extends BaseWidget
 
             $data[] = $shipmentIncomeGhs + $externalIncome;
         }
+
         return $data;
     }
 
@@ -262,6 +267,7 @@ class FinancialOverviewWidget extends BaseWidget
             })->sum('net_salary');
             $data[] = $expenses + $payroll;
         }
+
         return $data;
     }
 }

@@ -79,13 +79,15 @@ class PaymentResource extends Resource
                 Forms\Components\Section::make('Amount & Exchange Rate')
                     ->schema([
                         Forms\Components\Select::make('currency')
-                            ->label('Currency')
+                            ->label('Currency Received')
                             ->options([
                                 'USD' => 'USD - US Dollar',
                                 'GHS' => 'GHS - Ghana Cedis',
                             ])
                             ->default('USD')
                             ->required()
+                            ->live()
+                            ->helperText('Choose the currency the client actually paid in. The other amount below is calculated automatically from the exchange rate.')
                             ->native(false),
 
                         Forms\Components\TextInput::make('amount_usd')
@@ -93,17 +95,22 @@ class PaymentResource extends Resource
                             ->numeric()
                             ->prefix('$')
                             ->live(onBlur: true)
+                            ->disabled(fn (callable $get) => $get('currency') === 'GHS')
+                            ->dehydrated()
                             ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                if ($get('currency') === 'GHS') {
+                                    return;
+                                }
                                 $exchangeRate = (float) ($get('exchange_rate') ?? 0);
                                 if ($state && $exchangeRate > 0) {
                                     $set('amount_ghs', round($state * $exchangeRate, 2));
                                 }
                                 $set('amount', $state);
                             })
-                            ->required(),
+                            ->required(fn (callable $get) => $get('currency') !== 'GHS'),
 
                         Forms\Components\TextInput::make('exchange_rate')
-                            ->label('Exchange Rate (USD to GHS)')
+                            ->label('Exchange Rate (1 USD = ? GHS)')
                             ->numeric()
                             ->default(function () {
                                 try {
@@ -116,22 +123,56 @@ class PaymentResource extends Resource
                             })
                             ->live(onBlur: true)
                             ->afterStateUpdated(function ($state, callable $set, callable $get) {
-                                $amountUsd = (float) ($get('amount_usd') ?? 0);
-                                if ($amountUsd && $state) {
-                                    $set('amount_ghs', round($amountUsd * $state, 2));
+                                $rate = (float) $state;
+                                if (! $rate) {
+                                    return;
+                                }
+
+                                if ($get('currency') === 'GHS') {
+                                    $amountGhs = (float) ($get('amount_ghs') ?? 0);
+                                    if ($amountGhs) {
+                                        $usd = round($amountGhs / $rate, 2);
+                                        $set('amount_usd', $usd);
+                                        $set('amount', $usd);
+                                    }
+                                } else {
+                                    $amountUsd = (float) ($get('amount_usd') ?? 0);
+                                    if ($amountUsd) {
+                                        $set('amount_ghs', round($amountUsd * $rate, 2));
+                                    }
                                 }
                             })
-                            ->helperText('Current exchange rate')
+                            ->helperText('Editable — this defaults to the last synced daily rate, but always confirm it against the actual bank/market rate before saving.')
                             ->suffix('GHS per USD')
                             ->required(),
+
+                        Forms\Components\Placeholder::make('exchange_rate_warning')
+                            ->label('')
+                            ->content('⚠️ Please cross-check the exchange rate above against the current bank/market rate before saving. It determines the USD amount recorded against the client\'s balance — an incorrect rate will misstate what the client owes.')
+                            ->columnSpanFull(),
 
                         Forms\Components\TextInput::make('amount_ghs')
                             ->label('Amount (GHS)')
                             ->numeric()
                             ->prefix('GH₵')
-                            ->disabled()
+                            ->live(onBlur: true)
+                            ->disabled(fn (callable $get) => $get('currency') !== 'GHS')
                             ->dehydrated()
-                            ->helperText('Calculated automatically'),
+                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                if ($get('currency') !== 'GHS') {
+                                    return;
+                                }
+                                $exchangeRate = (float) ($get('exchange_rate') ?? 0);
+                                if ($state && $exchangeRate > 0) {
+                                    $usd = round($state / $exchangeRate, 2);
+                                    $set('amount_usd', $usd);
+                                    $set('amount', $usd);
+                                }
+                            })
+                            ->required(fn (callable $get) => $get('currency') === 'GHS')
+                            ->helperText(fn (callable $get) => $get('currency') === 'GHS'
+                                ? 'Enter the amount actually received in Ghana Cedis.'
+                                : 'Calculated automatically from the USD amount.'),
 
                         Forms\Components\Hidden::make('amount')
                             ->default(fn ($get) => $get('amount_usd')),

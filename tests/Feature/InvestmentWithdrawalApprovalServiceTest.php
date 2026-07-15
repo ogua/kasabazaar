@@ -97,4 +97,46 @@ class InvestmentWithdrawalApprovalServiceTest extends TestCase
         $this->assertEquals(0.0, (float) $investment->fresh()->current_balance);
         $this->assertGreaterThan(15000, (float) $request->amount_paid);
     }
+
+    public function test_withdrawal_request_is_rejected_before_the_contract_is_due(): void
+    {
+        $investor = Investor::create(['name' => 'Premature Withdrawal Investor', 'status' => 'active']);
+        $service = app(InvestmentWithdrawalApprovalService::class);
+
+        $investment = Investment::create([
+            'investor_id' => $investor->id,
+            'principal_amount' => 20000,
+            'current_balance' => 20000,
+            'start_date' => now()->subMonths(3), // 12-month default term: 9 months remain
+            'status' => 'active',
+        ]);
+
+        $this->assertFalse($investment->isContractDue());
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('contract is not yet due');
+
+        $service->submit($investment, ['is_full_withdrawal' => true]);
+    }
+
+    public function test_withdrawal_request_is_allowed_once_a_shorter_contract_term_matures(): void
+    {
+        $investor = Investor::create(['name' => 'Short Term Investor', 'status' => 'active']);
+        $service = app(InvestmentWithdrawalApprovalService::class);
+
+        $investment = Investment::create([
+            'investor_id' => $investor->id,
+            'principal_amount' => 20000,
+            'current_balance' => 20000,
+            'start_date' => now()->subMonths(7),
+            'contract_term_months' => 6,
+            'status' => 'active',
+        ]);
+
+        $this->assertTrue($investment->isContractDue());
+
+        $request = $service->submit($investment, ['is_full_withdrawal' => false, 'requested_amount' => 6000]);
+
+        $this->assertSame('submitted', $request->status->value);
+    }
 }

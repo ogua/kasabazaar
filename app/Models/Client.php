@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Client extends Model
 {
@@ -20,6 +21,11 @@ class Client extends Model
         return $this->belongsTo(Branch::class);
     }
 
+    public function shipments(): HasMany
+    {
+        return $this->hasMany(Shipment::class, 'client_id');
+    }
+
     public function users(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -27,17 +33,16 @@ class Client extends Model
 
     public function mcity(): BelongsTo
     {
-        return $this->belongsTo(City::class,"city");
+        return $this->belongsTo(City::class, 'city');
     }
 
     public function mstate(): BelongsTo
     {
-        return $this->belongsTo(State::class,"state_region");
+        return $this->belongsTo(State::class, 'state_region');
     }
-
 
     public function mcountry(): BelongsTo
     {
-        return $this->belongsTo(Country::class,"country");
+        return $this->belongsTo(Country::class, 'country');
     }
 }

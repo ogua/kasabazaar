@@ -127,6 +127,38 @@ class InvestorApiTest extends TestCase
         $this->assertEquals(6000, $response->json('data.requested_amount'));
     }
 
+    public function test_withdrawal_request_via_api_is_rejected_before_contract_is_due(): void
+    {
+        $investor = Investor::create(['name' => 'API Premature Withdrawal Investor', 'status' => 'active']);
+
+        $investment = Investment::create([
+            'investor_id' => $investor->id,
+            'principal_amount' => 20000,
+            'current_balance' => 20000,
+            'start_date' => now(),
+            'status' => 'active',
+        ]);
+
+        $user = User::create([
+            'name' => 'API Premature Withdrawal User',
+            'email' => 'investor-wd-early-'.uniqid().'@example.com',
+            'password' => bcrypt('password'),
+            'investor_id' => $investor->id,
+            'status' => 'active',
+        ]);
+
+        $token = $user->createToken('test')->plainTextToken;
+
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/investor/withdrawal-requests', [
+                'investment_id' => $investment->id,
+                'is_full_withdrawal' => true,
+            ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonFragment(['message' => "This investment's contract is not yet due. Withdrawal requests can be submitted starting {$investment->maturity_date->format('F j, Y')}."]);
+    }
+
     public function test_investor_can_self_serve_invest_via_paystack_checkout(): void
     {
         $investor = Investor::create(['name' => 'Self Serve Investor', 'status' => 'active', 'email' => 'selfserve@example.com']);

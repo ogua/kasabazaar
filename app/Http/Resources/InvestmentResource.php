@@ -19,6 +19,9 @@ class InvestmentResource extends JsonResource
             'status_label' => $this->status->getLabel(),
             'deposit_gateway' => $this->deposit_gateway,
             'start_date' => $this->start_date?->toDateString(),
+            'contract_term_months' => $this->contract_term_months,
+            'maturity_date' => $this->maturity_date?->toDateString(),
+            'is_contract_due' => $this->isContractDue(),
             'last_interest_posted_year' => $this->last_interest_posted_year,
             'created_at' => $this->created_at,
         ];

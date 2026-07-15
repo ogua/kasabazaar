@@ -2,6 +2,11 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Investor\Widgets\ContainerProfiInvestortWidget;
+use App\Filament\Widgets\ClientGrowthChart;
+use App\Filament\Widgets\FinancialOverviewWidget;
+use App\Filament\Widgets\ShipmentsByContainerChart;
+use App\Filament\Widgets\TopStatesWidget;
 use App\Http\Middleware\RedirectToAdminPanel;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -46,6 +51,12 @@ class InvestorPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Investor/Widgets'), for: 'App\\Filament\\Investor\\Widgets')
             ->widgets([
                 Widgets\AccountWidget::class,
+                FinancialOverviewWidget::class,
+                ContainerProfiInvestortWidget::class,
+                TopStatesWidget::class,
+                ShipmentsByContainerChart::class,
+                ClientGrowthChart::class,
+
             ])
             ->viteTheme('resources/css/filament/investor/theme.css')
             ->plugins([

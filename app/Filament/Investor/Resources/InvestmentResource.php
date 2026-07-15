@@ -103,6 +103,15 @@ class InvestmentResource extends Resource
                 Tables\Columns\TextColumn::make('start_date')
                     ->date('M d, Y')
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('maturity_date')
+                    ->label('Contract Due')
+                    ->date('M d, Y')
+                    ->color(fn (Investment $record) => $record->isContractDue() ? 'success' : 'gray')
+                    ->tooltip(fn (Investment $record) => $record->isContractDue()
+                        ? 'Your contract has matured — you may request a withdrawal.'
+                        : 'Withdrawal requests open once your contract term ends.')
+                    ->sortable(),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),

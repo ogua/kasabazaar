@@ -61,6 +61,17 @@ class InvestmentResource extends Resource
                             ->required()
                             ->default(now())
                             ->disabled(fn (?Investment $record) => $record !== null),
+
+                        Forms\Components\Select::make('contract_term_months')
+                            ->label('Contract Term')
+                            ->options([
+                                6 => '6 Months',
+                                12 => '1 Year',
+                            ])
+                            ->default(12)
+                            ->required()
+                            ->helperText('The investor may not request a withdrawal until this term has elapsed.')
+                            ->disabled(fn (?Investment $record) => $record !== null),
                     ])
                     ->columns(2),
 
@@ -150,6 +161,16 @@ class InvestmentResource extends Resource
                 Tables\Columns\TextColumn::make('start_date')
                     ->date('M d, Y')
                     ->sortable(),
+
+                Tables\Columns\TextColumn::make('maturity_date')
+                    ->label('Contract Due')
+                    ->date('M d, Y')
+                    ->color(fn (Investment $record) => $record->isContractDue() ? 'success' : 'gray')
+                    ->tooltip(fn (Investment $record) => $record->isContractDue()
+                        ? 'Contract has matured — withdrawal requests are allowed.'
+                        : 'Contract not yet due — the investor cannot submit a withdrawal request until this date.')
+                    ->sortable()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('last_interest_posted_year')
                     ->label('Interest Posted Through')

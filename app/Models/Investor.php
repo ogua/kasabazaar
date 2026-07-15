@@ -12,6 +12,10 @@ class Investor extends Model
 
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'default_annual_rate' => 'decimal:2',
+    ];
+
     public function investments(): HasMany
     {
         return $this->hasMany(Investment::class);

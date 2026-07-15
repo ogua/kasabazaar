@@ -55,7 +55,9 @@ class InvestmentWithdrawalRequestResource extends Resource
                     ->label('Investment')
                     ->options(fn () => Investment::where('investor_id', auth()->user()->investor_id)
                         ->where('status', 'active')
+                        ->where('maturity_date', '<=', now())
                         ->pluck('reference', 'id'))
+                    ->helperText('Only investments whose contract term has elapsed are eligible for a withdrawal request.')
                     ->required()
                     ->disabled(fn (?InvestmentWithdrawalRequest $record) => $record !== null),
 

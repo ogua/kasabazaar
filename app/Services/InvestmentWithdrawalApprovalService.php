@@ -18,6 +18,14 @@ class InvestmentWithdrawalApprovalService
 {
     public function submit(Investment $investment, array $data): InvestmentWithdrawalRequest
     {
+        if (! $investment->isContractDue()) {
+            $maturityDate = $investment->maturity_date?->format('F j, Y');
+
+            throw new \InvalidArgumentException(
+                "This investment's contract is not yet due. Withdrawal requests can be submitted starting {$maturityDate}."
+            );
+        }
+
         $isFull = (bool) ($data['is_full_withdrawal'] ?? false);
         $requestedAmount = $isFull ? null : (float) ($data['requested_amount'] ?? 0);
         $remainingAfter = null;

@@ -6692,6 +6692,8 @@ namespace App\Models {
 	 * @property string $id
 	 * @property-read mixed $fullname_branch
 	 * @property-read \App\Models\Branch $branch
+	 * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Shipment> $shipments
+	 * @property-read int|null $shipments_count
 	 * @property-read \App\Models\User $users
 	 * @property-read \App\Models\City $mcity
 	 * @property-read \App\Models\State $mstate
@@ -14718,6 +14720,8 @@ namespace App\Models {
 	 * @property mixed $last_interest_posted_year
 	 * @property float $current_balance
 	 * @property \App\Enums\InvestmentStatus $status
+	 * @property \Illuminate\Support\Carbon|null $maturity_date
+	 * @property integer $contract_term_months
 	 * @property \Illuminate\Support\Carbon $start_date
 	 * @property float|null $principal_amount_ghs
 	 * @property float|null $exchange_rate_at_investment
@@ -14740,6 +14744,8 @@ namespace App\Models {
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereExchangeRateAtInvestment($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment wherePrincipalAmountGhs($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereStartDate($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereContractTermMonths($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereMaturityDate($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereStatus($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereCurrentBalance($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereLastInterestPostedYear($value)
@@ -16650,6 +16656,7 @@ namespace App\Models {
 	 * @property string|null $bank_code
 	 * @property string|null $bank_name
 	 * @property string|null $notes
+	 * @property float|null $default_annual_rate
 	 * @property string $status
 	 * @property string|null $city
 	 * @property string|null $state_region
@@ -16682,6 +16689,7 @@ namespace App\Models {
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investor>|Investor whereStateRegion($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investor>|Investor whereCity($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investor>|Investor whereStatus($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<Investor>|Investor whereDefaultAnnualRate($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investor>|Investor whereNotes($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investor>|Investor whereBankName($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investor>|Investor whereBankCode($value)

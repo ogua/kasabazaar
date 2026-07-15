@@ -6,6 +6,7 @@ use App\Filament\Investor\Resources\InvestmentWithdrawalRequestResource;
 use App\Models\Investment;
 use App\Models\InvestmentWithdrawalRequest;
 use App\Services\InvestmentWithdrawalApprovalService;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateInvestmentWithdrawalRequest extends CreateRecord
@@ -18,6 +19,16 @@ class CreateInvestmentWithdrawalRequest extends CreateRecord
             ->where('investor_id', auth()->user()->investor_id)
             ->firstOrFail();
 
-        return app(InvestmentWithdrawalApprovalService::class)->submit($investment, $data);
+        try {
+            return app(InvestmentWithdrawalApprovalService::class)->submit($investment, $data);
+        } catch (\InvalidArgumentException $e) {
+            Notification::make()
+                ->title('Unable to submit withdrawal request')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+
+            $this->halt();
+        }
     }
 }

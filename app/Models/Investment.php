@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\InvestmentStatus;
 use App\Service\ExchangeRateService;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -18,6 +19,8 @@ class Investment extends Model
 
     protected $casts = [
         'start_date' => 'date',
+        'maturity_date' => 'date',
+        'contract_term_months' => 'integer',
         'principal_amount' => 'decimal:2',
         'principal_amount_ghs' => 'decimal:2',
         'current_balance' => 'decimal:2',
@@ -49,6 +52,26 @@ class Investment extends Model
                 $investment->current_balance = $investment->principal_amount;
             }
         });
+
+        static::saving(function (Investment $investment) {
+            if ($investment->start_date && (
+                $investment->isDirty(['start_date', 'contract_term_months']) || ! $investment->maturity_date
+            )) {
+                $investment->maturity_date = Carbon::parse($investment->start_date)
+                    ->addMonths($investment->contract_term_months ?? 12);
+            }
+        });
+    }
+
+    /**
+     * Whether the investment's contract term has elapsed. Withdrawal requests
+     * (partial or full) may only be submitted once the contract is due — the
+     * investor commits to holding the principal for the agreed term before
+     * returns or principal can be requested back.
+     */
+    public function isContractDue(): bool
+    {
+        return $this->maturity_date !== null && now()->gte($this->maturity_date);
     }
 
     public static function generateReference(): string

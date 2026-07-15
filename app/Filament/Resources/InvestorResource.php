@@ -77,6 +77,16 @@ class InvestorResource extends Resource
                     ])
                     ->columns(2),
 
+                Forms\Components\Section::make('Returns')
+                    ->description("This investor's standing annual interest rate, applied to all of their investments every year unless a specific tranche has a one-off rate override for a given year.")
+                    ->schema([
+                        Forms\Components\TextInput::make('default_annual_rate')
+                            ->label('Default Annual Rate')
+                            ->numeric()
+                            ->suffix('%')
+                            ->helperText('Leave blank to fall back to the company-wide default rate for each year.'),
+                    ]),
+
                 Forms\Components\Section::make('Payout Bank Details')
                     ->description('Used for automated Paystack transfer payouts. Optional for manual-only payouts.')
                     ->schema([
@@ -117,6 +127,12 @@ class InvestorResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => $state === 'active' ? 'success' : 'gray'),
+
+                Tables\Columns\TextColumn::make('default_annual_rate')
+                    ->label('Rate')
+                    ->suffix('%')
+                    ->placeholder('Company default')
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('investments_count')
                     ->label('Investments')
