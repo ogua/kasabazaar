@@ -2,16 +2,16 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms;
-use Filament\Tables;
+use App\Filament\Resources\InvoiceResource\Pages;
 use App\Models\Invoice;
 use App\Models\Shipment;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
 use Filament\Facades\Filament;
+use Filament\Forms;
+use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
-use App\Filament\Resources\InvoiceResource\Pages;
 
 class InvoiceResource extends Resource
 {
@@ -55,7 +55,7 @@ class InvoiceResource extends Resource
                 Tables\Columns\TextColumn::make('shipment.client.name')
                     ->label('Client')
                     ->searchable(),
-                    
+
                 Tables\Columns\TextColumn::make('total_amount')
                     ->state(fn ($record) => number_format($record->total_amount, 2))
                     ->numeric()
@@ -105,12 +105,20 @@ class InvoiceResource extends Resource
                     ->icon('heroicon-m-banknotes')
                     ->visible(fn () => Auth::user()?->hasAnyRole(['super_admin', 'CEO', 'Accountant']))
                     ->modalWidth('4xl')
-                    ->fillForm(function($record){
-                      //  logger($record->shipment);
+                    ->fillForm(function ($record) {
+                        //  logger($record->shipment);
                         return [
                             'total_amount' => $record->shipment?->total,
                             'paid_amount' => $record->shipment?->paid,
                             'balance' => $record->shipment?->total - $record->shipment?->paid,
+                            'new_currency' => 'USD',
+                            'new_exchange_rate' => (function () {
+                                try {
+                                    return app(\App\Service\ExchangeRateService::class)->getCurrentRate('USD', 'GHS');
+                                } catch (\Exception $e) {
+                                    return 12.0;
+                                }
+                            })(),
                         ];
                     })
                    // ->fillForm(fn ($record) => )
@@ -160,7 +168,7 @@ class InvoiceResource extends Resource
 
                         Forms\Components\Section::make('Add New Payment')
                             ->schema([
-                                    Forms\Components\Grid::make(3)
+                                Forms\Components\Grid::make(2)
                                     ->schema([
                                         Forms\Components\DateTimePicker::make('new_paid_on')
                                             ->label('Payment Date')
@@ -182,16 +190,105 @@ class InvoiceResource extends Resource
                                             ->required()
                                             ->live()
                                             ->native(false),
-
-                                        Forms\Components\TextInput::make('new_amount')
-                                            ->label('Amount')
-                                            ->numeric()
-                                            ->prefix('$')
-                                            ->required()
-                                            ->default(fn ($record) => max(0, $record->total - $record->paid)),
                                     ]),
 
-                                    Forms\Components\Grid::make(2)
+                                Forms\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\Select::make('new_currency')
+                                            ->label('Currency Received')
+                                            ->options([
+                                                'USD' => 'USD - US Dollar',
+                                                'GHS' => 'GHS - Ghana Cedis',
+                                            ])
+                                            ->default('USD')
+                                            ->required()
+                                            ->live()
+                                            ->helperText('Choose the currency the client actually paid in. The other amount below is calculated automatically from the exchange rate.')
+                                            ->native(false),
+
+                                        Forms\Components\TextInput::make('new_exchange_rate')
+                                            ->label('Exchange Rate (1 USD = ? GHS)')
+                                            ->numeric()
+                                            ->default(function () {
+                                                try {
+                                                    return app(\App\Service\ExchangeRateService::class)->getCurrentRate('USD', 'GHS');
+                                                } catch (\Exception $e) {
+                                                    return 12.0;
+                                                }
+                                            })
+                                            ->live(onBlur: true)
+                                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                                $rate = (float) $state;
+                                                if (! $rate) {
+                                                    return;
+                                                }
+
+                                                if ($get('new_currency') === 'GHS') {
+                                                    $amountGhs = (float) ($get('new_amount_ghs') ?? 0);
+                                                    if ($amountGhs) {
+                                                        $set('new_amount_usd', round($amountGhs / $rate, 2));
+                                                    }
+                                                } else {
+                                                    $amountUsd = (float) ($get('new_amount_usd') ?? 0);
+                                                    if ($amountUsd) {
+                                                        $set('new_amount_ghs', round($amountUsd * $rate, 2));
+                                                    }
+                                                }
+                                            })
+                                            ->helperText('Editable — defaults to the last synced daily rate, but always confirm it against the actual bank/market rate before saving.')
+                                            ->suffix('GHS per USD')
+                                            ->required(),
+                                    ]),
+
+                                Forms\Components\Placeholder::make('new_exchange_rate_warning')
+                                    ->label('')
+                                    ->content('⚠️ Please cross-check the exchange rate above against the current bank/market rate before saving. It determines the USD amount recorded against the client\'s balance — an incorrect rate will misstate what the client owes.')
+                                    ->columnSpanFull(),
+
+                                Forms\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\TextInput::make('new_amount_usd')
+                                            ->label('Amount (USD)')
+                                            ->numeric()
+                                            ->prefix('$')
+                                            ->live(onBlur: true)
+                                            ->disabled(fn (callable $get) => $get('new_currency') === 'GHS')
+                                            ->dehydrated()
+                                            ->default(fn ($record) => max(0, ($record->shipment?->total ?? 0) - ($record->shipment?->paid ?? 0)))
+                                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                                if ($get('new_currency') === 'GHS') {
+                                                    return;
+                                                }
+                                                $exchangeRate = (float) ($get('new_exchange_rate') ?? 0);
+                                                if ($state && $exchangeRate > 0) {
+                                                    $set('new_amount_ghs', round($state * $exchangeRate, 2));
+                                                }
+                                            })
+                                            ->required(fn (callable $get) => $get('new_currency') !== 'GHS'),
+
+                                        Forms\Components\TextInput::make('new_amount_ghs')
+                                            ->label('Amount (GHS)')
+                                            ->numeric()
+                                            ->prefix('GH₵')
+                                            ->live(onBlur: true)
+                                            ->disabled(fn (callable $get) => $get('new_currency') !== 'GHS')
+                                            ->dehydrated()
+                                            ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                                                if ($get('new_currency') !== 'GHS') {
+                                                    return;
+                                                }
+                                                $exchangeRate = (float) ($get('new_exchange_rate') ?? 0);
+                                                if ($state && $exchangeRate > 0) {
+                                                    $set('new_amount_usd', round($state / $exchangeRate, 2));
+                                                }
+                                            })
+                                            ->required(fn (callable $get) => $get('new_currency') === 'GHS')
+                                            ->helperText(fn (callable $get) => $get('new_currency') === 'GHS'
+                                                ? 'Enter the amount actually received in Ghana Cedis.'
+                                                : 'Calculated automatically from the USD amount.'),
+                                    ]),
+
+                                Forms\Components\Grid::make(2)
                                     ->schema([
                                         Forms\Components\TextInput::make('new_bankname')
                                             ->label('Bank Name')
@@ -207,15 +304,15 @@ class InvoiceResource extends Resource
                                             ->columnSpanFull(),
                                     ]),
 
-                                    Forms\Components\Textarea::make('new_payment_note')
+                                Forms\Components\Textarea::make('new_payment_note')
                                     ->label('Payment Notes')
                                     ->rows(2)
                                     ->columnSpanFull(),
-                                ]),
+                            ]),
                     ])
                     ->action(function ($record, array $data) {
                         // Create the new payment
-                        if (! empty($data['new_amount']) && $data['new_amount'] > 0) {
+                        if (! empty($data['new_amount_usd']) && $data['new_amount_usd'] > 0) {
                             \App\Models\Payment::create([
                                 'branch_id' => Filament::getTenant()->id,
                                 'user_id' => auth()->id(),
@@ -223,7 +320,10 @@ class InvoiceResource extends Resource
                                 'payment_type' => 'credit',
                                 'payment_ref' => 'PAY-'.strtoupper(bin2hex(random_bytes(4))),
                                 'paying_method' => $data['new_paying_method'],
-                                'amount' => $data['new_amount'],
+                                'currency' => $data['new_currency'] ?? 'USD',
+                                'exchange_rate' => $data['new_exchange_rate'] ?? null,
+                                'amount_usd' => $data['new_amount_usd'],
+                                'amount_ghs' => $data['new_amount_ghs'] ?? null,
                                 'paid_on' => $data['new_paid_on'],
                                 'bankname' => $data['new_bankname'] ?? null,
                                 'accountnumber' => $data['new_accountnumber'] ?? null,
@@ -235,7 +335,7 @@ class InvoiceResource extends Resource
                             // Update shipment paid amount
                             $shipment = Shipment::where('id', $record->shipment?->id)->first();
 
-                           // $totalPaid = $shipment?->payments()->sum('amount') + $data['new_amount'];
+                            // $totalPaid = $shipment?->payments()->sum('amount') + $data['new_amount'];
                             $totalPaid = $shipment?->payments()->sum('amount');
                             $shipment->paid = $totalPaid;
 
@@ -257,9 +357,13 @@ class InvoiceResource extends Resource
                                 ]);
                             }
 
+                            $body = ($data['new_currency'] ?? 'USD') === 'GHS'
+                                ? 'Payment of GH₵'.number_format($data['new_amount_ghs'], 2).' (equivalent to $'.number_format($data['new_amount_usd'], 2).') has been recorded.'
+                                : 'Payment of $'.number_format($data['new_amount_usd'], 2).' has been recorded.';
+
                             \Filament\Notifications\Notification::make()
                                 ->title('Payment Added')
-                                ->body('Payment of $'.number_format($data['new_amount'], 2).' has been recorded.')
+                                ->body($body)
                                 ->success()
                                 ->send();
                         }
@@ -278,10 +382,10 @@ class InvoiceResource extends Resource
 
             ])
             ->bulkActions([
-                    Tables\Actions\BulkActionGroup::make([
+                Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
-                    ]),
-                ]);
+                ]),
+            ]);
     }
 
     public static function getRelations(): array
