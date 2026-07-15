@@ -270,6 +270,9 @@ Route::prefix('v1')->group(function () {
             Route::get('statements', [InvestorDocumentController::class, 'statements']);
 
             Route::get('company-performance', [InvestorCompanyPerformanceController::class, 'index']);
+            Route::get('reports/shipments', [InvestorCompanyPerformanceController::class, 'shipments']);
+            Route::get('reports/income', [InvestorCompanyPerformanceController::class, 'income']);
+            Route::get('reports/expenses', [InvestorCompanyPerformanceController::class, 'expenses']);
         });
     });
 

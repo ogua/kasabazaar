@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ExternalShipmentController;
 use App\Http\Controllers\InvestmentController;
+use App\Http\Controllers\InvestorReportController;
 use App\Http\Controllers\ShippingController;
 use App\Http\Controllers\WebController;
 use App\Livewire\AgreementForm;
@@ -97,6 +98,24 @@ Route::middleware('signed')->group(function () {
 
     Route::get('/investor/{investor}/investment-account-statement/download', [InvestmentController::class, 'accountStatementDownload'])
         ->name('investment-account-statement-download');
+
+    Route::get('/investor/{investor}/reports/shipments', [InvestorReportController::class, 'shipments'])
+        ->name('investor-report-shipments');
+
+    Route::get('/investor/{investor}/reports/shipments/download', [InvestorReportController::class, 'shipmentsDownload'])
+        ->name('investor-report-shipments-download');
+
+    Route::get('/investor/{investor}/reports/income', [InvestorReportController::class, 'income'])
+        ->name('investor-report-income');
+
+    Route::get('/investor/{investor}/reports/income/download', [InvestorReportController::class, 'incomeDownload'])
+        ->name('investor-report-income-download');
+
+    Route::get('/investor/{investor}/reports/expenses', [InvestorReportController::class, 'expenses'])
+        ->name('investor-report-expenses');
+
+    Route::get('/investor/{investor}/reports/expenses/download', [InvestorReportController::class, 'expensesDownload'])
+        ->name('investor-report-expenses-download');
 });
 
 Route::get('/make-payment/{record}', DisclaimerForm::class)
