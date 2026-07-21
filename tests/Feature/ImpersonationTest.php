@@ -195,4 +195,56 @@ class ImpersonationTest extends TestCase
 
         $this->assertSame($secondUser->id, auth()->id());
     }
+
+    /**
+     * Regression test for a real bug: Auth::loginUsingId() rotates the session ID
+     * but carries over the PREVIOUS user's 'password_hash_web' session key untouched.
+     * AuthenticateSession middleware (re-applied on the target panel) compares that
+     * stale hash against the new user's actual password and, on any mismatch,
+     * force-logs-out and flushes the session — silently undoing the impersonation
+     * right after it starts. Caught only via real-browser testing, since
+     * actingAs()-based tests never exercise this session key at all.
+     */
+    public function test_starting_impersonation_refreshes_the_stale_password_hash_in_session(): void
+    {
+        $admin = $this->superAdmin();
+
+        $investor = Investor::create(['name' => 'Password Hash Investor', 'status' => 'active']);
+        $investorUser = User::factory()->create([
+            'status' => 'active',
+            'investor_id' => $investor->id,
+            'password' => bcrypt('a-distinctly-different-password'),
+        ]);
+
+        $this->actingAs($admin);
+        // Simulate AuthenticateSession having already stored the admin's own password
+        // hash during earlier, normal browsing — exactly what a real session looks
+        // like by the time someone clicks "Impersonate".
+        session(['password_hash_web' => $admin->getAuthPassword()]);
+
+        \App\Service\ImpersonationService::start($investorUser);
+
+        $this->assertSame($investorUser->getAuthPassword(), session('password_hash_web'));
+        $this->assertNotSame($admin->getAuthPassword(), session('password_hash_web'));
+    }
+
+    public function test_stopping_impersonation_refreshes_the_stale_password_hash_in_session(): void
+    {
+        $admin = $this->superAdmin();
+        $investorUser = User::factory()->create(['status' => 'active']);
+
+        $this->actingAs($investorUser);
+        // Simulate the investor's hash having been stored while impersonation was active.
+        session(['password_hash_web' => $investorUser->getAuthPassword()]);
+
+        $this
+            ->withSession([
+                'impersonate.original_id' => $admin->id,
+                'impersonate.original_panel' => 'admin',
+            ])
+            ->get('/impersonate/stop')
+            ->assertRedirect('/admin');
+
+        $this->assertSame($admin->getAuthPassword(), session('password_hash_web'));
+    }
 }
