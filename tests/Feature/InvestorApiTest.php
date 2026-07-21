@@ -259,6 +259,38 @@ class InvestorApiTest extends TestCase
         $pdfResponse->assertHeader('Content-Type', 'application/pdf');
     }
 
+    public function test_investor_can_preview_the_agreement_for_a_pending_payment_investment(): void
+    {
+        $investor = Investor::create(['name' => 'Pending Agreement Investor', 'status' => 'active']);
+
+        $investment = Investment::create([
+            'investor_id' => $investor->id,
+            'principal_amount' => 15000,
+            'start_date' => now(),
+            'status' => 'pending_payment',
+        ]);
+
+        $user = User::create([
+            'name' => 'Pending Agreement User',
+            'email' => 'investor-pending-agreement-'.uniqid().'@example.com',
+            'password' => bcrypt('password'),
+            'investor_id' => $investor->id,
+            'status' => 'active',
+        ]);
+
+        $token = $user->createToken('test')->plainTextToken;
+
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson("/api/v1/investor/investments/{$investment->id}/agreement");
+
+        $response->assertOk();
+        $this->assertNotEmpty($response->json('data.url'));
+
+        $pdfResponse = $this->get($response->json('data.url'));
+        $pdfResponse->assertOk();
+        $pdfResponse->assertHeader('Content-Type', 'application/pdf');
+    }
+
     public function test_self_serve_investment_rejects_gateway_reference_mismatch(): void
     {
         $investorA = Investor::create(['name' => 'Mismatch Investor A', 'status' => 'active']);

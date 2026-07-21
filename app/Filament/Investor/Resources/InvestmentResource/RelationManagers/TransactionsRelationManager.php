@@ -30,6 +30,18 @@ class TransactionsRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('type')
                     ->badge(),
 
+                Tables\Columns\TextColumn::make('period_start')
+                    ->label('Period')
+                    ->formatStateUsing(fn ($record) => $record->period_start && $record->period_end
+                        ? $record->period_start->format('M d, Y').' – '.$record->period_end->format('M d, Y')
+                        : '—')
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('rate_applied')
+                    ->label('Rate')
+                    ->suffix('%')
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('debit')
                     ->money('USD'),
 

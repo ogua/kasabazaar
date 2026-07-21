@@ -13,6 +13,16 @@
             'docSubtitle' => $investment->reference,
         ])
 
+        @if ($investment->status->value === 'pending_payment')
+            <div class="valuation-box" style="border-color: #b45309; background: #fffbeb;">
+                <strong>Preview — Payment Not Yet Received.</strong>
+                This document previews the terms of your proposed investment of
+                ${{ number_format($investment->principal_amount, 2) }}. It is provided so you may review the
+                agreement before funding. This Agreement does not take effect, and no obligations arise for either
+                party, until the Company confirms receipt of the Investor's funds.
+            </div>
+        @endif
+
         <div class="section">
             <p>This Investment Agreement ("Agreement") is entered into between KasaBazaar LLC d/b/a Rose Door to Door
                 Shipping &amp; Delivery Services ("Company") and {{ $investor->name }} ("Investor").</p>
@@ -36,12 +46,16 @@
                 <tr>
                     <th>Reference</th>
                     <th>Amount (USD)</th>
-                    <th>Date Received</th>
+                    <th>{{ $investment->status->value === 'pending_payment' ? 'Proposed Start Date' : 'Date Received' }}</th>
+                    <th>Term</th>
+                    <th>Maturity Date</th>
                 </tr>
                 <tr>
                     <td>{{ $investment->reference }}</td>
                     <td>{{ number_format($investment->principal_amount, 2) }}</td>
                     <td>{{ \Carbon\Carbon::parse($investment->start_date)->format('F j, Y') }}</td>
+                    <td>{{ $investment->contract_term_months }} months</td>
+                    <td>{{ $investment->maturity_date?->format('F j, Y') ?? '—' }}</td>
                 </tr>
             </table>
         </div>
@@ -73,6 +87,34 @@
                 upon the Company's profits, losses, revenues, or valuation.
             </p>
         </div>
+
+        @if ($interestHistory->isNotEmpty())
+            <div class="section">
+                <h2>Interest Posted to Date</h2>
+                <table>
+                    <tr>
+                        <th>Period</th>
+                        <th>Rate</th>
+                        <th>Days</th>
+                        <th>Interest (USD)</th>
+                    </tr>
+                    @foreach ($interestHistory as $txn)
+                        <tr>
+                            <td>
+                                @if ($txn->period_start && $txn->period_end)
+                                    {{ $txn->period_start->format('M j, Y') }} – {{ $txn->period_end->format('M j, Y') }}
+                                @else
+                                    Calendar Year {{ $txn->year }}
+                                @endif
+                            </td>
+                            <td>{{ $txn->rate_applied !== null ? number_format($txn->rate_applied, 2).'%' : '—' }}</td>
+                            <td>{{ $txn->period_start && $txn->period_end ? $txn->period_start->diffInDays($txn->period_end) + 1 : '—' }}</td>
+                            <td>{{ number_format($txn->credit, 2) }}</td>
+                        </tr>
+                    @endforeach
+                </table>
+            </div>
+        @endif
 
         <div class="section">
             <h2>Investment Valuation</h2>
@@ -128,14 +170,14 @@
                 <div class="signature-line">
                     {{ $investor->name }}<br>
                     Investor<br>
-                    Date: ___________________________
+                    Date: {{date('F j, Y')}}
                 </div>
             </div>
             <div class="signature-column">
                 <div class="signature-line">
                     Founder &amp; CVO<br>
                     KasaBazaar LLC d/b/a Rose Door to Door Shipping &amp; Delivery Services<br>
-                    Date: ___________________________
+                    Date: {{date('F j, Y')}}
                 </div>
             </div>
         </div>

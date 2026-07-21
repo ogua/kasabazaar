@@ -42,6 +42,19 @@ class PendingInterestPostings extends Page implements HasTable
 
                 Tables\Columns\TextColumn::make('year'),
 
+                Tables\Columns\TextColumn::make('period_start')
+                    ->label('Period')
+                    ->date('M d, Y')
+                    ->formatStateUsing(fn ($record) => $record->period_start && $record->period_end
+                        ? $record->period_start->format('M d, Y').' – '.$record->period_end->format('M d, Y')
+                        : '—')
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('rate_applied')
+                    ->label('Rate')
+                    ->suffix('%')
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('op_balance')
                     ->label('Opening Balance')
                     ->money('USD'),
@@ -66,8 +79,12 @@ class PendingInterestPostings extends Page implements HasTable
                     ->action(function (InvestmentTransaction $record) {
                         app(InvestmentInterestService::class)->postDraft($record, auth()->user());
 
+                        $period = $record->period_start && $record->period_end
+                            ? $record->period_start->format('M d, Y').' – '.$record->period_end->format('M d, Y')
+                            : $record->year;
+
                         Notification::make()
-                            ->title("Posted interest for {$record->year}")
+                            ->title("Posted interest for {$period}")
                             ->success()
                             ->send();
                     }),

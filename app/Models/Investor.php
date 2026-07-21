@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -19,6 +20,17 @@ class Investor extends Model
     public function investments(): HasMany
     {
         return $this->hasMany(Investment::class);
+    }
+
+    /**
+     * The default valuation date for combined (multi-tranche) agreement letters —
+     * the latest of each investment's own defaultAsOfDate(). See Investment::defaultAsOfDate().
+     */
+    public function defaultAsOfDate(): Carbon
+    {
+        $dates = $this->investments->map(fn (Investment $investment) => $investment->defaultAsOfDate());
+
+        return $dates->max() ?? now();
     }
 
     public function transactions(): HasMany

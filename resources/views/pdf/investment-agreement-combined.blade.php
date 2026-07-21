@@ -38,6 +38,8 @@
                     <th>Reference</th>
                     <th>Amount (USD)</th>
                     <th>Date Received</th>
+                    <th>Term</th>
+                    <th>Maturity Date</th>
                     <th>Current Value (USD)</th>
                 </tr>
                 @foreach ($investments as $investment)
@@ -45,6 +47,8 @@
                         <td>{{ $investment->reference }}</td>
                         <td>{{ number_format($investment->principal_amount, 2) }}</td>
                         <td>{{ \Carbon\Carbon::parse($investment->start_date)->format('F j, Y') }}</td>
+                        <td>{{ $investment->contract_term_months }} months</td>
+                        <td>{{ $investment->maturity_date?->format('F j, Y') ?? '—' }}</td>
                         <td>{{ number_format($valuations[$investment->id]['compounded_balance'], 2) }}</td>
                     </tr>
                 @endforeach
@@ -63,7 +67,7 @@
 
         <div class="section">
             <h2>Aggregate Investment Valuation</h2>
-            <p>The parties acknowledge the following aggregate position as of {{ now()->format('F j, Y') }}:</p>
+            <p>The parties acknowledge the following aggregate position as of {{ $asOfDate->format('F j, Y') }}:</p>
             <div class="valuation-box">
                 <div class="row">
                     <div class="label">Total Principal Invested</div>
@@ -109,14 +113,14 @@
                 <div class="signature-line">
                     {{ $investor->name }}<br>
                     Investor<br>
-                    Date: ___________________________
+                    Date: {{date('F j, Y')}}
                 </div>
             </div>
             <div class="signature-column">
                 <div class="signature-line">
                     Founder &amp; CVO<br>
                     KasaBazaar LLC d/b/a Rose Door to Door Shipping &amp; Delivery Services<br>
-                    Date: ___________________________
+                    Date: {{date('F j, Y')}}
                 </div>
             </div>
         </div>

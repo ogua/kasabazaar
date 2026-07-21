@@ -14717,6 +14717,7 @@ namespace App\Models {
 	 * @property string|null $payment_reference
 	 * @property string|null $payment_method
 	 * @property string|null $deposit_gateway
+	 * @property \Illuminate\Support\Carbon|null $last_interest_posted_through
 	 * @property mixed $last_interest_posted_year
 	 * @property float $current_balance
 	 * @property \App\Enums\InvestmentStatus $status
@@ -14749,6 +14750,7 @@ namespace App\Models {
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereStatus($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereCurrentBalance($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereLastInterestPostedYear($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereLastInterestPostedThrough($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereDepositGateway($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment wherePaymentMethod($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment wherePaymentReference($value)
@@ -15996,17 +15998,22 @@ namespace App\Models {
 	 * @property \Illuminate\Support\Carbon|null $created_at
 	 * @property string|null $reference_id
 	 * @property string|null $description
+	 * @property \Illuminate\Support\Carbon|null $edited_at
 	 * @property \Illuminate\Support\Carbon|null $posted_at
+	 * @property string|null $edited_by
 	 * @property string|null $posted_by
 	 * @property boolean $posted
 	 * @property mixed $year
 	 * @property float|null $amount_ghs
 	 * @property float|null $exchange_rate_at_transaction
+	 * @property float|null $rate_applied
 	 * @property float $cl_balance
 	 * @property float $credit
 	 * @property float $debit
 	 * @property float $op_balance
 	 * @property \App\Enums\InvestmentTransactionType $type
+	 * @property \Illuminate\Support\Carbon|null $period_end
+	 * @property \Illuminate\Support\Carbon|null $period_start
 	 * @property \Illuminate\Support\Carbon $date
 	 * @property string $investor_id
 	 * @property string $investment_id
@@ -16014,21 +16021,27 @@ namespace App\Models {
 	 * @property-read \App\Models\Investment $investment
 	 * @property-read \App\Models\Investor $investor
 	 * @property-read \App\Models\User $postedBy
+	 * @property-read \App\Models\User $editedBy
 	 * @method static \Illuminate\Database\Eloquent\Builder<InvestmentTransaction>|InvestmentTransaction whereId($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<InvestmentTransaction>|InvestmentTransaction whereInvestmentId($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<InvestmentTransaction>|InvestmentTransaction whereInvestorId($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<InvestmentTransaction>|InvestmentTransaction whereDate($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<InvestmentTransaction>|InvestmentTransaction wherePeriodStart($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<InvestmentTransaction>|InvestmentTransaction wherePeriodEnd($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<InvestmentTransaction>|InvestmentTransaction whereType($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<InvestmentTransaction>|InvestmentTransaction whereOpBalance($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<InvestmentTransaction>|InvestmentTransaction whereDebit($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<InvestmentTransaction>|InvestmentTransaction whereCredit($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<InvestmentTransaction>|InvestmentTransaction whereClBalance($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<InvestmentTransaction>|InvestmentTransaction whereRateApplied($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<InvestmentTransaction>|InvestmentTransaction whereExchangeRateAtTransaction($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<InvestmentTransaction>|InvestmentTransaction whereAmountGhs($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<InvestmentTransaction>|InvestmentTransaction whereYear($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<InvestmentTransaction>|InvestmentTransaction wherePosted($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<InvestmentTransaction>|InvestmentTransaction wherePostedBy($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<InvestmentTransaction>|InvestmentTransaction whereEditedBy($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<InvestmentTransaction>|InvestmentTransaction wherePostedAt($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<InvestmentTransaction>|InvestmentTransaction whereEditedAt($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<InvestmentTransaction>|InvestmentTransaction whereDescription($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<InvestmentTransaction>|InvestmentTransaction whereReferenceId($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<InvestmentTransaction>|InvestmentTransaction whereCreatedAt($value)

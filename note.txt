@@ -13,4 +13,4 @@ contract: date, expiry
 
 
 accountant calculate n input their return 
-in the first 6month or 1yr
+in the first 6month or 1yrs

@@ -26,6 +26,7 @@ class Investment extends Model
         'current_balance' => 'decimal:2',
         'exchange_rate_at_investment' => 'decimal:4',
         'status' => InvestmentStatus::class,
+        'last_interest_posted_through' => 'date',
     ];
 
     protected static function booted(): void
@@ -72,6 +73,22 @@ class Investment extends Model
     public function isContractDue(): bool
     {
         return $this->maturity_date !== null && now()->gte($this->maturity_date);
+    }
+
+    /**
+     * The default valuation date used for agreement letters/statements when no
+     * explicit as-of date is requested. Always a real, already-closed accounting
+     * date (never "today") so the same request produces the same figure regardless
+     * of when it's generated: the end of the most recently posted interest period,
+     * or the investment's start date if no interest has been posted yet.
+     */
+    public function defaultAsOfDate(): Carbon
+    {
+        if ($this->last_interest_posted_through) {
+            return Carbon::parse($this->last_interest_posted_through);
+        }
+
+        return Carbon::parse($this->start_date);
     }
 
     public static function generateReference(): string

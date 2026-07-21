@@ -82,17 +82,18 @@ class AnnualInvestmentStatementService
         $rows = [];
 
         foreach ($statement->investor->investments as $investment) {
-            $interestTxn = $investment->transactions()
+            $yearTxns = $investment->transactions()
                 ->where('type', InvestmentTransactionType::interest_credit->value)
                 ->where('year', $statement->year)
                 ->where('posted', true)
-                ->first();
+                ->orderBy('date')
+                ->get();
 
             $rows[] = [
                 'reference' => $investment->reference,
-                'opening_balance' => (float) ($interestTxn->op_balance ?? $investment->principal_amount),
-                'interest_credited' => (float) ($interestTxn->credit ?? 0),
-                'closing_balance' => (float) ($interestTxn->cl_balance ?? $investment->current_balance),
+                'opening_balance' => (float) ($yearTxns->first()->op_balance ?? $investment->principal_amount),
+                'interest_credited' => (float) $yearTxns->sum('credit'),
+                'closing_balance' => (float) ($yearTxns->last()->cl_balance ?? $investment->current_balance),
             ];
         }
 

@@ -117,11 +117,13 @@ class InvestmentResource extends Resource
                 Tables\Actions\ViewAction::make(),
 
                 Tables\Actions\Action::make('downloadAgreement')
-                    ->label('Agreement')
+                    ->label(fn (Investment $record) => $record->status->value === 'pending_payment' ? 'Preview Agreement' : 'Agreement')
                     ->icon('heroicon-o-document-text')
                     ->color('gray')
-                    ->visible(fn (Investment $record) => $record->status->value === 'active')
-                    ->url(fn (Investment $record) => URL::temporarySignedRoute('investment-agreement', now()->addDay(), $record))
+                    ->url(fn (Investment $record) => URL::temporarySignedRoute('investment-agreement', now()->addDay(), [
+                        'investment' => $record->id,
+                        'as_of' => $record->defaultAsOfDate()->toDateString(),
+                    ]))
                     ->openUrlInNewTab(),
             ])
             ->bulkActions([]);

@@ -16,15 +16,19 @@ class InvestmentTransaction extends Model
 
     protected $casts = [
         'date' => 'date',
+        'period_start' => 'date',
+        'period_end' => 'date',
         'type' => InvestmentTransactionType::class,
         'op_balance' => 'decimal:2',
         'debit' => 'decimal:2',
         'credit' => 'decimal:2',
         'cl_balance' => 'decimal:2',
+        'rate_applied' => 'decimal:2',
         'exchange_rate_at_transaction' => 'decimal:4',
         'amount_ghs' => 'decimal:2',
         'posted' => 'boolean',
         'posted_at' => 'datetime',
+        'edited_at' => 'datetime',
     ];
 
     protected static function booted(): void
@@ -51,5 +55,10 @@ class InvestmentTransaction extends Model
     public function postedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'posted_by');
+    }
+
+    public function editedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'edited_by');
     }
 }

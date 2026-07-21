@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ExternalShipmentController;
+use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\InvestmentController;
 use App\Http\Controllers\InvestorReportController;
 use App\Http\Controllers\ShippingController;
@@ -117,6 +118,14 @@ Route::middleware('signed')->group(function () {
     Route::get('/investor/{investor}/reports/expenses/download', [InvestorReportController::class, 'expensesDownload'])
         ->name('investor-report-expenses-download');
 });
+
+Route::get('/impersonate/start/{user}', [ImpersonationController::class, 'start'])
+    ->middleware(['auth', 'signed'])
+    ->name('impersonate.start');
+
+Route::get('/impersonate/stop', [ImpersonationController::class, 'stop'])
+    ->middleware('auth')
+    ->name('impersonate.stop');
 
 Route::get('/make-payment/{record}', DisclaimerForm::class)
     ->name('make-payment');

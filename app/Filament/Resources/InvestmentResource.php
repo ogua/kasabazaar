@@ -62,16 +62,24 @@ class InvestmentResource extends Resource
                             ->default(now())
                             ->disabled(fn (?Investment $record) => $record !== null),
 
-                        Forms\Components\Select::make('contract_term_months')
-                            ->label('Contract Term')
-                            ->options([
-                                6 => '6 Months',
-                                12 => '1 Year',
-                            ])
+                        Forms\Components\TextInput::make('contract_term_months')
+                            ->label('Contract Term (months)')
+                            ->numeric()
+                            ->minValue(1)
+                            ->maxValue(600)
                             ->default(12)
                             ->required()
-                            ->helperText('The investor may not request a withdrawal until this term has elapsed.')
+                            ->suffix('months')
+                            ->helperText('E.g. 6, 12, 24, 36, 60, 120 for 6mo / 1yr / 2yr / 3yr / 5yr / 10yr terms. The investor may not request a withdrawal until this term has elapsed.')
                             ->disabled(fn (?Investment $record) => $record !== null),
+
+                        Forms\Components\TextInput::make('initial_annual_rate')
+                            ->label('Annual Rate (optional)')
+                            ->numeric()
+                            ->suffix('%')
+                            ->helperText("Leave blank to fall back to the investor's standing rate, then the company-wide default for each year.")
+                            ->visible(fn (?Investment $record) => $record === null)
+                            ->dehydrated(false),
                     ])
                     ->columns(2),
 
@@ -234,8 +242,28 @@ class InvestmentResource extends Resource
                     ->label('Download Agreement')
                     ->icon('heroicon-o-document-text')
                     ->color('gray')
-                    ->url(fn (Investment $record) => URL::temporarySignedRoute('investment-agreement', now()->addDay(), $record))
+                    ->url(fn (Investment $record) => URL::temporarySignedRoute('investment-agreement', now()->addDay(), [
+                        'investment' => $record->id,
+                        'as_of' => $record->defaultAsOfDate()->toDateString(),
+                    ]))
                     ->openUrlInNewTab(),
+
+                Tables\Actions\Action::make('downloadAgreementAsOf')
+                    ->label('Download As Of...')
+                    ->icon('heroicon-o-calendar')
+                    ->color('gray')
+                    ->form([
+                        Forms\Components\DatePicker::make('as_of')
+                            ->label('As Of Date')
+                            ->default(fn (Investment $record) => $record->defaultAsOfDate())
+                            ->required(),
+                    ])
+                    ->action(function (Investment $record, array $data) {
+                        return redirect(URL::temporarySignedRoute('investment-agreement', now()->addDay(), [
+                            'investment' => $record->id,
+                            'as_of' => $data['as_of'],
+                        ]));
+                    }),
 
                 Action::make('postInterest')
                     ->label('Post Interest')
@@ -243,51 +271,100 @@ class InvestmentResource extends Resource
                     ->color('info')
                     ->visible(fn (Investment $record) => $record->status === InvestmentStatus::active)
                     ->form(function (Investment $record) {
-                        $nextYear = ($record->last_interest_posted_year ?? (Carbon::parse($record->start_date)->year - 1)) + 1;
+                        $from = $record->last_interest_posted_through
+                            ? Carbon::parse($record->last_interest_posted_through)->addDay()
+                            : Carbon::parse($record->start_date);
 
                         return [
-                            Forms\Components\Select::make('year')
-                                ->options(collect(range($nextYear, max($nextYear, now()->year)))->mapWithKeys(fn ($y) => [$y => $y]))
-                                ->default($nextYear)
+                            Forms\Components\DatePicker::make('period_start')
+                                ->label('From')
+                                ->default($from)
+                                ->live()
+                                ->required(),
+
+                            Forms\Components\DatePicker::make('period_end')
+                                ->label('To')
+                                ->default(now())
+                                ->afterOrEqual('period_start')
                                 ->live()
                                 ->required(),
 
                             Forms\Components\Placeholder::make('preview')
                                 ->label('Computed Interest')
                                 ->content(function (Get $get) use ($record) {
-                                    if (! $get('year')) {
+                                    if (! $get('period_start') || ! $get('period_end')) {
                                         return '—';
                                     }
 
-                                    $accrual = app(InvestmentInterestService::class)->previewAccrual($record, (int) $get('year'));
+                                    try {
+                                        $accrual = app(InvestmentInterestService::class)->periodAccrual(
+                                            $record,
+                                            Carbon::parse($get('period_start')),
+                                            Carbon::parse($get('period_end')),
+                                            (float) $record->current_balance
+                                        );
+                                    } catch (\Throwable $e) {
+                                        return $e->getMessage();
+                                    }
 
-                                    return sprintf(
-                                        '$%s — %s%% (%s), %d days on $%s',
-                                        number_format($accrual['interest'], 2),
-                                        number_format($accrual['rate'], 2),
-                                        $accrual['rate_source'],
-                                        $accrual['days_held'],
-                                        number_format($accrual['balance_start'], 2)
-                                    );
-                                }),
+                                    $lines = collect($accrual['segments'])->map(fn ($segment) => sprintf(
+                                        '%d: %s%% (%s) × %d days on $%s = $%s',
+                                        $segment['year'],
+                                        number_format($segment['rate'], 2),
+                                        $segment['rate_source'],
+                                        $segment['days_held'],
+                                        number_format($segment['balance_start'], 2),
+                                        number_format($segment['interest'], 2)
+                                    ))->implode("\n");
+
+                                    return sprintf('Total: $%s'."\n".'%s', number_format($accrual['total_interest'], 2), $lines);
+                                })
+                                ->columnSpanFull(),
 
                             Forms\Components\TextInput::make('override_amount')
                                 ->label('Override Amount (optional)')
                                 ->numeric()
                                 ->prefix('USD')
-                                ->helperText('Leave blank to post the computed amount above as-is.'),
+                                ->helperText('Only applied when the period above resolves to a single calendar-year segment.')
+                                ->visible(function (Get $get) use ($record) {
+                                    if (! $get('period_start') || ! $get('period_end')) {
+                                        return false;
+                                    }
+
+                                    try {
+                                        $accrual = app(InvestmentInterestService::class)->periodAccrual(
+                                            $record,
+                                            Carbon::parse($get('period_start')),
+                                            Carbon::parse($get('period_end')),
+                                            (float) $record->current_balance
+                                        );
+                                    } catch (\Throwable $e) {
+                                        return false;
+                                    }
+
+                                    return count($accrual['segments']) === 1;
+                                }),
                         ];
                     })
                     ->action(function (Investment $record, array $data) {
                         $service = app(InvestmentInterestService::class);
 
                         try {
-                            $draft = $service->generateDraft($record, (int) $data['year']);
-                            $override = filled($data['override_amount'] ?? null) ? (float) $data['override_amount'] : null;
-                            $service->postDraft($draft, auth()->user(), $override);
+                            $drafts = $service->generateDraftForPeriod(
+                                $record,
+                                Carbon::parse($data['period_start']),
+                                Carbon::parse($data['period_end'])
+                            );
+
+                            $overrides = [];
+                            if (filled($data['override_amount'] ?? null) && $drafts->count() === 1) {
+                                $overrides[$drafts->first()->id] = (float) $data['override_amount'];
+                            }
+
+                            $service->postDraftBatch($drafts, auth()->user(), $overrides);
 
                             Notification::make()
-                                ->title("Interest posted for {$data['year']}")
+                                ->title("Interest posted for {$data['period_start']} – {$data['period_end']}")
                                 ->success()
                                 ->send();
                         } catch (\Throwable $e) {

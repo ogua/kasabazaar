@@ -118,6 +118,7 @@ class AdminPanelProvider extends PanelProvider
 
             ])
             ->renderHook(PanelsRenderHook::USER_MENU_BEFORE, fn (): View => view('admin.staff-login-btn'))
+            ->renderHook(PanelsRenderHook::BODY_START, fn (): View => view('admin.impersonation-banner'))
             ->userMenuItems([
                 'profile' => MenuItem::make()
                     ->label(fn () => Auth::user()->name)

@@ -16,7 +16,9 @@ use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets;
+use Illuminate\Contracts\View\View;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -81,6 +83,7 @@ class InvestorPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
                 RedirectToAdminPanel::class,
-            ]);
+            ])
+            ->renderHook(PanelsRenderHook::BODY_START, fn (): View => view('admin.impersonation-banner'));
     }
 }
