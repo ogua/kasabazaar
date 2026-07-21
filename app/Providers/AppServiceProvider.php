@@ -7,10 +7,10 @@ use App\Models\Payment;
 use App\Models\Shipment;
 use App\Observers\PaymentObserver;
 use App\Observers\ShipmentObserver;
-use Illuminate\Foundation\AliasLoader;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\ServiceProvider;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginContract;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\AliasLoader;
+use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,9 +23,9 @@ class AppServiceProvider extends ServiceProvider
             LoginContract::class,
             LoginResponse::class
         );
-        
+
         $loader = AliasLoader::getInstance();
-        $loader->alias('Paystack',\Unicodeveloper\Paystack\Facades\Paystack::class);
+        $loader->alias('Paystack', \Unicodeveloper\Paystack\Facades\Paystack::class);
     }
 
     /**

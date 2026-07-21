@@ -2,11 +2,11 @@
 
 namespace App\Service;
 
-use App\Models\User;
 use App\Enums\UserStatus;
+use App\Models\User;
 use Filament\Facades\Filament;
-use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\URL;
 
 class ImpersonationService
 {
@@ -46,11 +46,23 @@ class ImpersonationService
             'impersonate.original_panel' => Filament::getCurrentPanel()?->getId() ?? 'admin',
         ]);
 
-       // Auth::loginUsingId($target->id);
-        $targetPanelId = self::targetPanelId($target); // 'admin' | 'investor' | 'client'
-        Filament::getPanel($targetPanelId)->auth()->loginUsingId($target->id);
+        Auth::loginUsingId($target->id);
+        self::refreshPasswordHashInSession($target);
 
         return self::targetPanelPath($target);
+    }
+
+    /**
+     * Auth::loginUsingId() rotates the session ID but does not clear the
+     * previous user's 'password_hash_{guard}' key from the carried-over session
+     * attributes. AuthenticateSession middleware (run again on the target panel)
+     * compares that stale hash against the new user's actual password and, on
+     * a mismatch, force-logs-out and flushes the session — so every impersonation
+     * swap must refresh this key to the new user's own hash immediately.
+     */
+    public static function refreshPasswordHashInSession(User $user): void
+    {
+        session()->put('password_hash_'.auth()->getDefaultDriver(), $user->getAuthPassword());
     }
 
     /**
@@ -67,26 +79,18 @@ class ImpersonationService
 
     public static function targetPanelId(User $user): string
     {
-        if (filled($user->investor_id)) return 'investor';
-        if (filled($user->client_id)) return 'client';
+        if (filled($user->investor_id)) {
+            return 'investor';
+        }
+        if (filled($user->client_id)) {
+            return 'client';
+        }
+
         return 'admin';
     }
 
     public static function targetPanelPath(User $user): string
     {
-        return '/' . self::targetPanelId($user);
+        return '/'.self::targetPanelId($user);
     }
-
-    // public static function targetPanelPath(User $user): string
-    // {
-    //     if (filled($user->investor_id)) {
-    //         return '/investor';
-    //     }
-
-    //     if (filled($user->client_id)) {
-    //         return '/client';
-    //     }
-
-    //     return '/admin';
-    // }
 }

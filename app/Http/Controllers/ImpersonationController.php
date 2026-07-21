@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 use App\Service\ImpersonationService;
+use Illuminate\Support\Facades\Auth;
 
 class ImpersonationController extends Controller
 {
@@ -26,7 +26,6 @@ class ImpersonationController extends Controller
             abort(403, $e->getMessage());
         }
 
-
         return redirect()->to($path);
     }
 
@@ -41,6 +40,7 @@ class ImpersonationController extends Controller
         session()->forget(['impersonate.original_id', 'impersonate.original_panel']);
 
         Auth::loginUsingId($originalId);
+        ImpersonationService::refreshPasswordHashInSession(User::findOrFail($originalId));
 
         return redirect()->to('/'.$panel);
     }
