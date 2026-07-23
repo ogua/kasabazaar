@@ -29,10 +29,17 @@ class MyStatement extends Page
     public function getValuations(): array
     {
         $interestService = app(InvestmentInterestService::class);
+        $investor = $this->getInvestor();
+        $asOfDate = $investor->defaultAsOfDate();
 
-        return $this->getInvestor()->investments
-            ->mapWithKeys(fn ($investment) => [$investment->id => $interestService->valuationAsOf($investment, now())])
+        return $investor->investments
+            ->mapWithKeys(fn ($investment) => [$investment->id => $interestService->valuationAsOf($investment, $asOfDate)])
             ->toArray();
+    }
+
+    public function getAsOfDate(): \Carbon\Carbon
+    {
+        return $this->getInvestor()->defaultAsOfDate();
     }
 
     protected function getHeaderActions(): array
