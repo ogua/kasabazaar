@@ -25,7 +25,7 @@
 
         <div class="section">
             <p>This statement reflects the full history of investments held by {{ $investor->name }} with KasaBazaar
-                LLC d/b/a Rose Door to Door Shipping &amp; Delivery Services, as of {{ now()->format('F j, Y') }}.</p>
+                LLC d/b/a Rose Door to Door Shipping &amp; Delivery Services, as of {{ $asOfDate->format('F j, Y') }}.</p>
         </div>
 
         @foreach ($investments as $investment)
@@ -145,8 +145,8 @@
         </div>
 
         <div class="footer">This statement was generated on {{ now()->format('M d, Y') }} and reflects posted ledger
-            activity to date. It does not constitute a request for withdrawal or a modification of any Investment
-            Agreement.</div>
+            activity through {{ $asOfDate->format('M d, Y') }}. It does not constitute a request for withdrawal or a
+            modification of any Investment Agreement.</div>
     </div>
 </body>
 

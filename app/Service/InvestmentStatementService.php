@@ -19,8 +19,14 @@ class InvestmentStatementService
 
         $interestService = app(InvestmentInterestService::class);
 
+        // Anchor to the same already-closed accounting date the Investment Agreement
+        // uses (Investment::defaultAsOfDate()), not "today" — otherwise this statement
+        // would silently blend in unposted, in-progress accrual for the current partial
+        // year and no longer tie out to the Agreement's stated balances.
+        $asOfDate = $investor->defaultAsOfDate();
+
         $valuations = $investor->investments->mapWithKeys(
-            fn (Investment $investment) => [$investment->id => $interestService->valuationAsOf($investment, now())]
+            fn (Investment $investment) => [$investment->id => $interestService->valuationAsOf($investment, $asOfDate)]
         );
 
         return \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.investment-account-statement', [
@@ -29,6 +35,7 @@ class InvestmentStatementService
             'valuations' => $valuations,
             'totalPrincipal' => $investor->investments->sum('principal_amount'),
             'totalValue' => $valuations->sum('compounded_balance'),
+            'asOfDate' => $asOfDate,
         ])
             ->setPaper('a4', 'portrait')
             ->setOptions([
