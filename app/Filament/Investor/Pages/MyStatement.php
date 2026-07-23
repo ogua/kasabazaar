@@ -55,6 +55,14 @@ class MyStatement extends Page
 
     public function downloadPdf()
     {
-        return InvestmentStatementService::downloadPdf($this->getInvestor());
+        $investor = $this->getInvestor();
+        $pdf = InvestmentStatementService::generatePdf($investor);
+
+        // Livewire only intercepts StreamedResponse/BinaryFileResponse as a browser
+        // download; DomPDF's own ->download() returns a plain Response, which a
+        // wire:click-triggered action silently swallows.
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->output();
+        }, "investment-statement-{$investor->id}.pdf");
     }
 }
