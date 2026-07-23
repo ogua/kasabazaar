@@ -2,25 +2,25 @@
 
 namespace App\Filament\Resources;
 
-use App\Enums\InvestmentStatus;
-use App\Enums\PaymentMethod;
-use App\Filament\Resources\InvestmentResource\Pages;
-use App\Filament\Resources\InvestmentResource\RelationManagers\RateOverridesRelationManager;
-use App\Filament\Resources\InvestmentResource\RelationManagers\TransactionsRelationManager;
-use App\Models\Investment;
-use App\Service\InvestmentInterestService;
-use App\Service\InvestmentPaymentService;
 use Carbon\Carbon;
-use Filament\Facades\Filament;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Notifications\Notification;
-use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Actions\Action;
+use Filament\Forms\Get;
+use Filament\Forms\Form;
+use App\Models\Investment;
 use Filament\Tables\Table;
+use App\Enums\PaymentMethod;
+use Filament\Facades\Filament;
+use App\Enums\InvestmentStatus;
+use Filament\Resources\Resource;
+use Filament\Tables\Actions\Action;
 use Illuminate\Support\Facades\URL;
+use Filament\Notifications\Notification;
+use App\Service\InvestmentPaymentService;
+use App\Service\InvestmentInterestService;
+use App\Filament\Resources\InvestmentResource\Pages;
+use App\Filament\Resources\InvestmentResource\RelationManagers\TransactionsRelationManager;
+use App\Filament\Resources\InvestmentResource\RelationManagers\RateOverridesRelationManager;
 
 class InvestmentResource extends Resource
 {
@@ -247,23 +247,7 @@ class InvestmentResource extends Resource
                         'as_of' => $record->defaultAsOfDate()->toDateString(),
                     ]))
                     ->openUrlInNewTab(),
-
-                Tables\Actions\Action::make('downloadAgreementAsOf')
-                    ->label('Download As Of...')
-                    ->icon('heroicon-o-calendar')
-                    ->color('gray')
-                    ->form([
-                        Forms\Components\DatePicker::make('as_of')
-                            ->label('As Of Date')
-                            ->default(fn (Investment $record) => $record->defaultAsOfDate())
-                            ->required(),
-                    ])
-                    ->action(function (Investment $record, array $data) {
-                        return redirect(URL::temporarySignedRoute('investment-agreement', now()->addDay(), [
-                            'investment' => $record->id,
-                            'as_of' => $data['as_of'],
-                        ]));
-                    }),
+                    
 
                 Action::make('postInterest')
                     ->label('Post Interest')
