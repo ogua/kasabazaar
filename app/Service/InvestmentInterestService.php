@@ -416,6 +416,71 @@ class InvestmentInterestService
     }
 
     /**
+     * Same valuation as valuationAsOf(), but broken down segment-by-segment (one
+     * entry per posted interest_credit transaction, plus any not-yet-posted trailing
+     * segments up to $asOfDate) instead of collapsed into totals. Used to render the
+     * itemized interest breakdown on agreement PDFs.
+     *
+     * @return array{principal: float, segments: array, interest_earned_total: float, compounded_balance: float, as_of: Carbon}
+     */
+    public function segmentedValuationAsOf(Investment $investment, Carbon $asOfDate): array
+    {
+        $postedTxns = InvestmentTransaction::where('investment_id', $investment->id)
+            ->where('type', InvestmentTransactionType::interest_credit->value)
+            ->where('posted', true)
+            ->orderBy('period_end')
+            ->get();
+
+        $segments = $postedTxns->map(fn (InvestmentTransaction $txn) => [
+            'year' => $txn->year,
+            'period_start' => Carbon::parse($txn->period_start),
+            'period_end' => Carbon::parse($txn->period_end),
+            'days_held' => Carbon::parse($txn->period_start)->diffInDays(Carbon::parse($txn->period_end)) + 1,
+            'rate' => (float) $txn->rate_applied,
+            'balance_start' => (float) $txn->op_balance,
+            'interest' => (float) $txn->credit,
+            'balance_end' => (float) $txn->cl_balance,
+        ])->all();
+
+        $lastPosted = $postedTxns->last();
+        $balance = $lastPosted ? (float) $lastPosted->cl_balance : (float) $investment->principal_amount;
+        $cursor = $lastPosted
+            ? Carbon::parse($lastPosted->period_end)->addDay()
+            : Carbon::parse($investment->start_date);
+
+        if ($cursor->lessThanOrEqualTo($asOfDate)) {
+            $trailing = $this->periodAccrual($investment, $cursor, $asOfDate, $balance);
+
+            foreach ($trailing['segments'] as $segment) {
+                if ($segment['days_held'] <= 0) {
+                    continue;
+                }
+
+                $segments[] = [
+                    'year' => $segment['year'],
+                    'period_start' => Carbon::parse($segment['period_start']),
+                    'period_end' => Carbon::parse($segment['period_end']),
+                    'days_held' => $segment['days_held'],
+                    'rate' => $segment['rate'],
+                    'balance_start' => $segment['balance_start'],
+                    'interest' => $segment['interest'],
+                    'balance_end' => $segment['balance_end'],
+                ];
+            }
+
+            $balance = $trailing['balance_end'];
+        }
+
+        return [
+            'principal' => (float) $investment->principal_amount,
+            'segments' => $segments,
+            'interest_earned_total' => round(collect($segments)->sum('interest'), 2),
+            'compounded_balance' => round($balance, 2),
+            'as_of' => $asOfDate,
+        ];
+    }
+
+    /**
      * True-up interest for a partial year ending at $throughDate (e.g. before a full
      * withdrawal payout closes the investment), then immediately post it.
      */

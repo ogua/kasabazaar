@@ -3,8 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\Investment;
+use App\Models\InvestmentRateSetting;
 use App\Models\Investor;
+use App\Models\User;
 use App\Service\InvestmentAgreementService;
+use App\Service\InvestmentInterestService;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
@@ -64,6 +68,38 @@ class InvestmentAgreementServiceTest extends TestCase
         Investment::create(['investor_id' => $investor->id, 'principal_amount' => 20000, 'start_date' => now()]);
 
         $pdf = InvestmentAgreementService::generateCombinedPdf($investor->fresh());
+
+        $this->assertGreaterThan(1000, strlen($pdf->output()));
+    }
+
+    public function test_combined_agreement_pdf_renders_the_itemized_valuation_breakdown_for_multiple_tranches(): void
+    {
+        $investor = Investor::create(['name' => 'Itemized Combined Investor', 'status' => 'active']);
+        $staffUser = User::first() ?? User::factory()->create();
+        InvestmentRateSetting::create(['year' => 2024, 'annual_rate' => 17]);
+        InvestmentRateSetting::create(['year' => 2025, 'annual_rate' => 15]);
+
+        $interestService = app(InvestmentInterestService::class);
+
+        // Second tranche created first, to prove the template orders by start_date
+        // (chronological "Investment 1"/"Investment 2"), not creation order.
+        $laterTranche = Investment::create([
+            'investor_id' => $investor->id,
+            'principal_amount' => 20000,
+            'start_date' => '2024-10-02',
+            'status' => 'active',
+        ]);
+        $earlierTranche = Investment::create([
+            'investor_id' => $investor->id,
+            'principal_amount' => 20000,
+            'start_date' => '2024-06-02',
+            'status' => 'active',
+        ]);
+
+        $interestService->postDraft($interestService->generateDraft($laterTranche, 2024), $staffUser);
+        $interestService->postDraft($interestService->generateDraft($earlierTranche, 2024), $staffUser);
+
+        $pdf = InvestmentAgreementService::generateCombinedPdf($investor->fresh(), Carbon::parse('2025-12-31'));
 
         $this->assertGreaterThan(1000, strlen($pdf->output()));
     }

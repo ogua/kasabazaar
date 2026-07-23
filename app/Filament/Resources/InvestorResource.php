@@ -2,15 +2,15 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms;
-use Filament\Tables;
-use App\Models\Investor;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
-use Filament\Resources\Resource;
-use Illuminate\Support\Facades\URL;
 use App\Filament\Resources\InvestorResource\Pages;
 use App\Filament\Resources\InvestorResource\RelationManagers\InvestmentsRelationManager;
+use App\Models\Investor;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Support\Facades\URL;
 
 class InvestorResource extends Resource
 {
@@ -225,23 +225,23 @@ class InvestorResource extends Resource
                     ]))
                     ->openUrlInNewTab(),
 
-                Tables\Actions\Action::make('downloadAgreementAsOf')
-                    ->label('Download As Of...')
-                    ->icon('heroicon-o-calendar')
-                    ->color('gray')
-                    ->visible(fn (Investor $record) => $record->investments()->exists())
-                    ->form([
-                        Forms\Components\DatePicker::make('as_of')
-                            ->label('As Of Date')
-                            ->default(fn (Investor $record) => $record->defaultAsOfDate())
-                            ->required(),
-                    ])
-                    ->action(function (Investor $record, array $data) {
-                        return redirect(URL::temporarySignedRoute('investment-agreement-combined', now()->addDay(), [
-                            'investor' => $record->id,
-                            'as_of' => $data['as_of'],
-                        ]));
-                    }),
+                // Tables\Actions\Action::make('downloadAgreementAsOf')
+                //     ->label('Download As Of...')
+                //     ->icon('heroicon-o-calendar')
+                //     ->color('gray')
+                //     ->visible(fn (Investor $record) => $record->investments()->exists())
+                //     ->form([
+                //         Forms\Components\DatePicker::make('as_of')
+                //             ->label('As Of Date')
+                //             ->default(fn (Investor $record) => $record->defaultAsOfDate())
+                //             ->required(),
+                //     ])
+                //     ->action(function (Investor $record, array $data) {
+                //         return redirect(URL::temporarySignedRoute('investment-agreement-combined', now()->addDay(), [
+                //             'investor' => $record->id,
+                //             'as_of' => $data['as_of'],
+                //         ]));
+                //     }),
 
                 Tables\Actions\Action::make('sendAgreement')
                     ->label('Send Agreement')

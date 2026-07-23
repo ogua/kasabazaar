@@ -134,6 +134,45 @@ class InvestmentInterestServiceTest extends TestCase
         $service->generateDraft($investment->fresh(), 2025);
     }
 
+    public function test_segmented_valuation_matches_valuation_as_of_and_breaks_down_by_segment(): void
+    {
+        $investor = Investor::create(['name' => 'Segmented Valuation Investor', 'status' => 'active']);
+        $staffUser = User::first() ?? User::factory()->create();
+        InvestmentRateSetting::create(['year' => 2024, 'annual_rate' => 17]);
+        InvestmentRateSetting::create(['year' => 2025, 'annual_rate' => 15]);
+
+        $investment = Investment::create([
+            'investor_id' => $investor->id,
+            'principal_amount' => 20000,
+            'start_date' => '2024-10-02',
+            'status' => 'active',
+        ]);
+
+        $service = app(InvestmentInterestService::class);
+
+        $service->postDraft($service->generateDraft($investment, 2024), $staffUser);
+
+        $asOfDate = Carbon::parse('2025-12-31');
+        $segmented = $service->segmentedValuationAsOf($investment->fresh(), $asOfDate);
+        $valuation = $service->valuationAsOf($investment->fresh(), $asOfDate);
+
+        $this->assertCount(2, $segmented['segments']);
+
+        // Already-posted 2024 segment, sourced from the transaction row.
+        $this->assertSame(2024, $segmented['segments'][0]['year']);
+        $this->assertSame(91, $segmented['segments'][0]['days_held']);
+        $this->assertEquals(17.0, $segmented['segments'][0]['rate']);
+        $this->assertEquals(847.67, $segmented['segments'][0]['interest']);
+
+        // Trailing, not-yet-posted 2025 segment computed live via periodAccrual.
+        $this->assertSame(2025, $segmented['segments'][1]['year']);
+        $this->assertEquals(15.0, $segmented['segments'][1]['rate']);
+        $this->assertEquals(3127.15, $segmented['segments'][1]['interest']);
+
+        $this->assertEquals($valuation['interest_earned_total'], $segmented['interest_earned_total']);
+        $this->assertEquals($valuation['compounded_balance'], $segmented['compounded_balance']);
+    }
+
     private function daysFromDescription(string $description): int
     {
         preg_match('/x (\d+) days/', $description, $matches);

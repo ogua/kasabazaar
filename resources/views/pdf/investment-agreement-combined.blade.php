@@ -7,6 +7,12 @@
 </head>
 
 <body>
+    @php
+        $ordinalWords = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth'];
+        $ordinal = fn (int $n) => $ordinalWords[$n - 1] ?? "{$n}th";
+        $clauseLabel = fn (int $i) => $i < 26 ? chr(97 + $i) : ($i + 1);
+    @endphp
+
     <div class="container">
         @include('pdf.partials.investment-pdf-header', [
             'docTitle' => 'Investment Agreement',
@@ -33,45 +39,98 @@
 
         <div class="section">
             <h2>Investment Contributions</h2>
-            <table>
-                <tr>
-                    <th>Reference</th>
-                    <th>Amount (USD)</th>
-                    <th>Date Received</th>
-                    <th>Term</th>
-                    <th>Maturity Date</th>
-                    <th>Current Value (USD)</th>
-                </tr>
-                @foreach ($investments as $investment)
-                    <tr>
-                        <td>{{ $investment->reference }}</td>
-                        <td>{{ number_format($investment->principal_amount, 2) }}</td>
-                        <td>{{ \Carbon\Carbon::parse($investment->start_date)->format('F j, Y') }}</td>
-                        <td>{{ $investment->contract_term_months }} months</td>
-                        <td>{{ $investment->maturity_date?->format('F j, Y') ?? '—' }}</td>
-                        <td>{{ number_format($valuations[$investment->id]['compounded_balance'], 2) }}</td>
-                    </tr>
-                @endforeach
-            </table>
+            @foreach ($investments as $i => $investment)
+                <div class="valuation-box">
+                    <div class="row">
+                        <div class="label"><strong>Investment {{ $i + 1 }}</strong></div>
+                        <div class="value"></div>
+                    </div>
+                    <div class="row">
+                        <div class="label">Amount</div>
+                        <div class="value">${{ number_format($investment->principal_amount, 2) }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="label">Date Received</div>
+                        <div class="value">{{ \Carbon\Carbon::parse($investment->start_date)->format('F j, Y') }}</div>
+                    </div>
+                </div>
+            @endforeach
+            <div class="valuation-box">
+                <div class="row">
+                    <div class="label"><strong>Total Principal Invested</strong></div>
+                    <div class="value"><strong>${{ number_format($totalPrincipal, 2) }}</strong></div>
+                </div>
+            </div>
         </div>
 
         <div class="section">
             <h2>Return on Investment</h2>
-            <p>
-                Interest on each tranche is calculated on an annual-compounding basis, accruing daily using a 365-day
-                year and prorated for partial-year periods, at the rate applicable to that tranche for each calendar
-                year. Returns represent compensation payable by the Company on the investment loan and are not
-                dependent upon the Company's profits, losses, revenues, or valuation.
-            </p>
+            <p>The parties agree that:</p>
+            @foreach ($rateClauses as $i => $clause)
+                <p style="margin-bottom: 6px;"><strong>{{ $clauseLabel($i) }}.</strong> {{ $clause }}</p>
+            @endforeach
         </div>
 
         <div class="section">
-            <h2>Aggregate Investment Valuation</h2>
+            <h2>Investment Valuation</h2>
+            <p>The parties acknowledge the following investment balances, calculated in accordance with the annual
+                compounding methodology described above:</p>
+
+            @foreach ($investments as $i => $investment)
+                @php
+                    $valuation = $valuations[$investment->id];
+                    $segments = $valuation['segments'];
+                    $segmentCount = count($segments);
+                @endphp
+                <p style="font-weight: bold; color: #003151; text-transform: uppercase; margin: 12px 0 6px;">
+                    {{ $ordinal($i + 1) }} Investment
+                </p>
+                <div class="valuation-box">
+                    <div class="row">
+                        <div class="label">Original Principal</div>
+                        <div class="value">${{ number_format($valuation['principal'], 2) }}</div>
+                    </div>
+                    @foreach ($segments as $j => $segment)
+                        @php
+                            $isFullYear = $segment['period_start']->isSameDay(\Carbon\Carbon::create($segment['year'], 1, 1))
+                                && $segment['period_end']->isSameDay(\Carbon\Carbon::create($segment['year'], 12, 31));
+                        @endphp
+                        <div class="row">
+                            <div class="label">
+                                @if ($isFullYear)
+                                    Interest Earned During {{ $segment['year'] }} at {{ number_format($segment['rate'], 2) }}%
+                                @else
+                                    Interest Earned ({{ $segment['period_start']->format('F j, Y') }}–{{ $segment['period_end']->format('F j, Y') }}) at {{ number_format($segment['rate'], 2) }}% per annum, prorated for {{ $segment['days_held'] }} days
+                                @endif
+                            </div>
+                            <div class="value">${{ number_format($segment['interest'], 2) }}</div>
+                        </div>
+                        @if ($j < $segmentCount - 1)
+                            <div class="row">
+                                <div class="label">Balance as of {{ $segment['period_end']->copy()->addDay()->format('F j, Y') }}</div>
+                                <div class="value">${{ number_format($segment['balance_end'], 2) }}</div>
+                            </div>
+                        @endif
+                    @endforeach
+                    <div class="row" style="border-top: 1px solid #A0043C; padding-top: 6px; margin-top: 4px;">
+                        <div class="label"><strong>Total Value of {{ $ordinal($i + 1) }} Investment as of {{ $asOfDate->format('F j, Y') }}</strong></div>
+                        <div class="value"><strong>${{ number_format($valuation['compounded_balance'], 2) }}</strong></div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+
+        <div class="section">
+            <h2>Total Investment Position</h2>
             <p>The parties acknowledge the following aggregate position as of {{ $asOfDate->format('F j, Y') }}:</p>
             <div class="valuation-box">
                 <div class="row">
                     <div class="label">Total Principal Invested</div>
                     <div class="value">${{ number_format($totalPrincipal, 2) }}</div>
+                </div>
+                <div class="row">
+                    <div class="label">Total Accrued Interest</div>
+                    <div class="value">${{ number_format($totalInterest, 2) }}</div>
                 </div>
                 <div class="row">
                     <div class="label">Total Investment Value</div>

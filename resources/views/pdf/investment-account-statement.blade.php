@@ -4,6 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <title>Investment Account Statement - {{ $investor->name }}</title>
+    <style>
+        .transactions-table {
+            font-size: 9px;
+        }
+
+        .transactions-table th,
+        .transactions-table td {
+            padding: 4px 5px;
+        }
+    </style>
 </head>
 
 <body>
@@ -66,19 +76,29 @@
                 @if ($investment->transactions->isEmpty())
                     <p>No posted transactions yet.</p>
                 @else
-                    <table>
+                    <table class="transactions-table">
                         <tr>
                             <th>Date</th>
                             <th>Type</th>
+                            <th>Interest Period</th>
+                            <th class="text-right">Days</th>
+                            <th class="text-right">Rate</th>
                             <th class="text-right">Debit</th>
                             <th class="text-right">Credit</th>
                             <th class="text-right">Balance</th>
                             <th>Description</th>
                         </tr>
                         @foreach ($investment->transactions as $transaction)
+                            @php
+                                $hasPeriod = $transaction->period_start && $transaction->period_end;
+                                $daysHeld = $hasPeriod ? $transaction->period_start->diffInDays($transaction->period_end) + 1 : null;
+                            @endphp
                             <tr>
                                 <td>{{ \Carbon\Carbon::parse($transaction->date)->format('M j, Y') }}</td>
                                 <td>{{ $transaction->type->getLabel() }}</td>
+                                <td>{{ $hasPeriod ? $transaction->period_start->format('M j, Y').' – '.$transaction->period_end->format('M j, Y') : '—' }}</td>
+                                <td class="text-right">{{ $daysHeld ?? '—' }}</td>
+                                <td class="text-right">{{ $transaction->rate_applied !== null ? number_format($transaction->rate_applied, 2).'%' : '—' }}</td>
                                 <td class="text-right">{{ $transaction->debit > 0 ? number_format($transaction->debit, 2) : '—' }}</td>
                                 <td class="text-right">{{ $transaction->credit > 0 ? number_format($transaction->credit, 2) : '—' }}</td>
                                 <td class="text-right">{{ number_format($transaction->cl_balance, 2) }}</td>
