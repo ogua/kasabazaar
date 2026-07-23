@@ -2,9 +2,9 @@
 
 namespace App\Filament\Investor\Resources\InvestmentWithdrawalRequestResource\Pages;
 
-use App\Filament\Investor\Resources\InvestmentWithdrawalRequestResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
+use App\Filament\Investor\Resources\InvestmentWithdrawalRequestResource;
 
 class ListInvestmentWithdrawalRequests extends ListRecords
 {
@@ -13,7 +13,8 @@ class ListInvestmentWithdrawalRequests extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make(),
+            Actions\CreateAction::make()
+            ->label('Interest Request'),
         ];
     }
 }
