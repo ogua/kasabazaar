@@ -2,16 +2,16 @@
 
 namespace App\Filament\Investor\Resources;
 
-use App\Filament\Investor\Resources\InvestmentWithdrawalRequestResource\Pages;
-use App\Models\Investment;
-use App\Models\InvestmentWithdrawalRequest;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Forms\Get;
+use Filament\Forms\Form;
+use App\Models\Investment;
 use Filament\Tables\Table;
+use Filament\Resources\Resource;
 use Illuminate\Database\Eloquent\Builder;
+use App\Models\InvestmentWithdrawalRequest;
+use App\Filament\Investor\Resources\InvestmentWithdrawalRequestResource\Pages;
 
 class InvestmentWithdrawalRequestResource extends Resource
 {
@@ -20,6 +20,10 @@ class InvestmentWithdrawalRequestResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-arrow-up-tray';
 
     protected static ?string $navigationLabel = 'Withdrawal Requests';
+
+    protected static ?string $pluralModelLabel = 'Withdrawal Requests';
+
+    protected static ?string $modelLabel = 'Withdrawal Request';
 
     protected static ?int $navigationSort = 2;
 
