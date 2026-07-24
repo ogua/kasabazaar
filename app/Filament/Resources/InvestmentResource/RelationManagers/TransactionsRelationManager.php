@@ -2,15 +2,17 @@
 
 namespace App\Filament\Resources\InvestmentResource\RelationManagers;
 
-use App\Enums\InvestmentTransactionType;
-use App\Models\InvestmentTransaction;
-use App\Service\InvestmentInterestService;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Notifications\Notification;
-use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Filament\Actions\EditAction;
+use App\Models\InvestmentTransaction;
+use App\Enums\InvestmentTransactionType;
+use Filament\Notifications\Notification;
+use Filament\Tables\Actions\DeleteAction;
+use App\Service\InvestmentInterestService;
+use Filament\Resources\RelationManagers\RelationManager;
 
 class TransactionsRelationManager extends RelationManager
 {
@@ -20,7 +22,21 @@ class TransactionsRelationManager extends RelationManager
 
     public function form(Form $form): Form
     {
-        return $form->schema([]);
+        return $form->schema([
+            Forms\Components\DatePicker::make('date')
+                ->required()
+                ->default(now()),
+
+                Forms\Components\DatePicker::make('period_start')
+                    ->required()
+                    ->default(now()),
+
+                Forms\Components\TextInput::make('rate_applied')
+                    ->label('Rate Applied')
+                    ->numeric()
+                    ->suffix('%')
+                    ->required()
+        ]);
     }
 
     public function table(Table $table): Table
@@ -116,6 +132,10 @@ class TransactionsRelationManager extends RelationManager
                                 ->send();
                         }
                     }),
+
+                    DeleteAction::make(),
+
+                    EditAction::make(),
             ])
             ->bulkActions([])
             ->paginated([10, 25, 50]);

@@ -39,8 +39,13 @@ class InvestmentResource extends Resource
     public static function form(Form $form): Form
     {
         return $form
-            ->schema([
-                Forms\Components\Section::make('Investment Details')
+            ->schema(self::InvestmentForm());
+    }
+
+
+    public static function InvestmentForm(){
+        return [
+            Forms\Components\Section::make('Investment Details')
                     ->schema([
                         Forms\Components\Select::make('investor_id')
                             ->label('Investor')
@@ -124,7 +129,7 @@ class InvestmentResource extends Resource
 
                 Forms\Components\Textarea::make('notes')
                     ->columnSpanFull(),
-            ]);
+        ];
     }
 
     public static function table(Table $table): Table
@@ -309,25 +314,25 @@ class InvestmentResource extends Resource
                                 ->label('Override Amount (optional)')
                                 ->numeric()
                                 ->prefix('USD')
-                                ->helperText('Only applied when the period above resolves to a single calendar-year segment.')
-                                ->visible(function (Get $get) use ($record) {
-                                    if (! $get('period_start') || ! $get('period_end')) {
-                                        return false;
-                                    }
+                                ->helperText('Only applied when the period above resolves to a single calendar-year segment.'),
+                                // ->visible(function (Get $get) use ($record) {
+                                //     if (! $get('period_start') || ! $get('period_end')) {
+                                //         return false;
+                                //     }
 
-                                    try {
-                                        $accrual = app(InvestmentInterestService::class)->periodAccrual(
-                                            $record,
-                                            Carbon::parse($get('period_start')),
-                                            Carbon::parse($get('period_end')),
-                                            (float) $record->current_balance
-                                        );
-                                    } catch (\Throwable $e) {
-                                        return false;
-                                    }
+                                //     try {
+                                //         $accrual = app(InvestmentInterestService::class)->periodAccrual(
+                                //             $record,
+                                //             Carbon::parse($get('period_start')),
+                                //             Carbon::parse($get('period_end')),
+                                //             (float) $record->current_balance
+                                //         );
+                                //     } catch (\Throwable $e) {
+                                //         return false;
+                                //     }
 
-                                    return count($accrual['segments']) === 1;
-                                }),
+                                //     return count($accrual['segments']) === 1;
+                                // }),
                         ];
                     })
                     ->action(function (Investment $record, array $data) {
