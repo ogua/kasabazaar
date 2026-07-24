@@ -140,8 +140,8 @@ class TransactionsRelationManager extends RelationManager
             ->paginated([10, 25, 50]);
     }
 
-    public function isReadOnly(): bool
-    {
-        return true;
-    }
+    // public function isReadOnly(): bool
+    // {
+    //     return true;
+    // }
 }
