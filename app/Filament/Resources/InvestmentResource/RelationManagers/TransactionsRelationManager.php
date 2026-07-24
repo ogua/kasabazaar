@@ -134,7 +134,6 @@ class TransactionsRelationManager extends RelationManager
                     }),
 
                     DeleteAction::make(),
-
                     EditAction::make(),
             ])
             ->bulkActions([])
