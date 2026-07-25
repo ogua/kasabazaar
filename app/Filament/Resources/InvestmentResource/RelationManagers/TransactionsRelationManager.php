@@ -24,10 +24,15 @@ class TransactionsRelationManager extends RelationManager
     {
         return $form->schema([
             Forms\Components\DatePicker::make('date')
+                ->label('Date Paid')
                 ->required()
                 ->default(now()),
 
                 Forms\Components\DatePicker::make('period_start')
+                    ->required()
+                    ->default(now()),
+
+                Forms\Components\DatePicker::make('period_end')
                     ->required()
                     ->default(now()),
 
