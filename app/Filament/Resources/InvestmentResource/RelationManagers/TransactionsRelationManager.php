@@ -133,7 +133,15 @@ class TransactionsRelationManager extends RelationManager
                         }
                     }),
 
-                    DeleteAction::make(),
+                    DeleteAction::make()
+                    ->before(function (InvestmentTransaction $record) {
+                        app(InvestmentInterestService::class)->reviseInterestTransaction(
+                                $record,
+                                0,
+                                auth()->user(),
+                                "wrong amount, deleted via Filament admin"
+                            );
+                    }),
                     EditAction::make(),
             ])
             ->bulkActions([])
