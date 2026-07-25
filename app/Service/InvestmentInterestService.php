@@ -2,14 +2,14 @@
 
 namespace App\Service;
 
-use App\Enums\InvestmentTransactionType;
-use App\Models\Investment;
-use App\Models\InvestmentTransaction;
-use App\Models\User;
-use App\Notifications\InvestmentInterestPosted;
 use Carbon\Carbon;
+use App\Models\User;
+use App\Models\Investment;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use App\Models\InvestmentTransaction;
+use App\Enums\InvestmentTransactionType;
+use App\Notifications\InvestmentInterestPosted;
 
 class InvestmentInterestService
 {
@@ -181,13 +181,17 @@ class InvestmentInterestService
         $periodStart = Carbon::create($year, 1, 1)->max($startDate);
         $periodEnd = Carbon::create($year, 12, 31);
 
+        $rate = ($partialYearPosted->rate_applied > 0)
+        ? $partialYearPosted->rate_applied
+        : $accrual['rate'];
+
         return InvestmentTransaction::create([
             'investment_id' => $investment->id,
             'investor_id' => $investment->investor_id,
             'date' => $periodEnd,
             'period_start' => $periodStart,
             'period_end' => $periodEnd,
-            'rate_applied' => $accrual['rate'],
+            'rate_applied' => $rate,
             'type' => InvestmentTransactionType::interest_credit->value,
             'op_balance' => $balanceAtStartOfYear,
             'credit' => $accrual['interest'],
