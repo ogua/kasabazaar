@@ -3,8 +3,8 @@
 namespace App\Service;
 
 use App\Enums\InvestmentTransactionType;
-use App\Exceptions\MissingInvestmentRateException;
 use App\Models\Investment;
+use App\Models\InvestmentTransaction;
 use App\Models\Investor;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -45,9 +45,18 @@ class InvestmentAgreementService
 
         $investments = $investor->investments()->orderBy('start_date')->get();
 
+        // includeUnposted: false — the agreement must only reflect interest that has
+        // actually been credited. Projecting a not-yet-posted period would show the
+        // investor a return they have not been paid, especially once $asOfDate is
+        // pulled forward by a sibling tranche with no posted interest of its own.
         $segmentedValuations = $investments->mapWithKeys(
-            fn (Investment $investment) => [$investment->id => $interestService->segmentedValuationAsOf($investment, $asOfDate)]
+            fn (Investment $investment) => [$investment->id => $interestService->segmentedValuationAsOf($investment, $asOfDate, includeUnposted: false)]
         );
+
+        // The date actually reflected by the figures above — the latest date any
+        // tranche has posted interest through — rather than the (possibly later)
+        // requested/default $asOfDate.
+        $reflectedAsOfDate = $segmentedValuations->max(fn (array $valuation) => $valuation['as_of']) ?? $asOfDate;
 
         return Pdf::loadView('pdf.investment-agreement-combined', [
             'investor' => $investor,
@@ -57,7 +66,7 @@ class InvestmentAgreementService
             'totalValue' => $segmentedValuations->sum('compounded_balance'),
             'totalInterest' => $segmentedValuations->sum('interest_earned_total'),
             'rateClauses' => self::buildCombinedRateClauses($investments, $asOfDate),
-            'asOfDate' => $asOfDate,
+            'asOfDate' => $reflectedAsOfDate,
         ])
             ->setPaper('a4', 'portrait')
             ->setOptions([
@@ -170,48 +179,43 @@ class InvestmentAgreementService
 
     /**
      * Build the dynamic "Return on Investment" clause list for a combined agreement:
-     * one clause per calendar year describing the rate that applied (collapsed into a
-     * single clause if every tranche shared the same rate that year, otherwise one
-     * clause per tranche), followed by the fixed methodology clauses.
+     * one clause per calendar year describing the rate actually applied to interest
+     * that has been posted for that year (collapsed into a single clause if every
+     * tranche shared the same rate that year, otherwise one clause per tranche),
+     * followed by the fixed methodology clauses. Years with no posted interest are
+     * omitted — this is a statement of returns actually paid, not a projection of
+     * what a configured rate would yield.
      *
      * @param  Collection<int, Investment>  $investments
      * @return array<int, string>
      */
     private static function buildCombinedRateClauses(Collection $investments, Carbon $asOfDate): array
     {
-        $resolver = app(InvestmentRateResolver::class);
-        $endYear = $asOfDate->year;
-        $startYear = $investments->min(fn (Investment $investment) => Carbon::parse($investment->start_date)->year) ?? $endYear;
-
         $clauses = [];
 
-        for ($year = $startYear; $year <= $endYear; $year++) {
-            $ratesThisYear = [];
+        $postedByYear = InvestmentTransaction::whereIn('investment_id', $investments->pluck('id'))
+            ->where('type', InvestmentTransactionType::interest_credit->value)
+            ->where('posted', true)
+            ->where('date', '<=', $asOfDate)
+            ->orderBy('year')
+            ->get()
+            ->groupBy('year');
 
-            foreach ($investments as $investment) {
-                if ($year < Carbon::parse($investment->start_date)->year) {
-                    continue;
-                }
+        foreach ($postedByYear as $year => $transactions) {
+            $ratesByReference = $transactions->groupBy('investment_id')->mapWithKeys(function (Collection $group) use ($investments) {
+                $reference = $investments->firstWhere('id', $group->first()->investment_id)?->reference ?? $group->first()->investment_id;
 
-                try {
-                    $ratesThisYear[$investment->reference] = $resolver->resolve($investment, $year)['rate'];
-                } catch (MissingInvestmentRateException $e) {
-                    // Not configured for this year — omit rather than guess.
-                }
-            }
+                return [$reference => (float) $group->first()->rate_applied];
+            });
 
-            if (empty($ratesThisYear)) {
-                continue;
-            }
-
-            if (count(array_unique($ratesThisYear)) === 1) {
+            if ($ratesByReference->unique()->count() === 1) {
                 $clauses[] = sprintf(
                     'Investments held during %d earned a return of %s%% per annum.',
                     $year,
-                    number_format(reset($ratesThisYear), 2)
+                    number_format($ratesByReference->first(), 2)
                 );
             } else {
-                foreach ($ratesThisYear as $reference => $rate) {
+                foreach ($ratesByReference as $reference => $rate) {
                     $clauses[] = sprintf(
                         'Investment %s held during %d earned a return of %s%% per annum.',
                         $reference,

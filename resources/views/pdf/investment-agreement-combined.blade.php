@@ -113,7 +113,7 @@
                         @endif
                     @endforeach
                     <div class="row" style="border-top: 1px solid #A0043C; padding-top: 6px; margin-top: 4px;">
-                        <div class="label"><strong>Total Value of {{ $ordinal($i + 1) }} Investment as of {{ $asOfDate->format('F j, Y') }}</strong></div>
+                        <div class="label"><strong>Total Value of {{ $ordinal($i + 1) }} Investment as of {{ $valuation['as_of']->format('F j, Y') }}</strong></div>
                         <div class="value"><strong>${{ number_format($valuation['compounded_balance'], 2) }}</strong></div>
                     </div>
                 </div>

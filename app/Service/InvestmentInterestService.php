@@ -2,14 +2,14 @@
 
 namespace App\Service;
 
-use Carbon\Carbon;
-use App\Models\User;
+use App\Enums\InvestmentTransactionType;
 use App\Models\Investment;
+use App\Models\InvestmentTransaction;
+use App\Models\User;
+use App\Notifications\InvestmentInterestPosted;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use App\Models\InvestmentTransaction;
-use App\Enums\InvestmentTransactionType;
-use App\Notifications\InvestmentInterestPosted;
 
 class InvestmentInterestService
 {
@@ -181,17 +181,13 @@ class InvestmentInterestService
         $periodStart = Carbon::create($year, 1, 1)->max($startDate);
         $periodEnd = Carbon::create($year, 12, 31);
 
-        $rate = ($partialYearPosted->rate_applied > 0)
-        ? $partialYearPosted->rate_applied
-        : $accrual['rate'];
-
         return InvestmentTransaction::create([
             'investment_id' => $investment->id,
             'investor_id' => $investment->investor_id,
             'date' => $periodEnd,
             'period_start' => $periodStart,
             'period_end' => $periodEnd,
-            'rate_applied' => $rate,
+            'rate_applied' => $accrual['rate'],
             'type' => InvestmentTransactionType::interest_credit->value,
             'op_balance' => $balanceAtStartOfYear,
             'credit' => $accrual['interest'],
@@ -421,13 +417,19 @@ class InvestmentInterestService
 
     /**
      * Same valuation as valuationAsOf(), but broken down segment-by-segment (one
-     * entry per posted interest_credit transaction, plus any not-yet-posted trailing
-     * segments up to $asOfDate) instead of collapsed into totals. Used to render the
-     * itemized interest breakdown on agreement PDFs.
+     * entry per posted interest_credit transaction, plus — when $includeUnposted is
+     * true — any not-yet-posted trailing segments up to $asOfDate) instead of
+     * collapsed into totals. Used to render the itemized interest breakdown on
+     * agreement PDFs.
+     *
+     * When $includeUnposted is false, only actually-posted interest is included:
+     * no trailing period is projected, and the returned 'as_of' reflects the date
+     * through which interest has actually been posted (or the investment's start
+     * date, if nothing has been posted yet) rather than the requested $asOfDate.
      *
      * @return array{principal: float, segments: array, interest_earned_total: float, compounded_balance: float, as_of: Carbon}
      */
-    public function segmentedValuationAsOf(Investment $investment, Carbon $asOfDate): array
+    public function segmentedValuationAsOf(Investment $investment, Carbon $asOfDate, bool $includeUnposted = true): array
     {
         $postedTxns = InvestmentTransaction::where('investment_id', $investment->id)
             ->where('type', InvestmentTransactionType::interest_credit->value)
@@ -451,8 +453,9 @@ class InvestmentInterestService
         $cursor = $lastPosted
             ? Carbon::parse($lastPosted->period_end)->addDay()
             : Carbon::parse($investment->start_date);
+        $lastCoveredDate = $lastPosted ? Carbon::parse($lastPosted->period_end) : Carbon::parse($investment->start_date);
 
-        if ($cursor->lessThanOrEqualTo($asOfDate)) {
+        if ($includeUnposted && $cursor->lessThanOrEqualTo($asOfDate)) {
             $trailing = $this->periodAccrual($investment, $cursor, $asOfDate, $balance);
 
             foreach ($trailing['segments'] as $segment) {
@@ -473,6 +476,7 @@ class InvestmentInterestService
             }
 
             $balance = $trailing['balance_end'];
+            $lastCoveredDate = $asOfDate;
         }
 
         return [
@@ -480,7 +484,7 @@ class InvestmentInterestService
             'segments' => $segments,
             'interest_earned_total' => round(collect($segments)->sum('interest'), 2),
             'compounded_balance' => round($balance, 2),
-            'as_of' => $asOfDate,
+            'as_of' => $includeUnposted ? $asOfDate : $lastCoveredDate,
         ];
     }
 
