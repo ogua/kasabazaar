@@ -131,6 +131,54 @@ class ReportService
     }
 
     /**
+     * Generate debtors report grouped by container — clients with an outstanding balance only
+     */
+    public function debtorsByContainer(int $year, ?int $sequence = null)
+    {
+        $yearSuffix = substr((string) $year, -2);
+
+        $query = Shipment::where('shipping_reference', 'like', "%-{$yearSuffix}-%")
+            ->whereRaw('total > paid')
+            ->with(['client', 'receivers', 'expenses']);
+
+        if ($sequence !== null) {
+            $query->where('container_number', $sequence);
+        }
+
+        $shipments = $query->get();
+
+        $grouped = $shipments->groupBy('container_number');
+
+        return $grouped->map(function ($containerShipments, $seq) {
+            $clients = $containerShipments->groupBy('client_id')->map(function ($clientShipments) {
+                $client = $clientShipments->first()->client;
+                $total = $clientShipments->sum('total');
+                $paid = $clientShipments->sum('paid');
+                $balance = $total - $paid;
+                $oldestShipmentDate = $clientShipments->min('created_at');
+
+                return [
+                    'name' => $client?->company_name ?? $client?->name ?? 'N/A',
+                    'phone' => $client?->phone ?? '',
+                    'shipment_count' => $clientShipments->count(),
+                    'total' => $total,
+                    'paid' => $paid,
+                    'balance' => $balance,
+                    'payment_status' => $paid > 0 ? 'partial' : 'unpaid',
+                    'days_outstanding' => $oldestShipmentDate?->diffInDays(now()) ?? 0,
+                ];
+            })->sortByDesc('balance')->values();
+
+            return [
+                'container' => "CON{$seq}",
+                'debtor_count' => $clients->count(),
+                'total_outstanding' => $clients->sum('balance'),
+                'clients' => $clients,
+            ];
+        })->sortByDesc('total_outstanding')->values();
+    }
+
+    /**
      * Generate container shipment detail report
      */
     public function containerShipmentDetail(string $reference): array

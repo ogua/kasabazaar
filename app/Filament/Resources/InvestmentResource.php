@@ -2,25 +2,26 @@
 
 namespace App\Filament\Resources;
 
-use Carbon\Carbon;
-use Filament\Forms;
-use Filament\Tables;
-use Filament\Forms\Get;
-use Filament\Forms\Form;
-use App\Models\Investment;
-use Filament\Tables\Table;
-use App\Enums\PaymentMethod;
-use Filament\Facades\Filament;
 use App\Enums\InvestmentStatus;
-use Filament\Resources\Resource;
-use Filament\Tables\Actions\Action;
-use Illuminate\Support\Facades\URL;
-use Filament\Notifications\Notification;
-use App\Service\InvestmentPaymentService;
-use App\Service\InvestmentInterestService;
+use App\Enums\PaymentMethod;
 use App\Filament\Resources\InvestmentResource\Pages;
-use App\Filament\Resources\InvestmentResource\RelationManagers\TransactionsRelationManager;
 use App\Filament\Resources\InvestmentResource\RelationManagers\RateOverridesRelationManager;
+use App\Filament\Resources\InvestmentResource\RelationManagers\TransactionsRelationManager;
+use App\Models\Investment;
+use App\Service\InvestmentInterestService;
+use App\Service\InvestmentPaymentService;
+use App\Service\InvestmentRateResolver;
+use Carbon\Carbon;
+use Filament\Facades\Filament;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Table;
+use Illuminate\Support\Facades\URL;
 
 class InvestmentResource extends Resource
 {
@@ -42,93 +43,93 @@ class InvestmentResource extends Resource
             ->schema(self::InvestmentForm());
     }
 
-
-    public static function InvestmentForm(){
+    public static function InvestmentForm()
+    {
         return [
             Forms\Components\Section::make('Investment Details')
-                    ->schema([
-                        Forms\Components\Select::make('investor_id')
-                            ->label('Investor')
-                            ->relationship('investor', 'name')
-                            ->searchable()
-                            ->preload()
-                            ->required()
-                            ->default(fn () => request()->query('investor_id')),
+                ->schema([
+                    Forms\Components\Select::make('investor_id')
+                        ->label('Investor')
+                        ->relationship('investor', 'name')
+                        ->searchable()
+                        ->preload()
+                        ->required()
+                        ->default(fn () => request()->query('investor_id')),
 
-                        Forms\Components\TextInput::make('principal_amount')
-                            ->label('Principal Amount')
-                            ->numeric()
-                            ->prefix('USD')
-                            ->required()
-                            ->disabled(fn (?Investment $record) => $record !== null),
+                    Forms\Components\TextInput::make('principal_amount')
+                        ->label('Principal Amount')
+                        ->numeric()
+                        ->prefix('USD')
+                        ->required()
+                        ->disabled(fn (?Investment $record) => $record !== null),
 
-                        Forms\Components\DatePicker::make('start_date')
-                            ->required()
-                            ->default(now())
-                            ->disabled(fn (?Investment $record) => $record !== null),
+                    Forms\Components\DatePicker::make('start_date')
+                        ->required()
+                        ->default(now())
+                        ->disabled(fn (?Investment $record) => $record !== null),
 
-                        Forms\Components\TextInput::make('contract_term_months')
-                            ->label('Contract Term (months)')
-                            ->numeric()
-                            ->minValue(1)
-                            ->maxValue(600)
-                            ->default(12)
-                            ->required()
-                            ->suffix('months')
-                            ->helperText('E.g. 6, 12, 24, 36, 60, 120 for 6mo / 1yr / 2yr / 3yr / 5yr / 10yr terms. The investor may not request a withdrawal until this term has elapsed.')
-                            ->disabled(fn (?Investment $record) => $record !== null),
+                    Forms\Components\TextInput::make('contract_term_months')
+                        ->label('Contract Term (months)')
+                        ->numeric()
+                        ->minValue(1)
+                        ->maxValue(600)
+                        ->default(12)
+                        ->required()
+                        ->suffix('months')
+                        ->helperText('E.g. 6, 12, 24, 36, 60, 120 for 6mo / 1yr / 2yr / 3yr / 5yr / 10yr terms. The investor may not request a withdrawal until this term has elapsed.')
+                        ->disabled(fn (?Investment $record) => $record !== null),
 
-                        Forms\Components\TextInput::make('initial_annual_rate')
-                            ->label('Annual Rate (optional)')
-                            ->numeric()
-                            ->suffix('%')
-                            ->helperText("Leave blank to fall back to the investor's standing rate, then the company-wide default for each year.")
-                            ->visible(fn (?Investment $record) => $record === null)
-                            ->dehydrated(false),
-                    ])
-                    ->columns(2),
+                    Forms\Components\TextInput::make('initial_annual_rate')
+                        ->label('Annual Rate (optional)')
+                        ->numeric()
+                        ->suffix('%')
+                        ->helperText("Leave blank to fall back to the investor's standing rate, then the company-wide default for each year.")
+                        ->visible(fn (?Investment $record) => $record === null)
+                        ->dehydrated(false),
+                ])
+                ->columns(2),
 
-                Forms\Components\Section::make('Deposit Recording')
-                    ->description('How the principal arrived. Money already collected? Record it manually with proof. Otherwise the investor completes a gateway checkout.')
-                    ->schema([
-                        Forms\Components\Select::make('deposit_gateway')
-                            ->label('Deposit Method')
-                            ->options([
-                                'manual' => 'Manual (already received)',
-                                'paystack' => 'Paystack Checkout',
-                                'stripe' => 'Stripe Checkout',
-                            ])
-                            ->default('manual')
-                            ->live()
-                            ->required(),
+            Forms\Components\Section::make('Deposit Recording')
+                ->description('How the principal arrived. Money already collected? Record it manually with proof. Otherwise the investor completes a gateway checkout.')
+                ->schema([
+                    Forms\Components\Select::make('deposit_gateway')
+                        ->label('Deposit Method')
+                        ->options([
+                            'manual' => 'Manual (already received)',
+                            'paystack' => 'Paystack Checkout',
+                            'stripe' => 'Stripe Checkout',
+                        ])
+                        ->default('manual')
+                        ->live()
+                        ->required(),
 
-                        Forms\Components\Select::make('payment_method')
-                            ->options(PaymentMethod::class)
-                            ->visible(fn (Get $get) => $get('deposit_gateway') === 'manual')
-                            ->required(fn (Get $get) => $get('deposit_gateway') === 'manual'),
+                    Forms\Components\Select::make('payment_method')
+                        ->options(PaymentMethod::class)
+                        ->visible(fn (Get $get) => $get('deposit_gateway') === 'manual')
+                        ->required(fn (Get $get) => $get('deposit_gateway') === 'manual'),
 
-                        Forms\Components\TextInput::make('payment_reference')
-                            ->label('Payment Reference')
-                            ->maxLength(255)
-                            ->visible(fn (Get $get) => $get('deposit_gateway') === 'manual'),
+                    Forms\Components\TextInput::make('payment_reference')
+                        ->label('Payment Reference')
+                        ->maxLength(255)
+                        ->visible(fn (Get $get) => $get('deposit_gateway') === 'manual'),
 
-                        Forms\Components\FileUpload::make('receipt_path')
-                            ->label('Receipt / Deposit Slip')
-                            ->directory('investment-receipts')
-                            ->acceptedFileTypes(['application/pdf', 'image/*'])
-                            ->columnSpanFull()
-                            ->visible(fn (Get $get) => $get('deposit_gateway') === 'manual'),
+                    Forms\Components\FileUpload::make('receipt_path')
+                        ->label('Receipt / Deposit Slip')
+                        ->directory('investment-receipts')
+                        ->acceptedFileTypes(['application/pdf', 'image/*'])
+                        ->columnSpanFull()
+                        ->visible(fn (Get $get) => $get('deposit_gateway') === 'manual'),
 
-                        Forms\Components\Placeholder::make('gateway_note')
-                            ->label('')
-                            ->content('The investor (or staff on their behalf) will complete this deposit via a checkout link once the investment record is saved.')
-                            ->visible(fn (Get $get) => in_array($get('deposit_gateway'), ['paystack', 'stripe'])),
-                    ])
-                    ->columns(2)
-                    ->visible(fn (?Investment $record) => $record === null),
+                    Forms\Components\Placeholder::make('gateway_note')
+                        ->label('')
+                        ->content('The investor (or staff on their behalf) will complete this deposit via a checkout link once the investment record is saved.')
+                        ->visible(fn (Get $get) => in_array($get('deposit_gateway'), ['paystack', 'stripe'])),
+                ])
+                ->columns(2)
+                ->visible(fn (?Investment $record) => $record === null),
 
-                Forms\Components\Textarea::make('notes')
-                    ->columnSpanFull(),
+            Forms\Components\Textarea::make('notes')
+                ->columnSpanFull(),
         ];
     }
 
@@ -252,118 +253,8 @@ class InvestmentResource extends Resource
                         'as_of' => $record->defaultAsOfDate()->toDateString(),
                     ]))
                     ->openUrlInNewTab(),
-                    
 
-                Action::make('postInterest')
-                    ->label('Post Interest')
-                    ->icon('heroicon-o-calculator')
-                    ->color('info')
-                    ->visible(fn (Investment $record) => $record->status === InvestmentStatus::active)
-                    ->form(function (Investment $record) {
-                        $from = $record->last_interest_posted_through
-                            ? Carbon::parse($record->last_interest_posted_through)->addDay()
-                            : Carbon::parse($record->start_date);
-
-                        return [
-                            Forms\Components\DatePicker::make('period_start')
-                                ->label('From')
-                                ->default($from)
-                                ->live()
-                                ->required(),
-
-                            Forms\Components\DatePicker::make('period_end')
-                                ->label('To')
-                                ->default(now())
-                                ->afterOrEqual('period_start')
-                                ->live()
-                                ->required(),
-
-                            Forms\Components\Placeholder::make('preview')
-                                ->label('Computed Interest')
-                                ->content(function (Get $get) use ($record) {
-                                    if (! $get('period_start') || ! $get('period_end')) {
-                                        return '—';
-                                    }
-
-                                    try {
-                                        $accrual = app(InvestmentInterestService::class)->periodAccrual(
-                                            $record,
-                                            Carbon::parse($get('period_start')),
-                                            Carbon::parse($get('period_end')),
-                                            (float) $record->current_balance
-                                        );
-                                    } catch (\Throwable $e) {
-                                        return $e->getMessage();
-                                    }
-
-                                    $lines = collect($accrual['segments'])->map(fn ($segment) => sprintf(
-                                        '%d: %s%% (%s) × %d days on $%s = $%s',
-                                        $segment['year'],
-                                        number_format($segment['rate'], 2),
-                                        $segment['rate_source'],
-                                        $segment['days_held'],
-                                        number_format($segment['balance_start'], 2),
-                                        number_format($segment['interest'], 2)
-                                    ))->implode("\n");
-
-                                    return sprintf('Total: $%s'."\n".'%s', number_format($accrual['total_interest'], 2), $lines);
-                                })
-                                ->columnSpanFull(),
-
-                            Forms\Components\TextInput::make('override_amount')
-                                ->label('Override Amount (optional)')
-                                ->numeric()
-                                ->prefix('USD')
-                                ->helperText('Only applied when the period above resolves to a single calendar-year segment.'),
-                                // ->visible(function (Get $get) use ($record) {
-                                //     if (! $get('period_start') || ! $get('period_end')) {
-                                //         return false;
-                                //     }
-
-                                //     try {
-                                //         $accrual = app(InvestmentInterestService::class)->periodAccrual(
-                                //             $record,
-                                //             Carbon::parse($get('period_start')),
-                                //             Carbon::parse($get('period_end')),
-                                //             (float) $record->current_balance
-                                //         );
-                                //     } catch (\Throwable $e) {
-                                //         return false;
-                                //     }
-
-                                //     return count($accrual['segments']) === 1;
-                                // }),
-                        ];
-                    })
-                    ->action(function (Investment $record, array $data) {
-                        $service = app(InvestmentInterestService::class);
-
-                        try {
-                            $drafts = $service->generateDraftForPeriod(
-                                $record,
-                                Carbon::parse($data['period_start']),
-                                Carbon::parse($data['period_end'])
-                            );
-
-                            $overrides = [];
-                            if (filled($data['override_amount'] ?? null) && $drafts->count() === 1) {
-                                $overrides[$drafts->first()->id] = (float) $data['override_amount'];
-                            }
-
-                            $service->postDraftBatch($drafts, auth()->user(), $overrides);
-
-                            Notification::make()
-                                ->title("Interest posted for {$data['period_start']} – {$data['period_end']}")
-                                ->success()
-                                ->send();
-                        } catch (\Throwable $e) {
-                            Notification::make()
-                                ->title('Failed to post interest')
-                                ->body($e->getMessage())
-                                ->danger()
-                                ->send();
-                        }
-                    }),
+                self::postInterestAction(),
 
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
@@ -381,6 +272,121 @@ class InvestmentResource extends Resource
             TransactionsRelationManager::class,
             RateOverridesRelationManager::class,
         ];
+    }
+
+    /**
+     * Shared "Post Interest" action, reused on the table row, the View page, and the
+     * Edit page. Posts exactly the From/To range entered — as a single flat-rate
+     * ledger entry, never split at a Dec 31 boundary or extended beyond what was
+     * entered — at a rate staff type in themselves rather than one silently resolved
+     * from the configured rate settings.
+     */
+    public static function postInterestAction(): Action
+    {
+        return Action::make('postInterest')
+            ->label('Post Interest')
+            ->icon('heroicon-o-calculator')
+            ->color('info')
+            ->visible(fn (Investment $record) => $record->status === InvestmentStatus::active)
+            ->form(function (Investment $record) {
+                $from = $record->last_interest_posted_through
+                    ? Carbon::parse($record->last_interest_posted_through)->addDay()
+                    : Carbon::parse($record->start_date);
+
+                $suggestedRate = null;
+                try {
+                    $suggestedRate = app(InvestmentRateResolver::class)->resolve($record, $from->year)['rate'];
+                } catch (\Throwable $e) {
+                    // No configured rate for this year — leave blank, staff must enter one.
+                }
+
+                return [
+                    Forms\Components\DatePicker::make('period_start')
+                        ->label('From')
+                        ->default($from)
+                        ->live()
+                        ->required(),
+
+                    Forms\Components\DatePicker::make('period_end')
+                        ->label('To')
+                        ->afterOrEqual('period_start')
+                        ->live()
+                        ->required()
+                        ->helperText('Interest is posted for exactly this range only — nothing before or after it is calculated or added.'),
+
+                    Forms\Components\TextInput::make('rate')
+                        ->label('Annual Rate')
+                        ->numeric()
+                        ->suffix('%')
+                        ->default($suggestedRate)
+                        ->required()
+                        ->helperText('Applied flat across the whole period above (no splitting or compounding at year boundaries). Change it if the agreed rate differs from the configured default.'),
+
+                    Forms\Components\Placeholder::make('preview')
+                        ->label('Computed Interest')
+                        ->content(function (Get $get) use ($record) {
+                            if (! $get('period_start') || ! $get('period_end') || ! filled($get('rate'))) {
+                                return '—';
+                            }
+
+                            $periodStart = Carbon::parse($get('period_start'));
+                            $periodEnd = Carbon::parse($get('period_end'));
+
+                            if ($periodStart->greaterThan($periodEnd)) {
+                                return 'From date must not be after the To date.';
+                            }
+
+                            $daysHeld = $periodStart->diffInDays($periodEnd) + 1;
+                            $balance = (float) $record->current_balance;
+                            $rate = (float) $get('rate');
+                            $interest = round($balance * ($rate / 100) * ($daysHeld / 365), 2);
+
+                            return sprintf(
+                                '%s%% × %d days on $%s = $%s',
+                                number_format($rate, 2),
+                                $daysHeld,
+                                number_format($balance, 2),
+                                number_format($interest, 2)
+                            );
+                        })
+                        ->columnSpanFull(),
+
+                    Forms\Components\TextInput::make('override_amount')
+                        ->label('Override Amount (optional)')
+                        ->numeric()
+                        ->prefix('USD')
+                        ->helperText('Overrides the computed interest above with this exact dollar amount.'),
+                ];
+            })
+            ->action(function (Investment $record, array $data) {
+                $service = app(InvestmentInterestService::class);
+
+                try {
+                    $draft = $service->generateManualDraft(
+                        $record,
+                        Carbon::parse($data['period_start']),
+                        Carbon::parse($data['period_end']),
+                        (float) $data['rate']
+                    );
+
+                    $service->postDraft(
+                        $draft,
+                        auth()->user(),
+                        filled($data['override_amount'] ?? null) ? (float) $data['override_amount'] : null
+                    );
+
+                    Notification::make()
+                        ->title("Interest posted for {$data['period_start']} – {$data['period_end']}")
+                        ->success()
+                        ->send();
+                } catch (\Throwable $e) {
+                    Notification::make()
+                        ->title('Failed to post interest')
+                        ->body($e->getMessage())
+                        ->danger()
+                        ->send();
+                }
+            });
     }
 
     private static function isStuckPendingPayment(Investment $record): bool

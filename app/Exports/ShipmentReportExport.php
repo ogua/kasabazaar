@@ -29,7 +29,7 @@ class ShipmentReportExport implements FromCollection, WithEvents, WithHeadings, 
 
     public function collection()
     {
-        if ($this->reportType !== 'profit_loss') {
+        if (! in_array($this->reportType, ['profit_loss', 'debtors'])) {
             return $this->data;
         }
 
@@ -69,6 +69,16 @@ class ShipmentReportExport implements FromCollection, WithEvents, WithHeadings, 
                 'Profit / Balance (USD)',
                 'Margin / Status',
             ],
+            'debtors' => [
+                'Container',
+                'Client',
+                'Phone',
+                'Shipments',
+                'Total Owed (USD)',
+                'Paid (USD)',
+                'Balance (USD)',
+                'Days Outstanding / Status',
+            ],
             default => ['Data']
         };
     }
@@ -78,6 +88,7 @@ class ShipmentReportExport implements FromCollection, WithEvents, WithHeadings, 
         return match ($this->reportType) {
             'by_container', 'by_year', 'by_date_range', 'client_shipments' => $this->mapShipmentRow($row),
             'profit_loss' => $this->mapProfitLossRow($row),
+            'debtors' => $this->mapDebtorsRow($row),
             default => [$row]
         };
     }
@@ -143,6 +154,33 @@ class ShipmentReportExport implements FromCollection, WithEvents, WithHeadings, 
         ];
     }
 
+    protected function mapDebtorsRow($row): array
+    {
+        if (($row['_type'] ?? '') === 'client') {
+            return [
+                '',
+                $row['name'] ?? 'N/A',
+                $row['phone'] ?? '',
+                $row['shipment_count'] ?? 0,
+                $row['total'] ?? 0,
+                $row['paid'] ?? 0,
+                $row['balance'] ?? 0,
+                ($row['days_outstanding'] ?? 0).'d / '.strtoupper($row['payment_status'] ?? 'unpaid'),
+            ];
+        }
+
+        return [
+            $row['container'] ?? 'N/A',
+            '',
+            '',
+            $row['debtor_count'] ?? 0,
+            '',
+            '',
+            $row['total_outstanding'] ?? 0,
+            '',
+        ];
+    }
+
     public function title(): string
     {
         return match ($this->reportType) {
@@ -151,6 +189,7 @@ class ShipmentReportExport implements FromCollection, WithEvents, WithHeadings, 
             'by_date_range' => 'Shipments by Date Range',
             'client_shipments' => 'Client Shipment History',
             'profit_loss' => 'Profit Loss Report',
+            'debtors' => 'Debtors Report',
             default => 'Report'
         };
     }
@@ -164,7 +203,7 @@ class ShipmentReportExport implements FromCollection, WithEvents, WithHeadings, 
 
     public function registerEvents(): array
     {
-        if ($this->reportType !== 'profit_loss') {
+        if (! in_array($this->reportType, ['profit_loss', 'debtors'])) {
             return [];
         }
 
@@ -189,9 +228,10 @@ class ShipmentReportExport implements FromCollection, WithEvents, WithHeadings, 
                     } else {
                         // Client row — check status in column H
                         $status = strtolower($sheet->getCell("H{$row}")->getValue());
-                        $color = match ($status) {
-                            'paid' => '006400',
-                            'partial' => 'B8860B',
+                        $color = match (true) {
+                            str_contains($status, 'partial') => 'B8860B',
+                            str_contains($status, 'unpaid') => 'CC0000',
+                            str_contains($status, 'paid') => '006400',
                             default => 'CC0000',
                         };
                         $sheet->getStyle("H{$row}")->applyFromArray([

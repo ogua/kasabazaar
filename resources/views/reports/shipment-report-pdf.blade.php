@@ -311,6 +311,90 @@
                 </tr>
             </table>
         </div>
+    @elseif($reportType === 'debtors')
+        {{-- Debtors Report --}}
+        @php
+            $grandDebtors = 0;
+            $grandOutstanding = 0;
+        @endphp
+        @foreach ($data as $row)
+            @php
+                $grandDebtors += $row['debtor_count'] ?? 0;
+                $grandOutstanding += $row['total_outstanding'] ?? 0;
+            @endphp
+            {{-- Container summary row --}}
+            <table style="margin-bottom: 0;">
+                <thead>
+                    <tr>
+                        <th>Container</th>
+                        <th class="text-right">Debtors</th>
+                        <th class="text-right">Total Outstanding (USD)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="background-color:#f0f0f0; font-weight:bold;">
+                        <td>{{ $row['container'] ?? 'N/A' }}</td>
+                        <td class="text-right">{{ $row['debtor_count'] ?? 0 }}</td>
+                        <td class="text-right negative">${{ number_format($row['total_outstanding'] ?? 0, 2) }}</td>
+                    </tr>
+                </tbody>
+            </table>
+            {{-- Debtor breakdown --}}
+            @if (!empty($row['clients']) && count($row['clients']) > 0)
+                <table style="margin-top:0; margin-bottom:20px; font-size:11px;">
+                    <thead>
+                        <tr style="background-color:#555;">
+                            <th style="padding-left:20px;">Client</th>
+                            <th class="text-right">Shipments</th>
+                            <th class="text-right">Total (USD)</th>
+                            <th class="text-right">Paid (USD)</th>
+                            <th class="text-right">Balance (USD)</th>
+                            <th class="text-right">Days Outstanding</th>
+                            <th class="text-right">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($row['clients'] as $client)
+                            @php
+                                $statusLabel = $client['payment_status'] === 'partial' ? 'PARTIAL' : 'UNPAID';
+                                $statusColor = $client['payment_status'] === 'partial' ? 'orange' : 'red';
+                            @endphp
+                            <tr>
+                                <td style="padding-left:20px;">
+                                    <strong>{{ $client['name'] }}</strong>
+                                    @if($client['phone'])
+                                        &nbsp;{{ $client['phone'] }}
+                                    @endif
+                                </td>
+                                <td class="text-right">{{ $client['shipment_count'] }}</td>
+                                <td class="text-right">${{ number_format($client['total'], 2) }}</td>
+                                <td class="text-right positive">${{ number_format($client['paid'], 2) }}</td>
+                                <td class="text-right negative">${{ number_format($client['balance'], 2) }}</td>
+                                <td class="text-right">{{ $client['days_outstanding'] }}</td>
+                                <td class="text-right" style="color:{{ $statusColor }}; font-weight:bold;">{{ $statusLabel }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+        @endforeach
+
+        <div class="totals-section">
+            <table>
+                <tr>
+                    <td><strong>Total Containers with Debtors:</strong></td>
+                    <td class="text-right">{{ $data->count() }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Total Debtors:</strong></td>
+                    <td class="text-right">{{ $grandDebtors }}</td>
+                </tr>
+                <tr style="border-top: 2px solid #333;">
+                    <td><strong>Total Outstanding Balance:</strong></td>
+                    <td class="text-right negative"><strong>${{ number_format($grandOutstanding, 2) }}</strong></td>
+                </tr>
+            </table>
+        </div>
     @endif
 </body>
 

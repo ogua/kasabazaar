@@ -279,6 +279,65 @@ class InvestmentInterestService
     }
 
     /**
+     * Generate a single, un-split draft interest_credit row for an exact date range at a
+     * manually supplied rate — unlike generateDraftForPeriod(), this never splits at a
+     * Dec 31 boundary or compounds mid-range; the rate applies flat across the whole
+     * period. Used when staff need to record interest for a period and rate agreed
+     * outside the configured InvestmentRateSetting history. Does not touch
+     * investment.current_balance — requires postDraft() to finalize.
+     */
+    public function generateManualDraft(Investment $investment, Carbon $periodStart, Carbon $periodEnd, float $rate): InvestmentTransaction
+    {
+        if ($periodStart->greaterThan($periodEnd)) {
+            throw new \InvalidArgumentException('Period start must not be after period end.');
+        }
+
+        $cursor = $investment->last_interest_posted_through
+            ? Carbon::parse($investment->last_interest_posted_through)
+            : ($investment->last_interest_posted_year
+                ? Carbon::create($investment->last_interest_posted_year, 12, 31)
+                : null);
+
+        if ($cursor && $periodStart->lessThanOrEqualTo($cursor)) {
+            throw new \RuntimeException(
+                "Interest through {$cursor->toDateString()} has already been posted for investment {$investment->reference}."
+            );
+        }
+
+        // Regenerate cleanly if a stale draft exists.
+        InvestmentTransaction::where('investment_id', $investment->id)
+            ->where('type', InvestmentTransactionType::interest_credit->value)
+            ->where('posted', false)
+            ->delete();
+
+        $balanceAtPeriodStart = (float) $investment->current_balance;
+        $daysHeld = $periodStart->diffInDays($periodEnd) + 1;
+        $interest = round($balanceAtPeriodStart * ($rate / 100) * ($daysHeld / 365), 2);
+
+        return InvestmentTransaction::create([
+            'investment_id' => $investment->id,
+            'investor_id' => $investment->investor_id,
+            'date' => $periodEnd,
+            'period_start' => $periodStart,
+            'period_end' => $periodEnd,
+            'rate_applied' => $rate,
+            'type' => InvestmentTransactionType::interest_credit->value,
+            'op_balance' => $balanceAtPeriodStart,
+            'credit' => $interest,
+            'year' => $periodEnd->year,
+            'posted' => false,
+            'description' => sprintf(
+                '%s%% (manual) x %d days / 365 on %s [%s – %s]',
+                number_format($rate, 2),
+                $daysHeld,
+                number_format($balanceAtPeriodStart, 2),
+                $periodStart->toDateString(),
+                $periodEnd->toDateString()
+            ),
+        ]);
+    }
+
+    /**
      * Finalize a draft interest_credit row, optionally overriding the computed amount,
      * and update the investment's authoritative running balance.
      */

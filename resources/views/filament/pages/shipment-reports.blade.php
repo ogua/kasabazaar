@@ -160,6 +160,13 @@
                                         <th class="px-4 py-2 text-right">Expenses / Paid (USD)</th>
                                         <th class="px-4 py-2 text-right">Profit / Balance (USD)</th>
                                         <th class="px-4 py-2 text-right">Margin / Status</th>
+                                    @elseif($this->report_type === 'debtors')
+                                        <th class="px-4 py-2 text-left">Container / Client</th>
+                                        <th class="px-4 py-2 text-right">Shipments</th>
+                                        <th class="px-4 py-2 text-right">Total Owed (USD)</th>
+                                        <th class="px-4 py-2 text-right">Paid (USD)</th>
+                                        <th class="px-4 py-2 text-right">Balance (USD)</th>
+                                        <th class="px-4 py-2 text-right">Days Outstanding / Status</th>
                                     @endif
                                 </tr>
                             </thead>
@@ -227,6 +234,43 @@
                                                 </td>
                                             </tr>
                                         @endforeach
+                                    @elseif($this->report_type === 'debtors')
+                                        {{-- Container summary row --}}
+                                        <tr class="border-b dark:border-gray-700 bg-gray-100 dark:bg-gray-900/50 font-semibold">
+                                            <td class="px-4 py-2">{{ $row['container'] ?? 'N/A' }}</td>
+                                            <td class="px-4 py-2 text-right">{{ $row['debtor_count'] ?? 0 }} debtor{{ ($row['debtor_count'] ?? 0) === 1 ? '' : 's' }}</td>
+                                            <td class="px-4 py-2 text-right">&mdash;</td>
+                                            <td class="px-4 py-2 text-right">&mdash;</td>
+                                            <td class="px-4 py-2 text-right text-red-600 dark:text-red-400">
+                                                ${{ number_format($row['total_outstanding'] ?? 0, 2) }}
+                                            </td>
+                                            <td class="px-4 py-2 text-right">&mdash;</td>
+                                        </tr>
+                                        {{-- Debtor breakdown rows --}}
+                                        @foreach($row['clients'] ?? [] as $client)
+                                            @php
+                                                $badgeColor = $client['payment_status'] === 'partial' ? 'warning' : 'danger';
+                                                $badgeLabel = $client['payment_status'] === 'partial' ? 'Partial' : 'Unpaid';
+                                            @endphp
+                                            <tr class="border-b border-gray-100 dark:border-gray-800 text-sm">
+                                                <td class="px-4 py-1.5 pl-8" colspan="2">
+                                                    <span class="font-medium">{{ $client['name'] }}</span>
+                                                    @if($client['phone'])
+                                                        <span class="text-xs text-gray-500 ml-2">{{ $client['phone'] }}</span>
+                                                    @endif
+                                                    <span class="text-xs text-gray-400 ml-1">({{ $client['shipment_count'] }} shipment{{ $client['shipment_count'] > 1 ? 's' : '' }})</span>
+                                                </td>
+                                                <td class="px-4 py-1.5 text-right">${{ number_format($client['total'], 2) }}</td>
+                                                <td class="px-4 py-1.5 text-right text-green-600 dark:text-green-400">${{ number_format($client['paid'], 2) }}</td>
+                                                <td class="px-4 py-1.5 text-right text-red-600 dark:text-red-400 font-semibold">
+                                                    ${{ number_format($client['balance'], 2) }}
+                                                </td>
+                                                <td class="px-4 py-1.5 text-right">
+                                                    <span class="text-xs text-gray-500 mr-2">{{ $client['days_outstanding'] }}d</span>
+                                                    <x-filament::badge :color="$badgeColor">{{ $badgeLabel }}</x-filament::badge>
+                                                </td>
+                                            </tr>
+                                        @endforeach
                                     @endif
                                 @endforeach
                             </tbody>
@@ -267,6 +311,30 @@
                                 <div class="text-lg font-semibold {{ $totalBalance > 0 ? 'text-red-600' : 'text-green-600' }}">
                                     ${{ number_format($totalBalance, 2) }}
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                @if($this->report_type === 'debtors')
+                    @php
+                        $totalDebtors = $this->reportData->sum(fn($item) => $item['debtor_count'] ?? 0);
+                        $totalContainers = $this->reportData->count();
+                        $totalOutstanding = $this->reportData->sum(fn($item) => $item['total_outstanding'] ?? 0);
+                    @endphp
+                    <div class="mt-4 pt-4 border-t dark:border-gray-700">
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            <div class="text-right">
+                                <div class="text-xs text-gray-500 uppercase tracking-wide">Containers with Debtors</div>
+                                <div class="text-lg font-semibold">{{ $totalContainers }}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xs text-gray-500 uppercase tracking-wide">Total Debtors</div>
+                                <div class="text-lg font-semibold">{{ $totalDebtors }}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xs text-gray-500 uppercase tracking-wide">Total Outstanding</div>
+                                <div class="text-lg font-semibold text-red-600">${{ number_format($totalOutstanding, 2) }}</div>
                             </div>
                         </div>
                     </div>

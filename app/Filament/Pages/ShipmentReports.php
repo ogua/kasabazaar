@@ -67,6 +67,7 @@ class ShipmentReports extends Page implements HasForms
                                 'by_date_range' => 'Shipments by Date Range',
                                 'profit_loss' => 'Profit/Loss by Container',
                                 'client_shipments' => 'Client Shipment History',
+                                'debtors' => 'Debtors Report (Unpaid by Container)',
                             ])
                             ->required()
                             ->live()
@@ -95,7 +96,7 @@ class ShipmentReports extends Page implements HasForms
 
                                 return $years;
                             })
-                            ->visible(fn ($get) => in_array($get('report_type'), ['by_container', 'by_year', 'profit_loss']))
+                            ->visible(fn ($get) => in_array($get('report_type'), ['by_container', 'by_year', 'profit_loss', 'debtors']))
                             ->required(),
 
                         Select::make('container_sequence')
@@ -112,7 +113,7 @@ class ShipmentReports extends Page implements HasForms
                                     ->mapWithKeys(fn ($val) => [$val => "CON{$val}"])
                                     ->toArray();
                             })
-                            ->visible(fn ($get) => in_array($get('report_type'), ['by_container', 'profit_loss'])),
+                            ->visible(fn ($get) => in_array($get('report_type'), ['by_container', 'profit_loss', 'debtors'])),
 
                         DatePicker::make('start_date')
                             ->label('Start Date')
@@ -152,6 +153,10 @@ class ShipmentReports extends Page implements HasForms
                 $data['start_date'] ?? null,
                 $data['end_date'] ?? null
             ),
+            'debtors' => $reportService->debtorsByContainer(
+                $data['year'],
+                $data['container_sequence'] ?? null
+            ),
             default => collect(),
         };
     }
@@ -177,6 +182,7 @@ class ShipmentReports extends Page implements HasForms
             'by_date_range' => 'Shipments by Date Range Report',
             'profit_loss' => 'Profit/Loss Report',
             'client_shipments' => 'Client Shipment History Report',
+            'debtors' => 'Debtors Report',
             default => 'Shipment Report'
         };
 
@@ -218,6 +224,7 @@ class ShipmentReports extends Page implements HasForms
             'by_date_range' => 'Shipments_by_Date_Range',
             'profit_loss' => 'Profit_Loss_Report',
             'client_shipments' => 'Client_Shipment_History',
+            'debtors' => 'Debtors_Report',
             default => 'Shipment_Report'
         };
 
@@ -250,6 +257,7 @@ class ShipmentReports extends Page implements HasForms
             'by_date_range' => 'Shipments by Date Range Report',
             'profit_loss' => 'Profit/Loss Report',
             'client_shipments' => 'Client Shipment History Report',
+            'debtors' => 'Debtors Report',
             default => 'Shipment Report'
         };
 
