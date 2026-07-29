@@ -7,6 +7,7 @@ use App\Filament\Resources\InvestorResource\RelationManagers\InvestmentsRelation
 use App\Models\Investor;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -32,8 +33,27 @@ class InvestorResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Investor Details')
                     ->schema([
-                        Forms\Components\TextInput::make('name')
+                        Forms\Components\Select::make('title')
+                            ->options([
+                                'Mr' => 'Mr',
+                                'Mrs' => 'Mrs',
+                                'Miss' => 'Miss',
+                                'Ms' => 'Ms',
+                                'Dr' => 'Dr',
+                                'Prof' => 'Prof',
+                                'Chief' => 'Chief',
+                                'Nana' => 'Nana',
+                                'Rev' => 'Rev',
+                            ])
+                            ->searchable(),
+
+                        Forms\Components\TextInput::make('first_name')
                             ->required()
+                            ->maxLength(255),
+
+                        Forms\Components\TextInput::make('other_names')
+                            ->label('Other Names')
+                            ->helperText('Surname and any middle names — hidden from the investor list, shown only via Reveal.')
                             ->maxLength(255),
 
                         Forms\Components\TextInput::make('email')
@@ -113,9 +133,13 @@ class InvestorResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name')
-                    ->searchable()
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('display_name')
+                    ->label('Name')
+                    ->searchable(query: function ($query, string $search) {
+                        return $query->where('title', 'like', "%{$search}%")
+                            ->orWhere('first_name', 'like', "%{$search}%");
+                    })
+                    ->sortable(['first_name']),
 
                 Tables\Columns\TextColumn::make('email')
                     ->searchable()
@@ -138,11 +162,6 @@ class InvestorResource extends Resource
                     ->label('Investments')
                     ->counts('investments'),
 
-                Tables\Columns\TextColumn::make('investments_sum_current_balance')
-                    ->label('Total Value')
-                    ->sum('investments', 'current_balance')
-                    ->money('USD'),
-
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime('M d, Y')
                     ->sortable()
@@ -156,6 +175,23 @@ class InvestorResource extends Resource
                     ]),
             ])
             ->actions([
+                Tables\Actions\Action::make('reveal')
+                    ->label('Reveal')
+                    ->icon('heroicon-o-eye')
+                    ->color('gray')
+                    ->modalHeading('Investor Details')
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Close')
+                    ->infolist([
+                        TextEntry::make('name')
+                            ->label('Full Name'),
+
+                        TextEntry::make('total_value')
+                            ->label('Total Value')
+                            ->state(fn (Investor $record) => $record->investments()->sum('current_balance'))
+                            ->money('USD'),
+                    ]),
+
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
 

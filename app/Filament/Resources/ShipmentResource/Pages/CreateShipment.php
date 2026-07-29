@@ -1139,11 +1139,13 @@ class CreateShipment extends CreateRecord
         $total = number_format($shipment->total, 2);
         $from = $shipment->origin_branch_id;
         $to = $shipment->destination_branch_id;
+        $url = route('public-shipment-view', $shipment->public_view_token);
 
         return "Dear {$clientName}, your shipment has been created. ".
             "Tracking: {$trackingNumber}. ".
             "Route: {$from} to {$to}. ".
             "Total: \${$total}. ".
+            "View Details: {$url}. ".
             'Thank you for choosing Rose Door To Door Shipping!';
     }
 

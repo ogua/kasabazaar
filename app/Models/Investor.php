@@ -17,6 +17,26 @@ class Investor extends Model
         'default_annual_rate' => 'decimal:2',
     ];
 
+    protected static function booted(): void
+    {
+        static::saving(function (Investor $investor) {
+            $investor->name = trim(collect([
+                $investor->title,
+                $investor->first_name,
+                $investor->other_names,
+            ])->filter()->implode(' '));
+        });
+    }
+
+    /**
+     * Masked name for contexts where the full identity must stay hidden
+     * (e.g. investor lists shown during pitches) — title + first name only.
+     */
+    public function getDisplayNameAttribute(): string
+    {
+        return trim(collect([$this->title, $this->first_name])->filter()->implode(' ')) ?: $this->name;
+    }
+
     public function investments(): HasMany
     {
         return $this->hasMany(Investment::class);

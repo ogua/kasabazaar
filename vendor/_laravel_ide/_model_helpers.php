@@ -1733,6 +1733,7 @@ namespace App\Models {
 	 * @property mixed $total_shipment_sequence
 	 * @property mixed $client_sequence
 	 * @property boolean $external_form_completed
+	 * @property string|null $public_view_token
 	 * @property string|null $external_token
 	 * @property boolean $insurance_accepted
 	 * @property float $vat_percentage
@@ -1810,6 +1811,7 @@ namespace App\Models {
 	 * @method static \Illuminate\Database\Eloquent\Builder<Shipment>|Shipment whereVatPercentage($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Shipment>|Shipment whereInsuranceAccepted($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Shipment>|Shipment whereExternalToken($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<Shipment>|Shipment wherePublicViewToken($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Shipment>|Shipment whereExternalFormCompleted($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Shipment>|Shipment whereClientSequence($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Shipment>|Shipment whereTotalShipmentSequence($value)
@@ -14720,6 +14722,12 @@ namespace App\Models {
 	 * @property \Illuminate\Support\Carbon|null $last_interest_posted_through
 	 * @property mixed $last_interest_posted_year
 	 * @property float $current_balance
+	 * @property string|null $agreement_finalized_by
+	 * @property \Illuminate\Support\Carbon|null $agreement_finalized_at
+	 * @property \Illuminate\Support\Carbon|null $agreement_signed_at
+	 * @property string|null $signed_agreement_path
+	 * @property \App\Enums\InvestmentAgreementStatus $agreement_status
+	 * @property \App\Enums\InvestmentCapitalType $capital_type
 	 * @property \App\Enums\InvestmentStatus $status
 	 * @property \Illuminate\Support\Carbon|null $maturity_date
 	 * @property integer $contract_term_months
@@ -14749,6 +14757,12 @@ namespace App\Models {
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereContractTermMonths($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereMaturityDate($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereStatus($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereCapitalType($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereAgreementStatus($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereSignedAgreementPath($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereAgreementSignedAt($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereAgreementFinalizedAt($value)
+	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereAgreementFinalizedBy($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereCurrentBalance($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereLastInterestPostedYear($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereLastInterestPostedThrough($value)
@@ -16682,6 +16696,7 @@ namespace App\Models {
 	 * @property string|null $email
 	 * @property string $name
 	 * @property string $id
+	 * @property-read mixed $display_name
 	 * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Investment> $investments
 	 * @property-read int|null $investments_count
 	 * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\InvestmentTransaction> $transactions
