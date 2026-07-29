@@ -2,19 +2,22 @@
 
 namespace App\Filament\Client\Resources;
 
-use Filament\Tables;
+use App\Filament\Client\Concerns\HasShipmentMediaAction;
+use App\Filament\Client\Resources\DeliveredShipmentResource\Pages;
 use App\Models\Shipment;
-use Filament\Tables\Table;
-use Filament\Resources\Resource;
-use Filament\Tables\Actions\ActionGroup;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Actions\ActionGroup;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use App\Filament\Client\Resources\DeliveredShipmentResource\Pages;
 
 class DeliveredShipmentResource extends Resource
 {
+    use HasShipmentMediaAction;
+
     protected static ?string $model = Shipment::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-check-badge';
@@ -58,10 +61,10 @@ class DeliveredShipmentResource extends Resource
                 Tables\Columns\TextColumn::make('payment_status')
                     ->label('Payment Status')
                     ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'paid'    => 'success',
+                    ->color(fn (string $state): string => match ($state) {
+                        'paid' => 'success',
                         'partial' => 'warning',
-                        default   => 'danger',
+                        default => 'danger',
                     }),
 
                 Tables\Columns\TextColumn::make('status')
@@ -100,21 +103,21 @@ class DeliveredShipmentResource extends Resource
                     ->sortable()
                     ->badge()
                     ->color('danger')
-                    ->state(fn($record) => number_format($record->shipping_cost, 2))
+                    ->state(fn ($record) => number_format($record->shipping_cost, 2))
                     ->prefix('$'),
 
                 Tables\Columns\TextColumn::make('total')
                     ->sortable()
                     ->badge()
                     ->color('info')
-                    ->state(fn($record) => number_format($record->total, 2))
+                    ->state(fn ($record) => number_format($record->total, 2))
                     ->prefix('$'),
 
                 Tables\Columns\TextColumn::make('paid')
                     ->sortable()
                     ->badge()
                     ->color('warning')
-                    ->state(fn($record) => number_format($record->paid, 2))
+                    ->state(fn ($record) => number_format($record->paid, 2))
                     ->prefix('$'),
 
                 Tables\Columns\TextColumn::make('created_at')
@@ -133,7 +136,7 @@ class DeliveredShipmentResource extends Resource
                     ->options([
                         'pending' => 'Pending',
                         'partial' => 'Partial',
-                        'paid'    => 'Paid',
+                        'paid' => 'Paid',
                     ]),
             ])
             ->actions([
@@ -143,8 +146,8 @@ class DeliveredShipmentResource extends Resource
                         ->icon('heroicon-m-banknotes')
                         ->color('primary')
                         ->requiresConfirmation()
-                        ->visible(fn($record) => $record->payment_status !== 'paid')
-                        ->url(fn($record) => route('make-payment', ['record' => $record]), shouldOpenInNewTab: true),
+                        ->visible(fn ($record) => $record->payment_status !== 'paid')
+                        ->url(fn ($record) => route('make-payment', ['record' => $record]), shouldOpenInNewTab: true),
 
                     Tables\Actions\Action::make('receiver')
                         ->label('Receiver Information')
@@ -161,7 +164,7 @@ class DeliveredShipmentResource extends Resource
                                     ImageEntry::make('receiver_name')->label(''),
                                     TextEntry::make('receiver_phone'),
                                     TextEntry::make('receiver_email'),
-                                    TextEntry::make('country')->state(fn($record) => "{$record->mcountry?->name}, {$record->mstate?->name}, {$record->mcity?->name}"),
+                                    TextEntry::make('country')->state(fn ($record) => "{$record->mcountry?->name}, {$record->mstate?->name}, {$record->mcity?->name}"),
                                     TextEntry::make('address'),
                                     TextEntry::make('receiver_id_type'),
                                     TextEntry::make('receiver_id_number'),
@@ -189,7 +192,7 @@ class DeliveredShipmentResource extends Resource
                                     TextEntry::make('receiver.receiver_name')->badge(),
                                     TextEntry::make('box_no'),
                                     TextEntry::make('product.name')
-                                        ->state(fn($record) => $record->product?->name . ' (' . $record->quantity . 'x)')
+                                        ->state(fn ($record) => $record->product?->name.' ('.$record->quantity.'x)')
                                         ->columnSpan(2),
                                     TextEntry::make('item_cost')->label('Value'),
                                 ])
@@ -197,10 +200,12 @@ class DeliveredShipmentResource extends Resource
                         ])
                         ->modalSubmitAction(false),
 
+                    self::mediaAction(),
+
                     Tables\Actions\Action::make('Print Invoice')
                         ->icon('heroicon-m-receipt-percent')
                         ->color('success')
-                        ->url(fn($record) => route('shipping-invoice', $record->id), shouldOpenInNewTab: true),
+                        ->url(fn ($record) => route('shipping-invoice', $record->id), shouldOpenInNewTab: true),
 
                     Tables\Actions\Action::make('payments')
                         ->label('View Payments')
@@ -238,9 +243,9 @@ class DeliveredShipmentResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListDeliveredShipments::route('/'),
+            'index' => Pages\ListDeliveredShipments::route('/'),
             'create' => Pages\CreateDeliveredShipment::route('/create'),
-            'edit'   => Pages\EditDeliveredShipment::route('/{record}/edit'),
+            'edit' => Pages\EditDeliveredShipment::route('/{record}/edit'),
         ];
     }
 }

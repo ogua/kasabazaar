@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\InvestmentAgreementStatus;
+use App\Enums\InvestmentCapitalType;
 use App\Enums\InvestmentStatus;
 use App\Service\ExchangeRateService;
 use Carbon\Carbon;
@@ -26,6 +28,10 @@ class Investment extends Model
         'current_balance' => 'decimal:2',
         'exchange_rate_at_investment' => 'decimal:4',
         'status' => InvestmentStatus::class,
+        'capital_type' => InvestmentCapitalType::class,
+        'agreement_status' => InvestmentAgreementStatus::class,
+        'agreement_signed_at' => 'datetime',
+        'agreement_finalized_at' => 'datetime',
         'last_interest_posted_through' => 'date',
     ];
 
@@ -125,5 +131,10 @@ class Investment extends Model
     public function recordedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'recorded_by');
+    }
+
+    public function agreementFinalizedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'agreement_finalized_by');
     }
 }

@@ -158,7 +158,7 @@
         @if (file_exists(public_path('images/kasabazaar-logo.png')))
             <img src="{{ URL::to('images/kasabazaar-logo.png') }}" alt="Logo" class="logo">
         @endif
-        <div class="company-name">KasaBazaar LLC d/b/a Rose Door to Door Shipping &amp; Delivery Services</div>
+        <div class="company-name">KasaBazaar Group Of Companies</div>
     </div>
     <div class="header-right">
         <div class="doc-title">{{ $docTitle ?? 'Document' }}</div>

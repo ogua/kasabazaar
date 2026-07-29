@@ -20,8 +20,8 @@
         ])
 
         <div class="section">
-            <p>This Investment Agreement ("Agreement") is entered into between KasaBazaar LLC d/b/a Rose Door to Door
-                Shipping &amp; Delivery Services ("Company") and {{ $investor->name }} ("Investor"), covering all
+            <p>This Investment Agreement ("Agreement") is entered into between KasaBazaar Group Of Companies
+                ("Company") and {{ $investor->name }} ("Investor"), covering all
                 investment tranches held by the Investor as of the date below.</p>
         </div>
 
@@ -176,9 +176,12 @@
                 </div>
             </div>
             <div class="signature-column">
+                @if (file_exists(public_path('images/shipping-signature.png')))
+                    <img src="{{ URL::to('images/shipping-signature.png') }}" alt="Authorized Signature" style="max-height: 60px;">
+                @endif
                 <div class="signature-line">
                     Founder &amp; CVO<br>
-                    KasaBazaar LLC d/b/a Rose Door to Door Shipping &amp; Delivery Services<br>
+                    KasaBazaar Group Of Companies<br>
                     Date: {{date('F j, Y')}}
                 </div>
             </div>

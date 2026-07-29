@@ -44,6 +44,19 @@
             </div>
         </div>
 
+        <div class="signature-block">
+            <div class="signature-column">
+                @if (file_exists(public_path('images/shipping-signature.png')))
+                    <img src="{{ URL::to('images/shipping-signature.png') }}" alt="Authorized Signature" style="max-height: 60px;">
+                @endif
+                <div class="signature-line">
+                    Founder &amp; CVO<br>
+                    KasaBazaar Group Of Companies<br>
+                    Date: {{ now()->format('F j, Y') }}
+                </div>
+            </div>
+        </div>
+
         <div class="footer">
             This statement was generated on {{ now()->format('M d, Y') }} and reflects the investment's posted ledger
             activity through the end of {{ $statement->year }}.

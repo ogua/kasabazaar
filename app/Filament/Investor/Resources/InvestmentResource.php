@@ -2,11 +2,13 @@
 
 namespace App\Filament\Investor\Resources;
 
+use App\Enums\InvestmentAgreementStatus;
 use App\Filament\Investor\Resources\InvestmentResource\Pages;
 use App\Filament\Investor\Resources\InvestmentResource\RelationManagers\TransactionsRelationManager;
 use App\Models\Investment;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -79,6 +81,8 @@ class InvestmentResource extends Resource
                     ])
                     ->columns(1)
                     ->visible(fn (?Investment $record) => $record === null),
+
+                Forms\Components\Hidden::make('capital_type')->default('investment'),
             ]);
     }
 
@@ -97,7 +101,15 @@ class InvestmentResource extends Resource
                     ->label('Current Value')
                     ->money('USD'),
 
+                Tables\Columns\TextColumn::make('capital_type')
+                    ->label('Capital Type')
+                    ->badge(),
+
                 Tables\Columns\TextColumn::make('status')
+                    ->badge(),
+
+                Tables\Columns\TextColumn::make('agreement_status')
+                    ->label('Agreement')
                     ->badge(),
 
                 Tables\Columns\TextColumn::make('start_date')
@@ -117,7 +129,7 @@ class InvestmentResource extends Resource
                 Tables\Actions\ViewAction::make(),
 
                 Tables\Actions\Action::make('downloadAgreement')
-                    ->label(fn (Investment $record) => $record->status->value === 'pending_payment' ? 'Preview Agreement' : 'Agreement')
+                    ->label(fn (Investment $record) => $record->status->value === 'pending_payment' ? 'Preview Agreement' : 'Download Agreement')
                     ->icon('heroicon-o-document-text')
                     ->color('gray')
                     ->url(fn (Investment $record) => URL::temporarySignedRoute('investment-agreement', now()->addDay(), [
@@ -125,6 +137,37 @@ class InvestmentResource extends Resource
                         'as_of' => $record->defaultAsOfDate()->toDateString(),
                     ]))
                     ->openUrlInNewTab(),
+
+                Tables\Actions\Action::make('uploadSignedAgreement')
+                    ->label(fn (Investment $record) => $record->agreement_status === InvestmentAgreementStatus::pending_review
+                        ? 'Signed Agreement Under Review'
+                        : 'Upload Signed Agreement')
+                    ->icon('heroicon-o-arrow-up-tray')
+                    ->color('primary')
+                    ->disabled(fn (Investment $record) => $record->agreement_status === InvestmentAgreementStatus::pending_review)
+                    ->visible(fn (Investment $record) => $record->agreement_status !== InvestmentAgreementStatus::finalized
+                        && $record->status->value !== 'pending_payment')
+                    ->modalDescription('Download the agreement, sign it, then upload a scan or photo of the signed copy here. Our team will review it and confirm once the agreement is finalized.')
+                    ->form([
+                        Forms\Components\FileUpload::make('signed_agreement_path')
+                            ->label('Signed Agreement')
+                            ->directory('investment-agreements/signed')
+                            ->acceptedFileTypes(['application/pdf', 'image/*'])
+                            ->required(),
+                    ])
+                    ->action(function (Investment $record, array $data) {
+                        $record->update([
+                            'signed_agreement_path' => $data['signed_agreement_path'],
+                            'agreement_status' => InvestmentAgreementStatus::pending_review,
+                            'agreement_signed_at' => now(),
+                        ]);
+
+                        Notification::make()
+                            ->title('Signed agreement uploaded')
+                            ->body('Our team will review it and confirm once finalized.')
+                            ->success()
+                            ->send();
+                    }),
             ])
             ->bulkActions([]);
     }

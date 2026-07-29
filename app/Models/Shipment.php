@@ -242,6 +242,18 @@ class Shipment extends Model
     }
 
     /**
+     * Generate unique token for the no-login public shipment activity page
+     */
+    public static function generatePublicViewToken(): string
+    {
+        do {
+            $token = Str::random(32);
+        } while (self::where('public_view_token', $token)->exists());
+
+        return $token;
+    }
+
+    /**
      * Get previous receivers for a client (for auto-populate)
      */
     public static function getPreviousReceivers(string $clientId): \Illuminate\Database\Eloquent\Collection

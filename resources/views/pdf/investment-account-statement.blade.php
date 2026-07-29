@@ -25,7 +25,7 @@
 
         <div class="section">
             <p>This statement reflects the full history of investments held by {{ $investor->name }} with KasaBazaar
-                LLC d/b/a Rose Door to Door Shipping &amp; Delivery Services, as of {{ $asOfDate->format('F j, Y') }}.</p>
+                Group Of Companies, as of {{ $asOfDate->format('F j, Y') }}.</p>
         </div>
 
         @foreach ($investments as $investment)
@@ -140,6 +140,19 @@
                 <div class="row">
                     <div class="label">Total Investment Value</div>
                     <div class="value">${{ number_format($totalValue, 2) }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="signature-block">
+            <div class="signature-column">
+                @if (file_exists(public_path('images/shipping-signature.png')))
+                    <img src="{{ URL::to('images/shipping-signature.png') }}" alt="Authorized Signature" style="max-height: 60px;">
+                @endif
+                <div class="signature-line">
+                    Founder &amp; CVO<br>
+                    KasaBazaar Group Of Companies<br>
+                    Date: {{ now()->format('F j, Y') }}
                 </div>
             </div>
         </div>

@@ -4,6 +4,7 @@ use App\Http\Controllers\ExternalShipmentController;
 use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\InvestmentController;
 use App\Http\Controllers\InvestorReportController;
+use App\Http\Controllers\PublicShipmentController;
 use App\Http\Controllers\ShippingController;
 use App\Http\Controllers\WebController;
 use App\Livewire\AgreementForm;
@@ -179,6 +180,12 @@ Route::get('/shipment-form-cities', [ExternalShipmentController::class, 'getCiti
 Route::get('/shipment-form-expired', function () {
     return view('external.shipment-form-expired');
 })->name('external-shipment-expired');
+
+// No-login shipment activity page — for clients who'd rather not create a portal
+// account. Secured by an unguessable token (same trust model as the external
+// shipment form above), not session auth.
+Route::get('/my-shipment/{token}', [PublicShipmentController::class, 'show'])
+    ->name('public-shipment-view');
 
 // API Routes for internal use
 Route::prefix('api')->middleware('web')->group(function () {

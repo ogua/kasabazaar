@@ -2,12 +2,10 @@
 
 namespace App\Filament\Client\Resources;
 
+use App\Filament\Client\Concerns\HasShipmentMediaAction;
 use App\Filament\Client\Resources\ShipmentResource\Pages;
-use App\Filament\Client\Resources\ShipmentResource\RelationManagers;
 use App\Filament\Client\Widgets\ShipmentstatisticsWidget;
 use App\Models\Shipment;
-use Filament\Forms;
-use Filament\Forms\Form;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\RepeatableEntry;
 use Filament\Infolists\Components\TextEntry;
@@ -16,10 +14,11 @@ use Filament\Tables;
 use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ShipmentResource extends Resource
 {
+    use HasShipmentMediaAction;
+
     protected static ?string $model = Shipment::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-truck';
@@ -37,15 +36,13 @@ class ShipmentResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()
-            ::where('client_id', auth()->user()->client_id)
+        return static::getModel()::where('client_id', auth()->user()->client_id)
             ->count();
     }
 
     public static function getNavigationBadgeColor(): ?string
     {
-        return static::getModel()
-            ::where('client_id', auth()->user()->client_id)
+        return static::getModel()::where('client_id', auth()->user()->client_id)
             ->count() > 1
             ? 'warning'
             : 'primary';
@@ -68,11 +65,11 @@ class ShipmentResource extends Resource
 
                 Tables\Columns\TextColumn::make('shipped_at')->dateTime()->sortable(),
 
-                Tables\Columns\TextColumn::make('shipping_cost')->numeric()->sortable()->badge()->color('danger')->state(fn($record) => number_format($record->shipping_cost, 2))->prefix('$'),
+                Tables\Columns\TextColumn::make('shipping_cost')->numeric()->sortable()->badge()->color('danger')->state(fn ($record) => number_format($record->shipping_cost, 2))->prefix('$'),
 
-                Tables\Columns\TextColumn::make('total')->sortable()->badge()->color('info')->state(fn($record) => number_format($record->total, 2))->prefix('$'),
+                Tables\Columns\TextColumn::make('total')->sortable()->badge()->color('info')->state(fn ($record) => number_format($record->total, 2))->prefix('$'),
 
-                Tables\Columns\TextColumn::make('paid')->sortable()->badge()->color('warning')->state(fn($record) => number_format($record->paid, 2))->prefix('$'),
+                Tables\Columns\TextColumn::make('paid')->sortable()->badge()->color('warning')->state(fn ($record) => number_format($record->paid, 2))->prefix('$'),
 
                 Tables\Columns\TextColumn::make('created_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')->dateTime()->sortable()->toggleable(isToggledHiddenByDefault: true),
@@ -82,7 +79,7 @@ class ShipmentResource extends Resource
             ])
             ->actions([
                 ActionGroup::make([
-                    Tables\Actions\Action::make('pay')->label('Pay Now')->icon('heroicon-m-banknotes')->color('primary')->requiresConfirmation()->url(fn($record) => route('make-payment', ['record' => $record]), shouldOpenInNewTab: true),
+                    Tables\Actions\Action::make('pay')->label('Pay Now')->icon('heroicon-m-banknotes')->color('primary')->requiresConfirmation()->url(fn ($record) => route('make-payment', ['record' => $record]), shouldOpenInNewTab: true),
 
                     Tables\Actions\Action::make('receiver')
                         ->label('Receiver Information')
@@ -95,7 +92,7 @@ class ShipmentResource extends Resource
                         ->infolist([
                             RepeatableEntry::make('receivers')
                                 ->label('')
-                                ->schema([ImageEntry::make('receiver_name')->label(''), TextEntry::make('receiver_phone'), TextEntry::make('receiver_email'), TextEntry::make('country')->state(fn($record) => "{$record->mcountry?->name}, {$record->mstate?->name}, {$record->mcity?->name}"), TextEntry::make('receiver_phone'), TextEntry::make('address'), TextEntry::make('receiver_id_type'), TextEntry::make('receiver_id_number'), TextEntry::make('item_cost')])
+                                ->schema([ImageEntry::make('receiver_name')->label(''), TextEntry::make('receiver_phone'), TextEntry::make('receiver_email'), TextEntry::make('country')->state(fn ($record) => "{$record->mcountry?->name}, {$record->mstate?->name}, {$record->mcity?->name}"), TextEntry::make('receiver_phone'), TextEntry::make('address'), TextEntry::make('receiver_id_type'), TextEntry::make('receiver_id_number'), TextEntry::make('item_cost')])
                                 ->columns(4),
                         ])
                         ->modalSubmitAction(false)
@@ -112,14 +109,16 @@ class ShipmentResource extends Resource
                         })
                         ->infolist([
                             RepeatableEntry::make('items')
-                                    ->label('') 
-                                    ->schema([ImageEntry::make('product.product_image')->label('')->columnSpan(2), TextEntry::make('receiver.receiver_name')
-                                    ->badge(), TextEntry::make('box_no'), TextEntry::make('product.name')->state(fn($record) => $record->product?->name . ' (' . $record->quantity . 'x)')->columnSpan(2), TextEntry::make('item_cost')->label('Value')])
-                                    ->columns(7),
+                                ->label('')
+                                ->schema([ImageEntry::make('product.product_image')->label('')->columnSpan(2), TextEntry::make('receiver.receiver_name')
+                                    ->badge(), TextEntry::make('box_no'), TextEntry::make('product.name')->state(fn ($record) => $record->product?->name.' ('.$record->quantity.'x)')->columnSpan(2), TextEntry::make('item_cost')->label('Value')])
+                                ->columns(7),
                         ])
                         ->modalSubmitAction(false),
 
-                    Tables\Actions\Action::make('Print Invoice')->icon('heroicon-m-receipt-percent')->color('success')->url(fn($record) => route('shipping-invoice', $record->id), shouldOpenInNewTab: true),
+                    self::mediaAction(),
+
+                    Tables\Actions\Action::make('Print Invoice')->icon('heroicon-m-receipt-percent')->color('success')->url(fn ($record) => route('shipping-invoice', $record->id), shouldOpenInNewTab: true),
 
                     Tables\Actions\Action::make('payments')
                         ->label('View Payments')
@@ -146,15 +145,15 @@ class ShipmentResource extends Resource
     public static function getWidgets(): array
     {
         return [
-                ShipmentstatisticsWidget::class
-            ];
+            ShipmentstatisticsWidget::class,
+        ];
     }
 
     public static function getRelations(): array
     {
         return [
-                //
-            ];
+            //
+        ];
     }
 
     public static function getPages(): array

@@ -37,7 +37,7 @@
 </head>
 <body>
     <div class="header">
-        <div class="company-name">KasaBazaar LLC d/b/a Rose Door to Door Shipping &amp; Delivery Services</div>
+        <div class="company-name">KasaBazaar Group Of Companies</div>
     </div>
 
     <div class="content">

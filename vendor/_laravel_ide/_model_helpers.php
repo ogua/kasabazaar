@@ -14738,6 +14738,7 @@ namespace App\Models {
 	 * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\InvestmentWithdrawalRequest> $withdrawalRequests
 	 * @property-read int|null $withdrawal_requests_count
 	 * @property-read \App\Models\User $recordedBy
+	 * @property-read \App\Models\User $agreementFinalizedBy
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereId($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereInvestorId($value)
 	 * @method static \Illuminate\Database\Eloquent\Builder<Investment>|Investment whereReference($value)

@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\InvestmentAgreementStatus;
+use App\Enums\InvestmentCapitalType;
 use App\Enums\InvestmentStatus;
 use App\Enums\PaymentMethod;
 use App\Filament\Resources\InvestmentResource\Pages;
@@ -21,6 +23,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 
 class InvestmentResource extends Resource
@@ -55,6 +58,13 @@ class InvestmentResource extends Resource
                         ->preload()
                         ->required()
                         ->default(fn () => request()->query('investor_id')),
+
+                    Forms\Components\Select::make('capital_type')
+                        ->label('Capital Type')
+                        ->options(InvestmentCapitalType::class)
+                        ->default(InvestmentCapitalType::investment)
+                        ->required()
+                        ->helperText('Investment: the investor holds a stake and earns returns. Loan: the company owes this back to the lender under loan terms.'),
 
                     Forms\Components\TextInput::make('principal_amount')
                         ->label('Principal Amount')
@@ -155,8 +165,17 @@ class InvestmentResource extends Resource
                     ->money('USD')
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('capital_type')
+                    ->label('Capital Type')
+                    ->badge(),
+
                 Tables\Columns\TextColumn::make('status')
                     ->badge(),
+
+                Tables\Columns\TextColumn::make('agreement_status')
+                    ->label('Agreement')
+                    ->badge()
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Age')
@@ -198,6 +217,14 @@ class InvestmentResource extends Resource
                         'withdrawn' => 'Withdrawn',
                         'closed' => 'Closed',
                     ]),
+
+                Tables\Filters\SelectFilter::make('capital_type')
+                    ->label('Capital Type')
+                    ->options(InvestmentCapitalType::class),
+
+                Tables\Filters\SelectFilter::make('agreement_status')
+                    ->label('Agreement')
+                    ->options(InvestmentAgreementStatus::class),
 
                 Tables\Filters\Filter::make('stuck_pending_payment')
                     ->label('Stuck (pending payment)')
@@ -253,6 +280,9 @@ class InvestmentResource extends Resource
                         'as_of' => $record->defaultAsOfDate()->toDateString(),
                     ]))
                     ->openUrlInNewTab(),
+
+                self::finalizeAgreementAction(),
+                self::rejectAgreementAction(),
 
                 self::postInterestAction(),
 
@@ -386,6 +416,76 @@ class InvestmentResource extends Resource
                         ->danger()
                         ->send();
                 }
+            });
+    }
+
+    /**
+     * Staff review action for a signed agreement the investor has uploaded — confirms
+     * receipt of a properly countersigned agreement and locks the record in as complete.
+     */
+    public static function finalizeAgreementAction(): Action
+    {
+        return Action::make('finalizeAgreement')
+            ->label('Finalize Agreement')
+            ->icon('heroicon-o-check-badge')
+            ->color('success')
+            ->visible(fn (Investment $record) => $record->agreement_status === InvestmentAgreementStatus::pending_review)
+            ->requiresConfirmation()
+            ->modalDescription('Confirm the uploaded document is a properly signed copy of the agreement before finalizing.')
+            ->form([
+                Forms\Components\Placeholder::make('signed_copy')
+                    ->label('Uploaded Signed Copy')
+                    ->content(fn (Investment $record) => new \Illuminate\Support\HtmlString(
+                        $record->signed_agreement_path
+                            ? '<a href="'.Storage::disk('public')->url($record->signed_agreement_path).'" target="_blank" class="text-primary-600 underline">Open uploaded document</a>'
+                            : 'No document on file.'
+                    )),
+            ])
+            ->action(function (Investment $record) {
+                $record->update([
+                    'agreement_status' => InvestmentAgreementStatus::finalized,
+                    'agreement_finalized_at' => now(),
+                    'agreement_finalized_by' => auth()->id(),
+                ]);
+
+                Notification::make()
+                    ->title('Agreement finalized')
+                    ->success()
+                    ->send();
+            });
+    }
+
+    /**
+     * Sends the uploaded copy back to the investor — e.g. illegible scan, wrong pages
+     * signed — resetting the record so they see the "Upload Signed Agreement" action
+     * again in their portal.
+     */
+    public static function rejectAgreementAction(): Action
+    {
+        return Action::make('rejectAgreement')
+            ->label('Reject Signed Copy')
+            ->icon('heroicon-o-x-circle')
+            ->color('danger')
+            ->visible(fn (Investment $record) => $record->agreement_status === InvestmentAgreementStatus::pending_review)
+            ->form([
+                Forms\Components\Textarea::make('reason')
+                    ->label('Reason')
+                    ->required()
+                    ->placeholder('e.g. Signature page missing, scan illegible...'),
+            ])
+            ->action(function (Investment $record, array $data) {
+                $record->update([
+                    'agreement_status' => InvestmentAgreementStatus::unsigned,
+                    'signed_agreement_path' => null,
+                    'agreement_signed_at' => null,
+                    'notes' => trim(($record->notes ?? '')."\n[".now()->format('M j, Y').'] Signed agreement rejected: '.$data['reason']),
+                ]);
+
+                Notification::make()
+                    ->title('Signed copy rejected')
+                    ->body('The investor will need to re-upload a signed agreement.')
+                    ->warning()
+                    ->send();
             });
     }
 
