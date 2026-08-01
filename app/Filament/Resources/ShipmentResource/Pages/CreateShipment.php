@@ -1139,6 +1139,12 @@ class CreateShipment extends CreateRecord
         $total = number_format($shipment->total, 2);
         $from = $shipment->origin_branch_id;
         $to = $shipment->destination_branch_id;
+
+        if (! $shipment->public_view_token) {
+            $shipment->public_view_token = \App\Models\Shipment::generatePublicViewToken();
+            $shipment->save();
+        }
+
         $url = route('public-shipment-view', $shipment->public_view_token);
 
         return "Dear {$clientName}, your shipment has been created. ".

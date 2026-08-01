@@ -13,7 +13,7 @@ class EditInvestment extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
-            InvestmentResource::postInterestAction(),
+            InvestmentResource::postInterestHeaderAction(),
             Actions\ViewAction::make(),
             Actions\DeleteAction::make(),
         ];

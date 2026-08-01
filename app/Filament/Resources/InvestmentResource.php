@@ -14,6 +14,7 @@ use App\Service\InvestmentInterestService;
 use App\Service\InvestmentPaymentService;
 use App\Service\InvestmentRateResolver;
 use Carbon\Carbon;
+use Filament\Actions\Action as HeaderAction;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -313,7 +314,27 @@ class InvestmentResource extends Resource
      */
     public static function postInterestAction(): Action
     {
-        return Action::make('postInterest')
+        return self::configurePostInterestAction(Action::make('postInterest'));
+    }
+
+    /**
+     * Header-action variant of postInterestAction() — the View/Edit page header expects
+     * Filament\Actions\Action, which Filament\Tables\Actions\Action does not extend.
+     */
+    public static function postInterestHeaderAction(): HeaderAction
+    {
+        return self::configurePostInterestAction(HeaderAction::make('postInterest'));
+    }
+
+    /**
+     * @template TAction of Action|HeaderAction
+     *
+     * @param  TAction  $action
+     * @return TAction
+     */
+    private static function configurePostInterestAction(Action|HeaderAction $action): Action|HeaderAction
+    {
+        return $action
             ->label('Post Interest')
             ->icon('heroicon-o-calculator')
             ->color('info')

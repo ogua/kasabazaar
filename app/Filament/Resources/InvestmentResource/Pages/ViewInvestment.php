@@ -13,7 +13,7 @@ class ViewInvestment extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            InvestmentResource::postInterestAction(),
+            InvestmentResource::postInterestHeaderAction(),
             Actions\EditAction::make(),
         ];
     }
