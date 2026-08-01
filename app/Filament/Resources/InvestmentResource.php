@@ -72,12 +72,16 @@ class InvestmentResource extends Resource
                         ->numeric()
                         ->prefix('USD')
                         ->required()
-                        ->disabled(fn (?Investment $record) => $record !== null),
+                        ->helperText(fn (?Investment $record) => $record !== null
+                            ? 'Adjusting this does not change the current balance already accrued — update that separately if needed.'
+                            : null),
 
                     Forms\Components\DatePicker::make('start_date')
                         ->required()
                         ->default(now())
-                        ->disabled(fn (?Investment $record) => $record !== null),
+                        ->helperText(fn (?Investment $record) => $record !== null
+                            ? 'Changing this recalculates the contract due date from the term below.'
+                            : null),
 
                     Forms\Components\TextInput::make('contract_term_months')
                         ->label('Contract Term (months)')
@@ -87,16 +91,28 @@ class InvestmentResource extends Resource
                         ->default(12)
                         ->required()
                         ->suffix('months')
-                        ->helperText('E.g. 6, 12, 24, 36, 60, 120 for 6mo / 1yr / 2yr / 3yr / 5yr / 10yr terms. The investor may not request a withdrawal until this term has elapsed.')
-                        ->disabled(fn (?Investment $record) => $record !== null),
+                        ->helperText('E.g. 6, 12, 24, 36, 60, 120 for 6mo / 1yr / 2yr / 3yr / 5yr / 10yr terms. The investor may not request a withdrawal until this term has elapsed. Changing this recalculates the contract due date.'),
 
                     Forms\Components\TextInput::make('initial_annual_rate')
-                        ->label('Annual Rate (optional)')
+                        ->label(fn (?Investment $record) => $record === null
+                            ? 'Annual Rate (optional)'
+                            : 'Annual Rate for '.Carbon::parse($record->start_date)->year)
                         ->numeric()
                         ->suffix('%')
-                        ->helperText("Leave blank to fall back to the investor's standing rate, then the company-wide default for each year.")
-                        ->visible(fn (?Investment $record) => $record === null)
-                        ->dehydrated(false),
+                        ->helperText(fn (?Investment $record) => $record === null
+                            ? "Leave blank to fall back to the investor's standing rate, then the company-wide default for each year."
+                            : "Sets the rate override for the investment's start year. Leave blank to make no change here — edit the Rate Overrides tab for other years.")
+                        ->afterStateHydrated(function (Forms\Components\TextInput $component, ?Investment $record) {
+                            if ($record === null) {
+                                return;
+                            }
+
+                            $override = $record->rateOverrides()
+                                ->where('year', Carbon::parse($record->start_date)->year)
+                                ->first();
+
+                            $component->state($override?->annual_rate);
+                        }),
                 ])
                 ->columns(2),
 
