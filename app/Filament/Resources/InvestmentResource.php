@@ -182,6 +182,24 @@ class InvestmentResource extends Resource
                     ->money('USD')
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('rate')
+                    ->label('Rate')
+                    ->state(function (Investment $record) {
+                        try {
+                            return app(InvestmentRateResolver::class)->resolve($record, now()->year);
+                        } catch (\App\Exceptions\MissingInvestmentRateException) {
+                            return null;
+                        }
+                    })
+                    ->formatStateUsing(fn (?array $state) => $state ? number_format($state['rate'], 2).'%' : '—')
+                    ->tooltip(fn (?array $state) => match ($state['source'] ?? null) {
+                        'override' => 'One-off rate override for '.now()->year,
+                        'investor_default' => "The investor's standing rate",
+                        'company_default' => 'Company-wide default rate for '.now()->year,
+                        default => 'No rate configured for '.now()->year,
+                    })
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('capital_type')
                     ->label('Capital Type')
                     ->badge(),
