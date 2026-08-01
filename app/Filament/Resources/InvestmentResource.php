@@ -184,19 +184,15 @@ class InvestmentResource extends Resource
 
                 Tables\Columns\TextColumn::make('rate')
                     ->label('Rate')
-                    ->state(function (Investment $record) {
-                        try {
-                            return app(InvestmentRateResolver::class)->resolve($record, now()->year);
-                        } catch (\App\Exceptions\MissingInvestmentRateException) {
-                            return null;
-                        }
-                    })
-                    ->formatStateUsing(fn (?array $state) => $state ? number_format($state['rate'], 2).'%' : '—')
-                    ->tooltip(fn (?array $state) => match ($state['source'] ?? null) {
-                        'override' => 'One-off rate override for '.now()->year,
-                        'investor_default' => "The investor's standing rate",
-                        'company_default' => 'Company-wide default rate for '.now()->year,
-                        default => 'No rate configured for '.now()->year,
+                    ->state(fn (Investment $record) => self::resolveCurrentRate($record)['rate'] ?? null)
+                    ->formatStateUsing(fn (?float $state) => $state !== null ? number_format($state, 2).'%' : '—')
+                    ->tooltip(function (Investment $record) {
+                        return match (self::resolveCurrentRate($record)['source'] ?? null) {
+                            'override' => 'One-off rate override for '.now()->year,
+                            'investor_default' => "The investor's standing rate",
+                            'company_default' => 'Company-wide default rate for '.now()->year,
+                            default => 'No rate configured for '.now()->year,
+                        };
                     })
                     ->toggleable(),
 
@@ -548,6 +544,18 @@ class InvestmentResource extends Resource
     {
         return $record->status === InvestmentStatus::pending_payment
             && $record->created_at->lt(now()->subHours(config('investment.stuck_pending_payment_hours')));
+    }
+
+    /**
+     * @return array{rate: float, source: string}|null
+     */
+    private static function resolveCurrentRate(Investment $record): ?array
+    {
+        try {
+            return app(InvestmentRateResolver::class)->resolve($record, now()->year);
+        } catch (\App\Exceptions\MissingInvestmentRateException) {
+            return null;
+        }
     }
 
     public static function getPages(): array
