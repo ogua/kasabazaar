@@ -990,6 +990,15 @@ class CreateShipment extends CreateRecord
         $data['tracking_number'] = \App\Models\Shipment::generateTrackingNumber();
         $data['external_token'] = \App\Models\Shipment::generateExternalToken();
 
+        // These columns are NOT NULL with a DB default of 0/false, but an explicit
+        // null in $data (e.g. a cleared numeric field) bypasses that DB default.
+        $data['vat_percentage'] = $data['vat_percentage'] ?? 0;
+        $data['vat'] = $data['vat'] ?? 0;
+        $data['insurance'] = $data['insurance'] ?? 0;
+        $data['insurance_accepted'] = $data['insurance_accepted'] ?? false;
+        $data['shipping_cost'] = $data['shipping_cost'] ?? 0;
+        $data['total'] = $data['total'] ?? 0;
+
         // Generate shipping reference using the shipped_at date
         $shipmentType = $this->data['shipment_type'] ?? 'new';
         $shippedAt = $data['shipped_at'] ?? now();

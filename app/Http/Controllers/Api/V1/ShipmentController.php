@@ -75,11 +75,11 @@ class ShipmentController extends BaseApiController
             'estimated_delivery_date' => $request->input('estimated_delivery_date'),
             'shipping_cost' => $request->input('shipping_cost', 0),
             'exchange_rate_at_shipment' => $request->input('exchange_rate_at_shipment'),
-            'vat_percentage' => $request->input('vat_percentage', 0),
-            'insurance_accepted' => $request->input('insurance_accepted', false),
-            'insurance' => $request->input('insurance', 0),
-            'total' => $request->input('total', $request->input('shipping_cost', 0)),
-            'paid' => $request->input('paid', 0),
+            'vat_percentage' => $request->input('vat_percentage') ?? 0,
+            'insurance_accepted' => $request->input('insurance_accepted') ?? false,
+            'insurance' => $request->input('insurance') ?? 0,
+            'total' => $request->input('total') ?? $request->input('shipping_cost', 0),
+            'paid' => $request->input('paid') ?? 0,
             'recorded_by' => auth()->id(),
             'external_token' => Shipment::generateExternalToken(),
             'client_existence' => $shipmentType,
@@ -141,12 +141,21 @@ class ShipmentController extends BaseApiController
     {
         $shipment = Shipment::whereIn('branch_id', $this->userBranchIds())->findOrFail($id);
 
-        $shipment->update($request->only([
+        $data = $request->only([
             'status', 'payment_status', 'destination_branch_id',
             'estimated_delivery_date', 'shipping_cost', 'total', 'paid',
             'vat_percentage', 'insurance_accepted', 'insurance',
             'is_received', 'delivered_at',
-        ]));
+        ]);
+
+        $notNullableFields = ['total', 'paid', 'insurance', 'vat_percentage', 'insurance_accepted'];
+        foreach ($notNullableFields as $field) {
+            if (array_key_exists($field, $data) && is_null($data[$field])) {
+                unset($data[$field]);
+            }
+        }
+
+        $shipment->update($data);
 
         return $this->success($this->formatShipmentDetail($shipment->fresh(['client', 'originBranch', 'destinationBranch'])));
     }
