@@ -25,6 +25,14 @@
                 investment tranches held by the Investor as of the date below.</p>
         </div>
 
+        @if (($loanInvestments ?? collect())->isNotEmpty())
+            <div class="section">
+                <p><em>This investor also holds {{ $loanInvestments->count() }} loan
+                    agreement(s) — {{ $loanInvestments->pluck('reference')->join(', ') }} — governed by separate
+                    individual Loan Agreements, not reflected in this document.</em></p>
+            </div>
+        @endif
+
         <div class="section">
             <h2>Nature of Investment</h2>
             <p>

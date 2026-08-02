@@ -33,6 +33,17 @@ Schedule::command('app:post-year-end-investment-interest')
         logger()->error('Scheduled app:post-year-end-investment-interest command failed.');
     });
 
+// Generate due periodic cash interest payouts for loan-type investments daily —
+// unlike annual compounding interest, loan payment frequency varies per loan
+// (monthly/quarterly/etc.), so this can't run on a single fixed calendar date.
+Schedule::command('app:generate-investment-interest-payout-drafts')
+    ->dailyAt('02:00')
+    ->withoutOverlapping()
+    ->runInBackground()
+    ->onFailure(function () {
+        logger()->error('Scheduled app:generate-investment-interest-payout-drafts command failed.');
+    });
+
 // Runs ~2 weeks after year-end interest drafts are generated above, giving staff
 // time to review and post that year's interest so the statement's ledger reflects
 // finalized figures. Creates draft records only — staff add business updates and

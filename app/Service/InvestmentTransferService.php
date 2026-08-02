@@ -2,7 +2,9 @@
 
 namespace App\Service;
 
+use App\Enums\InvestmentInterestPayoutStatus;
 use App\Enums\InvestmentWithdrawalStatus;
+use App\Models\InvestmentInterestPayout;
 use App\Models\InvestmentWithdrawalRequest;
 use App\Models\Investor;
 use App\Models\User;
@@ -127,6 +129,83 @@ class InvestmentTransferService
     private function resolveSystemUser(InvestmentWithdrawalRequest $request): User
     {
         return $request->investment->recordedBy
+            ?? User::role('super_admin')->first()
+            ?? User::firstOrFail();
+    }
+
+    /**
+     * Initiate a Paystack transfer for a due/processing loan interest payout.
+     * Mirrors initiatePaystackTransfer() above but has no full-withdrawal true-up
+     * step — a periodic interest payout's amount is fixed at generation time.
+     */
+    public function initiatePaystackInterestPayout(InvestmentInterestPayout $payout, User $initiatedBy): array
+    {
+        $amount = (float) $payout->amount - (float) $payout->amount_paid;
+        $recipientCode = $this->ensureRecipient($payout->investor);
+        $reference = 'INVPO-'.$payout->id.'-'.now()->timestamp;
+
+        $response = Http::withToken(config('services.paystack.secret_key'))
+            ->post(config('services.paystack.payment_url').'/transfer', [
+                'source' => 'balance',
+                'amount' => (int) round($amount * 100),
+                'recipient' => $recipientCode,
+                'reason' => "Loan interest payout — {$payout->investment->reference}",
+                'reference' => $reference,
+            ]);
+
+        if (! $response->successful() || ! $response->json('status')) {
+            throw new \RuntimeException($response->json('message') ?? 'Failed to initiate Paystack transfer.');
+        }
+
+        $payout->update([
+            'payout_gateway' => 'paystack',
+            'status' => InvestmentInterestPayoutStatus::processing->value,
+            'paystack_transfer_code' => $response->json('data.transfer_code'),
+            'payment_reference' => $reference,
+        ]);
+
+        return $response->json('data');
+    }
+
+    /**
+     * Called from the Paystack transfer webhook on `transfer.success` for an
+     * interest-payout transfer code. Idempotent — a payout already marked paid is
+     * left untouched.
+     */
+    public function handleInterestPayoutTransferSuccess(string $transferCode): void
+    {
+        $payout = InvestmentInterestPayout::where('paystack_transfer_code', $transferCode)->first();
+
+        if (! $payout || $payout->status === InvestmentInterestPayoutStatus::paid) {
+            return;
+        }
+
+        $amount = (float) $payout->amount - (float) $payout->amount_paid;
+
+        app(InvestmentInterestPayoutService::class)->recordPayment(
+            $payout,
+            $amount,
+            $this->resolvePayoutSystemUser($payout),
+            ['payout_gateway' => 'paystack', 'payment_reference' => $transferCode]
+        );
+    }
+
+    /**
+     * Called on `transfer.failed` / `transfer.reversed` for an interest-payout
+     * transfer code — reverts to 'due' so staff can retry or fall back to manual.
+     * There is no 'approved' state in this pipeline (see InvestmentInterestPayoutStatus).
+     */
+    public function handleInterestPayoutTransferFailed(string $transferCode): void
+    {
+        InvestmentInterestPayout::where('paystack_transfer_code', $transferCode)
+            ->where('status', InvestmentInterestPayoutStatus::processing->value)
+            ->first()
+            ?->update(['status' => InvestmentInterestPayoutStatus::due->value]);
+    }
+
+    private function resolvePayoutSystemUser(InvestmentInterestPayout $payout): User
+    {
+        return $payout->investment->recordedBy
             ?? User::role('super_admin')->first()
             ?? User::firstOrFail();
     }

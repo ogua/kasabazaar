@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Enums\InvestmentCapitalType;
 use App\Enums\InvestmentTransactionType;
 use App\Models\Investment;
 use App\Models\InvestmentTransaction;
@@ -17,17 +18,20 @@ class InvestmentAgreementService
     {
         $investment->load('investor');
         $asOfDate ??= $investment->defaultAsOfDate();
+        $isLoan = $investment->capital_type === InvestmentCapitalType::loan;
 
         return Pdf::loadView('pdf.investment-agreement', [
             'investment' => $investment,
             'investor' => $investment->investor,
-            'valuation' => app(InvestmentInterestService::class)->valuationAsOf($investment, $asOfDate),
-            'rateHistory' => self::buildRateHistory($investment, $asOfDate),
-            'interestHistory' => $investment->transactions()
+            'valuation' => $isLoan ? null : app(InvestmentInterestService::class)->valuationAsOf($investment, $asOfDate),
+            'rateHistory' => $isLoan ? [] : self::buildRateHistory($investment, $asOfDate),
+            'interestHistory' => $isLoan ? collect() : $investment->transactions()
                 ->where('type', InvestmentTransactionType::interest_credit->value)
                 ->where('posted', true)
                 ->orderBy('date')
                 ->get(),
+            'payoutSchedule' => $isLoan ? ($payoutSchedule = app(InvestmentInterestPayoutService::class)->projectSchedule($investment)) : [],
+            'loanRate' => $isLoan ? ($payoutSchedule[0]['rate'] ?? null) : null,
             'asOfDate' => $asOfDate,
         ])
             ->setPaper('a4', 'portrait')
@@ -43,7 +47,18 @@ class InvestmentAgreementService
         $asOfDate ??= $investor->defaultAsOfDate();
         $interestService = app(InvestmentInterestService::class);
 
-        $investments = $investor->investments()->orderBy('start_date')->get();
+        // Loan tranches are legally distinct instruments (fixed schedule, no
+        // compounding) — each already has its own complete agreement via
+        // generatePdf(). Mixing them into this compounding-focused combined
+        // document would misstate both, so they're excluded here and noted below.
+        $investments = $investor->investments()
+            ->where('capital_type', InvestmentCapitalType::investment->value)
+            ->orderBy('start_date')
+            ->get();
+        $loanInvestments = $investor->investments()
+            ->where('capital_type', InvestmentCapitalType::loan->value)
+            ->orderBy('start_date')
+            ->get();
 
         // includeUnposted: false — the agreement must only reflect interest that has
         // actually been credited. Projecting a not-yet-posted period would show the
@@ -61,6 +76,7 @@ class InvestmentAgreementService
         return Pdf::loadView('pdf.investment-agreement-combined', [
             'investor' => $investor,
             'investments' => $investments,
+            'loanInvestments' => $loanInvestments,
             'valuations' => $segmentedValuations,
             'totalPrincipal' => $investments->sum('principal_amount'),
             'totalValue' => $segmentedValuations->sum('compounded_balance'),

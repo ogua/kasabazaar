@@ -2,17 +2,17 @@
 
 namespace App\Filament\Resources\InvestmentResource\RelationManagers;
 
-use Filament\Forms;
-use Filament\Tables;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
-use App\Models\InvestmentTransaction;
-use Filament\Tables\Actions\EditAction;
 use App\Enums\InvestmentTransactionType;
-use Filament\Notifications\Notification;
-use Filament\Tables\Actions\DeleteAction;
+use App\Models\InvestmentTransaction;
 use App\Service\InvestmentInterestService;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Tables;
+use Filament\Tables\Actions\DeleteAction;
+use Filament\Tables\Actions\EditAction;
+use Filament\Tables\Table;
 
 class TransactionsRelationManager extends RelationManager
 {
@@ -28,19 +28,19 @@ class TransactionsRelationManager extends RelationManager
                 ->required()
                 ->default(now()),
 
-                Forms\Components\DatePicker::make('period_start')
-                    ->required()
-                    ->default(now()),
+            Forms\Components\DatePicker::make('period_start')
+                ->required()
+                ->default(now()),
 
-                Forms\Components\DatePicker::make('period_end')
-                    ->required()
-                    ->default(now()),
+            Forms\Components\DatePicker::make('period_end')
+                ->required()
+                ->default(now()),
 
-                Forms\Components\TextInput::make('rate_applied')
-                    ->label('Rate Applied')
-                    ->numeric()
-                    ->suffix('%')
-                    ->required()
+            Forms\Components\TextInput::make('rate_applied')
+                ->label('Rate Applied')
+                ->numeric()
+                ->suffix('%')
+                ->required(),
         ]);
     }
 
@@ -138,16 +138,44 @@ class TransactionsRelationManager extends RelationManager
                         }
                     }),
 
-                    DeleteAction::make()
-                    ->before(function (InvestmentTransaction $record) {
-                        app(InvestmentInterestService::class)->reviseInterestTransaction(
-                                $record,
-                                0,
-                                auth()->user(),
-                                "wrong amount, deleted via Filament admin"
-                            );
+                Tables\Actions\Action::make('reverseInterestCredit')
+                    ->label('Reverse')
+                    ->icon('heroicon-o-arrow-uturn-left')
+                    ->color('danger')
+                    ->visible(fn (InvestmentTransaction $record) => $record->type === InvestmentTransactionType::interest_credit
+                        && $record->posted
+                        && (auth()->user()?->hasRole('super_admin') ?? false))
+                    ->form([
+                        Forms\Components\Textarea::make('reason')
+                            ->label('Reason')
+                            ->required()
+                            ->placeholder('e.g. Posted for the wrong period, wrong rate used...'),
+                    ])
+                    ->requiresConfirmation()
+                    ->modalHeading('Reverse posted interest')
+                    ->modalDescription('Zeroes this posting, recalculates every later transaction and the investment\'s current value, and re-opens the year for a fresh posting. The row stays visible at $0 for audit — it is not erased.')
+                    ->action(function (InvestmentTransaction $record, array $data) {
+                        try {
+                            app(InvestmentInterestService::class)->reverseInterestCredit($record, auth()->user(), $data['reason']);
+
+                            Notification::make()
+                                ->title('Interest reversed, balances recalculated')
+                                ->success()
+                                ->send();
+                        } catch (\Throwable $e) {
+                            Notification::make()
+                                ->title('Could not reverse')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
                     }),
-                    EditAction::make(),
+
+                DeleteAction::make()
+                    ->label('Discard Draft')
+                    ->visible(fn (InvestmentTransaction $record) => ! $record->posted),
+
+                EditAction::make(),
             ])
             ->bulkActions([])
             ->paginated([10, 25, 50]);

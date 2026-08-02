@@ -29,15 +29,26 @@
         </div>
 
         <div class="section">
-            <h2>Nature of Investment</h2>
-            <p>
-                The parties expressly agree that the funds described in this Agreement constitute a private
-                investment loan from the Investor to the Company. The Investor shall be entitled only to repayment of
-                principal and the contractual returns described herein. This investment is intended to create a
-                debtor-creditor relationship between the Company and the Investor and shall not be construed as the
-                purchase of membership interests, shares, partnership interests, or any other form of equity ownership
-                in the Company.
-            </p>
+            <h2>Nature of {{ $investment->capital_type === \App\Enums\InvestmentCapitalType::loan ? 'Loan' : 'Investment' }}</h2>
+            @if ($investment->capital_type === \App\Enums\InvestmentCapitalType::loan)
+                <p>
+                    The parties expressly agree that the funds described in this Agreement constitute a loan from the
+                    Lender to the Company, repayable on the terms stated herein. The Lender shall be entitled only to
+                    repayment of principal at the Maturity Date and the periodic interest payments described herein.
+                    This Agreement is intended to create a debtor-creditor relationship between the Company and the
+                    Lender and shall not be construed as the purchase of membership interests, shares, partnership
+                    interests, or any other form of equity ownership in the Company.
+                </p>
+            @else
+                <p>
+                    The parties expressly agree that the funds described in this Agreement constitute a private
+                    investment loan from the Investor to the Company. The Investor shall be entitled only to repayment of
+                    principal and the contractual returns described herein. This investment is intended to create a
+                    debtor-creditor relationship between the Company and the Investor and shall not be construed as the
+                    purchase of membership interests, shares, partnership interests, or any other form of equity ownership
+                    in the Company.
+                </p>
+            @endif
         </div>
 
         <div class="section">
@@ -60,80 +71,121 @@
             </table>
         </div>
 
-        <div class="section">
-            <h2>Return on Investment</h2>
-            <p>
-                Interest shall be calculated on an annual-compounding basis, accruing daily using a 365-day year and
-                prorated for partial-year periods. Accrued interest is credited and added to principal at the end of
-                each calendar year; thereafter, interest for subsequent years is calculated on the increased balance.
-                The following rates apply to this investment:
-            </p>
-            <table>
-                <tr>
-                    <th>Year</th>
-                    <th>Annual Rate</th>
-                    <th>Source</th>
-                </tr>
-                @foreach ($rateHistory as $year => $rate)
-                    <tr>
-                        <td>{{ $year }}</td>
-                        <td>{{ $rate['rate'] !== null ? number_format($rate['rate'], 2).'%' : 'Not set' }}</td>
-                        <td>{{ $rate['source'] === 'override' ? 'Negotiated rate' : ($rate['source'] === 'company_default' ? 'Company default' : ucfirst($rate['source'])) }}</td>
-                    </tr>
-                @endforeach
-            </table>
-            <p>
-                Returns represent compensation payable by the Company on the investment loan and are not dependent
-                upon the Company's profits, losses, revenues, or valuation.
-            </p>
-        </div>
-
-        @if ($interestHistory->isNotEmpty())
+        @if ($investment->capital_type === \App\Enums\InvestmentCapitalType::loan)
             <div class="section">
-                <h2>Interest Posted to Date</h2>
+                <h2>Payment Terms</h2>
+                <p>
+                    Interest on the principal shall accrue at {{ number_format($loanRate, 2) }}% per annum, calculated
+                    on the outstanding principal balance, which shall remain unchanged throughout the term of this
+                    loan, and shall be paid in cash to the Lender {{ strtolower($investment->payout_frequency->getLabel()) }},
+                    on the following schedule:
+                </p>
                 <table>
                     <tr>
                         <th>Period</th>
-                        <th>Rate</th>
-                        <th>Days</th>
-                        <th>Interest (USD)</th>
+                        <th>Due Date</th>
+                        <th>Interest Amount (USD)</th>
                     </tr>
-                    @foreach ($interestHistory as $txn)
+                    @foreach ($payoutSchedule as $row)
                         <tr>
-                            <td>
-                                @if ($txn->period_start && $txn->period_end)
-                                    {{ $txn->period_start->format('M j, Y') }} – {{ $txn->period_end->format('M j, Y') }}
-                                @else
-                                    Calendar Year {{ $txn->year }}
-                                @endif
-                            </td>
-                            <td>{{ $txn->rate_applied !== null ? number_format($txn->rate_applied, 2).'%' : '—' }}</td>
-                            <td>{{ $txn->period_start && $txn->period_end ? $txn->period_start->diffInDays($txn->period_end) + 1 : '—' }}</td>
-                            <td>{{ number_format($txn->credit, 2) }}</td>
+                            <td>{{ $row['period_start']->format('M j, Y') }} – {{ $row['period_end']->format('M j, Y') }}</td>
+                            <td>{{ $row['due_date']->format('M j, Y') }}</td>
+                            <td>{{ number_format($row['amount'], 2) }}</td>
                         </tr>
                     @endforeach
                 </table>
+                <p>
+                    The entire outstanding principal balance of ${{ number_format($investment->principal_amount, 2) }}
+                    shall be due and payable in full on the Maturity Date,
+                    {{ $investment->maturity_date?->format('F j, Y') ?? '—' }}.
+                </p>
+            </div>
+
+            <div class="section">
+                <h2>Prepayment</h2>
+                <p>{{ config('investment.legal.prepayment_clause') }}</p>
+            </div>
+
+            <div class="section">
+                <h2>Default</h2>
+                <p>{{ str_replace(':days', (string) config('investment.legal.default_notice_days'), config('investment.legal.default_clause')) }}</p>
+            </div>
+        @else
+            <div class="section">
+                <h2>Return on Investment</h2>
+                <p>
+                    Interest shall be calculated on an annual-compounding basis, accruing daily using a 365-day year and
+                    prorated for partial-year periods. Accrued interest is credited and added to principal at the end of
+                    each calendar year; thereafter, interest for subsequent years is calculated on the increased balance.
+                    The following rates apply to this investment:
+                </p>
+                <table>
+                    <tr>
+                        <th>Year</th>
+                        <th>Annual Rate</th>
+                        <th>Source</th>
+                    </tr>
+                    @foreach ($rateHistory as $year => $rate)
+                        <tr>
+                            <td>{{ $year }}</td>
+                            <td>{{ $rate['rate'] !== null ? number_format($rate['rate'], 2).'%' : 'Not set' }}</td>
+                            <td>{{ $rate['source'] === 'override' ? 'Negotiated rate' : ($rate['source'] === 'company_default' ? 'Company default' : ucfirst($rate['source'])) }}</td>
+                        </tr>
+                    @endforeach
+                </table>
+                <p>
+                    Returns represent compensation payable by the Company on the investment loan and are not dependent
+                    upon the Company's profits, losses, revenues, or valuation.
+                </p>
+            </div>
+
+            @if ($interestHistory->isNotEmpty())
+                <div class="section">
+                    <h2>Interest Posted to Date</h2>
+                    <table>
+                        <tr>
+                            <th>Period</th>
+                            <th>Rate</th>
+                            <th>Days</th>
+                            <th>Interest (USD)</th>
+                        </tr>
+                        @foreach ($interestHistory as $txn)
+                            <tr>
+                                <td>
+                                    @if ($txn->period_start && $txn->period_end)
+                                        {{ $txn->period_start->format('M j, Y') }} – {{ $txn->period_end->format('M j, Y') }}
+                                    @else
+                                        Calendar Year {{ $txn->year }}
+                                    @endif
+                                </td>
+                                <td>{{ $txn->rate_applied !== null ? number_format($txn->rate_applied, 2).'%' : '—' }}</td>
+                                <td>{{ $txn->period_start && $txn->period_end ? $txn->period_start->diffInDays($txn->period_end) + 1 : '—' }}</td>
+                                <td>{{ number_format($txn->credit, 2) }}</td>
+                            </tr>
+                        @endforeach
+                    </table>
+                </div>
+            @endif
+
+            <div class="section">
+                <h2>Investment Valuation</h2>
+                <p>The parties acknowledge the following investment position as of {{ $valuation['as_of']->format('F j, Y') }}:</p>
+                <div class="valuation-box">
+                    <div class="row">
+                        <div class="label">Original Principal</div>
+                        <div class="value">${{ number_format($valuation['principal'], 2) }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="label">Total Interest Earned</div>
+                        <div class="value">${{ number_format($valuation['interest_earned_total'], 2) }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="label">Total Investment Value</div>
+                        <div class="value">${{ number_format($valuation['compounded_balance'], 2) }}</div>
+                    </div>
+                </div>
             </div>
         @endif
-
-        <div class="section">
-            <h2>Investment Valuation</h2>
-            <p>The parties acknowledge the following investment position as of {{ $valuation['as_of']->format('F j, Y') }}:</p>
-            <div class="valuation-box">
-                <div class="row">
-                    <div class="label">Original Principal</div>
-                    <div class="value">${{ number_format($valuation['principal'], 2) }}</div>
-                </div>
-                <div class="row">
-                    <div class="label">Total Interest Earned</div>
-                    <div class="value">${{ number_format($valuation['interest_earned_total'], 2) }}</div>
-                </div>
-                <div class="row">
-                    <div class="label">Total Investment Value</div>
-                    <div class="value">${{ number_format($valuation['compounded_balance'], 2) }}</div>
-                </div>
-            </div>
-        </div>
 
         <div class="section">
             <h2>Reporting</h2>

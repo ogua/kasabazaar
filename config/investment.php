@@ -22,5 +22,13 @@ return [
 
     'legal' => [
         'governing_law' => 'This Agreement shall be governed by and construed in accordance with the laws applicable to KasaBazaar Group Of Companies in its jurisdiction of registration.',
+
+        // Loan-type agreements only. Fixed company-wide wording — not a per-investment
+        // field — so every loan uses identical, consistent terms.
+        'prepayment_clause' => 'The Company may prepay all or any portion of the outstanding principal at any time prior to the Maturity Date without penalty or premium, provided that any accrued and unpaid interest through the date of prepayment is paid concurrently with such prepayment.',
+
+        'default_clause' => 'If the Company fails to make any interest payment or the principal repayment when due under this Agreement, and such failure continues for :days days after the Lender provides written notice of the default to the Company, the Company shall be in default of this Agreement, and the entire outstanding principal balance, together with any accrued and unpaid interest, shall become immediately due and payable.',
+
+        'default_notice_days' => 15,
     ],
 ];

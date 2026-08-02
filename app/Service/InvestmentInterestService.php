@@ -441,6 +441,52 @@ class InvestmentInterestService
     }
 
     /**
+     * Fully reverse a wrongly-posted interest_credit transaction — e.g. the wrong
+     * rate or period was posted by mistake. Reuses reviseInterestTransaction()'s
+     * cascade (zeroing the credit correctly recomputes every subsequent op_balance/
+     * cl_balance and investment.current_balance) rather than hard-deleting the row,
+     * which would destroy the audit trail for a posting that already moved the
+     * balance. Additionally rolls back the posting cursors if this was the
+     * investment's most recently posted year, since reviseInterestTransaction()
+     * deliberately leaves them untouched (correct for an amount tweak, wrong for a
+     * full reversal) — without this, generateDraft() would refuse to ever
+     * regenerate that year.
+     */
+    public function reverseInterestCredit(InvestmentTransaction $transaction, User $editor, string $reason): InvestmentTransaction
+    {
+        if ($transaction->type !== InvestmentTransactionType::interest_credit) {
+            throw new \InvalidArgumentException('Only interest_credit transactions may be reversed.');
+        }
+
+        if (! $transaction->posted) {
+            throw new \InvalidArgumentException('This draft has not been posted yet — discard it instead of reversing it.');
+        }
+
+        return DB::transaction(function () use ($transaction, $editor, $reason) {
+            $this->reviseInterestTransaction($transaction, 0.0, $editor, "REVERSED: {$reason}");
+
+            $transaction->refresh();
+            $investment = $transaction->investment;
+
+            if ($investment->last_interest_posted_year === $transaction->year) {
+                $priorPosted = InvestmentTransaction::where('investment_id', $investment->id)
+                    ->where('type', InvestmentTransactionType::interest_credit->value)
+                    ->where('posted', true)
+                    ->where('id', '!=', $transaction->id)
+                    ->orderByDesc('period_end')
+                    ->first();
+
+                $investment->update([
+                    'last_interest_posted_year' => $priorPosted?->year,
+                    'last_interest_posted_through' => $priorPosted?->period_end,
+                ]);
+            }
+
+            return $transaction->fresh();
+        });
+    }
+
+    /**
      * Live valuation (principal + posted interest + on-the-fly accrual for any
      * not-yet-posted year), as of an arbitrary date. Used by PDFs and payout calc.
      *

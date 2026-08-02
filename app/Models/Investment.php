@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\InvestmentAgreementStatus;
 use App\Enums\InvestmentCapitalType;
+use App\Enums\InvestmentPayoutFrequency;
 use App\Enums\InvestmentStatus;
 use App\Service\ExchangeRateService;
 use Carbon\Carbon;
@@ -33,6 +34,8 @@ class Investment extends Model
         'agreement_signed_at' => 'datetime',
         'agreement_finalized_at' => 'datetime',
         'last_interest_posted_through' => 'date',
+        'payout_frequency' => InvestmentPayoutFrequency::class,
+        'next_payout_due_date' => 'date',
     ];
 
     protected static function booted(): void
@@ -66,6 +69,19 @@ class Investment extends Model
             )) {
                 $investment->maturity_date = Carbon::parse($investment->start_date)
                     ->addMonths($investment->contract_term_months ?? 12);
+            }
+
+            // Only (re)seed the payout cursor for a loan that hasn't started its
+            // schedule yet — once a payout has been generated, editing the record
+            // must not silently reset how far through the schedule it already is.
+            if ($investment->capital_type === InvestmentCapitalType::loan
+                && $investment->start_date
+                && $investment->payout_frequency
+                && ($investment->isDirty(['start_date', 'payout_frequency']) || ! $investment->next_payout_due_date)
+                && ($investment->exists === false || ! $investment->interestPayouts()->exists())
+            ) {
+                $investment->next_payout_due_date = Carbon::parse($investment->start_date)
+                    ->addMonths($investment->payout_frequency->months());
             }
         });
     }
@@ -126,6 +142,11 @@ class Investment extends Model
     public function withdrawalRequests(): HasMany
     {
         return $this->hasMany(InvestmentWithdrawalRequest::class);
+    }
+
+    public function interestPayouts(): HasMany
+    {
+        return $this->hasMany(InvestmentInterestPayout::class);
     }
 
     public function recordedBy(): BelongsTo

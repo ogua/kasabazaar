@@ -9,6 +9,7 @@ enum InvestmentTransactionType: string implements HasColor, HasLabel
 {
     case contribution = 'contribution';
     case interest_credit = 'interest_credit';
+    case interest_payout = 'interest_payout';
     case withdrawal = 'withdrawal';
     case adjustment = 'adjustment';
 
@@ -17,6 +18,7 @@ enum InvestmentTransactionType: string implements HasColor, HasLabel
         return match ($this) {
             self::contribution => 'Contribution',
             self::interest_credit => 'Interest Credit',
+            self::interest_payout => 'Interest Payout',
             self::withdrawal => 'Withdrawal',
             self::adjustment => 'Adjustment',
         };
@@ -27,6 +29,7 @@ enum InvestmentTransactionType: string implements HasColor, HasLabel
         return match ($this) {
             self::contribution => 'success',
             self::interest_credit => 'info',
+            self::interest_payout => 'warning',
             self::withdrawal => 'danger',
             self::adjustment => 'gray',
         };

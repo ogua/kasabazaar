@@ -4,9 +4,11 @@ namespace App\Filament\Resources;
 
 use App\Enums\InvestmentAgreementStatus;
 use App\Enums\InvestmentCapitalType;
+use App\Enums\InvestmentPayoutFrequency;
 use App\Enums\InvestmentStatus;
 use App\Enums\PaymentMethod;
 use App\Filament\Resources\InvestmentResource\Pages;
+use App\Filament\Resources\InvestmentResource\RelationManagers\InterestPayoutsRelationManager;
 use App\Filament\Resources\InvestmentResource\RelationManagers\RateOverridesRelationManager;
 use App\Filament\Resources\InvestmentResource\RelationManagers\TransactionsRelationManager;
 use App\Models\Investment;
@@ -65,7 +67,25 @@ class InvestmentResource extends Resource
                         ->options(InvestmentCapitalType::class)
                         ->default(InvestmentCapitalType::investment)
                         ->required()
-                        ->helperText('Investment: the investor holds a stake and earns returns. Loan: the company owes this back to the lender under loan terms.'),
+                        ->live()
+                        ->helperText('Investment: the investor holds a stake and earns returns, compounding annually. Loan: the company owes this back to the lender under loan terms, paid out as periodic cash interest below.'),
+
+                    Forms\Components\Select::make('payout_frequency')
+                        ->label('Interest Payout Frequency')
+                        ->options(InvestmentPayoutFrequency::class)
+                        ->live()
+                        ->visible(fn (Get $get) => $get('capital_type') === InvestmentCapitalType::loan->value)
+                        ->required(fn (Get $get) => $get('capital_type') === InvestmentCapitalType::loan->value)
+                        ->helperText('How often cash interest is paid out to the lender. Unlike an Investment, a Loan\'s interest never compounds into its balance.'),
+
+                    Forms\Components\DatePicker::make('next_payout_due_date')
+                        ->label('First Interest Payout Due')
+                        ->visible(fn (Get $get) => $get('capital_type') === InvestmentCapitalType::loan->value)
+                        ->required(fn (Get $get) => $get('capital_type') === InvestmentCapitalType::loan->value)
+                        ->default(fn (Get $get) => $get('start_date') && $get('payout_frequency')
+                            ? Carbon::parse($get('start_date'))->addMonths(InvestmentPayoutFrequency::from($get('payout_frequency'))->months())
+                            : null)
+                        ->helperText('Subsequent payouts recur automatically at the frequency above thereafter.'),
 
                     Forms\Components\TextInput::make('principal_amount')
                         ->label('Principal Amount')
@@ -319,12 +339,11 @@ class InvestmentResource extends Resource
 
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
             ]);
+        // No bulk delete: deleting a funded investment must go through the
+        // guarded single-record flow on the Edit page (plain delete when nothing
+        // has posted yet, "Reverse & Close" otherwise) — a bulk action can't
+        // apply that guard per-record safely.
     }
 
     public static function getRelations(): array
@@ -332,6 +351,7 @@ class InvestmentResource extends Resource
         return [
             TransactionsRelationManager::class,
             RateOverridesRelationManager::class,
+            InterestPayoutsRelationManager::class,
         ];
     }
 

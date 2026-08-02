@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Investment;
 
 use App\Enums\InvestmentWebhookEventStatus;
 use App\Http\Controllers\Controller;
+use App\Models\InvestmentInterestPayout;
 use App\Models\InvestmentWebhookEvent;
 use App\Models\InvestmentWithdrawalRequest;
 use App\Service\InvestmentTransferService;
@@ -41,6 +42,9 @@ class InvestmentTransferWebhookController extends Controller
         $transferCode = $event['data']['transfer_code'];
         $withdrawalRequestId = InvestmentWithdrawalRequest::where('paystack_transfer_code', $transferCode)
             ->value('id');
+        $interestPayoutId = $withdrawalRequestId
+            ? null
+            : InvestmentInterestPayout::where('paystack_transfer_code', $transferCode)->value('id');
 
         if (! in_array($event['event'], ['transfer.success', 'transfer.failed', 'transfer.reversed'], true)) {
             InvestmentWebhookEvent::create([
@@ -48,6 +52,7 @@ class InvestmentTransferWebhookController extends Controller
                 'event_type' => $event['event'],
                 'reference' => $transferCode,
                 'investment_withdrawal_request_id' => $withdrawalRequestId,
+                'investment_interest_payout_id' => $interestPayoutId,
                 'status' => InvestmentWebhookEventStatus::ignored,
                 'payload' => $event,
             ]);
@@ -56,16 +61,24 @@ class InvestmentTransferWebhookController extends Controller
         }
 
         try {
-            match ($event['event']) {
-                'transfer.success' => $this->transferService->handleTransferSuccess($transferCode),
-                'transfer.failed', 'transfer.reversed' => $this->transferService->handleTransferFailed($transferCode),
-            };
+            if ($interestPayoutId) {
+                match ($event['event']) {
+                    'transfer.success' => $this->transferService->handleInterestPayoutTransferSuccess($transferCode),
+                    'transfer.failed', 'transfer.reversed' => $this->transferService->handleInterestPayoutTransferFailed($transferCode),
+                };
+            } else {
+                match ($event['event']) {
+                    'transfer.success' => $this->transferService->handleTransferSuccess($transferCode),
+                    'transfer.failed', 'transfer.reversed' => $this->transferService->handleTransferFailed($transferCode),
+                };
+            }
 
             InvestmentWebhookEvent::create([
                 'gateway' => 'paystack_transfer',
                 'event_type' => $event['event'],
                 'reference' => $transferCode,
                 'investment_withdrawal_request_id' => $withdrawalRequestId,
+                'investment_interest_payout_id' => $interestPayoutId,
                 'status' => InvestmentWebhookEventStatus::processed,
                 'payload' => $event,
             ]);
@@ -77,6 +90,7 @@ class InvestmentTransferWebhookController extends Controller
                 'event_type' => $event['event'],
                 'reference' => $transferCode,
                 'investment_withdrawal_request_id' => $withdrawalRequestId,
+                'investment_interest_payout_id' => $interestPayoutId,
                 'status' => InvestmentWebhookEventStatus::failed,
                 'error_message' => $e->getMessage(),
                 'payload' => $event,

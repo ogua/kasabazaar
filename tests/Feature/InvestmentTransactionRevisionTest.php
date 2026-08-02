@@ -98,4 +98,75 @@ class InvestmentTransactionRevisionTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         app(InvestmentInterestService::class)->reviseInterestTransaction($contribution, 9000, $editor);
     }
+
+    /**
+     * Regression: reversing a posted interest_credit must both zero its balance effect
+     * (via the same cascade reviseInterestTransaction() already uses) AND roll back the
+     * posting cursors — otherwise generateDraft() would refuse to ever regenerate the
+     * reversed year, since it checks last_interest_posted_year >= $year.
+     */
+    public function test_reversing_the_most_recently_posted_year_rolls_back_cursors_and_balance(): void
+    {
+        $investor = Investor::create(['name' => 'Cursor Rollback Investor', 'status' => 'active']);
+        $editor = User::first() ?? User::factory()->create();
+
+        $investment = Investment::create([
+            'investor_id' => $investor->id,
+            'principal_amount' => 10000,
+            'current_balance' => 10000,
+            'start_date' => '2025-01-01',
+            'status' => 'active',
+            'last_interest_posted_year' => 2025,
+            'last_interest_posted_through' => '2025-12-31',
+        ]);
+
+        $posted = InvestmentTransaction::create([
+            'investment_id' => $investment->id,
+            'investor_id' => $investor->id,
+            'date' => '2025-12-31',
+            'type' => InvestmentTransactionType::interest_credit->value,
+            'op_balance' => 10000,
+            'credit' => 1000,
+            'year' => 2025,
+            'period_end' => '2025-12-31',
+            'posted' => true,
+        ]);
+        $investment->update(['current_balance' => 11000]);
+
+        app(InvestmentInterestService::class)->reverseInterestCredit($posted, $editor, 'Posted for the wrong investment');
+
+        $investment->refresh();
+        $this->assertEquals(10000.00, (float) $investment->current_balance);
+        $this->assertNull($investment->last_interest_posted_year);
+        $this->assertNull($investment->last_interest_posted_through);
+        $this->assertEquals(0.0, (float) $posted->fresh()->credit);
+        $this->assertStringContainsString('REVERSED', $posted->fresh()->description);
+    }
+
+    public function test_reversing_an_unposted_draft_is_rejected(): void
+    {
+        $investor = Investor::create(['name' => 'Draft Rejection Investor', 'status' => 'active']);
+        $editor = User::first() ?? User::factory()->create();
+
+        $investment = Investment::create([
+            'investor_id' => $investor->id,
+            'principal_amount' => 10000,
+            'start_date' => '2025-01-01',
+            'status' => 'active',
+        ]);
+
+        $draft = InvestmentTransaction::create([
+            'investment_id' => $investment->id,
+            'investor_id' => $investor->id,
+            'date' => '2025-12-31',
+            'type' => InvestmentTransactionType::interest_credit->value,
+            'op_balance' => 10000,
+            'credit' => 1000,
+            'year' => 2025,
+            'posted' => false,
+        ]);
+
+        $this->expectException(\InvalidArgumentException::class);
+        app(InvestmentInterestService::class)->reverseInterestCredit($draft, $editor, 'should not be allowed');
+    }
 }
