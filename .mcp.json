@@ -20,7 +20,7 @@
             "mcp-server-mysql"
         ],
         "env": {
-            "MYSQL_CONNECTION_STRING": "mysql://root:@127.0.0.1:3310/oguapos"
+            "MYSQL_CONNECTION_STRING": "mysql://root:@127.0.0.1:3310/kasabazaar"
         }
         }
 
