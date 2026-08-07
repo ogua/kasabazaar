@@ -261,6 +261,8 @@ class InvestorApiTest extends TestCase
 
     public function test_investor_can_preview_the_agreement_for_a_pending_payment_investment(): void
     {
+        InvestmentRateSetting::firstOrCreate(['year' => now()->year], ['annual_rate' => 10]);
+
         $investor = Investor::create(['name' => 'Pending Agreement Investor', 'status' => 'active']);
 
         $investment = Investment::create([

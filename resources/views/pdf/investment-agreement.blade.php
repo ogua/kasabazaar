@@ -77,7 +77,7 @@
                 <p>
                     Interest on the principal shall accrue at {{ number_format($loanRate, 2) }}% per annum, calculated
                     on the outstanding principal balance, which shall remain unchanged throughout the term of this
-                    loan, and shall be paid in cash to the Lender {{ strtolower($investment->payout_frequency->getLabel()) }},
+                    loan, and shall be paid in cash to the Lender {{ $investment->payout_frequency ? strtolower($investment->payout_frequency->getLabel()) : 'as scheduled below' }},
                     on the following schedule:
                 </p>
                 <table>

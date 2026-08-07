@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             StaffRoleSeeder::class,
             ExpenseCategorySeeder::class,
             IncomeCategorySeeder::class,
+            EcommerceSeeder::class,
         ]);
     }
 }
