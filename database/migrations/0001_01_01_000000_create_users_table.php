@@ -16,8 +16,18 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            $table->string('password')->nullable();
             $table->rememberToken();
+
+            // kmarket is an auth mirror, not the credential authority — kasabazaar
+            // (via /api/v1/{customer,vendor}/auth/login) validates the password;
+            // this row just caches profile + the Sanctum token it issued.
+            $table->uuid('kasabazaar_user_id')->nullable()->unique();
+            $table->text('kasabazaar_token')->nullable();
+            $table->string('role')->default('customer'); // customer|vendor
+            $table->uuid('vendor_id')->nullable();
+            $table->string('avatar_url')->nullable();
+
             $table->timestamps();
         });
 

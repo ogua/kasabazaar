@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'kasabazaar' => [
+        'base_url' => env('KASABAZAAR_API_URL'),
+        'timeout' => env('KASABAZAAR_API_TIMEOUT', 10),
+    ],
+
 ];

@@ -22,6 +22,11 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'kasabazaar_user_id',
+        'kasabazaar_token',
+        'role',
+        'vendor_id',
+        'avatar_url',
     ];
 
     /**
@@ -32,6 +37,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'kasabazaar_token',
     ];
 
     /**
@@ -44,6 +50,12 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'kasabazaar_token' => 'encrypted',
         ];
+    }
+
+    public function isVendor(): bool
+    {
+        return $this->role === 'vendor';
     }
 }
