@@ -35,7 +35,7 @@ class EcommercePaystackWebhookController extends Controller
         $data = $event['data'];
         $metadata = $data['metadata'] ?? [];
 
-        if (($metadata['type'] ?? '') !== 'ecommerce_order') {
+        if (($metadata['type'] ?? '') !== 'ecommerce_order_group') {
             return response('ok');
         }
 

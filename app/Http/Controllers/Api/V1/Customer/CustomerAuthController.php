@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Customer;
 use App\Enums\UserStatus;
 use App\Models\Branch;
 use App\Models\Client;
+use App\Models\EcommerceCart;
 use App\Models\User;
 use App\Service\SystemSetting;
 use Illuminate\Http\JsonResponse;
@@ -52,6 +53,8 @@ class CustomerAuthController extends CustomerBaseController
             ]);
         });
 
+        $this->mergeGuestCart($user, $request->header('X-Guest-Session-Id'));
+
         $token = $user->createToken('customer-app')->plainTextToken;
 
         return $this->success([
@@ -84,12 +87,46 @@ class CustomerAuthController extends CustomerBaseController
             return $this->error('Your account has been deactivated.', 401);
         }
 
+        $this->mergeGuestCart($user, $request->header('X-Guest-Session-Id'));
+
         $token = $user->createToken('customer-app')->plainTextToken;
 
         return $this->success([
             'token' => $token,
             'user' => $this->formatUser($user->load('client')),
         ], 'Login successful.');
+    }
+
+    /**
+     * Merges a guest's session-keyed cart (gap D.2) into their user cart on
+     * login/registration so items added while browsing anonymously aren't lost.
+     */
+    private function mergeGuestCart(User $user, ?string $sessionId): void
+    {
+        if (! $sessionId) {
+            return;
+        }
+
+        $guestCart = EcommerceCart::where('session_id', $sessionId)->whereNull('user_id')->with('items')->first();
+
+        if (! $guestCart) {
+            return;
+        }
+
+        $userCart = EcommerceCart::firstOrCreate(['user_id' => $user->id]);
+
+        foreach ($guestCart->items as $guestItem) {
+            $existing = $userCart->items()->where('ecommerce_product_id', $guestItem->ecommerce_product_id)->first();
+
+            if ($existing) {
+                $existing->update(['quantity' => $existing->quantity + $guestItem->quantity]);
+                $guestItem->delete();
+            } else {
+                $guestItem->update(['cart_id' => $userCart->id]);
+            }
+        }
+
+        $guestCart->delete();
     }
 
     public function me(Request $request): JsonResponse

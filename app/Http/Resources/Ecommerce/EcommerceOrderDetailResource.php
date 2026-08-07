@@ -12,6 +12,12 @@ class EcommerceOrderDetailResource extends JsonResource
         return [
             'id' => $this->id,
             'order_number' => $this->order_number,
+            'order_group_id' => $this->order_group_id,
+            'vendor' => $this->whenLoaded('vendor', fn () => $this->vendor ? [
+                'id' => $this->vendor->id,
+                'business_name' => $this->vendor->business_name,
+                'slug' => $this->vendor->slug,
+            ] : null),
             'status' => $this->status instanceof \BackedEnum ? $this->status->value : $this->status,
             'payment_status' => $this->payment_status instanceof \BackedEnum ? $this->payment_status->value : $this->payment_status,
             'payment_gateway' => $this->payment_gateway,
@@ -19,6 +25,7 @@ class EcommerceOrderDetailResource extends JsonResource
             'subtotal_ghs' => $this->subtotal_ghs,
             'shipping_fee_ghs' => $this->shipping_fee_ghs,
             'discount_ghs' => $this->discount_ghs,
+            'tax_ghs' => $this->tax_ghs,
             'total_ghs' => $this->total_ghs,
             'total_usd' => $this->total_usd,
             'exchange_rate' => $this->exchange_rate,

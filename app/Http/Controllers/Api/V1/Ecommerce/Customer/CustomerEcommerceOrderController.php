@@ -20,6 +20,7 @@ class CustomerEcommerceOrderController extends CustomerBaseController
     public function index(Request $request): JsonResponse
     {
         $query = EcommerceOrder::where('user_id', auth()->id())
+            ->with('vendor:id,business_name')
             ->withCount('items');
 
         if ($request->filled('status')) {
@@ -34,7 +35,7 @@ class CustomerEcommerceOrderController extends CustomerBaseController
     public function show(Request $request, string $id): JsonResponse
     {
         $order = EcommerceOrder::where('user_id', auth()->id())
-            ->with(['items.product.images', 'deliveryDetail', 'statusHistory', 'shipment.trackingLogs', 'rating'])
+            ->with(['items.product.images', 'deliveryDetail', 'statusHistory', 'shipment.trackingLogs', 'rating', 'vendor:id,business_name,slug'])
             ->findOrFail($id);
 
         return $this->success(new EcommerceOrderDetailResource($order));

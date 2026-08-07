@@ -15,26 +15,23 @@ class EcommerceHomeController extends CustomerBaseController
 {
     public function index(Request $request): JsonResponse
     {
-        $branchId = $this->customerBranchId();
-
-        $categories = EcommerceCategory::where('branch_id', $branchId)
-            ->where('is_active', true)
+        $categories = EcommerceCategory::where('is_active', true)
             ->whereNull('parent_id')
             ->withCount('products')
             ->orderBy('sort_order')
             ->limit(10)
             ->get();
 
-        $featured = EcommerceProduct::where('branch_id', $branchId)
-            ->where('is_active', true)
+        $featured = EcommerceProduct::where('is_active', true)
             ->where('is_featured', true)
-            ->with(['category:id,name', 'images'])
+            ->whereHas('vendor', fn ($q) => $q->active())
+            ->with(['category:id,name', 'images', 'vendor:id,business_name,slug'])
             ->limit(10)
             ->get();
 
-        $newArrivals = EcommerceProduct::where('branch_id', $branchId)
-            ->where('is_active', true)
-            ->with(['category:id,name', 'images'])
+        $newArrivals = EcommerceProduct::where('is_active', true)
+            ->whereHas('vendor', fn ($q) => $q->active())
+            ->with(['category:id,name', 'images', 'vendor:id,business_name,slug'])
             ->latest()
             ->limit(10)
             ->get();
@@ -47,10 +44,10 @@ class EcommerceHomeController extends CustomerBaseController
             ->limit(10)
             ->pluck('ecommerce_product_id');
 
-        $bestSellers = EcommerceProduct::where('branch_id', $branchId)
-            ->where('is_active', true)
+        $bestSellers = EcommerceProduct::where('is_active', true)
+            ->whereHas('vendor', fn ($q) => $q->active())
             ->whereIn('id', $bestSellerIds)
-            ->with(['category:id,name', 'images'])
+            ->with(['category:id,name', 'images', 'vendor:id,business_name,slug'])
             ->get()
             ->sortBy(fn ($p) => $bestSellerIds->search($p->id))
             ->values();

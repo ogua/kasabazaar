@@ -27,6 +27,13 @@ class EcommerceProductResource extends JsonResource
             'is_featured' => $this->is_featured,
             'category' => new EcommerceCategoryResource($this->whenLoaded('category')),
             'images' => EcommerceProductImageResource::collection($this->whenLoaded('images')),
+            'vendor' => $this->whenLoaded('vendor', fn () => $this->vendor ? [
+                'id' => $this->vendor->id,
+                'business_name' => $this->vendor->business_name,
+                'slug' => $this->vendor->slug,
+            ] : null),
+            'average_rating' => $this->when(method_exists($this->resource, 'averageRating'), fn () => $this->averageRating()),
+            'reviews_count' => $this->when(method_exists($this->resource, 'reviewsCount'), fn () => $this->reviewsCount()),
         ];
     }
 }

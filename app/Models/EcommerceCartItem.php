@@ -28,4 +28,14 @@ class EcommerceCartItem extends Model
     {
         return $this->belongsTo(EcommerceProduct::class, 'ecommerce_product_id')->withTrashed();
     }
+
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class);
+    }
+
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
 }

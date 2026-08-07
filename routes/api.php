@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\V1\Ecommerce\Admin;
 use App\Http\Controllers\Api\V1\Ecommerce\Customer as EcommerceCustomer;
 use App\Http\Controllers\Api\V1\Ecommerce\EcommercePaystackWebhookController;
 use App\Http\Controllers\Api\V1\Ecommerce\EcommerceStripeWebhookController;
+use App\Http\Controllers\Api\V1\Ecommerce\VendorApplicationController;
 use App\Http\Controllers\Api\V1\ExchangeRateController;
 use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\FeedbackController;
@@ -55,6 +56,7 @@ use App\Http\Controllers\Api\V1\StaffRoleController;
 use App\Http\Controllers\Api\V1\TripController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\VehicleController;
+use App\Http\Controllers\Api\V1\Vendor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -351,8 +353,15 @@ Route::prefix('v1')->group(function () {
         Route::post('webhooks/paystack', [EcommercePaystackWebhookController::class, 'handle']);
         Route::post('webhooks/stripe', [EcommerceStripeWebhookController::class, 'handle']);
 
-        // Customer marketplace
-        Route::middleware(['auth:sanctum', 'active', 'customer'])->group(function () {
+        // Public — vendor onboarding applications (reviewed by staff in Filament)
+        Route::middleware('throttle:5,1')->post('vendor-applications', [VendorApplicationController::class, 'store']);
+
+        // Public browsing — no login required (web guests). If a Sanctum Bearer
+        // token is sent anyway (mobile), CustomerBaseController::customerBranchId()
+        // still resolves it and scopes to that customer's own branch; guests fall
+        // back to config('ecommerce.public_branch_id'). 'active' is safe here since
+        // it no-ops when there's no authenticated user.
+        Route::middleware(['active'])->group(function () {
             Route::get('home', [EcommerceCustomer\EcommerceHomeController::class, 'index']);
 
             Route::get('categories', [EcommerceCustomer\EcommerceCategoryBrowseController::class, 'index']);
@@ -360,14 +369,26 @@ Route::prefix('v1')->group(function () {
 
             Route::get('products', [EcommerceCustomer\EcommerceProductCatalogController::class, 'index']);
             Route::get('products/{id}', [EcommerceCustomer\EcommerceProductCatalogController::class, 'show']);
+            Route::get('products/{id}/reviews', [EcommerceCustomer\ProductReviewController::class, 'index']);
 
+            Route::get('vendors', [EcommerceCustomer\VendorStorefrontController::class, 'index']);
+            Route::get('vendors/{slug}', [EcommerceCustomer\VendorStorefrontController::class, 'show']);
+            Route::get('vendors/{slug}/products', [EcommerceCustomer\VendorStorefrontController::class, 'products']);
+
+            // Cart is guest-accessible (gap D.2): unauthenticated requests are
+            // keyed by the X-Guest-Session-Id header and merged into the user's
+            // cart on login/register (see CustomerAuthController::mergeGuestCart).
+            // Coupon application still requires login (per-user usage limits).
             Route::get('cart', [EcommerceCustomer\EcommerceCartController::class, 'show']);
             Route::post('cart/items', [EcommerceCustomer\EcommerceCartController::class, 'addItem']);
             Route::put('cart/items/{itemId}', [EcommerceCustomer\EcommerceCartController::class, 'updateItem']);
             Route::delete('cart/items/{itemId}', [EcommerceCustomer\EcommerceCartController::class, 'removeItem']);
             Route::delete('cart', [EcommerceCustomer\EcommerceCartController::class, 'clear']);
             Route::post('cart/coupon', [EcommerceCustomer\EcommerceCartController::class, 'applyCoupon']);
+        });
 
+        // Customer marketplace — genuinely requires login (checkout/orders/payments)
+        Route::middleware(['auth:sanctum', 'active', 'customer'])->group(function () {
             Route::apiResource('addresses', EcommerceCustomer\DeliveryAddressController::class);
             Route::patch('addresses/{id}/default', [EcommerceCustomer\DeliveryAddressController::class, 'setDefault']);
 
@@ -382,6 +403,71 @@ Route::prefix('v1')->group(function () {
             Route::post('payments/initiate', [EcommerceCustomer\EcommercePaymentController::class, 'initiate']);
             Route::post('payments/verify/paystack', [EcommerceCustomer\EcommercePaymentController::class, 'verifyPaystack']);
             Route::post('payments/verify/stripe', [EcommerceCustomer\EcommercePaymentController::class, 'verifyStripe']);
+
+            Route::post('coupons/validate', [EcommerceCustomer\CouponController::class, 'validateCode']);
+            Route::get('shipping-methods', [EcommerceCustomer\ShippingMethodController::class, 'forAddress']);
+
+            Route::get('wishlist', [EcommerceCustomer\WishlistController::class, 'index']);
+            Route::post('wishlist/{productId}', [EcommerceCustomer\WishlistController::class, 'store']);
+            Route::delete('wishlist/{productId}', [EcommerceCustomer\WishlistController::class, 'destroy']);
+
+            Route::post('products/{id}/reviews', [EcommerceCustomer\ProductReviewController::class, 'store']);
+        });
+
+        // Vendor self-service — vendor accounts are provisioned only via an
+        // approved EcommerceVendorApplication (see VendorProvisioningService),
+        // never self-registered.
+        Route::prefix('vendor')->group(function () {
+            Route::middleware('throttle:10,1')->group(function () {
+                Route::post('auth/login', [Vendor\VendorAuthController::class, 'login']);
+                Route::post('auth/forgot-password', [Vendor\VendorAuthController::class, 'forgotPassword']);
+                Route::post('auth/reset-password', [Vendor\VendorAuthController::class, 'resetPassword']);
+            });
+
+            Route::middleware(['auth:sanctum', 'active', 'vendor'])->group(function () {
+                Route::post('auth/logout', [Vendor\VendorAuthController::class, 'logout']);
+                Route::get('auth/me', [Vendor\VendorAuthController::class, 'me']);
+                Route::put('auth/password', [Vendor\VendorAuthController::class, 'changePassword']);
+
+                Route::get('store', [Vendor\VendorStoreSettingsController::class, 'show']);
+                Route::put('store', [Vendor\VendorStoreSettingsController::class, 'update']);
+                Route::post('store/logo', [Vendor\VendorStoreSettingsController::class, 'uploadLogo']);
+                Route::post('store/banner', [Vendor\VendorStoreSettingsController::class, 'uploadBanner']);
+
+                Route::get('categories', [Vendor\VendorCategoryController::class, 'index']);
+
+                Route::apiResource('products', Vendor\VendorProductController::class);
+                Route::post('products/{id}/images', [Vendor\VendorProductController::class, 'uploadImage']);
+                Route::delete('products/{id}/images/{imageId}', [Vendor\VendorProductController::class, 'deleteImage']);
+                Route::patch('products/{id}/toggle-active', [Vendor\VendorProductController::class, 'toggleActive']);
+
+                Route::post('inventory/adjust', [Vendor\VendorInventoryController::class, 'adjust']);
+                Route::get('inventory/logs', [Vendor\VendorInventoryController::class, 'logs']);
+                Route::get('inventory/low-stock', [Vendor\VendorInventoryController::class, 'lowStock']);
+
+                Route::get('orders', [Vendor\VendorOrderController::class, 'index']);
+                Route::get('orders/{id}', [Vendor\VendorOrderController::class, 'show']);
+                Route::patch('orders/{id}/process', [Vendor\VendorOrderController::class, 'process']);
+                Route::patch('orders/{id}/pack', [Vendor\VendorOrderController::class, 'pack']);
+                Route::patch('orders/{id}/dispatch', [Vendor\VendorOrderController::class, 'dispatch']);
+                Route::post('orders/{orderId}/shipment', [Vendor\VendorShipmentController::class, 'create']);
+                Route::post('orders/{orderId}/shipment/tracking', [Vendor\VendorShipmentController::class, 'addTracking']);
+
+                Route::get('reviews', [Vendor\VendorReviewController::class, 'index']);
+                Route::post('reviews/{id}/reply', [Vendor\VendorReviewController::class, 'reply']);
+
+                Route::get('coupons', [Vendor\VendorCouponController::class, 'index']);
+                Route::post('coupons', [Vendor\VendorCouponController::class, 'store']);
+                Route::put('coupons/{id}', [Vendor\VendorCouponController::class, 'update']);
+
+                Route::get('earnings/summary', [Vendor\VendorEarningsController::class, 'summary']);
+                Route::get('earnings/transactions', [Vendor\VendorEarningsController::class, 'transactions']);
+                Route::get('payouts', [Vendor\VendorPayoutController::class, 'index']);
+                Route::post('payouts', [Vendor\VendorPayoutController::class, 'store']);
+
+                Route::get('reports/sales', [Vendor\VendorReportController::class, 'sales']);
+                Route::get('reports/products', [Vendor\VendorReportController::class, 'productPerformance']);
+            });
         });
 
         // Staff admin marketplace

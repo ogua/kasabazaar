@@ -64,6 +64,16 @@ class EcommerceOrder extends Model
         return $this->belongsTo(Branch::class);
     }
 
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class);
+    }
+
+    public function orderGroup(): BelongsTo
+    {
+        return $this->belongsTo(EcommerceOrderGroup::class, 'order_group_id');
+    }
+
     public function approvedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');

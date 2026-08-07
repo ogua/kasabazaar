@@ -4,7 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\EcommerceCategoryResource\Pages;
 use App\Models\EcommerceCategory;
-use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -38,13 +37,7 @@ class EcommerceCategoryResource extends Resource
                         Forms\Components\Hidden::make('slug'),
                         Forms\Components\Select::make('parent_id')
                             ->label('Parent Category')
-                            ->options(function () {
-                                $tenantId = Filament::getTenant()?->id;
-
-                                return EcommerceCategory::where('branch_id', $tenantId)
-                                    ->whereNull('parent_id')
-                                    ->pluck('name', 'id');
-                            })
+                            ->options(fn () => EcommerceCategory::whereNull('parent_id')->pluck('name', 'id'))
                             ->searchable()
                             ->nullable()
                             ->placeholder('None (top-level)'),
@@ -62,8 +55,6 @@ class EcommerceCategoryResource extends Resource
                         Forms\Components\TextInput::make('sort_order')
                             ->numeric()
                             ->default(0),
-                        Forms\Components\Hidden::make('branch_id')
-                            ->default(fn () => Filament::getTenant()?->id),
                     ])
                     ->columns(2),
             ]);

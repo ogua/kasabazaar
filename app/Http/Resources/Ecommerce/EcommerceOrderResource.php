@@ -12,6 +12,11 @@ class EcommerceOrderResource extends JsonResource
         return [
             'id' => $this->id,
             'order_number' => $this->order_number,
+            'order_group_id' => $this->order_group_id,
+            'vendor' => $this->whenLoaded('vendor', fn () => $this->vendor ? [
+                'id' => $this->vendor->id,
+                'business_name' => $this->vendor->business_name,
+            ] : null),
             'status' => $this->status instanceof \BackedEnum ? $this->status->value : $this->status,
             'payment_status' => $this->payment_status instanceof \BackedEnum ? $this->payment_status->value : $this->payment_status,
             'payment_gateway' => $this->payment_gateway,
