@@ -52,7 +52,7 @@ class EcommerceOrderService
             ->first();
 
         if ($existingGroup) {
-            return $existingGroup->load(['orders.items', 'orders.deliveryDetail', 'orders.statusHistory']);
+            return $existingGroup->load(['orders.items', 'orders.deliveryDetail', 'orders.statusHistory', 'orders.vendor']);
         }
 
         foreach ($cart->items as $item) {
@@ -157,7 +157,7 @@ class EcommerceOrderService
                 ['type' => 'ecommerce_order_group', 'order_group_id' => $group->id]
             );
 
-            return $group->load(['orders.items', 'orders.deliveryDetail', 'orders.statusHistory']);
+            return $group->load(['orders.items', 'orders.deliveryDetail', 'orders.statusHistory', 'orders.vendor']);
         });
     }
 
