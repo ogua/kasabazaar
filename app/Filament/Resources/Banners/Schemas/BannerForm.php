@@ -24,6 +24,7 @@ class BannerForm
                         FileUpload::make('image_path')
                             ->label('Image')
                             ->image()
+                            ->disk('public')
                             ->directory('banners')
                             ->visibility('public')
                             ->required(),
