@@ -11,8 +11,6 @@ class OrderDetail extends Component
 {
     public array $orderData = [];
 
-    public array $tracking = [];
-
     public int $ratingValue = 5;
 
     public string $ratingComment = '';
@@ -27,7 +25,6 @@ class OrderDetail extends Component
     {
         try {
             $this->orderData = $ordersApi->show($order);
-            $this->tracking = $ordersApi->tracking($order);
         } catch (KasabazaarApiException $e) {
             Log::warning('storefront.account.order: failed to load order', ['order' => $order, 'message' => $e->getMessage()]);
             $this->notFound = true;

@@ -24,6 +24,7 @@ Route::name('storefront.')->group(function () {
     Route::get('/checkout', Storefront\Checkout::class)->name('checkout')->middleware('auth');
     Route::get('/checkout/callback', Storefront\CheckoutCallback::class)->name('checkout.callback')->middleware('auth');
     Route::get('/wishlist', Storefront\WishlistPage::class)->name('wishlist');
+    Route::get('/track-order', Storefront\TrackOrder::class)->name('track-order');
 
     Route::get('/login', Storefront\Auth\Login::class)->name('login')->middleware('guest');
     Route::get('/register', Storefront\Auth\Register::class)->name('register')->middleware('guest');

@@ -30,4 +30,12 @@ class OrdersApi
     {
         $this->client->post("marketplace/orders/{$id}/rate", ['rating' => $rating, 'comment' => $comment]);
     }
+
+    public function trackPublic(string $orderNumber, string $contact): array
+    {
+        return $this->client->post('marketplace/track-order', [
+            'order_number' => $orderNumber,
+            'contact' => $contact,
+        ])->data;
+    }
 }

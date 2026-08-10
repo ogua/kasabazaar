@@ -11,6 +11,18 @@
         </div>
         <h1 class="font-display font-bold text-2xl text-navy-900 mb-2">Payment Confirmed!</h1>
         <p class="text-muted mb-6">Your order has been placed successfully.</p>
+
+        @if (! empty($placedOrders))
+            <div class="text-left border border-border rounded-lg divide-y divide-border mb-6">
+                @foreach ($placedOrders as $placedOrder)
+                    <div class="flex items-center justify-between gap-3 px-4 py-3">
+                        <span class="text-sm font-medium text-fg">{{ $placedOrder['order_number'] }}</span>
+                        <a href="{{ route('storefront.track-order', ['order_number' => $placedOrder['order_number']]) }}" class="text-sm text-navy-500 hover:text-accent font-medium">Track this order</a>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
         @if ($orderGroupId)
             <x-storefront.ui.button href="{{ route('storefront.account.orders') }}" variant="primary">View My Orders</x-storefront.ui.button>
         @endif

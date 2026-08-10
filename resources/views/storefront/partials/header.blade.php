@@ -114,7 +114,7 @@
                 </ul>
             </nav>
 
-            <a href="{{ route('storefront.account.orders') }}" class="ml-auto flex items-center gap-1.5 text-sm text-white/75 hover:text-white">
+            <a href="{{ route('storefront.track-order') }}" class="ml-auto flex items-center gap-1.5 text-sm text-white/75 hover:text-white">
                 <x-storefront.icon name="truck" class="w-4 h-4" />
                 Track Order
             </a>

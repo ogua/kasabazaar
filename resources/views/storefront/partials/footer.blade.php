@@ -32,7 +32,7 @@
             <div>
                 <h3 class="font-display font-semibold text-sm text-navy-900 uppercase tracking-wide mb-4">My Account</h3>
                 <ul class="space-y-3 text-sm text-muted">
-                    <li><a href="{{ route('storefront.account.orders') }}" class="hover:text-accent">Track My Order</a></li>
+                    <li><a href="{{ route('storefront.track-order') }}" class="hover:text-accent">Track My Order</a></li>
                     <li><a href="{{ route('storefront.cart') }}" class="hover:text-accent">View Cart</a></li>
                     <li><a href="{{ route('storefront.login') }}" class="hover:text-accent">Sign In</a></li>
                     <li><a href="{{ route('storefront.wishlist') }}" class="hover:text-accent">My Wishlist</a></li>

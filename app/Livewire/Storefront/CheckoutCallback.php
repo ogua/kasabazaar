@@ -4,6 +4,7 @@ namespace App\Livewire\Storefront;
 
 use App\Services\Kasabazaar\CheckoutApi;
 use App\Services\Kasabazaar\KasabazaarApiException;
+use App\Services\Kasabazaar\OrdersApi;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
@@ -17,13 +18,15 @@ class CheckoutCallback extends Component
 
     public ?string $stripeClientSecret = null;
 
-    public function mount(CheckoutApi $checkoutApi): void
+    public array $placedOrders = [];
+
+    public function mount(CheckoutApi $checkoutApi, OrdersApi $ordersApi): void
     {
         $reference = request()->query('reference') ?? request()->query('trxref');
         $gateway = request()->query('gateway');
 
         if ($reference) {
-            $this->verifyPaystack($checkoutApi, $reference);
+            $this->verifyPaystack($checkoutApi, $ordersApi, $reference);
 
             return;
         }
@@ -41,12 +44,13 @@ class CheckoutCallback extends Component
     }
 
     #[On('stripe-confirmed')]
-    public function confirmStripePayment(CheckoutApi $checkoutApi, string $paymentIntentId): void
+    public function confirmStripePayment(CheckoutApi $checkoutApi, OrdersApi $ordersApi, string $paymentIntentId): void
     {
         try {
             $result = $checkoutApi->verifyStripe($paymentIntentId);
             $this->status = 'success';
             $this->orderGroupId = $result['order_group_id'] ?? $this->orderGroupId;
+            $this->loadPlacedOrders($ordersApi);
             $this->dispatch('cart-updated');
         } catch (KasabazaarApiException $e) {
             $this->status = 'failed';
@@ -54,16 +58,30 @@ class CheckoutCallback extends Component
         }
     }
 
-    private function verifyPaystack(CheckoutApi $checkoutApi, string $reference): void
+    private function verifyPaystack(CheckoutApi $checkoutApi, OrdersApi $ordersApi, string $reference): void
     {
         try {
             $result = $checkoutApi->verifyPaystack($reference);
             $this->status = 'success';
             $this->orderGroupId = $result['order_group_id'] ?? null;
+            $this->loadPlacedOrders($ordersApi);
             $this->dispatch('cart-updated');
         } catch (KasabazaarApiException $e) {
             $this->status = 'failed';
             $this->message = $e->getMessage();
+        }
+    }
+
+    private function loadPlacedOrders(OrdersApi $ordersApi): void
+    {
+        if (! $this->orderGroupId) {
+            return;
+        }
+
+        try {
+            $this->placedOrders = $ordersApi->list(['order_group_id' => $this->orderGroupId])->data ?? [];
+        } catch (KasabazaarApiException) {
+            $this->placedOrders = [];
         }
     }
 

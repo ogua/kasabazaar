@@ -30,6 +30,8 @@
             @endif
         </div>
 
+        @include('livewire.storefront.partials.order-status-timeline', ['order' => $order])
+
         <div class="border border-border rounded-lg overflow-hidden mb-6">
             <table class="w-full text-sm">
                 <thead class="bg-surface-muted text-xs uppercase tracking-wide text-muted">
