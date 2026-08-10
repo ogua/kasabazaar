@@ -385,6 +385,9 @@ Route::prefix('v1')->group(function () {
             Route::delete('cart/items/{itemId}', [EcommerceCustomer\EcommerceCartController::class, 'removeItem']);
             Route::delete('cart', [EcommerceCustomer\EcommerceCartController::class, 'clear']);
             Route::post('cart/coupon', [EcommerceCustomer\EcommerceCartController::class, 'applyCoupon']);
+
+            // Guest order tracking — order number + phone/email lookup, no login required.
+            Route::middleware('throttle:10,1')->post('track-order', [EcommerceCustomer\PublicOrderTrackingController::class, 'track']);
         });
 
         // Customer marketplace — genuinely requires login (checkout/orders/payments)

@@ -9,6 +9,7 @@ use App\Http\Resources\Ecommerce\EcommerceOrderResource;
 use App\Models\EcommerceOrder;
 use App\Models\EcommerceOrderRating;
 use App\Models\EcommerceOrderStatusHistory;
+use App\Notifications\Ecommerce\EcommerceOrderCancelled;
 use App\Services\EcommerceInventoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,6 +26,10 @@ class CustomerEcommerceOrderController extends CustomerBaseController
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        }
+
+        if ($request->filled('order_group_id')) {
+            $query->where('order_group_id', $request->order_group_id);
         }
 
         $paginated = $query->latest()->paginate((int) $request->input('per_page', 15));
@@ -90,6 +95,8 @@ class CustomerEcommerceOrderController extends CustomerBaseController
             'notes' => 'Cancelled by customer.',
             'created_by' => auth()->id(),
         ]);
+
+        auth()->user()->notify(new EcommerceOrderCancelled($order));
 
         return $this->success(null, 'Order cancelled.');
     }

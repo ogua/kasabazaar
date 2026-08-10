@@ -11,10 +11,12 @@ use App\Models\EcommerceOrder;
 use App\Models\EcommerceOrderStatusHistory;
 use App\Models\ExchangeRateLog;
 use App\Notifications\Ecommerce\EcommerceOrderApproved;
+use App\Notifications\Ecommerce\EcommerceOrderCancelled;
 use App\Notifications\Ecommerce\EcommerceOrderDelivered;
 use App\Notifications\Ecommerce\EcommerceOrderDispatched;
 use App\Notifications\Ecommerce\EcommerceOrderPacked;
 use App\Notifications\Ecommerce\EcommerceOrderProcessing;
+use App\Notifications\Ecommerce\EcommerceOrderRefunded;
 use App\Services\EcommerceInventoryService;
 use App\Services\PushNotificationService;
 use Illuminate\Http\JsonResponse;
@@ -205,6 +207,8 @@ class AdminEcommerceOrderController extends BaseApiController
 
         $this->appendHistory($order, EcommerceOrderStatus::Cancelled->value, 'Cancelled by staff. '.$request->reason);
 
+        $order->user->notify(new EcommerceOrderCancelled($order));
+
         return $this->success(null, 'Order cancelled.');
     }
 
@@ -222,6 +226,8 @@ class AdminEcommerceOrderController extends BaseApiController
         ]);
 
         $this->appendHistory($order, EcommerceOrderStatus::Refunded->value, 'Order refunded by staff.');
+
+        $order->user->notify(new EcommerceOrderRefunded($order));
 
         return $this->success(null, 'Order marked as refunded. Process payment reversal in gateway dashboard.');
     }

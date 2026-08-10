@@ -12,6 +12,13 @@ if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php'))
 // Register the Composer autoloader...
 require __DIR__.'/../vendor/autoload.php';
 
+// This app and the kmarket storefront share one Apache/mod_php instance on
+// port 7000 (shipping.com and kmarket.com vhosts). putenv() writes to the
+// OS process environment, which is shared across vhosts on threaded SAPIs
+// like mod_php — so it can leak a sibling vhost's env vars into this app's
+// request. Disabling it keeps env vars scoped to $_ENV/$_SERVER per request.
+\Illuminate\Support\Env::disablePutenv();
+
 // Bootstrap Laravel and handle the request...
 (require_once __DIR__.'/../bootstrap/app.php')
     ->handleRequest(Request::capture());

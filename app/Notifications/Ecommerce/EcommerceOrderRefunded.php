@@ -9,7 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class EcommerceOrderDelivered extends Notification implements ShouldQueue
+class EcommerceOrderRefunded extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -23,23 +23,22 @@ class EcommerceOrderDelivered extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject("Order Delivered — {$this->order->order_number}")
+            ->subject("Order Refunded — {$this->order->order_number}")
             ->greeting("Hi {$notifiable->name},")
-            ->line("Order {$this->order->order_number} has been delivered. We hope you enjoy it!")
-            ->action('Rate Your Order', $this->trackingUrl())
-            ->line('Let us know how we did.');
+            ->line("Order {$this->order->order_number} has been marked as refunded. Your payment will be reversed by our team.")
+            ->action('View Order', $this->trackingUrl());
     }
 
     public function toSms(object $notifiable): string
     {
-        return "Order {$this->order->order_number} has been delivered. Tap to rate: {$this->trackingUrl()}";
+        return "Order {$this->order->order_number} has been refunded.";
     }
 
     public function toDatabase(object $notifiable): array
     {
         return [
-            'title' => 'Order Delivered',
-            'body' => "Order {$this->order->order_number} has been delivered. Tap to rate your experience.",
+            'title' => 'Order Refunded',
+            'body' => "Order {$this->order->order_number} has been refunded.",
             'type' => 'ecommerce_order',
             'order_id' => $this->order->id,
             'order_number' => $this->order->order_number,
