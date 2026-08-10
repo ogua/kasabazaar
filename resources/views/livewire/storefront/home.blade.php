@@ -1,7 +1,21 @@
 <div>
     {{-- Hero: real admin-managed banners when available, brand panel otherwise --}}
     @if ($banners->isNotEmpty())
-        <section class="relative" x-data="{ active: 0, count: {{ $banners->count() }} }" x-init="setInterval(() => active = (active + 1) % count, 5000)">
+        <section
+            class="relative group"
+            x-data="{
+                active: 0,
+                count: {{ $banners->count() }},
+                timer: null,
+                start() { if (this.count > 1) { this.timer = setInterval(() => this.next(), 5000) } },
+                stop() { clearInterval(this.timer) },
+                next() { this.active = (this.active + 1) % this.count },
+                prev() { this.active = (this.active - 1 + this.count) % this.count },
+            }"
+            x-init="start()"
+            @mouseenter="stop()"
+            @mouseleave="start()"
+        >
             <div class="relative h-90 md:h-115 overflow-hidden bg-navy-900">
                 @foreach ($banners as $index => $banner)
                     <a
@@ -22,10 +36,26 @@
                     </a>
                 @endforeach
             </div>
+
             @if ($banners->count() > 1)
+                <button
+                    @click="prev()"
+                    class="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center w-10 h-10 rounded-full bg-white/90 text-navy-900 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
+                    aria-label="Previous slide"
+                >
+                    <x-storefront.icon name="chevron-left" class="w-5 h-5" />
+                </button>
+                <button
+                    @click="next()"
+                    class="absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center w-10 h-10 rounded-full bg-white/90 text-navy-900 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white"
+                    aria-label="Next slide"
+                >
+                    <x-storefront.icon name="chevron-right" class="w-5 h-5" />
+                </button>
+
                 <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
                     @foreach ($banners as $index => $banner)
-                        <button @click="active = {{ $index }}" class="w-6 h-1.5 rounded-full transition-colors" :class="active === {{ $index }} ? 'bg-accent' : 'bg-white/40'" aria-label="Show slide {{ $index + 1 }}"></button>
+                        <button @click="active = {{ $index }}" class="w-6 h-1.5 rounded-full transition-colors" x-bind:class="active === {{ $index }} ? 'bg-accent' : 'bg-white/40'" aria-label="Show slide {{ $index + 1 }}"></button>
                     @endforeach
                 </div>
             @endif
