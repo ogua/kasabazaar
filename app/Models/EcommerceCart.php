@@ -16,6 +16,7 @@ class EcommerceCart extends Model
     protected function casts(): array
     {
         return [
+            'discount_ghs' => 'decimal:2',
             'expires_at' => 'datetime',
         ];
     }

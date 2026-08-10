@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'customer' => \App\Http\Middleware\EnsureCustomer::class,
             'active' => \App\Http\Middleware\EnsureUserActive::class,
             'investor' => \App\Http\Middleware\EnsureInvestor::class,
+            'vendor' => \App\Http\Middleware\EnsureVendor::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

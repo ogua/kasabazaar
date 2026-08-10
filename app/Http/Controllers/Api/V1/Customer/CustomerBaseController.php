@@ -19,6 +19,8 @@ abstract class CustomerBaseController extends BaseApiController
 
     protected function customerBranchId(): string
     {
-        return auth()->user()->branch_id;
+        $user = auth('sanctum')->user();
+
+        return $user?->branch_id ?? config('ecommerce.public_branch_id');
     }
 }

@@ -45,6 +45,17 @@ return [
             'throw' => false,
         ],
 
+        // Sensitive vendor KYC documents (business certificate, Ghana Card, proof of
+        // address) — deliberately NOT symlinked into public/ (unlike 'public' above),
+        // so there is no direct URL for these files. Only reachable via an
+        // authenticated Filament download action (Storage::disk('vendor_documents')).
+        'vendor_documents' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/vendor-documents'),
+            'visibility' => 'private',
+            'throw' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

@@ -12,11 +12,13 @@ class EcommerceProductCatalogController extends CustomerBaseController
 {
     public function index(Request $request): JsonResponse
     {
-        $branchId = $this->customerBranchId();
+        $query = EcommerceProduct::where('is_active', true)
+            ->whereHas('vendor', fn ($q) => $q->active())
+            ->with(['category:id,name', 'images', 'vendor:id,business_name,slug']);
 
-        $query = EcommerceProduct::where('branch_id', $branchId)
-            ->where('is_active', true)
-            ->with(['category:id,name', 'images']);
+        if ($request->filled('vendor_id')) {
+            $query->where('vendor_id', $request->vendor_id);
+        }
 
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
@@ -57,11 +59,9 @@ class EcommerceProductCatalogController extends CustomerBaseController
 
     public function show(Request $request, string $id): JsonResponse
     {
-        $branchId = $this->customerBranchId();
-
-        $product = EcommerceProduct::where('branch_id', $branchId)
-            ->where('is_active', true)
-            ->with(['category:id,name,slug', 'images'])
+        $product = EcommerceProduct::where('is_active', true)
+            ->whereHas('vendor', fn ($q) => $q->active())
+            ->with(['category:id,name,slug', 'images', 'vendor:id,business_name,slug'])
             ->findOrFail($id);
 
         return $this->success(new EcommerceProductResource($product));

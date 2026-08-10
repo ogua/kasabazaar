@@ -12,10 +12,7 @@ class EcommerceCategoryController extends BaseApiController
 {
     public function index(Request $request): JsonResponse
     {
-        $branchId = $this->resolveBranch($request);
-
-        $categories = EcommerceCategory::where('branch_id', $branchId)
-            ->withCount('products')
+        $categories = EcommerceCategory::withCount('products')
             ->with('children')
             ->orderBy('sort_order')
             ->get();
@@ -25,8 +22,6 @@ class EcommerceCategoryController extends BaseApiController
 
     public function store(Request $request): JsonResponse
     {
-        $branchId = $this->resolveBranch($request);
-
         $data = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -35,17 +30,14 @@ class EcommerceCategoryController extends BaseApiController
             'is_active' => 'boolean',
         ]);
 
-        $category = EcommerceCategory::create(array_merge($data, ['branch_id' => $branchId]));
+        $category = EcommerceCategory::create($data);
 
         return $this->success(new EcommerceCategoryResource($category), 'Category created.', 201);
     }
 
     public function show(Request $request, string $id): JsonResponse
     {
-        $branchId = $this->resolveBranch($request);
-
-        $category = EcommerceCategory::where('branch_id', $branchId)
-            ->withCount('products')
+        $category = EcommerceCategory::withCount('products')
             ->with('children')
             ->findOrFail($id);
 
@@ -54,9 +46,7 @@ class EcommerceCategoryController extends BaseApiController
 
     public function update(Request $request, string $id): JsonResponse
     {
-        $branchId = $this->resolveBranch($request);
-
-        $category = EcommerceCategory::where('branch_id', $branchId)->findOrFail($id);
+        $category = EcommerceCategory::findOrFail($id);
 
         $data = $request->validate([
             'name' => 'sometimes|string|max:255',
@@ -74,9 +64,7 @@ class EcommerceCategoryController extends BaseApiController
 
     public function destroy(Request $request, string $id): JsonResponse
     {
-        $branchId = $this->resolveBranch($request);
-
-        $category = EcommerceCategory::where('branch_id', $branchId)->findOrFail($id);
+        $category = EcommerceCategory::findOrFail($id);
         $category->delete();
 
         return $this->success(null, 'Category deleted.');
@@ -84,9 +72,7 @@ class EcommerceCategoryController extends BaseApiController
 
     public function toggleActive(Request $request, string $id): JsonResponse
     {
-        $branchId = $this->resolveBranch($request);
-
-        $category = EcommerceCategory::where('branch_id', $branchId)->findOrFail($id);
+        $category = EcommerceCategory::findOrFail($id);
         $category->update(['is_active' => ! $category->is_active]);
 
         return $this->success(new EcommerceCategoryResource($category), 'Category status toggled.');
@@ -94,8 +80,7 @@ class EcommerceCategoryController extends BaseApiController
 
     public function uploadImage(Request $request, string $id): JsonResponse
     {
-        $branchId = $this->resolveBranch($request);
-        $category = EcommerceCategory::where('branch_id', $branchId)->findOrFail($id);
+        $category = EcommerceCategory::findOrFail($id);
 
         $request->validate(['image' => 'required|image|max:5120']);
 

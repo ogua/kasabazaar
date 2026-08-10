@@ -92,8 +92,23 @@ class User extends Authenticatable implements FilamentUser, HasTenants
         return $this->belongsTo(Investor::class, 'investor_id');
     }
 
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class, 'vendor_id');
+    }
+
     public function staff(): HasOne
     {
         return $this->hasOne(Staff::class, 'user_id');
+    }
+
+    public function wishlist(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    public function productReviews(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ProductReview::class);
     }
 }

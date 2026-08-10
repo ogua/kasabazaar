@@ -13,6 +13,10 @@ class EcommerceCartItemResource extends JsonResource
 
         return [
             'id' => $this->id,
+            'vendor' => $this->whenLoaded('vendor', fn () => $this->vendor ? [
+                'id' => $this->vendor->id,
+                'business_name' => $this->vendor->business_name,
+            ] : null),
             'quantity' => $this->quantity,
             'price_ghs' => $this->price_ghs,
             'stock' => $product?->stock,

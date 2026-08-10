@@ -10,10 +10,12 @@ use App\Models\EcommerceOrderShipment;
 use App\Models\EcommerceOrderStatusHistory;
 use App\Models\ExchangeRateLog;
 use App\Notifications\Ecommerce\EcommerceOrderApproved;
+use App\Notifications\Ecommerce\EcommerceOrderCancelled;
 use App\Notifications\Ecommerce\EcommerceOrderDelivered;
 use App\Notifications\Ecommerce\EcommerceOrderDispatched;
 use App\Notifications\Ecommerce\EcommerceOrderPacked;
 use App\Notifications\Ecommerce\EcommerceOrderProcessing;
+use App\Notifications\Ecommerce\EcommerceOrderRefunded;
 use App\Services\EcommerceInventoryService;
 use App\Services\PushNotificationService;
 use Filament\Forms;
@@ -451,6 +453,7 @@ class EcommerceOrderResource extends Resource
                             ]);
 
                             self::appendHistory($record, EcommerceOrderStatus::Cancelled->value, 'Cancelled by staff. '.($data['reason'] ?? ''));
+                            $record->user->notify(new EcommerceOrderCancelled($record));
                         })
                         ->successNotificationTitle('Order cancelled'),
 
@@ -468,6 +471,7 @@ class EcommerceOrderResource extends Resource
                             ]);
 
                             self::appendHistory($record, EcommerceOrderStatus::Refunded->value, 'Order refunded by staff.');
+                            $record->user->notify(new EcommerceOrderRefunded($record));
                         })
                         ->successNotificationTitle('Order marked as refunded'),
                 ]),

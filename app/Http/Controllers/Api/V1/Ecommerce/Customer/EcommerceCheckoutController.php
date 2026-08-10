@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api\V1\Ecommerce\Customer;
 
 use App\Exceptions\InsufficientStockException;
 use App\Http\Controllers\Api\V1\Customer\CustomerBaseController;
-use App\Http\Resources\Ecommerce\EcommerceOrderDetailResource;
+use App\Http\Resources\Ecommerce\EcommerceOrderGroupResource;
 use App\Services\EcommerceOrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,17 +21,19 @@ class EcommerceCheckoutController extends CustomerBaseController
         ]);
 
         try {
-            $order = $this->orderService->createFromCart(
+            $group = $this->orderService->createFromCart(
                 auth()->user(),
                 $data['delivery_address_id'],
                 $data['notes'] ?? ''
             );
         } catch (InsufficientStockException $e) {
             return $this->error($e->getMessage(), 422);
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), 422);
         }
 
         return $this->success(
-            new EcommerceOrderDetailResource($order->load(['items.product', 'deliveryDetail', 'statusHistory'])),
+            new EcommerceOrderGroupResource($group),
             'Order placed successfully.',
             201
         );

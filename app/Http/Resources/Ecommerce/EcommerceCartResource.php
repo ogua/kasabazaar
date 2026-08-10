@@ -13,9 +13,10 @@ class EcommerceCartResource extends JsonResource
         $subtotalGhs = $items->sum(fn ($i) => $i->price_ghs * $i->quantity);
 
         return [
-            'branch_id' => $this->branch_id,
             'coupon_code' => $this->coupon_code,
+            'discount_ghs' => $this->discount_ghs,
             'subtotal_ghs' => round($subtotalGhs, 2),
+            'vendor_count' => $items->pluck('vendor_id')->unique()->filter()->count(),
             'expires_at' => $this->expires_at,
             'items' => EcommerceCartItemResource::collection($items),
         ];

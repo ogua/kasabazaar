@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1\Ecommerce\Customer;
 
-use App\Enums\EcommerceOrderStatus;
+use App\Enums\EcommerceOrderPaymentStatus;
 use App\Http\Controllers\Api\V1\Customer\CustomerBaseController;
-use App\Models\EcommerceOrder;
+use App\Models\EcommerceOrderGroup;
 use App\Services\EcommercePaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,17 +15,23 @@ class EcommercePaymentController extends CustomerBaseController
 
     public function initiate(Request $request): JsonResponse
     {
-        $data = $request->validate(['order_id' => 'required|uuid']);
-        $order = EcommerceOrder::where('user_id', auth()->id())->with('deliveryDetail')->findOrFail($data['order_id']);
+        $data = $request->validate([
+            'order_group_id' => 'required|uuid',
+            'client' => 'nullable|string|in:web,mobile',
+        ]);
 
-        abort_unless($order->status === EcommerceOrderStatus::AwaitingPayment, 422, 'Order is not ready for payment.');
+        $group = EcommerceOrderGroup::where('user_id', auth()->id())
+            ->with('orders.deliveryDetail')
+            ->findOrFail($data['order_group_id']);
 
-        $country = $order->deliveryDetail?->country ?? 'Ghana';
+        abort_unless($group->payment_status === EcommerceOrderPaymentStatus::Pending, 422, 'This order has already been paid or is not ready for payment.');
+
+        $country = $group->orders->first()?->deliveryDetail?->country ?? 'Ghana';
         $gateway = $this->paymentService->getGateway($country);
 
         $result = $gateway === 'paystack'
-            ? $this->paymentService->initiatePaystack($order, auth()->user())
-            : $this->paymentService->initiateStripe($order, auth()->user());
+            ? $this->paymentService->initiatePaystack($group, auth()->user(), $data['client'] ?? 'web')
+            : $this->paymentService->initiateStripe($group, auth()->user());
 
         return $this->success(array_merge(['gateway' => $gateway], $result));
     }
@@ -33,26 +39,24 @@ class EcommercePaymentController extends CustomerBaseController
     public function verifyPaystack(Request $request): JsonResponse
     {
         $data = $request->validate(['reference' => 'required|string']);
-        $order = $this->paymentService->verifyAndRecordPaystack($data['reference']);
+        $group = $this->paymentService->verifyAndRecordPaystack($data['reference']);
 
         return $this->success([
-            'order_id' => $order->id,
-            'order_number' => $order->order_number,
-            'payment_status' => $order->payment_status,
-            'status' => $order->status,
+            'order_group_id' => $group->id,
+            'order_group_number' => $group->order_group_number,
+            'payment_status' => $group->payment_status,
         ], 'Payment confirmed.');
     }
 
     public function verifyStripe(Request $request): JsonResponse
     {
         $data = $request->validate(['payment_intent_id' => 'required|string']);
-        $order = $this->paymentService->verifyAndRecordStripe($data['payment_intent_id']);
+        $group = $this->paymentService->verifyAndRecordStripe($data['payment_intent_id']);
 
         return $this->success([
-            'order_id' => $order->id,
-            'order_number' => $order->order_number,
-            'payment_status' => $order->payment_status,
-            'status' => $order->status,
+            'order_group_id' => $group->id,
+            'order_group_number' => $group->order_group_number,
+            'payment_status' => $group->payment_status,
         ], 'Payment confirmed.');
     }
 }

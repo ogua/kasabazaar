@@ -42,6 +42,11 @@ class EcommerceProduct extends Model
         return $this->belongsTo(Branch::class);
     }
 
+    public function vendor(): BelongsTo
+    {
+        return $this->belongsTo(Vendor::class);
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(EcommerceCategory::class, 'category_id');
@@ -70,5 +75,25 @@ class EcommerceProduct extends Model
     public function orderItems(): HasMany
     {
         return $this->hasMany(EcommerceOrderItem::class);
+    }
+
+    public function variants(): HasMany
+    {
+        return $this->hasMany(ProductVariant::class, 'ecommerce_product_id');
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(ProductReview::class, 'ecommerce_product_id')->where('is_approved', true);
+    }
+
+    public function averageRating(): float
+    {
+        return round((float) $this->reviews()->avg('rating'), 1);
+    }
+
+    public function reviewsCount(): int
+    {
+        return $this->reviews()->count();
     }
 }

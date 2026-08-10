@@ -14,10 +14,7 @@ class EcommerceCategoryBrowseController extends CustomerBaseController
 {
     public function index(Request $request): JsonResponse
     {
-        $branchId = $this->customerBranchId();
-
-        $categories = EcommerceCategory::where('branch_id', $branchId)
-            ->where('is_active', true)
+        $categories = EcommerceCategory::where('is_active', true)
             ->whereNull('parent_id')
             ->withCount('products')
             ->with('children')
@@ -29,16 +26,12 @@ class EcommerceCategoryBrowseController extends CustomerBaseController
 
     public function products(Request $request, string $id): JsonResponse
     {
-        $branchId = $this->customerBranchId();
+        $category = EcommerceCategory::where('is_active', true)->findOrFail($id);
 
-        $category = EcommerceCategory::where('branch_id', $branchId)
-            ->where('is_active', true)
-            ->findOrFail($id);
-
-        $query = EcommerceProduct::where('branch_id', $branchId)
-            ->where('is_active', true)
+        $query = EcommerceProduct::where('is_active', true)
             ->where('category_id', $category->id)
-            ->with(['category:id,name', 'images']);
+            ->whereHas('vendor', fn ($q) => $q->active())
+            ->with(['category:id,name', 'images', 'vendor:id,business_name,slug']);
 
         if ($request->filled('search')) {
             $query->where('name', 'like', "%{$request->search}%");

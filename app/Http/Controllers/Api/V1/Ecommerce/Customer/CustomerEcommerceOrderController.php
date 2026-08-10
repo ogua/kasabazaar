@@ -9,6 +9,7 @@ use App\Http\Resources\Ecommerce\EcommerceOrderResource;
 use App\Models\EcommerceOrder;
 use App\Models\EcommerceOrderRating;
 use App\Models\EcommerceOrderStatusHistory;
+use App\Notifications\Ecommerce\EcommerceOrderCancelled;
 use App\Services\EcommerceInventoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,10 +21,15 @@ class CustomerEcommerceOrderController extends CustomerBaseController
     public function index(Request $request): JsonResponse
     {
         $query = EcommerceOrder::where('user_id', auth()->id())
+            ->with('vendor:id,business_name')
             ->withCount('items');
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        }
+
+        if ($request->filled('order_group_id')) {
+            $query->where('order_group_id', $request->order_group_id);
         }
 
         $paginated = $query->latest()->paginate((int) $request->input('per_page', 15));
@@ -34,7 +40,7 @@ class CustomerEcommerceOrderController extends CustomerBaseController
     public function show(Request $request, string $id): JsonResponse
     {
         $order = EcommerceOrder::where('user_id', auth()->id())
-            ->with(['items.product.images', 'deliveryDetail', 'statusHistory', 'shipment.trackingLogs', 'rating'])
+            ->with(['items.product.images', 'deliveryDetail', 'statusHistory', 'shipment.trackingLogs', 'rating', 'vendor:id,business_name,slug'])
             ->findOrFail($id);
 
         return $this->success(new EcommerceOrderDetailResource($order));
@@ -89,6 +95,8 @@ class CustomerEcommerceOrderController extends CustomerBaseController
             'notes' => 'Cancelled by customer.',
             'created_by' => auth()->id(),
         ]);
+
+        auth()->user()->notify(new EcommerceOrderCancelled($order));
 
         return $this->success(null, 'Order cancelled.');
     }
