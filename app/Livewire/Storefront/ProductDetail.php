@@ -6,6 +6,7 @@ use App\Livewire\Storefront\Concerns\HasCartActions;
 use App\Services\Kasabazaar\KasabazaarApiException;
 use App\Services\Kasabazaar\ProductsApi;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class ProductDetail extends Component
@@ -14,17 +15,25 @@ class ProductDetail extends Component
 
     public string $productId;
 
-    public array $product = [];
+    public array $productData = [];
 
     public array $reviews = [];
 
     public int $quantity = 1;
 
+    public bool $notFound = false;
+
     public function mount(string $product, ProductsApi $productsApi): void
     {
         $this->productId = $product;
-        $this->product = $productsApi->show($product);
-        $this->reviews = $productsApi->reviews($product)->data ?? [];
+
+        try {
+            $this->productData = $productsApi->show($product);
+            $this->reviews = $productsApi->reviews($product)->data ?? [];
+        } catch (KasabazaarApiException $e) {
+            Log::warning('storefront.product: failed to load product', ['product' => $product, 'message' => $e->getMessage()]);
+            $this->notFound = true;
+        }
     }
 
     public function increment(): void
@@ -65,8 +74,10 @@ class ProductDetail extends Component
 
     public function render()
     {
-        return view('livewire.storefront.product-detail')->layout('storefront.layouts.app', [
-            'title' => $this->product['name'] ?? 'Product',
+        return view('livewire.storefront.product-detail', [
+            'product' => $this->productData,
+        ])->layout('storefront.layouts.app', [
+            'title' => $this->productData['name'] ?? ($this->notFound ? 'Product Not Found' : 'Product'),
         ]);
     }
 }

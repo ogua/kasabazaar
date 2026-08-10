@@ -47,6 +47,7 @@ class CheckoutCallback extends Component
             $result = $checkoutApi->verifyStripe($paymentIntentId);
             $this->status = 'success';
             $this->orderGroupId = $result['order_group_id'] ?? $this->orderGroupId;
+            $this->dispatch('cart-updated');
         } catch (KasabazaarApiException $e) {
             $this->status = 'failed';
             $this->message = $e->getMessage();

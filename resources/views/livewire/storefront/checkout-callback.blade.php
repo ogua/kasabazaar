@@ -1,19 +1,27 @@
-<div class="container py-8 text-center" style="max-width:560px;">
+<div class="max-w-lg mx-auto px-4 sm:px-6 py-20 text-center">
     @if ($status === 'verifying')
-        <h1>Verifying your payment…</h1>
-        <p>Please wait a moment.</p>
+        <div class="flex justify-center mb-5">
+            <x-storefront.ui.spinner class="w-10 h-10 text-navy-900" />
+        </div>
+        <h1 class="font-display font-bold text-2xl text-navy-900 mb-2">Verifying your payment&hellip;</h1>
+        <p class="text-muted">Please wait a moment, this won't take long.</p>
     @elseif ($status === 'success')
-        <h1 class="text-success">Payment Confirmed!</h1>
-        <p>Your order has been placed successfully.</p>
+        <div class="flex items-center justify-center w-16 h-16 rounded-full bg-success/10 text-success mx-auto mb-5">
+            <x-storefront.icon name="check-circle" class="w-8 h-8" />
+        </div>
+        <h1 class="font-display font-bold text-2xl text-navy-900 mb-2">Payment Confirmed!</h1>
+        <p class="text-muted mb-6">Your order has been placed successfully.</p>
         @if ($orderGroupId)
-            <a href="{{ route('storefront.account.orders') }}" class="btn btn-dark btn-rounded mt-4">View My Orders</a>
+            <x-storefront.ui.button href="{{ route('storefront.account.orders') }}" variant="primary">View My Orders</x-storefront.ui.button>
         @endif
     @elseif ($status === 'awaiting-stripe')
-        <div wire:ignore id="stripe-payment-root" data-client-secret="{{ $stripeClientSecret }}" data-order-group-id="{{ $orderGroupId }}">
-            <h1>Complete Your Payment</h1>
-            <div id="stripe-payment-element" class="my-4"></div>
-            <button id="stripe-submit" class="btn btn-primary btn-rounded">Pay Now</button>
-            <div id="stripe-payment-message" class="text-danger mt-2"></div>
+        <div wire:ignore id="stripe-payment-root" data-client-secret="{{ $stripeClientSecret }}" data-order-group-id="{{ $orderGroupId }}" class="text-left">
+            <h1 class="font-display font-bold text-2xl text-navy-900 mb-5 text-center">Complete Your Payment</h1>
+            <div id="stripe-payment-element" class="mb-4"></div>
+            <button id="stripe-submit" class="w-full inline-flex items-center justify-center gap-2 rounded-sm bg-accent text-white font-semibold py-3 hover:bg-accent-hover disabled:opacity-60 disabled:cursor-not-allowed">
+                <span id="stripe-submit-label">Pay Now</span>
+            </button>
+            <p id="stripe-payment-message" class="text-error text-sm mt-3 text-center"></p>
         </div>
         <script src="https://js.stripe.com/v3/"></script>
         <script>
@@ -24,10 +32,18 @@
                 var elements = stripe.elements({ clientSecret: root.dataset.clientSecret });
                 elements.create('payment').mount('#stripe-payment-element');
 
-                document.getElementById('stripe-submit').addEventListener('click', function () {
+                var submitButton = document.getElementById('stripe-submit');
+                var submitLabel = document.getElementById('stripe-submit-label');
+
+                submitButton.addEventListener('click', function () {
+                    submitButton.disabled = true;
+                    submitLabel.textContent = 'Processing...';
+
                     stripe.confirmPayment({ elements, redirect: 'if_required' }).then(function (result) {
                         if (result.error) {
                             document.getElementById('stripe-payment-message').textContent = result.error.message;
+                            submitButton.disabled = false;
+                            submitLabel.textContent = 'Pay Now';
                         } else {
                             window.Livewire.dispatch('stripe-confirmed', { paymentIntentId: result.paymentIntent.id });
                         }
@@ -36,8 +52,11 @@
             });
         </script>
     @else
-        <h1 class="text-danger">Payment Failed</h1>
-        <p>{{ $message }}</p>
-        <a href="{{ route('storefront.checkout') }}" class="btn btn-dark btn-rounded mt-4">Try Again</a>
+        <div class="flex items-center justify-center w-16 h-16 rounded-full bg-error/10 text-error mx-auto mb-5">
+            <x-storefront.icon name="exclamation-circle" class="w-8 h-8" />
+        </div>
+        <h1 class="font-display font-bold text-2xl text-navy-900 mb-2">Payment Failed</h1>
+        <p class="text-muted mb-6">{{ $message }}</p>
+        <x-storefront.ui.button href="{{ route('storefront.checkout') }}" variant="primary">Try Again</x-storefront.ui.button>
     @endif
 </div>

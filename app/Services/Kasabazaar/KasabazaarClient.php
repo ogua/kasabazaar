@@ -55,7 +55,7 @@ class KasabazaarClient
             ->timeout((int) config('services.kasabazaar.timeout', 10))
             ->acceptJson()
             ->withHeaders($headers)
-            ->retry(2, 200, fn ($exception) => $exception instanceof ConnectionException);
+            ->retry(2, 200, fn ($exception) => $exception instanceof ConnectionException, throw: false);
 
         if ($token = $this->token()) {
             $request = $request->withToken($token);

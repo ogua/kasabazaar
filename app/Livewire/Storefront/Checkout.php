@@ -5,6 +5,7 @@ namespace App\Livewire\Storefront;
 use App\Services\Kasabazaar\CartApi;
 use App\Services\Kasabazaar\CheckoutApi;
 use App\Services\Kasabazaar\KasabazaarApiException;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class Checkout extends Component
@@ -36,8 +37,13 @@ class Checkout extends Component
 
     public function mount(CartApi $cartApi, CheckoutApi $checkoutApi): void
     {
-        $this->cart = $cartApi->show();
-        $this->addresses = $checkoutApi->addresses();
+        try {
+            $this->cart = $cartApi->show();
+            $this->addresses = $checkoutApi->addresses();
+        } catch (KasabazaarApiException $e) {
+            Log::warning('storefront.checkout: failed to load checkout data', ['message' => $e->getMessage()]);
+            $this->error = 'We\'re having trouble loading your checkout right now. Please refresh or try again shortly.';
+        }
 
         $default = collect($this->addresses)->firstWhere('is_default', true) ?? ($this->addresses[0] ?? null);
         $this->selectedAddressId = $default['id'] ?? '';
@@ -54,19 +60,24 @@ class Checkout extends Component
             'street' => 'nullable|string|max:255',
         ]);
 
-        $address = $checkoutApi->createAddress([
-            'full_name' => $this->full_name,
-            'phone' => $this->phone,
-            'country' => 'Ghana',
-            'region' => $this->region,
-            'city' => $this->city,
-            'street' => $this->street,
-            'is_default' => empty($this->addresses),
-        ]);
+        try {
+            $address = $checkoutApi->createAddress([
+                'full_name' => $this->full_name,
+                'phone' => $this->phone,
+                'country' => 'Ghana',
+                'region' => $this->region,
+                'city' => $this->city,
+                'street' => $this->street,
+                'is_default' => empty($this->addresses),
+            ]);
 
-        $this->addresses[] = $address;
-        $this->selectedAddressId = $address['id'];
-        $this->showNewAddressForm = false;
+            $this->addresses[] = $address;
+            $this->selectedAddressId = $address['id'];
+            $this->showNewAddressForm = false;
+            $this->error = '';
+        } catch (KasabazaarApiException $e) {
+            $this->error = $e->getMessage();
+        }
     }
 
     public function placeOrder(CheckoutApi $checkoutApi): void
@@ -82,20 +93,29 @@ class Checkout extends Component
         try {
             $orderGroup = $checkoutApi->checkout($this->selectedAddressId, $this->notes);
             $payment = $checkoutApi->initiatePayment($orderGroup['id']);
+            $gateway = $payment['gateway'] ?? null;
 
-            if (($payment['gateway'] ?? null) === 'paystack' && ! empty($payment['authorization_url'])) {
+            if ($gateway === 'paystack' && ! empty($payment['authorization_url'])) {
                 $this->redirect($payment['authorization_url'], navigate: false);
 
                 return;
             }
 
-            // Stripe: hand off to the callback page with the client secret so it
-            // can mount Stripe.js Elements and confirm the payment client-side.
-            $this->redirect(route('storefront.checkout.callback', [
-                'gateway' => 'stripe',
-                'client_secret' => $payment['client_secret'] ?? null,
-                'order_group_id' => $orderGroup['id'],
-            ]), navigate: false);
+            if ($gateway === 'stripe' && ! empty($payment['client_secret'])) {
+                // Hand off to the callback page with the client secret so it can
+                // mount Stripe.js Elements and confirm the payment client-side.
+                $this->redirect(route('storefront.checkout.callback', [
+                    'gateway' => 'stripe',
+                    'client_secret' => $payment['client_secret'],
+                    'order_group_id' => $orderGroup['id'],
+                ]), navigate: false);
+
+                return;
+            }
+
+            Log::warning('storefront.checkout: unrecognized payment gateway response', ['payment' => $payment]);
+            $this->error = 'We could not start the payment process. Please try again or contact support.';
+            $this->placingOrder = false;
         } catch (KasabazaarApiException $e) {
             $this->error = $e->getMessage();
             $this->placingOrder = false;

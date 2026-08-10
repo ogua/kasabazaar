@@ -1,36 +1,48 @@
-<div class="container py-8" style="max-width:480px;">
-    <h1 class="title title-simple mb-6">Create Account</h1>
+<div class="max-w-md mx-auto px-4 sm:px-6 py-16">
+    <div class="text-center mb-8">
+        <img src="{{ asset('images/brand/logo-mark.png') }}" alt="{{ config('app.name') }}" class="h-14 w-auto mx-auto mb-5">
+        <h1 class="font-display font-bold text-2xl text-navy-900">Create Account</h1>
+        <p class="text-muted text-sm mt-1">Join {{ config('app.name') }} to start shopping</p>
+    </div>
 
-    @if ($error)
-        <div class="alert alert-danger">{{ $error }}</div>
-    @endif
+    <x-storefront.ui.card>
+        @if ($error)
+            <x-storefront.ui.alert variant="error" class="mb-5">{{ $error }}</x-storefront.ui.alert>
+        @endif
 
-    <form wire:submit.prevent="submit">
-        <div class="form-group">
-            <label>Full Name</label>
-            <input type="text" class="form-control" wire:model="name" required autofocus>
-            @error('name') <span class="text-danger">{{ $message }}</span> @enderror
-        </div>
-        <div class="form-group">
-            <label>Email</label>
-            <input type="email" class="form-control" wire:model="email" required>
-            @error('email') <span class="text-danger">{{ $message }}</span> @enderror
-        </div>
-        <div class="form-group">
-            <label>Phone</label>
-            <input type="text" class="form-control" wire:model="phone">
-        </div>
-        <div class="form-group">
-            <label>Password</label>
-            <input type="password" class="form-control" wire:model="password" required>
-            @error('password') <span class="text-danger">{{ $message }}</span> @enderror
-        </div>
-        <div class="form-group">
-            <label>Confirm Password</label>
-            <input type="password" class="form-control" wire:model="password_confirmation" required>
-        </div>
-        <button type="submit" class="btn btn-dark btn-block" wire:loading.attr="disabled">Create Account</button>
-    </form>
+        <form wire:submit.prevent="submit" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-fg mb-1.5">Full Name</label>
+                <input type="text" wire:model="name" required autofocus class="w-full border border-border rounded-sm px-3 py-2.5 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent">
+                @error('name') <p class="text-error text-xs mt-1">{{ $message }}</p> @enderror
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-fg mb-1.5">Email</label>
+                <input type="email" wire:model="email" required class="w-full border border-border rounded-sm px-3 py-2.5 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent">
+                @error('email') <p class="text-error text-xs mt-1">{{ $message }}</p> @enderror
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-fg mb-1.5">Phone</label>
+                <input type="text" wire:model="phone" class="w-full border border-border rounded-sm px-3 py-2.5 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-fg mb-1.5">Password</label>
+                <input type="password" wire:model="password" required class="w-full border border-border rounded-sm px-3 py-2.5 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent">
+                @error('password') <p class="text-error text-xs mt-1">{{ $message }}</p> @enderror
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-fg mb-1.5">Confirm Password</label>
+                <input type="password" wire:model="password_confirmation" required class="w-full border border-border rounded-sm px-3 py-2.5 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent">
+            </div>
 
-    <p class="mt-4">Already have an account? <a href="{{ route('storefront.login') }}">Sign In</a></p>
+            <x-storefront.ui.button type="submit" variant="primary" size="lg" wire:loading.attr="disabled" wire:target="submit" class="w-full">
+                <span wire:loading.remove wire:target="submit">Create Account</span>
+                <span wire:loading wire:target="submit" class="inline-flex items-center gap-2"><x-storefront.ui.spinner class="w-4 h-4" /> Creating account...</span>
+            </x-storefront.ui.button>
+        </form>
+    </x-storefront.ui.card>
+
+    <p class="text-center text-sm text-muted mt-6">
+        Already have an account? <a href="{{ route('storefront.login') }}" class="text-navy-900 font-semibold hover:text-accent">Sign In</a>
+    </p>
 </div>

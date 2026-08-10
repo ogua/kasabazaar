@@ -3,11 +3,14 @@
 namespace App\Livewire\Storefront\Auth;
 
 use App\Services\Kasabazaar\AuthApi;
+use App\Services\Kasabazaar\KasabazaarApiException;
 use Livewire\Component;
 
 class ForgotPassword extends Component
 {
     public string $email = '';
+
+    public string $error = '';
 
     public bool $sent = false;
 
@@ -15,9 +18,12 @@ class ForgotPassword extends Component
     {
         $this->validate(['email' => 'required|email']);
 
-        $authApi->forgotPasswordCustomer($this->email);
-
-        $this->sent = true;
+        try {
+            $authApi->forgotPasswordCustomer($this->email);
+            $this->sent = true;
+        } catch (KasabazaarApiException $e) {
+            $this->error = $e->getMessage();
+        }
     }
 
     public function render()

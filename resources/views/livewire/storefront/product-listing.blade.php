@@ -1,30 +1,61 @@
-<div class="container mt-6 mb-8">
-    <div class="row">
-        <aside class="col-lg-3 mb-6">
-            <div class="widget widget-clean">
-                <h4 class="widget-title">Search</h4>
-                <input type="text" class="form-control" wire:model.live.debounce.500ms="search" placeholder="Search products…" />
-            </div>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    @php
+        $activeCategory = collect($headerCategories ?? [])->firstWhere('id', $category_id);
+    @endphp
 
-            <div class="widget widget-clean mt-6">
-                <h4 class="widget-title">Price Range (GHS)</h4>
-                <div class="d-flex" style="gap:8px;">
-                    <input type="number" class="form-control" wire:model.live.debounce.500ms="price_min" placeholder="Min" />
-                    <input type="number" class="form-control" wire:model.live.debounce.500ms="price_max" placeholder="Max" />
+    <x-storefront.ui.breadcrumb :items="array_filter([
+        ['label' => 'Shop', 'href' => $activeCategory ? route('storefront.shop') : null],
+        $activeCategory ? ['label' => $activeCategory['name']] : null,
+    ])" />
+
+    <div class="grid lg:grid-cols-4 gap-8">
+        <aside class="lg:col-span-1">
+            <div class="lg:sticky lg:top-16 space-y-6">
+                <div>
+                    <h3 class="font-display font-semibold text-sm text-navy-900 uppercase tracking-wide mb-3">Search</h3>
+                    <div class="relative">
+                        <x-storefront.icon name="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+                        <input
+                            type="text"
+                            wire:model.live.debounce.500ms="search"
+                            placeholder="Search products..."
+                            class="w-full border border-border rounded-sm pl-9 pr-3 py-2 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent"
+                        >
+                    </div>
                 </div>
-            </div>
 
-            <div class="widget widget-clean mt-6">
-                <label class="d-flex align-items-center">
-                    <input type="checkbox" wire:model.live="in_stock" class="mr-2" /> In stock only
+                <div>
+                    <h3 class="font-display font-semibold text-sm text-navy-900 uppercase tracking-wide mb-3">Category</h3>
+                    <select wire:model.live="category_id" class="w-full border border-border rounded-sm px-3 py-2 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent">
+                        <option value="">All Categories</option>
+                        @foreach ($headerCategories ?? [] as $category)
+                            <option value="{{ $category['id'] }}">{{ $category['name'] }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <h3 class="font-display font-semibold text-sm text-navy-900 uppercase tracking-wide mb-3">Price Range (GHS)</h3>
+                    <div class="flex items-center gap-2">
+                        <input type="number" wire:model.live.debounce.500ms="price_min" placeholder="Min" class="w-full border border-border rounded-sm px-3 py-2 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent">
+                        <span class="text-muted">&ndash;</span>
+                        <input type="number" wire:model.live.debounce.500ms="price_max" placeholder="Max" class="w-full border border-border rounded-sm px-3 py-2 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent">
+                    </div>
+                </div>
+
+                <label class="flex items-center gap-2 text-sm text-fg cursor-pointer">
+                    <input type="checkbox" wire:model.live="in_stock" class="w-4 h-4 rounded-sm border-border text-accent focus:ring-accent">
+                    In stock only
                 </label>
             </div>
         </aside>
 
-        <div class="col-lg-9">
-            <div class="toolbox d-flex justify-content-between align-items-center mb-4">
-                <span>{{ $meta['total'] ?? count($products) }} products found</span>
-                <select class="form-control" style="max-width:220px;" wire:model.live="sort">
+        <div class="lg:col-span-3">
+            <div class="flex items-center justify-between gap-4 mb-6">
+                <p class="text-sm text-muted" wire:loading.class="opacity-50" wire:target="search,category_id,price_min,price_max,in_stock,sort,gotoPage,previousPage,nextPage">
+                    {{ $meta['total'] ?? count($products) }} products found
+                </p>
+                <select wire:model.live="sort" class="border border-border rounded-sm px-3 py-2 text-sm max-w-50 focus:outline-none focus-visible:outline-2 focus-visible:outline-accent">
                     <option value="newest">Newest</option>
                     <option value="price_asc">Price: Low to High</option>
                     <option value="price_desc">Price: High to Low</option>
@@ -32,27 +63,31 @@
                 </select>
             </div>
 
-            <div class="row" wire:loading.class="opacity-50">
+            @if ($error)
+                <x-storefront.ui.alert variant="error" class="mb-6">{{ $error }}</x-storefront.ui.alert>
+            @endif
+
+            <div
+                class="grid grid-cols-2 md:grid-cols-3 gap-5 transition-opacity"
+                wire:loading.class="opacity-40"
+                wire:target="search,category_id,price_min,price_max,in_stock,sort,gotoPage,previousPage,nextPage"
+            >
                 @forelse ($products as $product)
-                    <div class="col-6 col-md-4 mb-4">
-                        <x-storefront.product-card :product="$product" />
-                    </div>
+                    <x-storefront.product-card :product="$product" />
                 @empty
-                    <div class="col-12 text-center py-8">
-                        <p>No products found. Try adjusting your filters.</p>
-                    </div>
+                    @unless ($error)
+                        <div class="col-span-full">
+                            <x-storefront.ui.empty-state
+                                icon="search"
+                                title="No products found"
+                                description="Try adjusting your search or filters to find what you're looking for."
+                            />
+                        </div>
+                    @endunless
                 @endforelse
             </div>
 
-            @if (($meta['last_page'] ?? 1) > 1)
-                <ul class="pagination justify-content-center mt-6">
-                    @for ($page = 1; $page <= $meta['last_page']; $page++)
-                        <li class="page-item {{ $page === ($meta['current_page'] ?? 1) ? 'active' : '' }}">
-                            <button type="button" class="page-link" wire:click="gotoPage({{ $page }})">{{ $page }}</button>
-                        </li>
-                    @endfor
-                </ul>
-            @endif
+            <x-storefront.ui.pagination :meta="$meta" />
         </div>
     </div>
 </div>

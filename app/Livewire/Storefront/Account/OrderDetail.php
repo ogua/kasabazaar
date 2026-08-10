@@ -2,12 +2,14 @@
 
 namespace App\Livewire\Storefront\Account;
 
+use App\Services\Kasabazaar\KasabazaarApiException;
 use App\Services\Kasabazaar\OrdersApi;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class OrderDetail extends Component
 {
-    public array $order = [];
+    public array $orderData = [];
 
     public array $tracking = [];
 
@@ -17,28 +19,48 @@ class OrderDetail extends Component
 
     public bool $rated = false;
 
+    public bool $notFound = false;
+
+    public ?string $error = null;
+
     public function mount(string $order, OrdersApi $ordersApi): void
     {
-        $this->order = $ordersApi->show($order);
-        $this->tracking = $ordersApi->tracking($order);
+        try {
+            $this->orderData = $ordersApi->show($order);
+            $this->tracking = $ordersApi->tracking($order);
+        } catch (KasabazaarApiException $e) {
+            Log::warning('storefront.account.order: failed to load order', ['order' => $order, 'message' => $e->getMessage()]);
+            $this->notFound = true;
+        }
     }
 
     public function cancel(OrdersApi $ordersApi): void
     {
-        $ordersApi->cancel($this->order['id']);
-        $this->order = $ordersApi->show($this->order['id']);
+        try {
+            $ordersApi->cancel($this->orderData['id']);
+            $this->orderData = $ordersApi->show($this->orderData['id']);
+            $this->dispatch('toast', type: 'success', message: 'Order cancelled.');
+        } catch (KasabazaarApiException $e) {
+            $this->dispatch('toast', type: 'error', message: $e->getMessage());
+        }
     }
 
     public function submitRating(OrdersApi $ordersApi): void
     {
-        $ordersApi->rate($this->order['id'], $this->ratingValue, $this->ratingComment);
-        $this->rated = true;
+        try {
+            $ordersApi->rate($this->orderData['id'], $this->ratingValue, $this->ratingComment);
+            $this->rated = true;
+        } catch (KasabazaarApiException $e) {
+            $this->dispatch('toast', type: 'error', message: $e->getMessage());
+        }
     }
 
     public function render()
     {
-        return view('livewire.storefront.account.order-detail')->layout('storefront.layouts.app', [
-            'title' => 'Order '.($this->order['order_number'] ?? ''),
+        return view('livewire.storefront.account.order-detail', [
+            'order' => $this->orderData,
+        ])->layout('storefront.layouts.app', [
+            'title' => $this->notFound ? 'Order Not Found' : 'Order '.($this->orderData['order_number'] ?? ''),
         ]);
     }
 }

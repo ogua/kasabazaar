@@ -5,6 +5,7 @@ namespace App\Livewire\Storefront\Account;
 use App\Services\Kasabazaar\AuthApi;
 use App\Services\Kasabazaar\KasabazaarApiException;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
 class Profile extends Component
@@ -21,15 +22,23 @@ class Profile extends Component
 
     public string $profileMessage = '';
 
+    public string $profileError = '';
+
     public string $passwordMessage = '';
 
     public string $passwordError = '';
 
     public function mount(AuthApi $authApi): void
     {
-        $me = $authApi->me();
-        $this->name = $me['name'];
-        $this->phone = $me['phone'] ?? '';
+        try {
+            $me = $authApi->me();
+            $this->name = $me['name'];
+            $this->phone = $me['phone'] ?? '';
+        } catch (KasabazaarApiException $e) {
+            Log::warning('storefront.account.profile: failed to load profile', ['message' => $e->getMessage()]);
+            $this->name = Auth::user()->name;
+            $this->profileError = 'We\'re having trouble loading your latest profile details. Showing your last known name.';
+        }
     }
 
     public function updateProfile(AuthApi $authApi): void
@@ -39,10 +48,15 @@ class Profile extends Component
             'phone' => 'nullable|string|max:30',
         ]);
 
-        $authApi->updateProfile(['name' => $this->name, 'phone' => $this->phone]);
+        try {
+            $authApi->updateProfile(['name' => $this->name, 'phone' => $this->phone]);
 
-        Auth::user()->update(['name' => $this->name]);
-        $this->profileMessage = 'Profile updated.';
+            Auth::user()->update(['name' => $this->name]);
+            $this->profileMessage = 'Profile updated.';
+            $this->profileError = '';
+        } catch (KasabazaarApiException $e) {
+            $this->profileError = $e->getMessage();
+        }
     }
 
     public function updatePassword(AuthApi $authApi): void

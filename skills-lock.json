@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "ecommerce-landing-page": {
+      "source": "nexscope-ai/ecommerce-skills",
+      "sourceType": "github",
+      "skillPath": "ecommerce-landing-page/SKILL.md",
+      "computedHash": "5561134e022c8007afa7e7345a4d161163a7f8c33ef3bfe910ceea690ece2121"
+    },
+    "frontend-design-deslop": {
+      "source": "samber/cc-skills",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-design-deslop/SKILL.md",
+      "computedHash": "67578dd42fa3092f745e444351cb7662d6cc63ac4f11903ed555dfcb26c6848c"
+    },
+    "storefront-best-practices": {
+      "source": "medusajs/medusa-agent-skills",
+      "sourceType": "github",
+      "skillPath": "plugins/ecommerce-storefront/skills/storefront-best-practices/SKILL.md",
+      "computedHash": "e5ea4008fa4d591b3768091391874783804034d691ab2994d1db7bd3bd5be76f"
+    }
+  }
+}

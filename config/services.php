@@ -40,4 +40,12 @@ return [
         'timeout' => env('KASABAZAAR_API_TIMEOUT', 10),
     ],
 
+    'whatsapp' => [
+        'number' => env('WHATSAPP_NUMBER'),
+    ],
+
+    'stripe' => [
+        'publishable_key' => env('STRIPE_KEY'),
+    ],
+
 ];

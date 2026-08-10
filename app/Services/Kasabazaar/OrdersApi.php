@@ -13,12 +13,12 @@ class OrdersApi
 
     public function show(string $id): array
     {
-        return $this->client->get("marketplace/orders/{$id}")->data;
+        return $this->client->get("marketplace/orders/{$id}")->data ?? [];
     }
 
     public function tracking(string $id): array
     {
-        return $this->client->get("marketplace/orders/{$id}/tracking")->data;
+        return $this->client->get("marketplace/orders/{$id}/tracking")->data ?? [];
     }
 
     public function cancel(string $id, ?string $reason = null): void
