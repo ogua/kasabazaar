@@ -37,7 +37,7 @@ class EcommerceProductResource extends Resource
                             ->required()
                             ->maxLength(255),
                         Forms\Components\Hidden::make('vendor_id')
-                            ->value("5aaf5434-5126-4bf3-9380-4248e0b4c4fb"),
+                            ->default("5aaf5434-5126-4bf3-9380-4248e0b4c4fb"),
                         Forms\Components\TextInput::make('sku')
                             ->label('SKU')
                             ->maxLength(100)
