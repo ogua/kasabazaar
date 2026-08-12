@@ -1,0 +1,5 @@
+DB_DATABASE=u681407738_kasabazaar
+DB_USERNAME=u681407738_kasabazaar
+DB_PASSWORD=9qN^l]fS:1Ux
+
+kims_bistro

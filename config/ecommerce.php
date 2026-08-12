@@ -23,4 +23,12 @@ return [
     ],
 
     'default_vendor_commission_rate' => (float) env('ECOMMERCE_DEFAULT_VENDOR_COMMISSION_RATE', 10),
+
+    /*
+     * The Vendor slug for products sold directly by the platform rather than
+     * a third-party vendor (e.g. products created through the admin panel,
+     * which has no vendor selector). EcommerceProduct::booted() defaults any
+     * product created without a vendor_id to this vendor.
+     */
+    'platform_vendor_slug' => env('ECOMMERCE_PLATFORM_VENDOR_SLUG', 'kasabazaar-market'),
 ];

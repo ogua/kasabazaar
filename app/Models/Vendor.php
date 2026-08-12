@@ -38,6 +38,16 @@ class Vendor extends Model
         return $query->where('status', VendorStatus::Active);
     }
 
+    /**
+     * The vendor representing products sold directly by the platform rather
+     * than a third-party vendor (e.g. products created through the admin
+     * panel, which has no vendor selector).
+     */
+    public static function platform(): self
+    {
+        return once(fn () => static::where('slug', config('ecommerce.platform_vendor_slug'))->firstOrFail());
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

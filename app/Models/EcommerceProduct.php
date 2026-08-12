@@ -34,6 +34,7 @@ class EcommerceProduct extends Model
     {
         static::creating(function (self $model) {
             $model->slug ??= Str::slug($model->name);
+            $model->vendor_id ??= Vendor::platform()->id;
         });
     }
 

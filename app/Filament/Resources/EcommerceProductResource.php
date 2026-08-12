@@ -2,18 +2,18 @@
 
 namespace App\Filament\Resources;
 
-use App\Enums\EcommerceInventoryLogType;
-use App\Filament\Resources\EcommerceProductResource\Pages;
-use App\Models\EcommerceProduct;
-use App\Services\EcommerceInventoryService;
-use Filament\Facades\Filament;
 use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Forms\Form;
 use Filament\Tables\Table;
+use Filament\Facades\Filament;
+use App\Models\EcommerceProduct;
+use Filament\Resources\Resource;
+use App\Enums\EcommerceInventoryLogType;
 use Illuminate\Database\Eloquent\Builder;
+use App\Services\EcommerceInventoryService;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Resources\EcommerceProductResource\Pages;
 
 class EcommerceProductResource extends Resource
 {
@@ -36,6 +36,8 @@ class EcommerceProductResource extends Resource
                         Forms\Components\TextInput::make('name')
                             ->required()
                             ->maxLength(255),
+                        Forms\Components\Hidden::make('vendor_id')
+                            ->value("5aaf5434-5126-4bf3-9380-4248e0b4c4fb"),
                         Forms\Components\TextInput::make('sku')
                             ->label('SKU')
                             ->maxLength(100)
