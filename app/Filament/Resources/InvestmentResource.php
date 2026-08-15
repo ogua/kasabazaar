@@ -395,7 +395,8 @@ class InvestmentResource extends Resource
             ->label('Post Interest')
             ->icon('heroicon-o-calculator')
             ->color('info')
-            ->visible(fn (Investment $record) => $record->status === InvestmentStatus::active)
+            ->visible(fn (Investment $record) => $record->status === InvestmentStatus::active
+                && $record->capital_type === InvestmentCapitalType::investment)
             ->form(function (Investment $record) {
                 $from = $record->last_interest_posted_through
                     ? Carbon::parse($record->last_interest_posted_through)->addDay()
