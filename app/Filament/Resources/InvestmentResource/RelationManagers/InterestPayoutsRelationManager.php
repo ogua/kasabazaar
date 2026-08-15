@@ -65,6 +65,8 @@ class InterestPayoutsRelationManager extends RelationManager
             ->actions([
                 Tables\Actions\ViewAction::make()
                     ->url(fn ($record) => \App\Filament\Resources\InvestmentInterestPayoutResource::getUrl('view', ['record' => $record])),
+
+                $this->revertToDueAction(),
             ])
             ->bulkActions([]);
     }
@@ -120,6 +122,12 @@ class InterestPayoutsRelationManager extends RelationManager
                         ->required()
                         ->helperText('Only elapsed periods without an existing payout record are listed — amount is computed from the same schedule shown in the loan agreement.'),
 
+                    Forms\Components\Toggle::make('mark_as_paid')
+                        ->label('Cash already paid to the lender')
+                        ->helperText('Off = interest has accrued/earned for this period but the cash payout itself hasn\'t happened yet (e.g. this loan only disburses at contract maturity) — the period is recorded as Due, payable later via the normal Record Payment action.')
+                        ->default(false)
+                        ->live(),
+
                     Forms\Components\Select::make('payout_gateway')
                         ->label('Payout Method')
                         ->options([
@@ -129,22 +137,25 @@ class InterestPayoutsRelationManager extends RelationManager
                         ])
                         ->default('manual')
                         ->live()
-                        ->required(),
+                        ->visible(fn (Get $get) => $get('mark_as_paid'))
+                        ->required(fn (Get $get) => $get('mark_as_paid')),
 
                     Forms\Components\Select::make('payment_method')
                         ->options(PaymentMethod::class)
-                        ->visible(fn (Get $get) => $get('payout_gateway') === 'manual')
-                        ->required(fn (Get $get) => $get('payout_gateway') === 'manual'),
+                        ->visible(fn (Get $get) => $get('mark_as_paid') && $get('payout_gateway') === 'manual')
+                        ->required(fn (Get $get) => $get('mark_as_paid') && $get('payout_gateway') === 'manual'),
 
                     Forms\Components\TextInput::make('payment_reference')
                         ->label('Payment Reference')
-                        ->maxLength(255),
+                        ->maxLength(255)
+                        ->visible(fn (Get $get) => $get('mark_as_paid')),
 
                     Forms\Components\FileUpload::make('receipt_path')
                         ->label('Transfer Confirmation')
                         ->directory('investment-interest-payout-receipts')
                         ->acceptedFileTypes(['application/pdf', 'image/*'])
-                        ->columnSpanFull(),
+                        ->columnSpanFull()
+                        ->visible(fn (Get $get) => $get('mark_as_paid')),
 
                     Forms\Components\Textarea::make('notes')
                         ->columnSpanFull()
@@ -164,10 +175,12 @@ class InterestPayoutsRelationManager extends RelationManager
                         $payout->update(['notes' => $data['notes']]);
                     }
 
-                    $payoutService->recordPayment($payout, null, auth()->user(), $data);
+                    if ($data['mark_as_paid'] ?? false) {
+                        $payoutService->recordPayment($payout, null, auth()->user(), $data);
+                    }
 
                     Notification::make()
-                        ->title('Historical payout recorded and marked paid')
+                        ->title(($data['mark_as_paid'] ?? false) ? 'Historical payout recorded and marked paid' : 'Interest recorded as due (not yet paid)')
                         ->success()
                         ->send();
                 } catch (\Throwable $e) {
@@ -176,6 +189,37 @@ class InterestPayoutsRelationManager extends RelationManager
                         ->body($e->getMessage())
                         ->danger()
                         ->send();
+                }
+            });
+    }
+
+    /**
+     * Corrects a payout mistakenly marked paid/processing when no cash actually
+     * moved — puts it back to 'due' (still earned and owed, just not yet disbursed)
+     * rather than 'reversed' (which implies real money left the company and had to be
+     * undone). See InvestmentInterestPayoutService::revertToDue().
+     */
+    protected function revertToDueAction(): Tables\Actions\Action
+    {
+        return Tables\Actions\Action::make('revertToDue')
+            ->label('Revert to Due')
+            ->icon('heroicon-o-backspace')
+            ->color('warning')
+            ->visible(fn ($record) => in_array($record->status->value, ['processing', 'paid']))
+            ->form([
+                Forms\Components\Textarea::make('reason')
+                    ->label('Reason')
+                    ->required()
+                    ->placeholder('e.g. Marked paid by mistake — this loan only disburses interest at contract maturity.'),
+            ])
+            ->requiresConfirmation()
+            ->modalDescription('Use this when no cash actually left the company — cancels the phantom payment entry and puts the payout back to "Due" (earned, still owed) rather than "Reversed". If cash was genuinely sent to the investor, use Reverse on the Interest Payouts page instead.')
+            ->action(function ($record, array $data) {
+                try {
+                    app(InvestmentInterestPayoutService::class)->revertToDue($record, auth()->user(), $data['reason']);
+                    Notification::make()->title('Payout reverted to due')->success()->send();
+                } catch (\Throwable $e) {
+                    Notification::make()->title('Failed to revert')->body($e->getMessage())->danger()->send();
                 }
             });
     }

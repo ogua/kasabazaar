@@ -250,6 +250,28 @@ class InvestmentInterestPayoutResource extends Resource
                         }
                     }),
 
+                Action::make('revertToDue')
+                    ->label('Revert to Due (Not Actually Paid)')
+                    ->icon('heroicon-o-backspace')
+                    ->color('warning')
+                    ->visible(fn (InvestmentInterestPayout $record) => in_array($record->status->value, ['processing', 'paid']))
+                    ->form([
+                        Forms\Components\Textarea::make('reason')
+                            ->label('Reason')
+                            ->required()
+                            ->placeholder('e.g. Marked paid by mistake — this loan only disburses interest at contract maturity.'),
+                    ])
+                    ->requiresConfirmation()
+                    ->modalDescription('Use this when no cash actually left the company — cancels the phantom payment entry and puts the payout back to "Due" (earned, still owed) rather than "Reversed". If cash was genuinely sent to the investor, use Reverse instead.')
+                    ->action(function (InvestmentInterestPayout $record, array $data) {
+                        try {
+                            app(InvestmentInterestPayoutService::class)->revertToDue($record, auth()->user(), $data['reason']);
+                            Notification::make()->title('Payout reverted to due')->success()->send();
+                        } catch (\Throwable $e) {
+                            Notification::make()->title('Failed to revert')->body($e->getMessage())->danger()->send();
+                        }
+                    }),
+
                 Tables\Actions\DeleteAction::make()
                     ->label('Discard')
                     ->visible(fn (InvestmentInterestPayout $record) => $record->status->value === 'due'),

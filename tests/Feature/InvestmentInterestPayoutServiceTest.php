@@ -102,6 +102,43 @@ class InvestmentInterestPayoutServiceTest extends TestCase
         $this->assertNotNull($reversal);
     }
 
+    /**
+     * Regression: some loans only disburse interest at contract maturity, with
+     * interest simply accruing (recorded as "due") each period until then. If a
+     * period gets mistakenly marked paid, revertToDue() must cancel the phantom cash
+     * movement and land on 'due' — not 'reversed' — so the amount still shows as
+     * earned/owed rather than looking like a cancelled/undone payment.
+     */
+    public function test_revert_to_due_cancels_a_mistaken_paid_mark_without_touching_balance(): void
+    {
+        $investor = Investor::create(['name' => 'Revert To Due Investor', 'status' => 'active']);
+        $staff = User::first() ?? User::factory()->create();
+        $loan = $this->makeLoan($investor);
+        InvestmentRateOverride::create(['investment_id' => $loan->id, 'year' => 2026, 'annual_rate' => 9]);
+
+        $service = app(InvestmentInterestPayoutService::class);
+        $payout = $service->generateDue(
+            $loan,
+            \Carbon\Carbon::parse('2026-02-15'),
+            \Carbon\Carbon::parse('2026-05-15'),
+            \Carbon\Carbon::parse('2026-05-15')
+        );
+        $service->recordPayment($payout, null, $staff, ['payout_gateway' => 'manual', 'payment_reference' => 'MISTAKE']);
+
+        $reverted = $service->revertToDue($payout->fresh(), $staff, 'Not actually paid — payout deferred to maturity.');
+
+        $this->assertSame('due', $reverted->status->value);
+        $this->assertEquals(900.0, round((float) $reverted->amount, 2));
+        $this->assertEquals(0.0, (float) $reverted->amount_paid);
+        $this->assertNull($reverted->payout_gateway);
+        $this->assertEquals(40000.00, (float) $loan->fresh()->current_balance);
+
+        $netMovement = $loan->transactions()
+            ->where('type', InvestmentTransactionType::interest_payout->value)
+            ->sum('debit');
+        $this->assertEquals(0.0, (float) $netMovement, 'The phantom payment and its correction must net to zero.');
+    }
+
     public function test_reverse_payout_is_rejected_for_a_due_row_not_yet_paid(): void
     {
         $investor = Investor::create(['name' => 'Due Loan Investor', 'status' => 'active']);

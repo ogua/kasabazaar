@@ -240,4 +240,65 @@ class InvestmentInterestPayoutService
             InvestorNotifier::notify($payout->investor_id, new InvestmentInterestPayoutStatusUpdated($payout->fresh()));
         });
     }
+
+    /**
+     * Correct a payout that was mistakenly marked paid/processing when no cash
+     * actually moved — e.g. this loan only disburses interest at contract maturity,
+     * with interest simply accruing (recorded as "due") each period until then.
+     * Unlike reversePayout(), which assumes real money left the company and lands on
+     * a permanent 'reversed' status, this cancels the phantom cash-movement entry and
+     * puts the payout back to 'due' — still earned and owed, just not yet paid out —
+     * so it behaves like any other due payout going forward (payable via
+     * recordPayment() once the actual disbursement happens).
+     */
+    public function revertToDue(InvestmentInterestPayout $payout, User $staff, string $reason): InvestmentInterestPayout
+    {
+        if (! in_array($payout->status, [InvestmentInterestPayoutStatus::processing, InvestmentInterestPayoutStatus::paid], true)) {
+            throw new \InvalidArgumentException('Only a processing or paid payout can be reverted to due.');
+        }
+
+        return DB::transaction(function () use ($payout, $staff, $reason) {
+            $investment = $payout->investment;
+            $amountPaid = (float) $payout->amount_paid;
+
+            if ($amountPaid != 0.0) {
+                InvestmentTransaction::create([
+                    'investment_id' => $investment->id,
+                    'investor_id' => $investment->investor_id,
+                    'date' => now(),
+                    'type' => InvestmentTransactionType::interest_payout->value,
+                    'period_start' => $payout->period_start,
+                    'period_end' => $payout->period_end,
+                    'rate_applied' => $payout->rate_applied,
+                    'op_balance' => $investment->principal_amount,
+                    'debit' => -$amountPaid,
+                    'credit' => -$amountPaid,
+                    'posted' => true,
+                    'posted_by' => $staff->id,
+                    'posted_at' => now(),
+                    'reference_id' => $payout->id,
+                    'description' => "Correction: no cash actually paid for period {$payout->period_start->format('M j, Y')} – {$payout->period_end->format('M j, Y')} — {$reason}",
+                    'edited_by' => $staff->id,
+                    'edited_at' => now(),
+                ]);
+            }
+
+            $payout->update([
+                'status' => InvestmentInterestPayoutStatus::due->value,
+                'amount_paid' => 0,
+                'paid_at' => null,
+                'payout_gateway' => null,
+                'payment_method' => null,
+                'payment_reference' => null,
+                'receipt_path' => null,
+                'notes' => trim(($payout->notes ?? '')."\nReverted to due by {$staff->name} on ".now()->toDateTimeString().": {$reason}"),
+                'reviewed_by' => $staff->id,
+                'reviewed_at' => now(),
+            ]);
+
+            InvestorNotifier::notify($payout->investor_id, new InvestmentInterestPayoutStatusUpdated($payout->fresh()));
+
+            return $payout->fresh();
+        });
+    }
 }
