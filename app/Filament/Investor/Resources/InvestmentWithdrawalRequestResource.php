@@ -2,16 +2,16 @@
 
 namespace App\Filament\Investor\Resources;
 
-use Filament\Forms;
-use Filament\Tables;
-use Filament\Forms\Get;
-use Filament\Forms\Form;
-use App\Models\Investment;
-use Filament\Tables\Table;
-use Filament\Resources\Resource;
-use Illuminate\Database\Eloquent\Builder;
-use App\Models\InvestmentWithdrawalRequest;
 use App\Filament\Investor\Resources\InvestmentWithdrawalRequestResource\Pages;
+use App\Models\Investment;
+use App\Models\InvestmentWithdrawalRequest;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class InvestmentWithdrawalRequestResource extends Resource
 {
@@ -59,9 +59,10 @@ class InvestmentWithdrawalRequestResource extends Resource
                     ->label('Investment')
                     ->options(fn () => Investment::where('investor_id', auth()->user()->investor_id)
                         ->where('status', 'active')
+                        ->where('capital_type', \App\Enums\InvestmentCapitalType::investment->value)
                         ->where('maturity_date', '<=', now())
                         ->pluck('reference', 'id'))
-                    ->helperText('Only investments whose contract term has elapsed are eligible for a withdrawal request.')
+                    ->helperText('Only investment tranches whose contract term has elapsed are eligible for a withdrawal request. Loans are not eligible for early withdrawal — principal is due in full at maturity per your Loan Agreement.')
                     ->required()
                     ->disabled(fn (?InvestmentWithdrawalRequest $record) => $record !== null),
 

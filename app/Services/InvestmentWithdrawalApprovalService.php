@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\InvestmentCapitalType;
 use App\Enums\InvestmentStatus;
 use App\Enums\InvestmentTransactionType;
 use App\Enums\InvestmentWithdrawalStatus;
@@ -18,6 +19,12 @@ class InvestmentWithdrawalApprovalService
 {
     public function submit(Investment $investment, array $data): InvestmentWithdrawalRequest
     {
+        if ($investment->capital_type === InvestmentCapitalType::loan) {
+            throw new \InvalidArgumentException(
+                'Loans are not eligible for early withdrawal. Principal is due in full at maturity per your Loan Agreement; contact the Company regarding prepayment.'
+            );
+        }
+
         if (! $investment->isContractDue()) {
             $maturityDate = $investment->maturity_date?->format('F j, Y');
 

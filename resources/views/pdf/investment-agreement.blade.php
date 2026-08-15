@@ -1,15 +1,19 @@
+@php
+    $isLoan = $investment->capital_type === \App\Enums\InvestmentCapitalType::loan;
+    $partyLabel = $isLoan ? 'Lender' : 'Investor';
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <title>Investment Agreement - {{ $investment->reference }}</title>
+    <title>{{ $isLoan ? 'Loan Agreement' : 'Investment Agreement' }} - {{ $investment->reference }}</title>
 </head>
 
 <body>
     <div class="container">
         @include('pdf.partials.investment-pdf-header', [
-            'docTitle' => 'Investment Agreement',
+            'docTitle' => $isLoan ? 'Loan Agreement' : 'Investment Agreement',
             'docSubtitle' => $investment->reference,
         ])
 
@@ -24,13 +28,13 @@
         @endif
 
         <div class="section">
-            <p>This Investment Agreement ("Agreement") is entered into between KasaBazaar Group Of Companies
-                ("Company") and {{ $investor->name }} ("Investor").</p>
+            <p>This {{ $isLoan ? 'Loan' : 'Investment' }} Agreement ("Agreement") is entered into between KasaBazaar
+                Group Of Companies ("Company") and {{ $investor->name }} ("{{ $partyLabel }}").</p>
         </div>
 
         <div class="section">
-            <h2>Nature of {{ $investment->capital_type === \App\Enums\InvestmentCapitalType::loan ? 'Loan' : 'Investment' }}</h2>
-            @if ($investment->capital_type === \App\Enums\InvestmentCapitalType::loan)
+            <h2>Nature of {{ $isLoan ? 'Loan' : 'Investment' }}</h2>
+            @if ($isLoan)
                 <p>
                     The parties expressly agree that the funds described in this Agreement constitute a loan from the
                     Lender to the Company, repayable on the terms stated herein. The Lender shall be entitled only to
@@ -71,45 +75,12 @@
             </table>
         </div>
 
-        @if ($investment->capital_type === \App\Enums\InvestmentCapitalType::loan)
-            <div class="section">
-                <h2>Payment Terms</h2>
-                <p>
-                    Interest on the principal shall accrue at {{ number_format($loanRate, 2) }}% per annum, calculated
-                    on the outstanding principal balance, which shall remain unchanged throughout the term of this
-                    loan, and shall be paid in cash to the Lender {{ $investment->payout_frequency ? strtolower($investment->payout_frequency->getLabel()) : 'as scheduled below' }},
-                    on the following schedule:
-                </p>
-                <table>
-                    <tr>
-                        <th>Period</th>
-                        <th>Due Date</th>
-                        <th>Interest Amount (USD)</th>
-                    </tr>
-                    @foreach ($payoutSchedule as $row)
-                        <tr>
-                            <td>{{ $row['period_start']->format('M j, Y') }} – {{ $row['period_end']->format('M j, Y') }}</td>
-                            <td>{{ $row['due_date']->format('M j, Y') }}</td>
-                            <td>{{ number_format($row['amount'], 2) }}</td>
-                        </tr>
-                    @endforeach
-                </table>
-                <p>
-                    The entire outstanding principal balance of ${{ number_format($investment->principal_amount, 2) }}
-                    shall be due and payable in full on the Maturity Date,
-                    {{ $investment->maturity_date?->format('F j, Y') ?? '—' }}.
-                </p>
-            </div>
-
-            <div class="section">
-                <h2>Prepayment</h2>
-                <p>{{ config('investment.legal.prepayment_clause') }}</p>
-            </div>
-
-            <div class="section">
-                <h2>Default</h2>
-                <p>{{ str_replace(':days', (string) config('investment.legal.default_notice_days'), config('investment.legal.default_clause')) }}</p>
-            </div>
+        @if ($isLoan)
+            @include('pdf.partials.loan-terms', [
+                'investment' => $investment,
+                'payoutSchedule' => $payoutSchedule,
+                'loanRate' => $loanRate,
+            ])
         @else
             <div class="section">
                 <h2>Return on Investment</h2>
@@ -185,33 +156,33 @@
                     </div>
                 </div>
             </div>
+
+            <div class="section">
+                <h2>Withdrawal of Investment</h2>
+                <p>
+                    The Investor may request a partial or full withdrawal of the investment by providing not less than
+                    {{ config('investment.notice_days') }} days' prior written notice to the Company, specifying the
+                    amount requested. Partial withdrawals shall be permitted in amounts of not less than
+                    ${{ number_format(config('investment.partial_minimum'), 2) }} per request, provided that the
+                    remaining investment balance after such withdrawal is not less than
+                    ${{ number_format(config('investment.minimum_remaining_balance'), 2) }}, unless otherwise approved by
+                    the Company in writing. Upon expiration of the notice period, the Company shall review the withdrawal
+                    request and, subject to available liquidity and operational requirements, process payment within
+                    {{ config('investment.payment_window_days') }} days. If the Company determines in good faith that
+                    immediate payment would materially impair its liquidity or ability to conduct normal business
+                    operations, the Company may defer payment for up to an additional
+                    {{ config('investment.max_deferral_days') }} days, upon written notice to the Investor explaining the
+                    reason for the deferral. Any unpaid balance of an approved withdrawal request shall remain credited to
+                    the Investor's account and continue to accrue returns in accordance with this Agreement until paid.
+                </p>
+            </div>
         @endif
 
         <div class="section">
             <h2>Reporting</h2>
             <p>
-                The Company shall provide the Investor with an annual investment statement showing the principal
-                balance, accrued returns, total investment value, and significant business updates.
-            </p>
-        </div>
-
-        <div class="section">
-            <h2>Withdrawal of Investment</h2>
-            <p>
-                The Investor may request a partial or full withdrawal of the investment by providing not less than
-                {{ config('investment.notice_days') }} days' prior written notice to the Company, specifying the
-                amount requested. Partial withdrawals shall be permitted in amounts of not less than
-                ${{ number_format(config('investment.partial_minimum'), 2) }} per request, provided that the
-                remaining investment balance after such withdrawal is not less than
-                ${{ number_format(config('investment.minimum_remaining_balance'), 2) }}, unless otherwise approved by
-                the Company in writing. Upon expiration of the notice period, the Company shall review the withdrawal
-                request and, subject to available liquidity and operational requirements, process payment within
-                {{ config('investment.payment_window_days') }} days. If the Company determines in good faith that
-                immediate payment would materially impair its liquidity or ability to conduct normal business
-                operations, the Company may defer payment for up to an additional
-                {{ config('investment.max_deferral_days') }} days, upon written notice to the Investor explaining the
-                reason for the deferral. Any unpaid balance of an approved withdrawal request shall remain credited to
-                the Investor's account and continue to accrue returns in accordance with this Agreement until paid.
+                The Company shall provide the {{ $partyLabel }} with an annual statement showing the principal
+                balance, {{ $isLoan ? 'interest paid' : 'accrued returns, total investment value,' }} and significant business updates.
             </p>
         </div>
 
@@ -221,7 +192,7 @@
             <div class="signature-column">
                 <div class="signature-line">
                     {{ $investor->name }}<br>
-                    Investor<br>
+                    {{ $partyLabel }}<br>
                     Date: {{date('F j, Y')}}
                 </div>
             </div>

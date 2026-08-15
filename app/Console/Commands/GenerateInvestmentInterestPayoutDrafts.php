@@ -36,15 +36,28 @@ class GenerateInvestmentInterestPayoutDrafts extends Command
         foreach ($investments as $investment) {
             try {
                 $months = $investment->payout_frequency->months();
-                $periodEnd = Carbon::parse($investment->next_payout_due_date);
+                $maturityDate = Carbon::parse($investment->maturity_date);
+                $cursor = Carbon::parse($investment->next_payout_due_date);
                 $periodStart = $investment->interestPayouts()->doesntExist()
                     ? Carbon::parse($investment->start_date)
-                    : $periodEnd->copy()->subMonths($months)->addDay();
+                    : $cursor->copy()->subMonths($months)->addDay();
+
+                // Clamp to the true maturity date — the cursor advances in fixed
+                // increments and can overshoot a maturity date that doesn't land
+                // exactly on a period boundary (e.g. a manually overridden maturity
+                // date matching an already-signed physical agreement). Mirrors the
+                // clamping in InvestmentInterestPayoutService::projectSchedule() so
+                // the agreement's shown schedule matches what actually generates.
+                $isFinalPeriod = $cursor->gte($maturityDate);
+                $periodEnd = $isFinalPeriod ? $maturityDate->copy() : $cursor->copy();
 
                 $payout = $service->generateDue($investment, $periodStart, $periodEnd, $periodEnd);
 
                 $investment->update([
-                    'next_payout_due_date' => $periodEnd->copy()->addMonths($months),
+                    // Once the loan has reached its final scheduled period, stop
+                    // advancing the cursor — principal becomes due at maturity instead,
+                    // and nothing further should be generated past that point.
+                    'next_payout_due_date' => $isFinalPeriod ? null : $cursor->copy()->addMonths($months),
                 ]);
 
                 $rows[] = [$investment->reference, $payout->amount, 'due row created'];

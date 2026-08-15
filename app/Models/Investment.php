@@ -64,7 +64,14 @@ class Investment extends Model
         });
 
         static::saving(function (Investment $investment) {
-            if ($investment->start_date && (
+            // On create, every attribute is "dirty" (including start_date), so an
+            // explicitly-provided maturity_date — e.g. matching an already-signed
+            // physical agreement — must be distinguished from "not provided yet" by
+            // checking $investment->exists rather than isDirty() alone, or it would
+            // be silently overwritten by the auto-calculated value below.
+            $maturityExplicitlyProvided = ! $investment->exists && $investment->maturity_date !== null;
+
+            if ($investment->start_date && ! $maturityExplicitlyProvided && (
                 $investment->isDirty(['start_date', 'contract_term_months']) || ! $investment->maturity_date
             )) {
                 $investment->maturity_date = Carbon::parse($investment->start_date)

@@ -46,11 +46,13 @@ class InvestmentAgreementService
     {
         $asOfDate ??= $investor->defaultAsOfDate();
         $interestService = app(InvestmentInterestService::class);
+        $payoutService = app(InvestmentInterestPayoutService::class);
 
-        // Loan tranches are legally distinct instruments (fixed schedule, no
-        // compounding) — each already has its own complete agreement via
-        // generatePdf(). Mixing them into this compounding-focused combined
-        // document would misstate both, so they're excluded here and noted below.
+        // Investment tranches (compounding) and loan tranches (fixed schedule) are
+        // legally distinct instruments, so each gets its own section below using the
+        // wording proven correct in the single-tranche agreement — but both belong in
+        // one combined document so an investor holding either or both types always
+        // receives a single complete agreement rather than an empty/partial one.
         $investments = $investor->investments()
             ->where('capital_type', InvestmentCapitalType::investment->value)
             ->orderBy('start_date')
@@ -68,19 +70,30 @@ class InvestmentAgreementService
             fn (Investment $investment) => [$investment->id => $interestService->segmentedValuationAsOf($investment, $asOfDate, includeUnposted: false)]
         );
 
+        $loanPayoutSchedules = $loanInvestments->mapWithKeys(
+            fn (Investment $investment) => [$investment->id => $payoutService->projectSchedule($investment)]
+        );
+        $loanRates = $loanPayoutSchedules->map(fn (array $schedule) => $schedule[0]['rate'] ?? null);
+
         // The date actually reflected by the figures above — the latest date any
-        // tranche has posted interest through — rather than the (possibly later)
-        // requested/default $asOfDate.
-        $reflectedAsOfDate = $segmentedValuations->max(fn (array $valuation) => $valuation['as_of']) ?? $asOfDate;
+        // investment tranche has posted interest through — rather than the (possibly
+        // later) requested/default $asOfDate. Falls back to $asOfDate for a loan-only
+        // investor, who has no compounding valuation to reflect.
+        $reflectedAsOfDate = $segmentedValuations->isNotEmpty()
+            ? ($segmentedValuations->max(fn (array $valuation) => $valuation['as_of']) ?? $asOfDate)
+            : $asOfDate;
 
         return Pdf::loadView('pdf.investment-agreement-combined', [
             'investor' => $investor,
             'investments' => $investments,
             'loanInvestments' => $loanInvestments,
+            'loanPayoutSchedules' => $loanPayoutSchedules,
+            'loanRates' => $loanRates,
             'valuations' => $segmentedValuations,
             'totalPrincipal' => $investments->sum('principal_amount'),
             'totalValue' => $segmentedValuations->sum('compounded_balance'),
             'totalInterest' => $segmentedValuations->sum('interest_earned_total'),
+            'totalLoanPrincipal' => $loanInvestments->sum('principal_amount'),
             'rateClauses' => self::buildCombinedRateClauses($investments, $asOfDate),
             'asOfDate' => $reflectedAsOfDate,
         ])
@@ -122,14 +135,15 @@ class InvestmentAgreementService
         }
 
         $pdf = self::generatePdf($investment, $asOfDate);
+        $docTitle = $investment->capital_type === InvestmentCapitalType::loan ? 'Loan Agreement' : 'Investment Agreement';
 
         try {
             Mail::send('emails.investment-agreement', [
                 'investment' => $investment,
                 'investor' => $investment->investor,
-            ], function ($message) use ($email, $investment, $pdf) {
+            ], function ($message) use ($email, $investment, $pdf, $docTitle) {
                 $message->to($email)
-                    ->subject('Investment Agreement — '.$investment->reference)
+                    ->subject($docTitle.' — '.$investment->reference)
                     ->attachData($pdf->output(), "investment-agreement-{$investment->reference}.pdf", [
                         'mime' => 'application/pdf',
                     ]);
@@ -150,15 +164,20 @@ class InvestmentAgreementService
         }
 
         $pdf = self::generateCombinedPdf($investor, $asOfDate);
+        $hasInvestments = $investor->investments->contains(fn (Investment $i) => $i->capital_type === InvestmentCapitalType::investment);
+        $hasLoans = $investor->investments->contains(fn (Investment $i) => $i->capital_type === InvestmentCapitalType::loan);
+        $docTitle = $hasInvestments && $hasLoans
+            ? 'Investment & Loan Agreement'
+            : ($hasLoans ? 'Loan Agreement' : 'Investment Agreement');
 
         try {
             Mail::send('emails.investment-agreement-combined', [
                 'investor' => $investor,
                 'investments' => $investor->investments,
                 'totalPrincipal' => $investor->investments->sum('principal_amount'),
-            ], function ($message) use ($investor, $pdf) {
+            ], function ($message) use ($investor, $pdf, $docTitle) {
                 $message->to($investor->email)
-                    ->subject('Investment Agreement — '.$investor->name)
+                    ->subject($docTitle.' — '.$investor->name)
                     ->attachData($pdf->output(), "investment-agreement-{$investor->id}.pdf", [
                         'mime' => 'application/pdf',
                     ]);

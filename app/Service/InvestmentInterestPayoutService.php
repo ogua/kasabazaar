@@ -78,11 +78,20 @@ class InvestmentInterestPayoutService
         }
 
         $months = $investment->payout_frequency->months();
+        $maturityDate = Carbon::parse($investment->maturity_date);
         $schedule = [];
         $periodStart = Carbon::parse($investment->start_date);
-        $periodEnd = $periodStart->copy()->addMonths($months);
 
-        while ($periodEnd->lte($investment->maturity_date)) {
+        while ($periodStart->lte($maturityDate)) {
+            $naturalPeriodEnd = $periodStart->copy()->addMonths($months);
+
+            // Clamp the final period to the true maturity date rather than overshooting
+            // it — this keeps the schedule aligned whether maturity_date lands exactly
+            // on a period boundary (the common case) or was manually overridden to match
+            // an already-signed physical agreement (e.g. "day before anniversary").
+            $isFinalPeriod = $naturalPeriodEnd->gte($maturityDate);
+            $periodEnd = $isFinalPeriod ? $maturityDate->copy() : $naturalPeriodEnd;
+
             $calc = $this->periodInterest($investment, $periodStart, $periodEnd);
 
             $schedule[] = [
@@ -93,12 +102,15 @@ class InvestmentInterestPayoutService
                 'amount' => $calc['interest'],
             ];
 
+            if ($isFinalPeriod) {
+                break;
+            }
+
             // Advance from periodEnd's own prior value (not periodStart) so due dates
             // stay anchored the same way GenerateInvestmentInterestPayoutDrafts advances
             // next_payout_due_date — the schedule shown here must match what actually
             // gets generated.
             $periodStart = $periodEnd->copy()->addDay();
-            $periodEnd = $periodEnd->copy()->addMonths($months);
         }
 
         return $schedule;

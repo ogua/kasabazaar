@@ -1,8 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+@php
+    $isLoan = $investment->capital_type === \App\Enums\InvestmentCapitalType::loan;
+@endphp
 <head>
     <meta charset="UTF-8">
-    <title>Investment Agreement</title>
+    <title>{{ $isLoan ? 'Loan Agreement' : 'Investment Agreement' }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -43,11 +46,11 @@
     <div class="content">
         <p>Dear {{ $investor->name }},</p>
 
-        <p>Please find attached your investment agreement for reference {{ $investment->reference }}, covering an
-            investment of ${{ number_format($investment->principal_amount, 2) }} dated
+        <p>Please find attached your {{ $isLoan ? 'loan' : 'investment' }} agreement for reference {{ $investment->reference }}, covering a
+            {{ $isLoan ? 'loan' : 'investment' }} of ${{ number_format($investment->principal_amount, 2) }} dated
             {{ \Carbon\Carbon::parse($investment->start_date)->format('F j, Y') }}.</p>
 
-        <p>If you have any questions about this agreement or your investment, please contact us.</p>
+        <p>If you have any questions about this agreement or your {{ $isLoan ? 'loan' : 'investment' }}, please contact us.</p>
     </div>
 
     <div class="footer">

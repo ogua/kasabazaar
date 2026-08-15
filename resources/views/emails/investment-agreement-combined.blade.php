@@ -1,8 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+@php
+    $hasInvestments = $investments->where('capital_type', \App\Enums\InvestmentCapitalType::investment)->isNotEmpty();
+    $hasLoans = $investments->where('capital_type', \App\Enums\InvestmentCapitalType::loan)->isNotEmpty();
+    $docTitle = $hasInvestments && $hasLoans
+        ? 'Investment & Loan Agreement'
+        : ($hasLoans ? 'Loan Agreement' : 'Investment Agreement');
+@endphp
 <head>
     <meta charset="UTF-8">
-    <title>Investment Agreement</title>
+    <title>{{ $docTitle }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -43,11 +50,11 @@
     <div class="content">
         <p>Dear {{ $investor->name }},</p>
 
-        <p>Please find attached your investment agreement, covering
-            {{ $investments->count() === 1 ? 'your investment tranche' : 'all ' . $investments->count() . ' of your investment tranches' }}
+        <p>Please find attached your {{ strtolower($docTitle) }}, covering
+            {{ $investments->count() === 1 ? 'your tranche' : 'all ' . $investments->count() . ' of your tranches' }}
             totaling ${{ number_format($totalPrincipal, 2) }} in principal.</p>
 
-        <p>If you have any questions about this agreement or your investments, please contact us.</p>
+        <p>If you have any questions about this agreement, please contact us.</p>
     </div>
 
     <div class="footer">

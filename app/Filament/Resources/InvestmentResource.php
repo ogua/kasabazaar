@@ -113,6 +113,13 @@ class InvestmentResource extends Resource
                         ->suffix('months')
                         ->helperText('E.g. 6, 12, 24, 36, 60, 120 for 6mo / 1yr / 2yr / 3yr / 5yr / 10yr terms. The investor may not request a withdrawal until this term has elapsed. Changing this recalculates the contract due date.'),
 
+                    Forms\Components\DatePicker::make('maturity_date')
+                        ->label('Maturity / Contract Due Date')
+                        ->default(fn (Get $get) => $get('start_date') && $get('contract_term_months')
+                            ? Carbon::parse($get('start_date'))->addMonths((int) $get('contract_term_months'))
+                            : null)
+                        ->helperText('Auto-calculated from the start date and term above. Override only to match the exact end date on an already-signed physical agreement — the interest payout schedule and agreement PDF will follow this date.'),
+
                     Forms\Components\TextInput::make('initial_annual_rate')
                         ->label(fn (?Investment $record) => $record === null
                             ? 'Annual Rate (optional)'

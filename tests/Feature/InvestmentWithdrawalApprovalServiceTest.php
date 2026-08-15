@@ -139,4 +139,34 @@ class InvestmentWithdrawalApprovalServiceTest extends TestCase
 
         $this->assertSame('submitted', $request->status->value);
     }
+
+    /**
+     * Regression: a loan's signed terms only allow the Company to prepay — the lender
+     * has no contractual right to demand early return of principal. Even once the
+     * contract term has elapsed (which used to be the only gate), a loan-type
+     * investment must still be rejected for a self-service withdrawal request.
+     */
+    public function test_loan_investment_is_rejected_for_withdrawal(): void
+    {
+        $investor = Investor::create(['name' => 'Loan Withdrawal Investor', 'status' => 'active']);
+        $service = app(InvestmentWithdrawalApprovalService::class);
+
+        $investment = Investment::create([
+            'investor_id' => $investor->id,
+            'capital_type' => 'loan',
+            'principal_amount' => 40000,
+            'current_balance' => 40000,
+            'start_date' => now()->subMonths(13),
+            'contract_term_months' => 12,
+            'payout_frequency' => 'quarterly',
+            'status' => 'active',
+        ]);
+
+        $this->assertTrue($investment->isContractDue());
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('not eligible for early withdrawal');
+
+        $service->submit($investment, ['is_full_withdrawal' => true]);
+    }
 }
