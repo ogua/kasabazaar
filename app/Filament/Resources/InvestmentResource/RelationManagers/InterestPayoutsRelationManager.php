@@ -3,8 +3,13 @@
 namespace App\Filament\Resources\InvestmentResource\RelationManagers;
 
 use App\Enums\InvestmentCapitalType;
+use App\Enums\PaymentMethod;
 use App\Models\Investment;
+use App\Service\InvestmentInterestPayoutService;
+use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -54,7 +59,9 @@ class InterestPayoutsRelationManager extends RelationManager
                     ->badge(),
             ])
             ->defaultSort('due_date', 'desc')
-            ->headerActions([])
+            ->headerActions([
+                $this->recordHistoricalPayoutAction(),
+            ])
             ->actions([
                 Tables\Actions\ViewAction::make()
                     ->url(fn ($record) => \App\Filament\Resources\InvestmentInterestPayoutResource::getUrl('view', ['record' => $record])),
@@ -65,5 +72,111 @@ class InterestPayoutsRelationManager extends RelationManager
     public function isReadOnly(): bool
     {
         return true;
+    }
+
+    /**
+     * Payouts are otherwise only ever created by the daily
+     * app:generate-investment-interest-payout-drafts cron, driven off
+     * next_payout_due_date. This lets staff backfill a period that was actually paid
+     * to the lender before the loan's payout schedule was correctly configured (e.g.
+     * cash paid outside the app, or paid via the wrong action before this pipeline
+     * existed for this record) — restricted to already-elapsed periods that don't yet
+     * have a payout row, computed from the same projectSchedule() the agreement PDF
+     * uses, so the backfilled amount/dates always match what the lender was shown.
+     */
+    protected function recordHistoricalPayoutAction(): Tables\Actions\Action
+    {
+        return Tables\Actions\Action::make('recordHistoricalPayout')
+            ->label('Record Historical Payout')
+            ->icon('heroicon-o-clock')
+            ->color('warning')
+            ->form(function () {
+                $investment = $this->getOwnerRecord();
+                $schedule = app(InvestmentInterestPayoutService::class)->projectSchedule($investment);
+                $existingDueDates = $investment->interestPayouts()
+                    ->pluck('due_date')
+                    ->map(fn ($date) => $date->toDateString())
+                    ->all();
+
+                $options = [];
+                foreach ($schedule as $i => $row) {
+                    if ($row['due_date']->isFuture() || in_array($row['due_date']->toDateString(), $existingDueDates, true)) {
+                        continue;
+                    }
+
+                    $options[$i] = sprintf(
+                        '%s – %s (due %s): $%s',
+                        $row['period_start']->format('M j, Y'),
+                        $row['period_end']->format('M j, Y'),
+                        $row['due_date']->format('M j, Y'),
+                        number_format($row['amount'], 2)
+                    );
+                }
+
+                return [
+                    Forms\Components\Select::make('period_index')
+                        ->label('Period')
+                        ->options($options)
+                        ->required()
+                        ->helperText('Only elapsed periods without an existing payout record are listed — amount is computed from the same schedule shown in the loan agreement.'),
+
+                    Forms\Components\Select::make('payout_gateway')
+                        ->label('Payout Method')
+                        ->options([
+                            'manual' => 'Manual (bank transfer / cheque executed outside the app)',
+                            'paystack' => 'Paystack Transfer',
+                            'stripe' => 'Stripe',
+                        ])
+                        ->default('manual')
+                        ->live()
+                        ->required(),
+
+                    Forms\Components\Select::make('payment_method')
+                        ->options(PaymentMethod::class)
+                        ->visible(fn (Get $get) => $get('payout_gateway') === 'manual')
+                        ->required(fn (Get $get) => $get('payout_gateway') === 'manual'),
+
+                    Forms\Components\TextInput::make('payment_reference')
+                        ->label('Payment Reference')
+                        ->maxLength(255),
+
+                    Forms\Components\FileUpload::make('receipt_path')
+                        ->label('Transfer Confirmation')
+                        ->directory('investment-interest-payout-receipts')
+                        ->acceptedFileTypes(['application/pdf', 'image/*'])
+                        ->columnSpanFull(),
+
+                    Forms\Components\Textarea::make('notes')
+                        ->columnSpanFull()
+                        ->placeholder('Why this is being backfilled, e.g. paid before the payout schedule was correctly configured on this record.'),
+                ];
+            })
+            ->action(function (array $data) {
+                $investment = $this->getOwnerRecord();
+                $payoutService = app(InvestmentInterestPayoutService::class);
+                $schedule = $payoutService->projectSchedule($investment);
+                $row = $schedule[(int) $data['period_index']];
+
+                try {
+                    $payout = $payoutService->generateDue($investment, $row['period_start'], $row['period_end'], $row['due_date']);
+
+                    if (filled($data['notes'] ?? null)) {
+                        $payout->update(['notes' => $data['notes']]);
+                    }
+
+                    $payoutService->recordPayment($payout, null, auth()->user(), $data);
+
+                    Notification::make()
+                        ->title('Historical payout recorded and marked paid')
+                        ->success()
+                        ->send();
+                } catch (\Throwable $e) {
+                    Notification::make()
+                        ->title('Failed to record payout')
+                        ->body($e->getMessage())
+                        ->danger()
+                        ->send();
+                }
+            });
     }
 }
