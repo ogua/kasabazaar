@@ -29,9 +29,12 @@
         </div>
 
         @foreach ($investments as $investment)
-            @php $valuation = $valuations[$investment->id]; @endphp
+            @php
+                $isLoan = $investment->capital_type === \App\Enums\InvestmentCapitalType::loan;
+                $valuation = $valuations[$investment->id] ?? null;
+            @endphp
             <div class="section">
-                <h2>Investment {{ $investment->reference }}</h2>
+                <h2>{{ $isLoan ? 'Loan' : 'Investment' }} {{ $investment->reference }}</h2>
 
                 <table>
                     <tr>
@@ -61,16 +64,65 @@
                     </tr>
                 </table>
 
-                <div class="valuation-box">
-                    <div class="row">
-                        <div class="label">Interest Earned to Date</div>
-                        <div class="value">${{ number_format($valuation['interest_earned_total'], 2) }}</div>
+                @if ($isLoan)
+                    <div class="valuation-box">
+                        <div class="row">
+                            <div class="label">Maturity Date</div>
+                            <div class="value">{{ $investment->maturity_date?->format('F j, Y') ?? '—' }}</div>
+                        </div>
+                        <div class="row">
+                            <div class="label">Total Interest Accrued</div>
+                            <div class="value">${{ number_format($investment->interestPayouts->sum('amount'), 2) }}</div>
+                        </div>
+                        <div class="row">
+                            <div class="label">Total Interest Paid</div>
+                            <div class="value">${{ number_format($investment->interestPayouts->sum('amount_paid'), 2) }}</div>
+                        </div>
+                        <div class="row">
+                            <div class="label">Principal (due in full at maturity)</div>
+                            <div class="value">${{ number_format($investment->principal_amount, 2) }}</div>
+                        </div>
                     </div>
-                    <div class="row">
-                        <div class="label">Current Value</div>
-                        <div class="value">${{ number_format($valuation['compounded_balance'], 2) }}</div>
+                @else
+                    <div class="valuation-box">
+                        <div class="row">
+                            <div class="label">Interest Earned to Date</div>
+                            <div class="value">${{ number_format($valuation['interest_earned_total'], 2) }}</div>
+                        </div>
+                        <div class="row">
+                            <div class="label">Current Value</div>
+                            <div class="value">${{ number_format($valuation['compounded_balance'], 2) }}</div>
+                        </div>
                     </div>
-                </div>
+                @endif
+
+                @if ($isLoan)
+                    <h2>Interest Payout History</h2>
+                    @if ($investment->interestPayouts->isEmpty())
+                        <p>No interest accrued yet.</p>
+                    @else
+                        <table class="transactions-table">
+                            <tr>
+                                <th>Period</th>
+                                <th>Due Date</th>
+                                <th class="text-right">Rate</th>
+                                <th class="text-right">Amount</th>
+                                <th class="text-right">Paid</th>
+                                <th>Status</th>
+                            </tr>
+                            @foreach ($investment->interestPayouts as $payout)
+                                <tr>
+                                    <td>{{ $payout->period_start->format('M j, Y') }} – {{ $payout->period_end->format('M j, Y') }}</td>
+                                    <td>{{ $payout->due_date->format('M j, Y') }}</td>
+                                    <td class="text-right">{{ number_format($payout->rate_applied, 2) }}%</td>
+                                    <td class="text-right">{{ number_format($payout->amount, 2) }}</td>
+                                    <td class="text-right">{{ number_format($payout->amount_paid, 2) }}</td>
+                                    <td>{{ $payout->status->getLabel() }}</td>
+                                </tr>
+                            @endforeach
+                        </table>
+                    @endif
+                @endif
 
                 <h2>Transaction History</h2>
                 @if ($investment->transactions->isEmpty())
@@ -141,6 +193,16 @@
                     <div class="label">Total Investment Value</div>
                     <div class="value">${{ number_format($totalValue, 2) }}</div>
                 </div>
+                @if ($totalLoanInterestAccrued > 0)
+                    <div class="row">
+                        <div class="label">Total Loan Interest Accrued</div>
+                        <div class="value">${{ number_format($totalLoanInterestAccrued, 2) }}</div>
+                    </div>
+                    <div class="row">
+                        <div class="label">Total Loan Interest Paid</div>
+                        <div class="value">${{ number_format($totalLoanInterestPaid, 2) }}</div>
+                    </div>
+                @endif
             </div>
         </div>
 
