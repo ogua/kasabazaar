@@ -38,9 +38,13 @@ class GenerateInvestmentInterestPayoutDrafts extends Command
                 $months = $investment->payout_frequency->months();
                 $maturityDate = Carbon::parse($investment->maturity_date);
                 $cursor = Carbon::parse($investment->next_payout_due_date);
-                $periodStart = $investment->interestPayouts()->doesntExist()
-                    ? Carbon::parse($investment->start_date)
-                    : $cursor->copy()->subMonths($months)->addDay();
+
+                // The cursor is always start_date + N months (seeded that way, and
+                // advanced by exactly one frequency each run), so the period it closes
+                // out started exactly one frequency before it — mirrors the anchoring in
+                // InvestmentInterestPayoutService::projectSchedule() so due dates always
+                // land on the same day-of-month as the start date.
+                $periodStart = $cursor->copy()->subMonths($months);
 
                 // Clamp to the true maturity date — the cursor advances in fixed
                 // increments and can overshoot a maturity date that doesn't land

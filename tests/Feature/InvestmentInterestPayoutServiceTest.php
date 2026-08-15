@@ -136,4 +136,28 @@ class InvestmentInterestPayoutServiceTest extends TestCase
         $generated = $service->generateDue($loan, $schedule[0]['period_start'], $schedule[0]['period_end'], $schedule[0]['due_date']);
         $this->assertEquals($schedule[0]['amount'], (float) $generated->amount, 'The projected schedule must match what generateDue() actually produces.');
     }
+
+    /**
+     * Regression: a $40,000 loan at 9% quarterly must produce exactly the schedule
+     * written into the signed physical agreement — flat $900 every quarter on the
+     * 15th of Feb/May/Aug/Nov, with the final period clamped to the maturity date
+     * (Feb 14, the day before the anniversary) rather than day-counted, uneven
+     * amounts landing a day or two later each quarter.
+     */
+    public function test_project_schedule_matches_a_flat_quarterly_loan_agreement_exactly(): void
+    {
+        $investor = Investor::create(['name' => 'Flat Schedule Investor', 'status' => 'active']);
+        $loan = $this->makeLoan($investor, ['maturity_date' => '2027-02-14']);
+        InvestmentRateOverride::create(['investment_id' => $loan->id, 'year' => 2026, 'annual_rate' => 9]);
+
+        $schedule = app(InvestmentInterestPayoutService::class)->projectSchedule($loan->fresh());
+
+        $this->assertCount(4, $schedule);
+        $this->assertSame(['2026-05-15', '2026-08-15', '2026-11-15', '2027-02-14'], array_map(
+            fn (array $row) => $row['due_date']->toDateString(),
+            $schedule
+        ));
+        $this->assertSame([900.0, 900.0, 900.0, 900.0], array_map(fn (array $row) => $row['amount'], $schedule));
+        $this->assertEqualsWithDelta(3600.0, array_sum(array_column($schedule, 'amount')), 0.001);
+    }
 }

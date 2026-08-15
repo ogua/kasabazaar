@@ -30,13 +30,20 @@ class InvestmentInterestPayoutService
      * the life of the term, unlike compounding investments which may re-price
      * annually via company-wide rate settings.
      *
+     * Interest is a flat share of the annual amount (principal × rate ÷ payments per
+     * year) rather than day-counted — this matches how loan agreements are normally
+     * written (e.g. a 9% quarterly loan pays exactly principal × 9% ÷ 4 every quarter)
+     * even though the final period may span fewer days than a full period when clamped
+     * to the maturity date.
+     *
      * @return array{rate: float, source: string, days: int, interest: float}
      */
     public function periodInterest(Investment $investment, Carbon $periodStart, Carbon $periodEnd): array
     {
         $resolved = $this->rateResolver->resolve($investment, Carbon::parse($investment->start_date)->year);
         $days = $periodStart->diffInDays($periodEnd) + 1;
-        $interest = round((float) $investment->principal_amount * ($resolved['rate'] / 100) * ($days / 365), 2);
+        $paymentsPerYear = 12 / $investment->payout_frequency->months();
+        $interest = round((float) $investment->principal_amount * ($resolved['rate'] / 100) / $paymentsPerYear, 2);
 
         return [
             'rate' => $resolved['rate'],
@@ -79,25 +86,34 @@ class InvestmentInterestPayoutService
 
         $months = $investment->payout_frequency->months();
         $maturityDate = Carbon::parse($investment->maturity_date);
+        $startDate = Carbon::parse($investment->start_date);
         $schedule = [];
-        $periodStart = Carbon::parse($investment->start_date);
+        $period = 1;
 
-        while ($periodStart->lte($maturityDate)) {
-            $naturalPeriodEnd = $periodStart->copy()->addMonths($months);
+        while (true) {
+            // Every period is anchored directly to start_date (start_date + N months),
+            // not chained off the previous period's end — so due dates always land on
+            // the same day-of-month as the start date (e.g. the 15th of every quarter),
+            // matching how a physical loan agreement is normally dated. Consecutive
+            // periods share their boundary date (period 1 ends May 15, period 2 begins
+            // May 15) rather than starting the day after, since interest is now a flat
+            // per-period share rather than day-counted.
+            $periodStart = $startDate->copy()->addMonths(($period - 1) * $months);
+            $naturalDueDate = $startDate->copy()->addMonths($period * $months);
 
             // Clamp the final period to the true maturity date rather than overshooting
             // it — this keeps the schedule aligned whether maturity_date lands exactly
             // on a period boundary (the common case) or was manually overridden to match
             // an already-signed physical agreement (e.g. "day before anniversary").
-            $isFinalPeriod = $naturalPeriodEnd->gte($maturityDate);
-            $periodEnd = $isFinalPeriod ? $maturityDate->copy() : $naturalPeriodEnd;
+            $isFinalPeriod = $naturalDueDate->gte($maturityDate);
+            $dueDate = $isFinalPeriod ? $maturityDate->copy() : $naturalDueDate;
 
-            $calc = $this->periodInterest($investment, $periodStart, $periodEnd);
+            $calc = $this->periodInterest($investment, $periodStart, $dueDate);
 
             $schedule[] = [
-                'period_start' => $periodStart->copy(),
-                'period_end' => $periodEnd->copy(),
-                'due_date' => $periodEnd->copy(),
+                'period_start' => $periodStart,
+                'period_end' => $dueDate->copy(),
+                'due_date' => $dueDate->copy(),
                 'rate' => $calc['rate'],
                 'amount' => $calc['interest'],
             ];
@@ -106,11 +122,7 @@ class InvestmentInterestPayoutService
                 break;
             }
 
-            // Advance from periodEnd's own prior value (not periodStart) so due dates
-            // stay anchored the same way GenerateInvestmentInterestPayoutDrafts advances
-            // next_payout_due_date — the schedule shown here must match what actually
-            // gets generated.
-            $periodStart = $periodEnd->copy()->addDay();
+            $period++;
         }
 
         return $schedule;
