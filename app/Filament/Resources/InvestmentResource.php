@@ -207,7 +207,23 @@ class InvestmentResource extends Resource
                 Tables\Columns\TextColumn::make('current_balance')
                     ->label('Current Value')
                     ->money('USD')
-                    ->sortable(),
+                    ->sortable()
+                    ->tooltip(fn (Investment $record) => $record->capital_type === InvestmentCapitalType::loan
+                        ? 'Principal only — a loan\'s balance never compounds. See the Interest Owed column for accrued interest.'
+                        : null),
+
+                Tables\Columns\TextColumn::make('interest_owed')
+                    ->label('Interest Owed')
+                    ->state(fn (Investment $record) => $record->capital_type === InvestmentCapitalType::loan
+                        ? $record->interestPayouts()
+                            ->whereIn('status', ['due', 'processing'])
+                            ->get()
+                            ->sum(fn ($payout) => (float) $payout->amount - (float) $payout->amount_paid)
+                        : null)
+                    ->money('USD')
+                    ->placeholder('—')
+                    ->tooltip('Loan interest accrued but not yet paid to the lender.')
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('rate')
                     ->label('Rate')

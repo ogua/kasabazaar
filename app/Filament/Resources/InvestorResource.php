@@ -188,7 +188,24 @@ class InvestorResource extends Resource
 
                         TextEntry::make('total_value')
                             ->label('Total Value')
+                            ->helperText('Investment tranches: current_balance (includes compounded interest). Loan tranches: principal only — a loan\'s balance never compounds, so accrued interest is shown separately below.')
                             ->state(fn (Investor $record) => $record->investments()->sum('current_balance'))
+                            ->money('USD'),
+
+                        TextEntry::make('accrued_loan_interest')
+                            ->label('Accrued Loan Interest (Unpaid)')
+                            ->helperText('Interest earned on loan tranches but not yet paid out to the investor.')
+                            ->state(fn (Investor $record) => $record->investments()
+                                ->where('capital_type', \App\Enums\InvestmentCapitalType::loan->value)
+                                ->with('interestPayouts')
+                                ->get()
+                                ->flatMap->interestPayouts
+                                // Collection::whereIn() loose-compares against the cast enum instance,
+                                // not the raw string, so it must filter on ->value explicitly — unlike
+                                // the DB-level whereIn() used elsewhere in this codebase, which compares
+                                // the raw column value and works fine with a plain string array.
+                                ->filter(fn ($payout) => in_array($payout->status->value, ['due', 'processing'], true))
+                                ->sum(fn ($payout) => (float) $payout->amount - (float) $payout->amount_paid))
                             ->money('USD'),
                     ]),
 
