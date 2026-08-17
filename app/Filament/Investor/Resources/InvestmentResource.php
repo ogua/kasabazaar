@@ -3,6 +3,7 @@
 namespace App\Filament\Investor\Resources;
 
 use App\Enums\InvestmentAgreementStatus;
+use App\Enums\InvestmentCapitalType;
 use App\Filament\Investor\Resources\InvestmentResource\Pages;
 use App\Filament\Investor\Resources\InvestmentResource\RelationManagers\TransactionsRelationManager;
 use App\Models\Investment;
@@ -99,7 +100,22 @@ class InvestmentResource extends Resource
 
                 Tables\Columns\TextColumn::make('current_balance')
                     ->label('Current Value')
-                    ->money('USD'),
+                    ->money('USD')
+                    ->tooltip(fn (Investment $record) => $record->capital_type === InvestmentCapitalType::loan
+                        ? 'Principal only — a loan\'s balance never compounds. See Interest Owed for accrued interest.'
+                        : null),
+
+                Tables\Columns\TextColumn::make('interest_owed')
+                    ->label('Interest Owed')
+                    ->state(fn (Investment $record) => $record->capital_type === InvestmentCapitalType::loan
+                        ? $record->interestPayouts()
+                            ->whereIn('status', ['due', 'processing'])
+                            ->get()
+                            ->sum(fn ($payout) => (float) $payout->amount - (float) $payout->amount_paid)
+                        : null)
+                    ->money('USD')
+                    ->placeholder('—')
+                    ->tooltip('Loan interest accrued but not yet paid to you.'),
 
                 Tables\Columns\TextColumn::make('capital_type')
                     ->label('Capital Type')
