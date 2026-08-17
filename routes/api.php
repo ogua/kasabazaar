@@ -256,6 +256,7 @@ Route::prefix('v1')->group(function () {
 
         // ── Investor (role-specific) ────────────────────────────────────────
         Route::prefix('investor')->middleware('investor')->group(function () {
+            Route::get('portfolio-summary', [InvestorInvestmentController::class, 'portfolioSummary']);
             Route::get('investments', [InvestorInvestmentController::class, 'index']);
             Route::post('investments', [InvestorInvestmentController::class, 'store']);
             Route::get('investments/{id}', [InvestorInvestmentController::class, 'show']);

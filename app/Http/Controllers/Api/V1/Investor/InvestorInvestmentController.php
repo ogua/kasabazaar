@@ -8,6 +8,7 @@ use App\Http\Resources\InvestmentTransactionResource;
 use App\Models\Investment;
 use App\Service\InvestmentInterestService;
 use App\Service\InvestmentPaymentService;
+use App\Service\InvestorPortfolioSummaryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -21,6 +22,15 @@ class InvestorInvestmentController extends InvestorBaseController
             ->get();
 
         return $this->success(InvestmentResource::collection($investments));
+    }
+
+    /**
+     * Same figures shown first on the investor Filament panel's dashboard —
+     * both call InvestorPortfolioSummaryService so the two never drift apart.
+     */
+    public function portfolioSummary(InvestorPortfolioSummaryService $service): JsonResponse
+    {
+        return $this->success($service->compute($this->investorId()));
     }
 
     public function show(string $id): JsonResponse
