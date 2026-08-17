@@ -261,6 +261,7 @@ Route::prefix('v1')->group(function () {
             Route::get('investments/{id}', [InvestorInvestmentController::class, 'show']);
             Route::get('investments/{id}/transactions', [InvestorInvestmentController::class, 'transactions']);
             Route::get('investments/{id}/agreement', [InvestorDocumentController::class, 'agreement']);
+            Route::post('investments/{id}/signed-agreement', [InvestorDocumentController::class, 'uploadSignedAgreement']);
             Route::post('investments/{id}/verify', [InvestorInvestmentController::class, 'verify']);
 
             Route::get('withdrawal-requests', [InvestorWithdrawalRequestController::class, 'index']);
