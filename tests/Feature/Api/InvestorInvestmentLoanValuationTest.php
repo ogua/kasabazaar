@@ -5,6 +5,7 @@ namespace Tests\Feature\Api;
 use App\Models\Investment;
 use App\Models\InvestmentInterestPayout;
 use App\Models\InvestmentRateSetting;
+use App\Models\InvestmentTransaction;
 use App\Models\Investor;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -132,6 +133,53 @@ class InvestorInvestmentLoanValuationTest extends TestCase
         $response->assertJsonPath('data.valuation.interest_paid_total', null);
         $response->assertJsonPath('data.valuation.interest_owed', null);
         $this->assertNotNull($response->json('data.valuation.compounded_balance'));
+    }
+
+    public function test_investment_valuation_stays_pinned_to_the_last_posted_period_not_today(): void
+    {
+        InvestmentRateSetting::firstOrCreate(['year' => now()->year], ['annual_rate' => 17.5]);
+
+        $investor = Investor::create(['name' => 'Pinned Valuation Investor', 'status' => 'active']);
+
+        // Mirrors a real case: principal $10,000, one posted interest_credit
+        // covering Nov 2024 - Dec 2025 ($2,035.62 @ 17.5%), current_balance already
+        // reflects that credit. last_interest_posted_year (2025) trails "now" by a
+        // full year on purpose — this is exactly the gap that used to make
+        // valuationAsOf() project an extra, unposted partial-year accrual on top.
+        $investment = Investment::create([
+            'investor_id' => $investor->id,
+            'principal_amount' => 10000,
+            'current_balance' => 12035.62,
+            'capital_type' => 'investment',
+            'start_date' => '2024-11-01',
+            'status' => 'active',
+            'last_interest_posted_year' => 2025,
+            'last_interest_posted_through' => '2025-12-31',
+        ]);
+
+        InvestmentTransaction::create([
+            'investment_id' => $investment->id,
+            'investor_id' => $investor->id,
+            'date' => '2025-12-31',
+            'period_start' => '2024-11-01',
+            'period_end' => '2025-12-31',
+            'type' => 'interest_credit',
+            'op_balance' => 10000,
+            'debit' => 0,
+            'credit' => 2035.62,
+            'rate_applied' => 17.5,
+            'posted' => true,
+            'year' => 2025,
+        ]);
+
+        $response = $this->withHeaders($this->authHeader($investor))
+            ->getJson("/api/v1/investor/investments/{$investment->id}");
+
+        $response->assertOk();
+        $response->assertJsonPath('data.valuation.interest_earned_total', 2035.62);
+        $response->assertJsonPath('data.valuation.compounded_balance', 12035.62);
+        $response->assertJsonPath('data.valuation.as_of', '2025-12-31');
+        $response->assertJsonPath('data.investment.current_balance', 12035.62);
     }
 
     public function test_investments_list_exposes_capital_type_and_interest_owed(): void

@@ -61,7 +61,13 @@ class InvestorInvestmentController extends InvestorBaseController
                 'as_of' => now()->toDateString(),
             ];
         } else {
-            $result = app(InvestmentInterestService::class)->valuationAsOf($investment, now());
+            // Pinned to the last actually-posted period, not now() — otherwise
+            // valuationAsOf() projects an extra, not-yet-posted partial-year accrual
+            // on top of the posted balance whenever last_interest_posted_year trails
+            // the current year, showing the investor a return they haven't been
+            // credited. Same defaultAsOfDate() already used by the agreement PDF
+            // and account statement, so the figure is identical everywhere it's shown.
+            $result = app(InvestmentInterestService::class)->valuationAsOf($investment, $investment->defaultAsOfDate());
 
             $valuation = [
                 'capital_type' => 'investment',
