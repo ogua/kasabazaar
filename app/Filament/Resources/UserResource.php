@@ -59,11 +59,13 @@ class UserResource extends Resource
                             ->searchable(),
 
                         Forms\Components\Select::make('role')
+                            ->label('Account Type')
                             ->options([
-                                'customer' => 'Customer',
+                                'customer' => 'Customer (Client)',
                                 'admin' => 'Admin',
-                                'branch_personnel' => 'Branch Personnel',
+                                'branch_personnel' => 'Branch Personnel (Staff)',
                                 'investor' => 'Investor',
+                                'vendor' => 'Vendor',
                             ])
                             ->searchable(),
 
@@ -135,14 +137,47 @@ class UserResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('email')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('role')
+                    ->label('Account Type')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'customer' => 'Client',
+                        'admin' => 'Admin',
+                        'branch_personnel' => 'Staff',
+                        'investor' => 'Investor',
+                        'vendor' => 'Vendor',
+                        default => $state ?? '—',
+                    })
+                    ->color(fn (?string $state): string => match ($state) {
+                        'customer' => 'success',
+                        'admin' => 'danger',
+                        'branch_personnel' => 'primary',
+                        'investor' => 'warning',
+                        'vendor' => 'info',
+                        default => 'gray',
+                    })
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('roles.name')
+                    ->label('Permissions')
                     ->badge(),
                 Tables\Columns\TextColumn::make('branches.name')
                     ->badge()
                     ->color('info')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('client.name')
+                    ->label('Client')
+                    ->badge()
+                    ->color('success')
+                    ->toggleable()
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('staff.name')
+                    ->label('Staff')
+                    ->badge()
+                    ->color('primary')
+                    ->toggleable()
                     ->searchable(),
                 Tables\Columns\TextColumn::make('investor.name')
                     ->label('Investor')
@@ -160,6 +195,15 @@ class UserResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('role')
+                    ->label('Account Type')
+                    ->options([
+                        'customer' => 'Client',
+                        'admin' => 'Admin',
+                        'branch_personnel' => 'Staff',
+                        'investor' => 'Investor',
+                        'vendor' => 'Vendor',
+                    ]),
                 Tables\Filters\SelectFilter::make('status')
                     ->options(UserStatus::class),
             ])

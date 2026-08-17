@@ -77,7 +77,9 @@ class CustomerAuthController extends CustomerBaseController
             'password' => 'required|string',
         ]);
 
-        $user = User::where('email', $request->email)->whereNotNull('client_id')->first();
+        $user = User::where('email', $request->email)
+            ->where(fn ($query) => $query->whereNotNull('client_id')->orWhereNotNull('investor_id'))
+            ->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             return $this->error('Invalid credentials.', 401);
@@ -87,13 +89,19 @@ class CustomerAuthController extends CustomerBaseController
             return $this->error('Your account has been deactivated.', 401);
         }
 
+        $user->load(['client', 'investor']);
+
+        if ($user->investor_id && $user->investor?->status !== 'active') {
+            return $this->error('Your investor account is currently inactive. Please contact us for assistance.', 401);
+        }
+
         $this->mergeGuestCart($user, $request->header('X-Guest-Session-Id'));
 
         $token = $user->createToken('customer-app')->plainTextToken;
 
         return $this->success([
             'token' => $token,
-            'user' => $this->formatUser($user->load('client')),
+            'user' => $this->formatUser($user),
         ], 'Login successful.');
     }
 
@@ -131,7 +139,7 @@ class CustomerAuthController extends CustomerBaseController
 
     public function me(Request $request): JsonResponse
     {
-        return $this->success($this->formatUser($request->user()->load('client')));
+        return $this->success($this->formatUser($request->user()->load(['client', 'investor'])));
     }
 
     public function updateProfile(Request $request): JsonResponse
@@ -155,7 +163,7 @@ class CustomerAuthController extends CustomerBaseController
             );
         }
 
-        return $this->success($this->formatUser($user->fresh('client')));
+        return $this->success($this->formatUser($user->fresh(['client', 'investor'])));
     }
 
     public function changePassword(Request $request): JsonResponse
@@ -203,7 +211,9 @@ class CustomerAuthController extends CustomerBaseController
         $request->validate(['email' => 'required|email']);
 
         // Always return success to prevent user enumeration
-        $user = User::where('email', $request->email)->whereNotNull('client_id')->first();
+        $user = User::where('email', $request->email)
+            ->where(fn ($query) => $query->whereNotNull('client_id')->orWhereNotNull('investor_id'))
+            ->first();
 
         if ($user) {
             Password::broker()->sendResetLink(['email' => $request->email]);
@@ -262,6 +272,7 @@ class CustomerAuthController extends CustomerBaseController
             'email' => $user->email,
             'phone' => $user->phone,
             'avatar' => $user->avatar,
+            'account_type' => $user->investor_id ? 'investor' : 'client',
             'client_id' => $user->client_id,
             'client' => $user->client ? [
                 'id' => $user->client->id,
@@ -272,6 +283,12 @@ class CustomerAuthController extends CustomerBaseController
                 'country' => $user->client->country,
                 'city' => $user->client->city,
                 'address' => $user->client->address,
+            ] : null,
+            'investor_id' => $user->investor_id,
+            'investor' => $user->investor ? [
+                'id' => $user->investor->id,
+                'name' => $user->investor->name,
+                'status' => $user->investor->status,
             ] : null,
         ];
     }
