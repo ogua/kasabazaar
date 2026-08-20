@@ -6,13 +6,22 @@
         <p class="text-muted max-w-xl mx-auto">Have a question about an order, a vendor application, or the marketplace in general? Send us a message and we'll get back to you.</p>
     </div>
 
-    <div class="grid md:grid-cols-3 gap-5 mb-12">
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-12">
         <x-storefront.ui.card class="text-center">
             <span class="flex items-center justify-center w-12 h-12 rounded-full bg-navy-900/5 text-navy-900 mx-auto mb-3">
                 <x-storefront.icon name="mail" class="w-5 h-5" />
             </span>
             <h2 class="font-semibold text-sm text-fg mb-1">Email</h2>
-            <a href="mailto:{{ config('mail.from.address') }}" class="text-sm text-navy-500 hover:text-accent">{{ config('mail.from.address') }}</a>
+            <a href="mailto:{{ config('group.contact.email') }}" class="text-sm text-navy-500 hover:text-accent">{{ config('group.contact.email') }}</a>
+        </x-storefront.ui.card>
+
+        <x-storefront.ui.card class="text-center">
+            <span class="flex items-center justify-center w-12 h-12 rounded-full bg-navy-900/5 text-navy-900 mx-auto mb-3">
+                <x-storefront.icon name="phone" class="w-5 h-5" />
+            </span>
+            <h2 class="font-semibold text-sm text-fg mb-1">Phone</h2>
+            <a href="tel:{{ config('group.contact.phone_gh_tel') }}" class="block text-sm text-navy-500 hover:text-accent">{{ config('group.contact.phone_gh') }}</a>
+            <a href="tel:{{ config('group.contact.phone_us_tel') }}" class="block text-sm text-navy-500 hover:text-accent">{{ config('group.contact.phone_us') }}</a>
         </x-storefront.ui.card>
 
         @if ($whatsapp = config('services.whatsapp.number'))
@@ -30,7 +39,7 @@
                 <x-storefront.icon name="map-pin" class="w-5 h-5" />
             </span>
             <h2 class="font-semibold text-sm text-fg mb-1">Based In</h2>
-            <p class="text-sm text-muted">Accra, Ghana</p>
+            <p class="text-sm text-muted">{{ config('group.contact.address') ?: config('group.contact.regions') }}</p>
         </x-storefront.ui.card>
     </div>
 
@@ -40,6 +49,8 @@
             <div class="space-y-3">
                 <p class="text-sm text-muted">Looking for quick answers about orders, payments, or becoming a vendor? Visit our <a href="{{ route('storefront.faq') }}" class="text-navy-500 font-medium hover:text-accent">FAQ page</a> — most questions are answered there.</p>
                 <p class="text-sm text-muted">For order-specific issues, sign in and check <a href="{{ route('storefront.account.orders') }}" class="text-navy-500 font-medium hover:text-accent">My Orders</a> first — tracking and status details are all there.</p>
+                <p class="text-sm text-muted">Delivery timeframes are set out in our <a href="{{ route('storefront.delivery-policy') }}" class="text-navy-500 font-medium hover:text-accent">Delivery Policy</a>, and return rights in our <a href="{{ route('storefront.returns') }}" class="text-navy-500 font-medium hover:text-accent">Returns &amp; Refunds Policy</a>.</p>
+                <p class="text-sm text-muted">Looking for a different {{ config('group.parent.name') }} business — freight, real estate or mobility? See <a href="{{ route('storefront.group') }}" class="text-navy-500 font-medium hover:text-accent">Our Group</a>.</p>
             </div>
         </div>
 

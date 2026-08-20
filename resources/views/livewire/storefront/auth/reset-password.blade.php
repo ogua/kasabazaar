@@ -1,6 +1,6 @@
 <div class="max-w-md mx-auto px-4 sm:px-6 py-16">
     <div class="text-center mb-8">
-        <img src="{{ asset('images/brand/logo-mark.png') }}" alt="{{ config('app.name') }}" class="h-14 w-auto mx-auto mb-5">
+        <img src="{{ asset('images/brand/logo-stacked.png') }}" alt="{{ config('app.name') }}" class="h-16 w-auto mx-auto mb-5">
         <h1 class="font-display font-bold text-2xl text-navy-900">Reset Password</h1>
     </div>
 

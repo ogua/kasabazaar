@@ -1,13 +1,20 @@
-# DESIGN.md - KasaBazaar storefront (kmarket)
+# DESIGN.md - KASAROSE storefront (kmarket)
+
+> **Rebrand note (August 2026).** This storefront was launched as *KasaBazaar Market* and renamed to
+> **KASAROSE**. The structural design decisions below (grid, type scale, component system, the "wake" motif)
+> survived the rename unchanged. What moved: the colour palette, now sampled from the KASAROSE logo
+> (`resources/brand/kasa.png` — blue `#055F9C`, red `#EF4136`) instead of the old KasaBazaar logo, and
+> the brand assets in `public/images/brand/`. The Tailwind token *names* (`navy-*`, `accent`) were kept so the
+> existing blade markup did not have to churn — read `navy-*` as "the KASAROSE blue scale", not as literal navy.
 
 ## Context (from discovery)
 
 - Artifact type: marketplace (two-sided) — customer-facing storefront on top of a multi-vendor commerce API. Auth, browse/PDP, cart/checkout, and account are the core surfaces.
-- Positioning: corporate-adjacent trust (logistics heritage, part of the RDD Shipping / KasaBazaar group of companies) expressed through a consumer-energetic storefront, not an admin back-office.
+- Positioning: corporate-adjacent trust (logistics heritage, part of the KasaBazaar Group of Companies alongside KasaBazaar, RDD Shipping and Neoride Africa) expressed through a consumer-energetic storefront, not an admin back-office.
 - Audience: everyday shoppers in Ghana buying from local vendors, plus prospective vendors evaluating whether to sell here. Primary action: find a product and complete a confident purchase; secondary action: a vendor signs up.
 - Adjectives: trustworthy, efficient, energetic, approachable, modern.
 - Visual word translations:
-  - trustworthy -> deep navy as the dominant ink/surface color, generous proof (vendor names, reviews, delivery/return info near the decision point), no dark patterns.
+  - trustworthy -> deep brand blue as the dominant ink/surface color, generous proof (vendor names, reviews, delivery/return info near the decision point), no dark patterns.
   - efficient -> clear scan paths, tabular numerals on prices/orders, decisive primary-button hierarchy, real loading/empty/error states everywhere (this is also a functional bug fix, not just a look).
   - energetic -> a sharp, brighter red accent (not the muted admin-panel maroon) used sparingly for CTAs, sale badges, and the signature wake motif.
   - approachable -> warm stone neutrals instead of cold gray, humanist body type, rounded-but-restrained corners (never blob rounding).
@@ -17,17 +24,17 @@
 - Archetype: Hero (delivers reliably) tempered by Everyman (local, communal, unpretentious).
 - References: admire Jumia/Airbnb-style marketplace card density and trust placement; avoid the luxury-restraint direction (too cold for a broad Ghanaian consumer marketplace) and avoid the source jQuery template's demo-stock-photo, coupon-countdown aesthetic entirely.
 - Mode: light only (no dark mode requested; not worth the added surface area for this pass).
-- Constraints: Laravel 12 + Livewire + Tailwind CSS v4 (already installed, previously unused by the storefront), Alpine.js (bundled with Livewire), no new JS framework, no new paid icon/font licenses. Brand colors and logo are fixed inputs (not free invention) — derived from `public/images/Kasabazaar-logo.jpg`, tuned brighter/warmer than the existing Filament admin panel's maroon (`#A0043C`/`#003151`) per explicit product decision.
+- Constraints: Laravel 12 + Livewire + Tailwind CSS v4 (already installed, previously unused by the storefront), Alpine.js (bundled with Livewire), no new JS framework, no new paid icon/font licenses. Brand colors and logo are fixed inputs (not free invention) — sampled directly from `public/images/brand/brand/kasa.png` (the KASAROSE mark), and deliberately distinct from the RDD Shipping admin panel's maroon (`#A0043C`/`#003151`).
 
 ## Aesthetic
 
 - Direction: bespoke — "Waypoint". Closest catalog references are Swiss (grid discipline, restraint) and consumer marketplace craft (Airbnb-grade card/trust density), diverged toward warmth: Swiss's rigor kept, its coldness dropped for stone neutrals and a brighter accent.
 - Defining trait: information is organized on a strict, generous grid with flat surfaces (border-only cards, no ambient card shadows) — hierarchy comes from type weight, spacing, and the single accent color, not from decoration.
-- Signature move: the "wake" — the curved sweep from the KB mark's ship-wake device — recurs as a single thin red curved rule under key section headings, as the active-tab/active-nav indicator, and as the loading-bar treatment. Used exactly once per screen region, never as a repeated decorative pattern.
+- Signature move: the "wake" — echoing the red wedge that cuts through the KASAROSE **K** — recurs as a single thin red rule under key section headings, as the active-tab/active-nav indicator, and as the loading-bar treatment. Used exactly once per screen region, never as a repeated decorative pattern.
 
 ## Typography
 
-- Display: **Space Grotesk** | source: Google Fonts (Fontshare also carries it) | license: OFL. Bold, geometric, confident letterforms that echo the blocky K/B mark. Used for H1-H3, hero copy, and prices.
+- Display: **Space Grotesk** | source: Google Fonts (Fontshare also carries it) | license: OFL. Bold, geometric, confident letterforms that echo the angular KASAROSE wordmark. Used for H1-H3, hero copy, and prices.
 - Body: **Plus Jakarta Sans** | source: Google Fonts | license: OFL. Humanist, warm, highly legible at small sizes for dense commerce UI (prices, meta, table cells).
 - Mono: not used (no code/data-table-numerics context beyond prices, which use tabular figures in Plus Jakarta Sans, not a mono face).
 - Scale: ratio 1.25 (Major Third), base 16px.
@@ -46,33 +53,34 @@
 
 ## Color
 
-- Strategy: brand-derived (not free invention) from the KasaBazaar logo's navy + red, pulled brighter/warmer than the admin panel's muted maroon so the storefront reads as retail rather than back-office. Explicitly avoids the indigo/violet "AI slop" band — the accent sits in the red/orange-red hue family (~25 deg), the ink in a blue/navy hue family (~260 deg), 235 degrees apart, high separation.
-- Distribution: ~60% neutral (stone surfaces/backgrounds), ~30% navy (ink, headers, footer, nav), ~10% red accent (CTAs, sale badges, the wake motif, focus/active states).
-- Palette (role -> OKLCH | hex):
+- Strategy: brand-derived (not free invention) from the KASAROSE logo's blue + red. Sampled directly from `resources/brand/kasa.png`: the mark is `#055F9C` blue with an `#EF4136` red wedge. Pulled brighter than the RDD Shipping admin panel's muted maroon so the storefront reads as retail rather than back-office. Explicitly avoids the indigo/violet "AI slop" band — the accent sits in the red hue family (~28 deg), the ink in a blue hue family (~245 deg), high separation.
+- Distribution: ~60% neutral (stone surfaces/backgrounds), ~30% brand blue (ink, headers, footer, nav), ~10% red accent (CTAs, sale badges, the wake motif, focus/active states).
+- Palette (role -> OKLCH | hex). Token names retain the `navy-*` prefix from the pre-rebrand system; the values are the KASAROSE blue scale:
   - bg (page): oklch(98.23% 0.0029 84.56) | #FAF9F7
   - surface (cards/panels): oklch(100% 0 0) | #FFFFFF
   - surface-muted: oklch(95.56% 0.0057 84.57) | #F2F0EC
   - fg (body text): oklch(21.61% 0.0061 56.04) | #1C1917
   - muted (secondary text): oklch(55.34% 0.0116 58.07) | #78716C
   - border: oklch(91.95% 0.0087 84.57) | #E7E4DE
-  - ink / navy-900 (header, footer, primary headings on light, filled-navy buttons): oklch(25.96% 0.0737 262.12) | #0F2247
-  - ink-hover / navy-700: oklch(35.09% 0.0842 259.11) | #1E3A66
-  - ink-deep / navy-950 (favicon bg, deepest text): oklch(20.44% 0.0510 262.72) | #0A162E
-  - link / navy-500: oklch(45.90% 0.1001 259.89) | #35578F
-  - accent / red-600 (primary CTA, sale badge, wake motif): oklch(58.23% 0.2233 24.75) | #E11D2E
-  - accent-hover / red-700: oklch(51.59% 0.1994 24.98) | #C01524
-  - accent-soft / red-50 (badge/alert backgrounds): oklch(95.66% 0.0185 17.48) | #FDECEC
+  - ink-deep / navy-950 (favicon bg, OG card bg, deepest text): oklch(22.67% 0.0531 244.57) | #021E33
+  - ink / navy-900 (header, footer, primary headings on light, filled buttons): oklch(33.74% 0.0830 245.75) | #043A5F
+  - ink-hover / navy-700: oklch(41.63% 0.1016 244.72) | #05507F
+  - link / navy-500 (**the logo blue itself**): oklch(47.25% 0.1228 247.25) | #055F9C
+  - navy-200 (muted brand tint, step numerals): oklch(83.54% 0.0535 237.11) | #A9CFE8
+  - accent (**the logo red**, primary CTA, sale badge, wake motif): oklch(63.24% 0.2121 28.41) | #EF4136
+  - accent-hover: oklch(55.74% 0.2026 29.02) | #D02A20
+  - accent-soft (badge/alert backgrounds): oklch(95.60% 0.0187 25.60) | #FDECEA
   - accent-fg: white
   - success: oklch(62.71% 0.1699 149.21) | #16A34A
   - warning: oklch(66.58% 0.1574 58.32) | #D97706
-  - error: same as accent-700 (#C01524) so error states read as "the same red family," not a clashing third hue.
+  - error: same as accent-hover (#D02A20) so error states read as "the same red family," not a clashing third hue.
 - Dark mode: out of scope for this pass (see Constraints).
 
 ## Spacing, radius, shadow
 
 - Spacing base: 4px (Tailwind default `--spacing: 0.25rem`), used at the standard 1/2/3/4/6/8/12/16/24 step scale.
 - Radius: two values only — `--radius-sm: 6px` (buttons, inputs, badges, chips) and `--radius-lg: 14px` (cards, panels, modals). Nothing above 16px; no blob rounding.
-- Shadow approach: **defined edge, not soft elevation**, as the default (matches the Swiss-leaning "flat surfaces" defining trait). Resting cards/rows use a 1px `border` in `--color-border`, no shadow. Reserve a single soft shadow token (`--shadow-float: 0 8px 24px -8px rgb(15 34 71 / 0.18)`, navy-tinted) exclusively for genuinely floating/overlaid surfaces that must read above content: dropdowns, the mobile nav drawer, modals, the sticky-header-on-scroll state, and toasts. Never combine a border and a shadow on the same element.
+- Shadow approach: **defined edge, not soft elevation**, as the default (matches the Swiss-leaning "flat surfaces" defining trait). Resting cards/rows use a 1px `border` in `--color-border`, no shadow. Reserve a single soft shadow token (`--shadow-float: 0 8px 24px -8px rgb(2 30 51 / 0.20)`, brand-blue-tinted) exclusively for genuinely floating/overlaid surfaces that must read above content: dropdowns, the mobile nav drawer, modals, the sticky-header-on-scroll state, and toasts. Never combine a border and a shadow on the same element.
 
 ## Layout and composition
 
@@ -173,3 +181,4 @@ Out of scope for this pass (see Constraints).
 ## Changelog
 
 - 2026-08-10: Initial system authored for the full storefront redesign + bug-fix pass. Brand colors and logo sourced from `public/images/Kasabazaar-logo.jpg`; palette tuned brighter/warmer than the sibling Filament admin panel per explicit product decision (see kmarket redesign plan).
+- 2026-08-20: Rebrand from *KasaBazaar Market* to **KASAROSE**. Colour strategy unchanged in shape (blue ink + red accent, stone neutrals) but every brand value resampled from the new mark — the `navy-*` scale moved from hue ~262 to ~245 and now terminates in the logo blue `#055F9C` at `navy-500`; `accent` is now the logo red `#EF4136` exactly. Token *names* deliberately kept so blade markup did not churn. Structural decisions (grid, type scale, component system, the "wake" motif) survived untouched; the wake now reads as an echo of the red wedge in the K rather than a ship wake. Source art moved out of the web root to `resources/brand/` and the whole asset set became reproducible via `php artisan brand:build`. Five long-form legal pages added, introducing the only prose-weight surfaces on the site (`.legal-prose` in `resources/css/app.css`).

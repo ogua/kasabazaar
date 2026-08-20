@@ -5,12 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
 
-    <title>@yield('title', config('app.name'))</title>
-    <meta name="description" content="@yield('meta_description', config('app.name').' — a multi-vendor marketplace in Ghana.')">
+    <title>@hasSection('title')@yield('title') — {{ config('app.name') }}@else{{ config('app.name') }} — {{ config('group.company.tagline') }}@endif</title>
+    <meta name="description" content="@yield('meta_description', config('group.company.meta_description'))">
+    <link rel="canonical" href="{{ url()->current() }}">
 
+    <meta property="og:site_name" content="{{ config('app.name') }}">
     <meta property="og:title" content="@yield('og_title', config('app.name'))">
-    <meta property="og:description" content="@yield('og_description', config('app.name').' — shop from local vendors across Ghana.')">
+    <meta property="og:description" content="@yield('og_description', config('group.company.meta_description'))">
     <meta property="og:image" content="@yield('og_image', asset('images/brand/og-image.png'))">
+    <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
 
@@ -19,7 +22,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/favicon-32x32.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('images/apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
-    <meta name="theme-color" content="#0F2247">
+    <meta name="theme-color" content="#021E33">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,6 +31,35 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
     @livewireStyles
+
+    {{-- Organization schema. The group roster comes from config/group.php so the
+         structured data can never drift from the footer's cross-links. --}}
+    @php
+        $organisationSchema = [
+            '@context' => 'https://schema.org',
+            '@type' => 'OnlineStore',
+            'name' => config('app.name'),
+            'legalName' => config('group.company.legal_name'),
+            'url' => config('group.company.url'),
+            'logo' => asset('images/brand/logo-lockup.png'),
+            'image' => asset('images/brand/og-image.png'),
+            'description' => config('group.company.meta_description'),
+            'parentOrganization' => [
+                '@type' => 'Organization',
+                'name' => config('group.parent.name'),
+                'url' => config('group.parent.url'),
+            ],
+            'sameAs' => array_column(config('group.companies'), 'url'),
+            'contactPoint' => [
+                '@type' => 'ContactPoint',
+                'contactType' => 'customer support',
+                'email' => config('group.contact.email'),
+                'telephone' => config('group.contact.phone_gh_tel'),
+                'areaServed' => 'GH',
+            ],
+        ];
+    @endphp
+    <script type="application/ld+json">{!! json_encode($organisationSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
 </head>
 
 <body class="bg-bg text-fg font-sans antialiased">

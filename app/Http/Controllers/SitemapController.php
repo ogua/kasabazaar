@@ -17,9 +17,15 @@ class SitemapController extends Controller
                 ->add(Url::create(route('storefront.shop'))->setPriority(0.9))
                 ->add(Url::create(route('storefront.vendors'))->setPriority(0.7))
                 ->add(Url::create(route('storefront.become-vendor'))->setPriority(0.5))
-                ->add(Url::create(route('storefront.about'))->setPriority(0.3))
+                ->add(Url::create(route('storefront.about'))->setPriority(0.4))
+                ->add(Url::create(route('storefront.group'))->setPriority(0.4))
                 ->add(Url::create(route('storefront.contact'))->setPriority(0.3))
-                ->add(Url::create(route('storefront.faq'))->setPriority(0.3));
+                ->add(Url::create(route('storefront.faq'))->setPriority(0.3))
+                ->add(Url::create(route('storefront.privacy'))->setPriority(0.2))
+                ->add(Url::create(route('storefront.terms'))->setPriority(0.2))
+                ->add(Url::create(route('storefront.delivery-policy'))->setPriority(0.2))
+                ->add(Url::create(route('storefront.returns'))->setPriority(0.2))
+                ->add(Url::create(route('storefront.cookies'))->setPriority(0.2));
 
             foreach ($productsApi->categories() as $category) {
                 $sitemap->add(Url::create(route('storefront.category', $category['id']))->setPriority(0.6));

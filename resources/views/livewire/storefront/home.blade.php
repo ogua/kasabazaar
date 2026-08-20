@@ -64,12 +64,12 @@
         <section class="bg-navy-900 text-white">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 py-16 md:py-24 grid md:grid-cols-2 gap-10 items-center">
                 <div>
-                    <p class="text-accent font-semibold text-sm uppercase tracking-wide mb-3">KasaBazaar Marketplace</p>
+                    <p class="text-accent font-semibold text-sm uppercase tracking-wide mb-3">{{ config('app.name') }} Marketplace</p>
                     <h1 class="font-display font-bold text-3xl md:text-5xl leading-tight mb-5 text-balance">
                         Shop local vendors, delivered with confidence.
                     </h1>
                     <p class="text-white/70 text-base md:text-lg mb-8 max-w-md">
-                        Backed by the KasaBazaar Group of Companies' logistics network — thousands of products from vetted vendors across Ghana.
+                        Backed by the {{ config('group.parent.name') }}' logistics network — thousands of products from vetted vendors across Ghana.
                     </p>
                     <x-storefront.ui.button href="{{ route('storefront.shop') }}" variant="accent" size="lg">
                         Start Shopping
@@ -77,7 +77,7 @@
                     </x-storefront.ui.button>
                 </div>
                 <div class="hidden md:flex justify-center">
-                    <img src="{{ asset('images/brand/logo-lockup-on-dark.png') }}" alt="" class="w-72 opacity-90">
+                    <img src="{{ asset('images/brand/logo-stacked-on-dark.png') }}" alt="" class="w-64 opacity-90">
                 </div>
             </div>
         </section>

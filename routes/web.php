@@ -7,6 +7,23 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
 
+// Served from a route rather than a static public/robots.txt so the Sitemap
+// directive always carries the real APP_URL instead of a hardcoded domain.
+Route::get('/robots.txt', function () {
+    $lines = [
+        'User-agent: *',
+        'Disallow: /account',
+        'Disallow: /checkout',
+        'Disallow: /cart',
+        'Disallow: /vendor-portal',
+        '',
+        'Sitemap: '.route('sitemap'),
+    ];
+
+    return response(implode(PHP_EOL, $lines).PHP_EOL, 200)
+        ->header('Content-Type', 'text/plain');
+})->name('robots');
+
 // ─── Storefront (public + customer) ────────────────────────────────────────
 // Note: the vendor self-service dashboard lives in the `vendor` Filament
 // panel (see App\Providers\Filament\VendorPanelProvider), not here.
@@ -47,6 +64,17 @@ Route::name('storefront.')->group(function () {
     });
 
     Route::get('/about-us', fn () => view('storefront.pages.about'))->name('about');
+    Route::get('/our-group', fn () => view('storefront.pages.group'))->name('group');
     Route::get('/contact-us', Storefront\Contact::class)->name('contact');
     Route::get('/faq', fn () => view('storefront.pages.faq'))->name('faq');
+
+    // ─── Legal ─────────────────────────────────────────────────────────────
+    // Static prose pages sharing the x-storefront.legal-layout component.
+    // Add any new policy here, to the footer's Legal column, to the component's
+    // "Our other policies" list and to SitemapController.
+    Route::get('/privacy-policy', fn () => view('storefront.pages.legal.privacy'))->name('privacy');
+    Route::get('/terms-of-use', fn () => view('storefront.pages.legal.terms'))->name('terms');
+    Route::get('/delivery-policy', fn () => view('storefront.pages.legal.delivery'))->name('delivery-policy');
+    Route::get('/returns-and-refunds', fn () => view('storefront.pages.legal.returns'))->name('returns');
+    Route::get('/cookie-policy', fn () => view('storefront.pages.legal.cookies'))->name('cookies');
 });

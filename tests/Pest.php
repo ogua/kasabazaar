@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /*
@@ -13,8 +14,11 @@ use Tests\TestCase;
 |
 */
 
+// Feature tests migrate the in-memory sqlite database (see phpunit.xml) — the
+// storefront home page reads local `banners`, so without this the suite fails
+// on a missing table rather than on anything real.
 pest()->extend(TestCase::class)
- // ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+    ->use(RefreshDatabase::class)
     ->in('Feature');
 
 /*

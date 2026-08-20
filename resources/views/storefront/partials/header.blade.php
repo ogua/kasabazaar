@@ -3,8 +3,9 @@
     {{-- Utility bar --}}
     <div class="bg-navy-950 text-white/80 text-xs">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 h-9 flex items-center justify-between">
-            <p class="hidden sm:block">Welcome to KasaBazaar Market — shop from vendors across Ghana.</p>
+            <p class="hidden sm:block">Welcome to {{ config('app.name') }} — shop from vetted vendors across Ghana.</p>
             <div class="flex items-center gap-4 ml-auto">
+                <a href="{{ config('group.parent.companies_url') }}" target="_blank" rel="noopener" class="hidden md:inline hover:text-white">{{ config('group.parent.name') }}</a>
                 <a href="{{ route('storefront.contact') }}" class="hover:text-white">Contact Us</a>
                 @auth
                     <a href="{{ route('storefront.account.dashboard') }}" class="hover:text-white">My Account</a>
@@ -23,12 +24,10 @@
                 <x-storefront.icon name="menu" class="w-6 h-6" />
             </button>
 
-            <a href="{{ route('storefront.home') }}" class="flex items-center gap-2 shrink-0">
-                <img src="{{ asset('images/brand/logo-mark.png') }}" alt="" class="h-10 w-auto" width="60" height="41">
-                <span class="hidden sm:flex flex-col leading-none">
-                    <span class="font-display font-bold text-lg text-navy-900">Kasa<span class="text-accent">Bazaar</span></span>
-                    <span class="text-[10px] tracking-wide text-muted uppercase">Group of Companies</span>
-                </span>
+            <a href="{{ route('storefront.home') }}" class="flex items-center shrink-0" aria-label="{{ config('app.name') }} home">
+                {{-- Mark alone below sm:, full lockup above — the wordmark is unreadable at phone widths. --}}
+                <img src="{{ asset('images/brand/logo-mark.png') }}" alt="{{ config('app.name') }}" class="sm:hidden h-9 w-auto" width="512" height="431">
+                <img src="{{ asset('images/brand/logo-lockup.png') }}" alt="{{ config('app.name') }}" class="hidden sm:block h-10 w-auto" width="1200" height="375">
             </a>
 
             <form method="get" action="{{ route('storefront.shop') }}" class="hidden md:flex flex-1 max-w-2xl mx-auto">
@@ -99,6 +98,7 @@
                             ['label' => 'Vendors', 'route' => 'storefront.vendors'],
                             ['label' => 'Sell on '.config('app.name'), 'route' => 'storefront.become-vendor'],
                             ['label' => 'About Us', 'route' => 'storefront.about'],
+                            ['label' => 'Our Group', 'route' => 'storefront.group'],
                         ];
                     @endphp
                     @foreach ($navLinks as $link)
@@ -145,7 +145,7 @@
             class="relative w-80 max-w-[85%] h-full bg-white flex flex-col"
         >
             <div class="flex items-center justify-between px-4 h-16 border-b border-border">
-                <img src="{{ asset('images/brand/logo-mark.png') }}" alt="{{ config('app.name') }}" class="h-9 w-auto">
+                <img src="{{ asset('images/brand/logo-lockup.png') }}" alt="{{ config('app.name') }}" class="h-8 w-auto">
                 <button @click="mobileOpen = false" class="p-2 text-navy-900" aria-label="Close menu">
                     <x-storefront.icon name="x-mark" class="w-6 h-6" />
                 </button>
@@ -166,6 +166,7 @@
                         ['label' => 'Wishlist', 'route' => 'storefront.wishlist'],
                         ['label' => 'Cart', 'route' => 'storefront.cart'],
                         ['label' => 'About Us', 'route' => 'storefront.about'],
+                        ['label' => 'Our Group', 'route' => 'storefront.group'],
                         ['label' => 'Contact Us', 'route' => 'storefront.contact'],
                         ['label' => 'FAQs', 'route' => 'storefront.faq'],
                     ] as $link)
