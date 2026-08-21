@@ -14,6 +14,19 @@
 </head>
 
 <body>
+    @php $unmapped = $statement['unmapped_categories'] ?? ['expenses' => [], 'incomes' => [], 'total' => 0]; @endphp
+
+    @if ($unmapped['total'] > 0)
+        <div class="warning-note">
+            <strong>{{ $money($unmapped['total']) }} is in unmapped categories.</strong>
+            The amounts below report under a catch-all account rather than their proper statement
+            line, so cost of sales and the gross margin are understated:
+            @foreach (array_merge($unmapped['expenses'], $unmapped['incomes']) as $category)
+                {{ $category['name'] }} {{ $money($category['amount']) }}@if (! $loop->last); @endif
+            @endforeach
+        </div>
+    @endif
+
     <table>
         <thead>
             <tr>

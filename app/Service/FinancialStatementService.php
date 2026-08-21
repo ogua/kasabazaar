@@ -91,6 +91,7 @@ class FinancialStatementService
             'cost_of_sales' => $costOfSales,
             'operating_expenses' => $operatingExpenses,
             'finance_costs' => $financeCosts,
+            'unmapped_categories' => $this->unmappedTradingCategories($year),
             'totals' => [
                 'revenue' => $totalRevenue,
                 'cost_of_sales' => $totalCostOfSales,
@@ -343,6 +344,58 @@ class FinancialStatementService
         $add('INC-OTHER', (float) Income::where('status', IncomeStatus::Received)
             ->whereYear('income_date', $year)
             ->sum('amount_usd'));
+    }
+
+    /**
+     * Expense and income categories carrying spend in the year that have not been
+     * pointed at an account, with what each contributed. They still report — they land
+     * in the catch-all — but a large unmapped balance silently flatters cost of sales
+     * and makes the gross margin meaningless, so the statement surfaces them.
+     *
+     * @return array{expenses: array<int, array{name: string, code: string, amount: float}>, incomes: array<int, array{name: string, code: string, amount: float}>, total: float}
+     */
+    public function unmappedTradingCategories(int $year): array
+    {
+        if (self::tradingSource() !== 'records') {
+            return ['expenses' => [], 'incomes' => [], 'total' => 0.0];
+        }
+
+        $expenses = Expense::query()
+            ->whereYear('expense_date', $year)
+            ->with('category.chartOfAccount')
+            ->get()
+            ->filter(fn (Expense $expense) => $expense->category?->chartOfAccount === null)
+            ->groupBy(fn (Expense $expense) => $expense->category?->id ?? 'none')
+            ->map(fn (Collection $rows) => [
+                'name' => $rows->first()->category?->name ?? 'Uncategorised',
+                'code' => $rows->first()->category?->code ?? '—',
+                'amount' => round((float) $rows->sum('amount_usd'), 2),
+            ])
+            ->sortByDesc('amount')
+            ->values()
+            ->all();
+
+        $incomes = Income::query()
+            ->where('status', IncomeStatus::Received)
+            ->whereYear('income_date', $year)
+            ->with('category.chartOfAccount')
+            ->get()
+            ->filter(fn (Income $income) => $income->category?->chartOfAccount === null)
+            ->groupBy(fn (Income $income) => $income->category?->id ?? 'none')
+            ->map(fn (Collection $rows) => [
+                'name' => $rows->first()->category?->name ?? 'Uncategorised',
+                'code' => $rows->first()->category?->code ?? '—',
+                'amount' => round((float) $rows->sum('amount_usd'), 2),
+            ])
+            ->sortByDesc('amount')
+            ->values()
+            ->all();
+
+        return [
+            'expenses' => $expenses,
+            'incomes' => $incomes,
+            'total' => round(collect($expenses)->sum('amount') + collect($incomes)->sum('amount'), 2),
+        ];
     }
 
     /**

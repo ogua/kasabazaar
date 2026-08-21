@@ -9,6 +9,34 @@
         {{ $this->form }}
     </form>
 
+    @php $unmapped = $statement['unmapped_categories'] ?? ['expenses' => [], 'incomes' => [], 'total' => 0]; @endphp
+
+    @if ($unmapped['total'] > 0)
+        {{-- A large unmapped balance sits in the catch-all account, which flatters cost
+             of sales and makes the gross margin meaningless. Surfaced rather than left
+             to be discovered by whoever reads the statement. --}}
+        <x-filament::section>
+            <div class="rounded-lg border border-warning-300 bg-warning-50 p-4 dark:border-warning-700 dark:bg-warning-950/50">
+                <p class="font-semibold text-warning-800 dark:text-warning-200">
+                    {{ $money($unmapped['total']) }} is in unmapped categories.
+                </p>
+                <p class="mt-1 text-sm text-warning-700 dark:text-warning-300">
+                    These amounts report under the catch-all account rather than their proper statement
+                    line, so cost of sales and the gross margin below are understated. Map them under
+                    Finance → Expense Categories / Income Categories.
+                </p>
+                <ul class="mt-2 space-y-1 text-sm text-warning-800 dark:text-warning-200">
+                    @foreach (array_merge($unmapped['expenses'], $unmapped['incomes']) as $category)
+                        <li class="flex justify-between gap-4">
+                            <span>{{ $category['name'] }} <span class="opacity-60">({{ $category['code'] }})</span></span>
+                            <span class="font-semibold tabular-nums">{{ $money($category['amount']) }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        </x-filament::section>
+    @endif
+
     <x-filament::section>
         <x-slot name="heading">{{ $statement['period']['label'] }}</x-slot>
         <x-slot name="description">

@@ -565,6 +565,47 @@ class FinancialStatementServiceTest extends TestCase
             ->firstWhere('statement_line', 'Share Capital')['amount'], 0.01);
     }
 
+    /**
+     * An unmapped category still reports, but it lands in the catch-all and quietly
+     * understates cost of sales. Production hit exactly this: five user-created
+     * categories carried most of the spend and the gross margin came out at 99%.
+     */
+    public function test_unmapped_categories_are_reported_against_the_statement(): void
+    {
+        $this->derivedPeriod();
+
+        $this->shipmentOwing($this->client(), total: 100000, paid: 0, createdAt: '2026-02-01');
+        $this->expense('CUSTOMS', 2000, '2026-02-05');
+        $this->expense('Container Fee', 40000, '2026-02-06', mapped: false);
+        $this->expense('Lunch', 500, '2026-02-07', mapped: false);
+
+        $statement = $this->service->profitAndLoss(self::DERIVED_YEAR);
+        $unmapped = $statement['unmapped_categories'];
+
+        $this->assertEqualsWithDelta(40500.00, $unmapped['total'], 0.01);
+
+        // Largest first, so the one worth fixing is the one read first.
+        $this->assertSame('Container Fee', $unmapped['expenses'][0]['name']);
+        $this->assertEqualsWithDelta(40000.00, $unmapped['expenses'][0]['amount'], 0.01);
+
+        // The money is still reported — it just sits in the wrong caption.
+        $this->assertEqualsWithDelta(40500.00, $statement['totals']['operating_expenses'], 0.01);
+        $this->assertEqualsWithDelta(2000.00, $statement['totals']['cost_of_sales'], 0.01);
+    }
+
+    public function test_a_fully_mapped_year_reports_nothing_unmapped(): void
+    {
+        $this->derivedPeriod();
+
+        $this->shipmentOwing($this->client(), total: 5000, paid: 0, createdAt: '2026-02-01');
+        $this->expense('CUSTOMS', 1000, '2026-02-05');
+
+        $statement = $this->service->profitAndLoss(self::DERIVED_YEAR);
+
+        $this->assertEqualsWithDelta(0.0, $statement['unmapped_categories']['total'], 0.01);
+        $this->assertSame([], $statement['unmapped_categories']['expenses']);
+    }
+
     private function expense(string $categoryCode, float $amount, string $date, bool $mapped = true): Expense
     {
         $category = ExpenseCategory::firstOrCreate(
