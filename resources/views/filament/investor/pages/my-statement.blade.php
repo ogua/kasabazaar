@@ -3,7 +3,7 @@
         $investor = $this->getInvestor();
         $valuations = $this->getValuations();
         $asOfDate = $this->getAsOfDate();
-        $totalPrincipal = $investor->investments->sum('principal_amount');
+        $totalPrincipal = $this->getLiveInvestments()->sum('principal_amount');
         $totalValue = collect($valuations)->sum('compounded_balance');
     @endphp
 

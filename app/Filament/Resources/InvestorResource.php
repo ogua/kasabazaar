@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\InvestorResource\Pages;
+use App\Filament\Resources\InvestorResource\RelationManagers\ConversionsRelationManager;
 use App\Filament\Resources\InvestorResource\RelationManagers\InvestmentsRelationManager;
 use App\Models\Investor;
 use Filament\Forms;
@@ -189,13 +190,14 @@ class InvestorResource extends Resource
                         TextEntry::make('total_value')
                             ->label('Total Value')
                             ->helperText('Investment tranches: current_balance (includes compounded interest). Loan tranches: principal only — a loan\'s balance never compounds, so accrued interest is shown separately below.')
-                            ->state(fn (Investor $record) => $record->investments()->sum('current_balance'))
+                            ->state(fn (Investor $record) => $record->investments()->excludingConverted()->sum('current_balance'))
                             ->money('USD'),
 
                         TextEntry::make('accrued_loan_interest')
                             ->label('Accrued Loan Interest (Unpaid)')
                             ->helperText('Interest earned on loan tranches but not yet paid out to the investor.')
                             ->state(fn (Investor $record) => $record->investments()
+                                ->excludingConverted()
                                 ->where('capital_type', \App\Enums\InvestmentCapitalType::loan->value)
                                 ->with('interestPayouts')
                                 ->get()
@@ -334,6 +336,7 @@ class InvestorResource extends Resource
     {
         return [
             InvestmentsRelationManager::class,
+            ConversionsRelationManager::class,
         ];
     }
 

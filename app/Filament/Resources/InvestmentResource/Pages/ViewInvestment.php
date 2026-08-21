@@ -14,6 +14,7 @@ class ViewInvestment extends ViewRecord
     {
         return [
             InvestmentResource::postInterestHeaderAction(),
+            InvestmentResource::convertCapitalHeaderAction(),
             Actions\EditAction::make(),
         ];
     }

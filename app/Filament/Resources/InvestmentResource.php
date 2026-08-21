@@ -4,6 +4,9 @@ namespace App\Filament\Resources;
 
 use App\Enums\InvestmentAgreementStatus;
 use App\Enums\InvestmentCapitalType;
+use App\Enums\InvestmentConversionDirection;
+use App\Enums\InvestmentConversionSourceMode;
+use App\Enums\InvestmentConversionStatus;
 use App\Enums\InvestmentPayoutFrequency;
 use App\Enums\InvestmentStatus;
 use App\Enums\PaymentMethod;
@@ -12,6 +15,9 @@ use App\Filament\Resources\InvestmentResource\RelationManagers\InterestPayoutsRe
 use App\Filament\Resources\InvestmentResource\RelationManagers\RateOverridesRelationManager;
 use App\Filament\Resources\InvestmentResource\RelationManagers\TransactionsRelationManager;
 use App\Models\Investment;
+use App\Models\InvestmentConversion;
+use App\Models\InvestmentConversionSource;
+use App\Service\InvestmentConversionService;
 use App\Service\InvestmentInterestService;
 use App\Service\InvestmentPaymentService;
 use App\Service\InvestmentRateResolver;
@@ -26,6 +32,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 
@@ -359,6 +366,7 @@ class InvestmentResource extends Resource
                 self::rejectAgreementAction(),
 
                 self::postInterestAction(),
+                self::convertCapitalAction(),
 
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
@@ -376,6 +384,263 @@ class InvestmentResource extends Resource
             RateOverridesRelationManager::class,
             InterestPayoutsRelationManager::class,
         ];
+    }
+
+    /**
+     * Shared "Convert Capital" action, offered in the same three places as
+     * postInterestAction(): the table row, the View header and the Edit header.
+     */
+    public static function convertCapitalAction(): Action
+    {
+        return self::configureConvertCapitalAction(Action::make('convertCapital'));
+    }
+
+    /**
+     * Header-action variant — the View/Edit page header expects
+     * Filament\Actions\Action, which Filament\Tables\Actions\Action does not extend.
+     */
+    public static function convertCapitalHeaderAction(): HeaderAction
+    {
+        return self::configureConvertCapitalAction(HeaderAction::make('convertCapital'));
+    }
+
+    /**
+     * Staff-initiated conversion: created already approved and executed in one step,
+     * unlike an investor-raised request which waits for review on the Capital
+     * Conversions screen.
+     *
+     * @template TAction of Action|HeaderAction
+     *
+     * @param  TAction  $action
+     * @return TAction
+     */
+    private static function configureConvertCapitalAction(Action|HeaderAction $action): Action|HeaderAction
+    {
+        return $action
+            ->label('Convert Capital')
+            ->icon('heroicon-o-arrows-right-left')
+            ->color('warning')
+            ->visible(fn (Investment $record) => $record->status === InvestmentStatus::active)
+            ->modalHeading(fn (Investment $record) => $record->capital_type === InvestmentCapitalType::loan
+                ? 'Convert loan capital to an investment'
+                : 'Convert investment capital to a loan')
+            ->modalDescription(fn (Investment $record) => $record->capital_type === InvestmentCapitalType::investment
+                ? 'The selected tranches are settled and re-issued as a single new loan. Note the lender loses the right to request an early withdrawal — loan principal is due in full at maturity.'
+                : 'The selected tranches are settled and re-issued as a single new compounding investment. Any interest accrued but not yet paid out is rolled into the new principal.')
+            ->form(fn (Investment $record) => self::convertCapitalForm($record))
+            ->action(function (Investment $record, array $data) {
+                try {
+                    $conversion = self::buildStaffConversion($record, $data);
+                    $target = app(InvestmentConversionService::class)->execute($conversion, auth()->user());
+                } catch (\Throwable $e) {
+                    Notification::make()
+                        ->title('Conversion failed')
+                        ->body($e->getMessage())
+                        ->danger()
+                        ->persistent()
+                        ->send();
+
+                    return;
+                }
+
+                Notification::make()
+                    ->title('Capital converted')
+                    ->body(sprintf(
+                        'Issued %s for $%s. Its agreement is ready for the investor to review.',
+                        $target->reference,
+                        number_format((float) $target->principal_amount, 2)
+                    ))
+                    ->success()
+                    ->persistent()
+                    ->send();
+            });
+    }
+
+    /**
+     * @return array<int, \Filament\Forms\Components\Component>
+     */
+    private static function convertCapitalForm(Investment $record): array
+    {
+        $direction = $record->capital_type === InvestmentCapitalType::loan
+            ? InvestmentConversionDirection::to_investment
+            : InvestmentConversionDirection::to_loan;
+        $targetIsLoan = $direction->targetCapitalType() === InvestmentCapitalType::loan;
+        $service = app(InvestmentConversionService::class);
+
+        // Every other tranche of the same investor that could join this conversion, so
+        // a whole-portfolio roll is one action rather than one per tranche.
+        $eligible = Investment::where('investor_id', $record->investor_id)
+            ->excludingConverted()
+            ->where('status', InvestmentStatus::active->value)
+            ->where('capital_type', $record->capital_type->value)
+            ->orderBy('start_date')
+            ->get();
+
+        $options = $eligible->mapWithKeys(function (Investment $tranche) use ($service) {
+            $settlement = $service->settlementValue($tranche, now());
+            $total = $settlement['principal'] + $settlement['interest'];
+
+            return [$tranche->id => sprintf(
+                '%s — $%s principal + $%s interest = $%s%s',
+                $tranche->reference,
+                number_format($settlement['principal'], 2),
+                number_format($settlement['interest'], 2),
+                number_format($total, 2),
+                $tranche->isContractDue() ? '' : ' (not yet matured)'
+            )];
+        })->all();
+
+        return [
+            Forms\Components\CheckboxList::make('source_ids')
+                ->label('Tranches to convert')
+                ->options($options)
+                ->default([$record->id])
+                ->required()
+                ->live()
+                ->bulkToggleable()
+                ->columnSpanFull()
+                ->helperText('Select one tranche, or several to combine them into a single new tranche.'),
+
+            Forms\Components\Select::make('mode')
+                ->label('How much of each tranche')
+                ->options(InvestmentConversionResource::sourceModeOptions())
+                ->default(InvestmentConversionSourceMode::full->value)
+                ->required()
+                ->live(),
+
+            Forms\Components\TextInput::make('amount')
+                ->label('Amount to convert')
+                ->numeric()
+                ->prefix('USD')
+                ->required(fn (Get $get) => $get('mode') === InvestmentConversionSourceMode::partial->value)
+                ->visible(fn (Get $get) => $get('mode') === InvestmentConversionSourceMode::partial->value)
+                ->helperText(sprintf(
+                    'Minimum $%s, and at least $%s must remain in the tranche unless you tick the waiver below. A partial amount applies to each selected tranche, so select one at a time here.',
+                    number_format((float) config('investment.partial_minimum'), 2),
+                    number_format((float) config('investment.minimum_remaining_balance'), 2)
+                )),
+
+            Forms\Components\DatePicker::make('conversion_date')
+                ->label('Conversion date')
+                ->default(now())
+                ->required()
+                ->live()
+                ->helperText('Interest is trued up to this date before the tranches are settled.'),
+
+            Forms\Components\Placeholder::make('quote')
+                ->label('Settlement')
+                ->columnSpanFull()
+                ->content(function (Get $get) use ($record, $service) {
+                    $sourceIds = $get('source_ids') ?: [];
+
+                    if (empty($sourceIds) || ! $get('conversion_date')) {
+                        return '—';
+                    }
+
+                    try {
+                        $quote = $service->quote(
+                            $record->investor,
+                            collect($sourceIds)->map(fn ($id) => [
+                                'investment_id' => $id,
+                                'mode' => $get('mode') ?: InvestmentConversionSourceMode::full->value,
+                                'amount' => $get('amount'),
+                            ])->all(),
+                            Carbon::parse($get('conversion_date'))
+                        );
+                    } catch (\Throwable $e) {
+                        return $e->getMessage();
+                    }
+
+                    return sprintf(
+                        '$%s principal + $%s interest = $%s carried forward%s',
+                        number_format($quote['total_principal_rolled'], 2),
+                        number_format($quote['total_interest_rolled'], 2),
+                        number_format($quote['total_amount'], 2),
+                        $quote['total_paid_out'] > 0
+                            ? sprintf(', with $%s of interest paid out in cash', number_format($quote['total_paid_out'], 2))
+                            : ''
+                    );
+                }),
+
+            Forms\Components\Section::make('Terms of the new tranche')
+                ->schema([
+                    Forms\Components\TextInput::make('target_contract_term_months')
+                        ->label('Contract Term (months)')
+                        ->numeric()
+                        ->minValue(1)
+                        ->maxValue(600)
+                        ->default(12)
+                        ->required()
+                        ->suffix('months'),
+
+                    Forms\Components\Select::make('target_payout_frequency')
+                        ->label('Interest Payout Frequency')
+                        ->options(InvestmentPayoutFrequency::class)
+                        ->visible($targetIsLoan)
+                        ->required($targetIsLoan)
+                        ->helperText('How often cash interest is paid to the lender.'),
+
+                    Forms\Components\TextInput::make('target_annual_rate')
+                        ->label('Annual Rate')
+                        ->numeric()
+                        ->suffix('%')
+                        ->required($targetIsLoan)
+                        ->helperText($targetIsLoan
+                            ? 'Fixed for the whole life of the loan. Required — without it the loan would re-price off the company-wide rate settings each year.'
+                            : 'Optional. Leave blank to fall back to the standing investor rate, then the company-wide default.'),
+                ])
+                ->columns(3),
+
+            Forms\Components\Section::make('Exceptions')
+                ->schema([
+                    Forms\Components\Toggle::make('maturity_exception_approved')
+                        ->label('Allow tranches whose contract term has not yet elapsed'),
+
+                    Forms\Components\Toggle::make('threshold_exception_approved')
+                        ->label('Waive the partial-conversion minimums')
+                        ->visible(fn (Get $get) => $get('mode') === InvestmentConversionSourceMode::partial->value),
+                ])
+                ->collapsed(),
+        ];
+    }
+
+    private static function buildStaffConversion(Investment $record, array $data): InvestmentConversion
+    {
+        $direction = $record->capital_type === InvestmentCapitalType::loan
+            ? InvestmentConversionDirection::to_investment
+            : InvestmentConversionDirection::to_loan;
+
+        return DB::transaction(function () use ($record, $data, $direction) {
+            $conversion = InvestmentConversion::create([
+                'investor_id' => $record->investor_id,
+                'direction' => $direction->value,
+                'conversion_date' => $data['conversion_date'],
+                // Staff act on a written instruction already in hand, so there is no
+                // second party left to review it — created approved, executed at once.
+                'status' => InvestmentConversionStatus::approved->value,
+                'requested_by_investor' => false,
+                'target_contract_term_months' => $data['target_contract_term_months'],
+                'target_payout_frequency' => $data['target_payout_frequency'] ?? null,
+                'target_annual_rate' => filled($data['target_annual_rate'] ?? null) ? (float) $data['target_annual_rate'] : null,
+                'maturity_exception_approved' => (bool) ($data['maturity_exception_approved'] ?? false),
+                'threshold_exception_approved' => (bool) ($data['threshold_exception_approved'] ?? false),
+                'reviewed_by' => auth()->id(),
+                'reviewed_at' => now(),
+            ]);
+
+            foreach ($data['source_ids'] as $sourceId) {
+                InvestmentConversionSource::create([
+                    'investment_conversion_id' => $conversion->id,
+                    'source_investment_id' => $sourceId,
+                    'mode' => $data['mode'],
+                    'amount_rolled' => $data['mode'] === InvestmentConversionSourceMode::partial->value
+                        ? (float) $data['amount']
+                        : 0,
+                ]);
+            }
+
+            return $conversion->fresh('sources');
+        });
     }
 
     /**

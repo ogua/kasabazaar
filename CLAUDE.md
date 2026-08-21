@@ -35,6 +35,77 @@ php artisan app:exchange-rate        # sync exchange rates
 php artisan sitemap:generate
 ```
 
+## Group of Companies — cross-site sync (IMPORTANT)
+
+**RDD Shipping** (this repo, directory name `kasabazaar`) is the freight logistics arm of the **KasaBazaar Group
+of Companies**. It is **one of four sibling websites**, each in its own repository, that reference each other in
+navigation, footers and legal pages:
+
+| Company | What it is | Repo | Stack |
+|---|---|---|---|
+| **RDD Shipping** | This repo — freight logistics & package forwarding | this repo | Laravel 11 + Filament 3 |
+| KasaBazaar Group | Group site, "Our Companies" page | `Projects/website/kasabazar-website` | Plain PHP + Bootstrap |
+| Neoride Africa | Tricycle mobility, last-mile transport | `Projects/neoride` | Plain PHP template |
+| KASAROSE | Ecommerce marketplace | `Projects/website/kmarket` | Laravel 12 + Livewire + Filament 4 |
+
+(All four live under `C:/xampp/htdocs/`.)
+
+### KASAROSE is an API consumer of this app
+
+KASAROSE is the group's multi-vendor marketplace, launched as *KasaBazaar Market* and renamed in August 2026. It
+is a **separate application that talks to this one strictly over `/api/v1`** — there is no shared database
+connection, and it has no local product or order schema of its own. Two consequences:
+
+- **Never break `/api/v1` response shapes without checking `kmarket`.** Renaming a field, changing a status
+  string or altering pagination metadata will break the storefront silently. The consuming clients are in
+  `kmarket`'s `app/Services/Kasabazaar/*`.
+- Operationally, RDD Shipping **carries a share of KASAROSE deliveries** — nationwide road freight and anything
+  arriving from the US warehouse — and returns tracking events for them. That relationship is described in both
+  privacy policies and both delivery policies, so a change to it is a cross-repo change.
+
+### The roster
+
+**Every company roster lives in exactly one file per repo. Never hardcode a sister company's name or URL in a
+blade — read it from the roster.**
+
+| Repo | Roster file |
+|---|---|
+| kasabazaar (here) | `config/group.php` |
+| kmarket (KASAROSE) | `config/group.php` |
+| kasabazar-website | `includes/config.php` (`$group_companies`, `SITE_URL_*`) |
+| neoride | `parts/group_companies.php` |
+
+### The rule
+
+**Before you finish any change that touches company identity, cross-links or legal/policy copy, check whether the
+same change is needed in the other three repositories — and make it there too, in the same session.**
+
+Changes that always require the cross-repo sweep:
+
+- Adding, renaming or removing a group company, or changing its tagline, role or one-line description.
+- Changing any company's production domain (edit `config/group.php` and the `*_SITE_URL` env vars, never a blade).
+- Any edit to `resources/views/web/privacy-policy.blade.php` — it names the other companies and describes what
+  data passes between them. If it says KASAROSE passes us delivery addresses, the KASAROSE privacy policy must
+  describe the same flow from its side.
+- Changing the operational relationship between companies (who carries what, who is the point of contact).
+- Changing shared contact details (published phone numbers, support email, registered address).
+- Changing an `/api/v1` contract KASAROSE consumes (see above) — that is a code sweep, not a copy sweep, but it is
+  still cross-repo.
+
+Changes that do **not** need the sweep: Filament admin work, cashbook/payroll/fleet domain logic, PDF and Excel
+generation, tenant/branch scoping, shipment workflow.
+
+### Where the cross-links surface here
+
+- `config/group.php` — the roster, the parent-group URLs and this company's own identity strings.
+- `resources/views/web/footer.blade.php` — the "Our Group" link column and the parent-group line in the copyright
+  bar. Both loop over `config('group.companies')`.
+- `resources/views/web/privacy-policy.blade.php` — section 3a, "Sharing Within the KasaBazaar Group of Companies",
+  loops the same roster.
+
+This repo's public website has a privacy policy but **no terms of use page**; the other three repos do. If terms
+are added here, mirror the "Our Sister Companies" clause the group site and KASAROSE both carry.
+
 ## Architecture Overview
 
 **Kasabazaar** is a multi-tenant shipping & logistics platform for Rose Door to Door / Kasabazaar Limited (Ghana). It manages shipments, fleet, payroll, financials, and a cashbook — served via a Filament admin panel and a REST API consumed by a mobile app.

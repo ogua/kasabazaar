@@ -3,16 +3,18 @@
 namespace App\Service;
 
 use App\Enums\InvestmentTransactionType;
+use App\Models\Investment;
 use App\Models\InvestmentAnnualStatement;
 use App\Notifications\AnnualInvestmentStatementReady;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 
 class AnnualInvestmentStatementService
 {
     public static function generatePdf(InvestmentAnnualStatement $statement): \Barryvdh\DomPDF\PDF
     {
-        $statement->load('investor.investments');
+        $statement->load('investor.investments.conversionSources.conversion');
         $rows = self::buildRows($statement);
 
         return Pdf::loadView('reports.investment-annual-statement-pdf', [
@@ -81,7 +83,19 @@ class AnnualInvestmentStatementService
     {
         $rows = [];
 
-        foreach ($statement->investor->investments as $investment) {
+        // Deliberately NOT filtered with excludingConverted(): a tranche converted
+        // during the statement year was live for part of it and must appear in that
+        // year's statement. Only tranches already settled before the year opened are
+        // dropped — they contributed nothing to it.
+        $yearStart = Carbon::create($statement->year, 1, 1);
+
+        $investments = $statement->investor->investments->reject(
+            fn (Investment $investment) => $investment->isConverted()
+                && $investment->conversionSources
+                    ->every(fn ($source) => $source->conversion?->conversion_date?->lt($yearStart) ?? false)
+        );
+
+        foreach ($investments as $investment) {
             $yearTxns = $investment->transactions()
                 ->where('type', InvestmentTransactionType::interest_credit->value)
                 ->where('year', $statement->year)

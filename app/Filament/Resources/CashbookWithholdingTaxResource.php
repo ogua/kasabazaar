@@ -17,11 +17,19 @@ class CashbookWithholdingTaxResource extends Resource
     protected static ?string $model = CashbookWithholdingTax::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-calculator';
+
     protected static ?string $navigationGroup = 'Cashbook';
+
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?int $navigationSort = 5;
+
     protected static ?string $navigationLabel = 'Withholding Tax';
+
     protected static ?string $modelLabel = 'WHT Entry';
+
     protected static ?string $pluralModelLabel = 'Withholding Tax';
+
     protected static bool $isScopedToTenant = false;
 
     public static function form(Form $form): Form
@@ -55,7 +63,7 @@ class CashbookWithholdingTaxResource extends Resource
                             ->reactive()
                             ->afterStateUpdated(function (Get $get, Set $set) {
                                 $gross = floatval($get('gross_amount'));
-                                $rate  = floatval($get('rate') ?: 0.075);
+                                $rate = floatval($get('rate') ?: 0.075);
                                 $set('wht_amount', round($gross * $rate, 2));
                             }),
                         Forms\Components\TextInput::make('rate')
@@ -65,7 +73,7 @@ class CashbookWithholdingTaxResource extends Resource
                             ->reactive()
                             ->afterStateUpdated(function (Get $get, Set $set) {
                                 $gross = floatval($get('gross_amount'));
-                                $rate  = floatval($get('rate') ?: 0.075);
+                                $rate = floatval($get('rate') ?: 0.075);
                                 $set('wht_amount', round($gross * $rate, 2));
                             }),
                         Forms\Components\TextInput::make('wht_amount')
@@ -93,7 +101,7 @@ class CashbookWithholdingTaxResource extends Resource
                 Tables\Columns\TextColumn::make('staff_name')->label('Staff')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('gross_amount')->label('Gross')->numeric(2)->prefix('₵'),
                 Tables\Columns\TextColumn::make('rate')
-                    ->formatStateUsing(fn ($state) => number_format((float) $state * 100, 1) . '%'),
+                    ->formatStateUsing(fn ($state) => number_format((float) $state * 100, 1).'%'),
                 Tables\Columns\TextColumn::make('wht_amount')->label('WHT')->numeric(2)->prefix('₵')->weight('bold')->color('danger'),
             ])
             ->filters([
@@ -126,9 +134,9 @@ class CashbookWithholdingTaxResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListCashbookWithholdingTaxes::route('/'),
+            'index' => Pages\ListCashbookWithholdingTaxes::route('/'),
             'create' => Pages\CreateCashbookWithholdingTax::route('/create'),
-            'edit'   => Pages\EditCashbookWithholdingTax::route('/{record}/edit'),
+            'edit' => Pages\EditCashbookWithholdingTax::route('/{record}/edit'),
         ];
     }
 }

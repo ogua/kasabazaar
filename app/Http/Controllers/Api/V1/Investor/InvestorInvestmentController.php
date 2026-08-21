@@ -14,10 +14,27 @@ use Illuminate\Http\Request;
 
 class InvestorInvestmentController extends InvestorBaseController
 {
+    /**
+     * Everything InvestmentResource reads. The two conversion relations are what
+     * populate converted_from_reference / converted_to_reference — without them the
+     * resource's whenLoaded() guards omit the fields entirely rather than lazy-loading
+     * one query per tranche.
+     */
+    private const RESOURCE_RELATIONS = [
+        'interestPayouts',
+        'convertedFromConversion',
+        'conversionSources.conversion.targetInvestment',
+    ];
+
     public function index(): JsonResponse
     {
+        // Converted tranches are excluded: the successor tranche holds the same
+        // capital, so listing both would show the investor their money twice.
+        // A converted tranche remains reachable via show() and on the statement PDF,
+        // which are history documents rather than a position list.
         $investments = Investment::where('investor_id', $this->investorId())
-            ->with('interestPayouts')
+            ->excludingConverted()
+            ->with(self::RESOURCE_RELATIONS)
             ->orderByDesc('start_date')
             ->get();
 
@@ -36,7 +53,7 @@ class InvestorInvestmentController extends InvestorBaseController
     public function show(string $id): JsonResponse
     {
         $investment = Investment::where('investor_id', $this->investorId())
-            ->with('interestPayouts')
+            ->with(self::RESOURCE_RELATIONS)
             ->findOrFail($id);
 
         // A loan's balance never compounds — interest lives entirely in

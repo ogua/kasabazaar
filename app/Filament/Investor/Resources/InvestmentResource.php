@@ -163,19 +163,32 @@ class InvestmentResource extends Resource
                     ->disabled(fn (Investment $record) => $record->agreement_status === InvestmentAgreementStatus::pending_review)
                     ->visible(fn (Investment $record) => $record->agreement_status !== InvestmentAgreementStatus::finalized
                         && $record->status->value !== 'pending_payment')
-                    ->modalDescription('Download the agreement, sign it, then upload a scan or photo of the signed copy here. Our team will review it and confirm once the agreement is finalized.')
+                    ->modalDescription('Your agreement already carries your name as your signature — there is nothing to print or sign by hand. Download it, read it in full, then upload the same document back here to record your agreement to its terms. Our team will review it and confirm once finalized.')
                     ->form([
                         Forms\Components\FileUpload::make('signed_agreement_path')
-                            ->label('Signed Agreement')
+                            ->label('Agreement Document')
+                            ->helperText('Upload the agreement you downloaded above.')
                             ->directory('investment-agreements/signed')
                             ->acceptedFileTypes(['application/pdf', 'image/*'])
                             ->required(),
+
+                        // The name is affixed for the investor, so the upload is the act
+                        // of assent rather than the signing. This confirmation, with the
+                        // originating IP recorded below, is what evidences that assent.
+                        Forms\Components\Checkbox::make('acknowledged')
+                            ->label('I have read this agreement in full and agree to be bound by its terms.')
+                            ->accepted()
+                            ->required()
+                            ->validationMessages([
+                                'accepted' => 'You must confirm that you have read and agree to the terms of this agreement.',
+                            ]),
                     ])
                     ->action(function (Investment $record, array $data) {
                         $record->update([
                             'signed_agreement_path' => $data['signed_agreement_path'],
                             'agreement_status' => InvestmentAgreementStatus::pending_review,
                             'agreement_signed_at' => now(),
+                            'agreement_acknowledged_ip' => request()->ip(),
                         ]);
 
                         Notification::make()

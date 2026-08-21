@@ -26,6 +26,17 @@ class MyStatement extends Page
             ->findOrFail(auth()->user()->investor_id);
     }
 
+    /**
+     * Tranches the investor still holds. A tranche settled into a successor by a
+     * capital conversion is excluded from every total on this page — the successor
+     * carries the same capital, so counting both would double the figures. The
+     * per-tranche history table below still lists them.
+     */
+    public function getLiveInvestments(): \Illuminate\Support\Collection
+    {
+        return $this->getInvestor()->investments->reject(fn ($investment) => $investment->isConverted());
+    }
+
     public function getValuations(): array
     {
         $interestService = app(InvestmentInterestService::class);
@@ -33,6 +44,7 @@ class MyStatement extends Page
         $asOfDate = $investor->defaultAsOfDate();
 
         return $investor->investments
+            ->reject(fn ($investment) => $investment->isConverted())
             ->mapWithKeys(fn ($investment) => [$investment->id => $interestService->valuationAsOf($investment, $asOfDate)])
             ->toArray();
     }

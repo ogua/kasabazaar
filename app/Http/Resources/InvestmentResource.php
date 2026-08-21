@@ -38,6 +38,9 @@ class InvestmentResource extends JsonResource
             'agreement_status' => $this->agreement_status->value,
             'agreement_status_label' => $this->agreement_status->getLabel(),
             'has_signed_agreement' => filled($this->signed_agreement_path),
+            // The name affixed to the agreement as the investor's signature. Snapshotted
+            // when the document is first generated, so it never drifts from the issued copy.
+            'signature_name' => $this->agreement_signature_name,
             'deposit_gateway' => $this->deposit_gateway,
             'start_date' => $this->start_date?->toDateString(),
             'contract_term_months' => $this->contract_term_months,
@@ -49,6 +52,18 @@ class InvestmentResource extends JsonResource
             'interest_owed' => $isLoan
                 ? round((float) $unpaidPayouts->sum(fn ($p) => (float) $p->amount - (float) $p->amount_paid), 2)
                 : null,
+            'is_converted' => $this->isConverted(),
+            // Set when this tranche was issued as the successor of settled tranche(s)
+            // rather than funded with new money.
+            'converted_from_reference' => $this->whenLoaded(
+                'convertedFromConversion',
+                fn () => $this->convertedFromConversion?->reference
+            ),
+            // Set on a settled tranche, pointing at the tranche that now holds its capital.
+            'converted_to_reference' => $this->whenLoaded(
+                'conversionSources',
+                fn () => $this->conversionSources->last()?->conversion?->targetInvestment?->reference
+            ),
             'created_at' => $this->created_at,
         ];
     }

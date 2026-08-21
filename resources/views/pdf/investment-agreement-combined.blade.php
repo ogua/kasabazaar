@@ -229,6 +229,43 @@
             </div>
         @endif
 
+        @if (($convertedTranches ?? collect())->isNotEmpty())
+            <div class="section">
+                <h2>Prior Holdings Converted</h2>
+                <p>
+                    The holdings below are no longer live and are excluded from the totals above. Each was settled
+                    and re-issued as a tranche of the other instrument on the date shown; the capital is carried by
+                    the successor tranche listed against it. Shown for continuity of record only.
+                </p>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Reference</th>
+                            <th>Type Held</th>
+                            <th>Converted On</th>
+                            <th class="text-right">Amount Carried Forward</th>
+                            <th>Successor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($convertedTranches as $tranche)
+                            @php
+                                $source = $tranche->conversionSources->last();
+                                $conversion = $source?->conversion;
+                            @endphp
+                            <tr>
+                                <td>{{ $tranche->reference }}</td>
+                                <td>{{ $tranche->capital_type->getLabel() }}</td>
+                                <td>{{ $conversion?->conversion_date?->format('M j, Y') ?? '—' }}</td>
+                                <td class="text-right">${{ number_format($source?->amount_rolled ?? 0, 2) }}</td>
+                                <td>{{ $conversion?->targetInvestment?->reference ?? '—' }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+
         <div class="section">
             <h2>Reporting</h2>
             <p>
@@ -240,25 +277,12 @@
 
         @include('pdf.partials.investment-legal-boilerplate')
 
-        <div class="signature-block">
-            <div class="signature-column">
-                <div class="signature-line">
-                    {{ $investor->name }}<br>
-                    {{ $partyLabel }}<br>
-                    Date: {{date('F j, Y')}}
-                </div>
-            </div>
-            <div class="signature-column">
-                @if (file_exists(public_path('images/shipping-signature.png')))
-                    <img src="{{ URL::to('images/shipping-signature.png') }}" alt="Authorized Signature" style="max-height: 60px;">
-                @endif
-                <div class="signature-line">
-                    Founder &amp; CVO<br>
-                    KasaBazaar Group Of Companies<br>
-                    Date: {{date('F j, Y')}}
-                </div>
-            </div>
-        </div>
+        @include('pdf.partials.investment-signature-block', [
+            'signatureName' => $investor->name,
+            'signatureDate' => now(),
+            'acknowledgedAt' => null,
+            'partyLabel' => $partyLabel,
+        ])
     </div>
 </body>
 

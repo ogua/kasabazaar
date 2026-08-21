@@ -83,7 +83,7 @@
                             <div class="value">${{ number_format($investment->principal_amount, 2) }}</div>
                         </div>
                     </div>
-                @else
+                @elseif ($valuation)
                     <div class="valuation-box">
                         <div class="row">
                             <div class="label">Interest Earned to Date</div>
@@ -92,6 +92,34 @@
                         <div class="row">
                             <div class="label">Current Value</div>
                             <div class="value">${{ number_format($valuation['compounded_balance'], 2) }}</div>
+                        </div>
+                    </div>
+                @endif
+
+                @if ($investment->isConverted())
+                    @php
+                        $conversionSource = $investment->conversionSources->last();
+                        $conversion = $conversionSource?->conversion;
+                    @endphp
+                    {{-- A settled tranche has no live valuation — its capital now sits on the
+                         successor. It stays on the statement so the closing balance below does
+                         not simply drop with nothing to explain it. --}}
+                    <div class="valuation-box" style="border-color: #1d4ed8; background: #eff6ff;">
+                        <div class="row">
+                            <div class="label">Converted On</div>
+                            <div class="value">{{ $conversion?->conversion_date?->format('F j, Y') ?? '—' }}</div>
+                        </div>
+                        <div class="row">
+                            <div class="label">Amount Carried Forward</div>
+                            <div class="value">${{ number_format($conversionSource?->amount_rolled ?? 0, 2) }}</div>
+                        </div>
+                        <div class="row">
+                            <div class="label">Carried Forward To</div>
+                            <div class="value">{{ $conversion?->targetInvestment?->reference ?? '—' }}</div>
+                        </div>
+                        <div class="row">
+                            <div class="label">Closing Balance</div>
+                            <div class="value">$0.00</div>
                         </div>
                     </div>
                 @endif

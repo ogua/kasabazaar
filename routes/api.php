@@ -37,6 +37,7 @@ use App\Http\Controllers\Api\V1\Investment\InvestmentPaystackWebhookController;
 use App\Http\Controllers\Api\V1\Investment\InvestmentStripeWebhookController;
 use App\Http\Controllers\Api\V1\Investment\InvestmentTransferWebhookController;
 use App\Http\Controllers\Api\V1\Investor\InvestorCompanyPerformanceController;
+use App\Http\Controllers\Api\V1\Investor\InvestorConversionController;
 use App\Http\Controllers\Api\V1\Investor\InvestorDocumentController;
 use App\Http\Controllers\Api\V1\Investor\InvestorInvestmentController;
 use App\Http\Controllers\Api\V1\Investor\InvestorWithdrawalRequestController;
@@ -214,6 +215,12 @@ Route::prefix('v1')->group(function () {
             Route::get('receivables-aging', [FinancialReportController::class, 'receivablesAging']);
             Route::get('container-detail/{reference}', [FinancialReportController::class, 'containerDetail']);
 
+            // Bank-facing statutory statements. Same engine the admin panel renders,
+            // so the figures cannot drift between the two.
+            Route::get('statements/profit-and-loss', [FinancialReportController::class, 'profitAndLoss']);
+            Route::get('statements/balance-sheet', [FinancialReportController::class, 'balanceSheet']);
+            Route::get('statements/accounts-receivable', [FinancialReportController::class, 'accountsReceivable']);
+
             // Legacy saved-report endpoints (wildcard must come last)
             Route::get('/', [ReportController::class, 'index']);
             Route::get('{id}', [ReportController::class, 'show']);
@@ -264,6 +271,13 @@ Route::prefix('v1')->group(function () {
             Route::get('investments/{id}/agreement', [InvestorDocumentController::class, 'agreement']);
             Route::post('investments/{id}/signed-agreement', [InvestorDocumentController::class, 'uploadSignedAgreement']);
             Route::post('investments/{id}/verify', [InvestorInvestmentController::class, 'verify']);
+
+            Route::get('conversions/eligible', [InvestorConversionController::class, 'eligible']);
+            Route::post('conversions/quote', [InvestorConversionController::class, 'quote']);
+            Route::get('conversions', [InvestorConversionController::class, 'index']);
+            Route::post('conversions', [InvestorConversionController::class, 'store']);
+            Route::get('conversions/{id}', [InvestorConversionController::class, 'show']);
+            Route::post('conversions/{id}/cancel', [InvestorConversionController::class, 'cancel']);
 
             Route::get('withdrawal-requests', [InvestorWithdrawalRequestController::class, 'index']);
             Route::post('withdrawal-requests', [InvestorWithdrawalRequestController::class, 'store']);

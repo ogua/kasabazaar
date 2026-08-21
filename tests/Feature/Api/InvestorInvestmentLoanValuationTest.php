@@ -234,6 +234,7 @@ class InvestorInvestmentLoanValuationTest extends TestCase
         $response = $this->withHeaders($this->authHeader($investor))
             ->post("/api/v1/investor/investments/{$investment->id}/signed-agreement", [
                 'signed_agreement' => $file,
+                'acknowledged' => true,
             ]);
 
         $response->assertOk();
@@ -243,7 +244,38 @@ class InvestorInvestmentLoanValuationTest extends TestCase
         $investment->refresh();
         $this->assertSame('pending_review', $investment->agreement_status->value);
         $this->assertNotNull($investment->agreement_signed_at);
+        $this->assertNotNull($investment->agreement_acknowledged_ip);
         Storage::disk('public')->assertExists($investment->signed_agreement_path);
+    }
+
+    /**
+     * The agreement now carries the investor's name already affixed as the signature,
+     * so the upload alone is not evidence of assent — the explicit confirmation is.
+     */
+    public function test_signed_agreement_upload_requires_an_explicit_acknowledgement(): void
+    {
+        Storage::fake('public');
+
+        $investor = Investor::create(['name' => 'Unacknowledging Investor', 'status' => 'active']);
+        $investment = Investment::create([
+            'investor_id' => $investor->id,
+            'principal_amount' => 5000,
+            'current_balance' => 5000,
+            'start_date' => now(),
+            'status' => 'active',
+        ]);
+
+        $response = $this->withHeaders($this->authHeader($investor))
+            ->postJson("/api/v1/investor/investments/{$investment->id}/signed-agreement", [
+                'signed_agreement' => UploadedFile::fake()->create('signed.pdf', 100, 'application/pdf'),
+            ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors('acknowledged');
+
+        $investment->refresh();
+        $this->assertSame('unsigned', $investment->agreement_status->value);
+        $this->assertNull($investment->signed_agreement_path);
     }
 
     public function test_signed_agreement_upload_is_rejected_before_investment_is_funded(): void

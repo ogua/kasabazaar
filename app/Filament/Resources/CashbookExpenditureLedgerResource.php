@@ -16,11 +16,19 @@ class CashbookExpenditureLedgerResource extends Resource
     protected static ?string $model = CashbookExpenditureLedger::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-arrow-trending-down';
+
     protected static ?string $navigationGroup = 'Cashbook';
+
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?int $navigationSort = 7;
+
     protected static ?string $navigationLabel = 'Expenditure Ledger';
+
     protected static ?string $modelLabel = 'Expenditure Ledger Entry';
+
     protected static ?string $pluralModelLabel = 'Expenditure Ledger';
+
     protected static bool $isScopedToTenant = false;
 
     public static function form(Form $form): Form
@@ -91,9 +99,9 @@ class CashbookExpenditureLedgerResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListCashbookExpenditureLedgers::route('/'),
+            'index' => Pages\ListCashbookExpenditureLedgers::route('/'),
             'create' => Pages\CreateCashbookExpenditureLedger::route('/create'),
-            'edit'   => Pages\EditCashbookExpenditureLedger::route('/{record}/edit'),
+            'edit' => Pages\EditCashbookExpenditureLedger::route('/{record}/edit'),
         ];
     }
 }

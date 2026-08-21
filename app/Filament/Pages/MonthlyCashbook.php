@@ -20,19 +20,27 @@ class MonthlyCashbook extends Page implements HasTable
     use InteractsWithTable;
 
     protected static ?string $navigationIcon = 'heroicon-o-book-open';
+
     protected static ?string $navigationGroup = 'Cashbook';
+
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?int $navigationSort = 1;
+
     protected static ?string $title = 'Monthly Cashbook';
+
     protected static ?string $navigationLabel = 'Monthly Cashbook';
+
     protected static string $view = 'filament.pages.monthly-cashbook';
 
     public int $selectedMonth;
+
     public int $selectedYear;
 
     public function mount(): void
     {
         $this->selectedMonth = (int) now()->format('n');
-        $this->selectedYear  = (int) now()->format('Y');
+        $this->selectedYear = (int) now()->format('Y');
     }
 
     public function updatedSelectedMonth(): void
@@ -111,8 +119,9 @@ class MonthlyCashbook extends Page implements HasTable
                     ->form($this->entryFormSchema())
                     ->using(function (CashbookEntry $record, array $data): CashbookEntry {
                         $data['month'] = $this->selectedMonth;
-                        $data['year']  = $this->selectedYear;
+                        $data['year'] = $this->selectedYear;
                         $record->update($data);
+
                         return $record;
                     })
                     ->successNotificationTitle('Entry updated'),
@@ -137,7 +146,7 @@ class MonthlyCashbook extends Page implements HasTable
                 ->form($this->entryFormSchema())
                 ->action(function (array $data): void {
                     $data['month'] = $this->selectedMonth;
-                    $data['year']  = $this->selectedYear;
+                    $data['year'] = $this->selectedYear;
                     CashbookEntry::create($data);
                     Notification::make()
                         ->title('Entry added')
@@ -244,6 +253,7 @@ class MonthlyCashbook extends Page implements HasTable
     public static function getYearOptions(): array
     {
         $currentYear = (int) now()->format('Y');
+
         return array_combine(
             range($currentYear - 1, $currentYear + 1),
             range($currentYear - 1, $currentYear + 1)

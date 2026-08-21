@@ -10,13 +10,21 @@ class InvestmentStatementService
 {
     public static function generatePdf(Investor $investor): \Barryvdh\DomPDF\PDF
     {
+        // The statement lists every tranche including converted ones — it is a
+        // history document, and hiding a settled tranche would leave an unexplained
+        // drop in the running balance. The *totals* below deliberately exclude them,
+        // since the successor tranche already carries that capital.
         $investor->load(['investments' => function ($query) {
             $query->with([
                 'transactions' => fn ($query) => $query->where('posted', true)->orderBy('date'),
-                // due/processing/paid only — skipped/reversed rows don't represent money
-                // owed and would otherwise inflate "accrued" totals below.
-                'interestPayouts' => fn ($query) => $query->whereIn('status', ['due', 'processing', 'paid'])->orderBy('due_date'),
+                // skipped/reversed rows don't represent money earned and would inflate
+                // the "accrued" totals below. 'converted' rows are kept: that interest
+                // was genuinely earned, it simply became principal in a successor
+                // tranche rather than being paid out in cash.
+                'interestPayouts' => fn ($query) => $query->whereIn('status', ['due', 'processing', 'paid', 'converted'])->orderBy('due_date'),
                 'withdrawalRequests' => fn ($query) => $query->orderByDesc('created_at'),
+                // Needed by the converted-tranche history block on the statement.
+                'conversionSources.conversion.targetInvestment',
             ]);
         }]);
 
@@ -32,19 +40,21 @@ class InvestmentStatementService
         // balance never compounds, so calling this for a loan would misrepresent it
         // (and its "interest earned" would always read $0, since loan interest is
         // tracked separately via interestPayouts, not interest_credit transactions).
-        $valuations = $investor->investments
+        $liveInvestments = $investor->investments->reject(fn (Investment $investment) => $investment->isConverted());
+
+        $valuations = $liveInvestments
             ->where('capital_type', InvestmentCapitalType::investment)
             ->mapWithKeys(
                 fn (Investment $investment) => [$investment->id => $interestService->valuationAsOf($investment, $asOfDate)]
             );
 
-        $loans = $investor->investments->where('capital_type', InvestmentCapitalType::loan);
+        $loans = $liveInvestments->where('capital_type', InvestmentCapitalType::loan);
 
         return \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.investment-account-statement', [
             'investor' => $investor,
             'investments' => $investor->investments,
             'valuations' => $valuations,
-            'totalPrincipal' => $investor->investments->sum('principal_amount'),
+            'totalPrincipal' => $liveInvestments->sum('principal_amount'),
             'totalValue' => $valuations->sum('compounded_balance') + $loans->sum('principal_amount'),
             'totalLoanInterestAccrued' => $loans->flatMap->interestPayouts->sum('amount'),
             'totalLoanInterestPaid' => $loans->flatMap->interestPayouts->sum('amount_paid'),

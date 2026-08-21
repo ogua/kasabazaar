@@ -48,7 +48,13 @@ class Investor extends Model
      */
     public function defaultAsOfDate(): Carbon
     {
-        $dates = $this->investments->map(fn (Investment $investment) => $investment->defaultAsOfDate());
+        // Converted tranches are excluded: a settled tranche's posting cursor would
+        // otherwise pull the valuation date forward past what the live tranches have
+        // actually posted through, and every PDF anchored to this date would claim to
+        // be as-of a period it has no figures for.
+        $dates = $this->investments
+            ->reject(fn (Investment $investment) => $investment->isConverted())
+            ->map(fn (Investment $investment) => $investment->defaultAsOfDate());
 
         return $dates->max() ?? now();
     }
@@ -66,6 +72,11 @@ class Investor extends Model
     public function annualStatements(): HasMany
     {
         return $this->hasMany(InvestmentAnnualStatement::class);
+    }
+
+    public function conversions(): HasMany
+    {
+        return $this->hasMany(InvestmentConversion::class);
     }
 
     public function users(): HasMany

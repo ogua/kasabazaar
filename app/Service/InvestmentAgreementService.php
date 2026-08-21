@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Enums\InvestmentCapitalType;
+use App\Enums\InvestmentStatus;
 use App\Enums\InvestmentTransactionType;
 use App\Models\Investment;
 use App\Models\InvestmentTransaction;
@@ -16,9 +17,11 @@ class InvestmentAgreementService
 {
     public static function generatePdf(Investment $investment, ?Carbon $asOfDate = null): \Barryvdh\DomPDF\PDF
     {
-        $investment->load('investor');
+        $investment->load('investor', 'convertedFromConversion.sources.sourceInvestment');
         $asOfDate ??= $investment->defaultAsOfDate();
         $isLoan = $investment->capital_type === InvestmentCapitalType::loan;
+
+        self::affixSignature($investment);
 
         return Pdf::loadView('pdf.investment-agreement', [
             'investment' => $investment,
@@ -30,6 +33,7 @@ class InvestmentAgreementService
                 ->where('posted', true)
                 ->orderBy('date')
                 ->get(),
+            'conversion' => $investment->convertedFromConversion,
             'payoutSchedule' => $isLoan ? ($payoutSchedule = app(InvestmentInterestPayoutService::class)->projectSchedule($investment)) : [],
             'loanRate' => $isLoan ? ($payoutSchedule[0]['rate'] ?? null) : null,
             'asOfDate' => $asOfDate,
@@ -53,12 +57,23 @@ class InvestmentAgreementService
         // wording proven correct in the single-tranche agreement — but both belong in
         // one combined document so an investor holding either or both types always
         // receives a single complete agreement rather than an empty/partial one.
+        // excludingConverted(): a tranche settled into a successor is no longer a live
+        // holding — including it alongside the successor would state a total principal
+        // the investor does not actually hold. Its history is carried instead by
+        // $convertedTranches below and by the account statement.
         $investments = $investor->investments()
+            ->excludingConverted()
             ->where('capital_type', InvestmentCapitalType::investment->value)
             ->orderBy('start_date')
             ->get();
         $loanInvestments = $investor->investments()
+            ->excludingConverted()
             ->where('capital_type', InvestmentCapitalType::loan->value)
+            ->orderBy('start_date')
+            ->get();
+        $convertedTranches = $investor->investments()
+            ->where('status', InvestmentStatus::converted->value)
+            ->with('conversionSources.conversion.targetInvestment')
             ->orderBy('start_date')
             ->get();
 
@@ -87,6 +102,7 @@ class InvestmentAgreementService
             'investor' => $investor,
             'investments' => $investments,
             'loanInvestments' => $loanInvestments,
+            'convertedTranches' => $convertedTranches,
             'loanPayoutSchedules' => $loanPayoutSchedules,
             'loanRates' => $loanRates,
             'valuations' => $segmentedValuations,
@@ -164,8 +180,9 @@ class InvestmentAgreementService
         }
 
         $pdf = self::generateCombinedPdf($investor, $asOfDate);
-        $hasInvestments = $investor->investments->contains(fn (Investment $i) => $i->capital_type === InvestmentCapitalType::investment);
-        $hasLoans = $investor->investments->contains(fn (Investment $i) => $i->capital_type === InvestmentCapitalType::loan);
+        $liveInvestments = $investor->investments->reject(fn (Investment $i) => $i->isConverted());
+        $hasInvestments = $liveInvestments->contains(fn (Investment $i) => $i->capital_type === InvestmentCapitalType::investment);
+        $hasLoans = $liveInvestments->contains(fn (Investment $i) => $i->capital_type === InvestmentCapitalType::loan);
         $docTitle = $hasInvestments && $hasLoans
             ? 'Investment & Loan Agreement'
             : ($hasLoans ? 'Loan Agreement' : 'Investment Agreement');
@@ -173,8 +190,8 @@ class InvestmentAgreementService
         try {
             Mail::send('emails.investment-agreement-combined', [
                 'investor' => $investor,
-                'investments' => $investor->investments,
-                'totalPrincipal' => $investor->investments->sum('principal_amount'),
+                'investments' => $liveInvestments,
+                'totalPrincipal' => $liveInvestments->sum('principal_amount'),
             ], function ($message) use ($investor, $pdf, $docTitle) {
                 $message->to($investor->email)
                     ->subject($docTitle.' — '.$investor->name)
@@ -189,6 +206,25 @@ class InvestmentAgreementService
 
             return false;
         }
+    }
+
+    /**
+     * Snapshot the name the agreement is signed in, the first time one is generated.
+     * Held on the investment rather than read live from the investor at render time:
+     * Investor::booted() recomposes `name` from title/first_name/other_names on every
+     * save, so a later correction to those fields would otherwise silently restate the
+     * signature on an already-issued and returned document.
+     */
+    private static function affixSignature(Investment $investment): void
+    {
+        if ($investment->agreement_signature_name) {
+            return;
+        }
+
+        $investment->forceFill([
+            'agreement_signature_name' => $investment->investor?->name,
+            'agreement_signature_affixed_at' => now(),
+        ])->saveQuietly();
     }
 
     /**

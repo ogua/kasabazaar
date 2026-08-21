@@ -15,11 +15,19 @@ class CashbookLoanResource extends Resource
     protected static ?string $model = CashbookLoan::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-credit-card';
+
     protected static ?string $navigationGroup = 'Cashbook';
+
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?int $navigationSort = 4;
+
     protected static ?string $navigationLabel = 'Loan Schedule';
+
     protected static ?string $modelLabel = 'Loan Entry';
+
     protected static ?string $pluralModelLabel = 'Loan Schedule';
+
     protected static bool $isScopedToTenant = false;
 
     public static function form(Form $form): Form
@@ -52,7 +60,7 @@ class CashbookLoanResource extends Resource
                     ->schema([
                         Forms\Components\Placeholder::make('cl_balance')
                             ->label('Closing Balance (auto-computed)')
-                            ->content(fn ($record) => $record ? '₵' . number_format($record->cl_balance, 2) : 'Computed on save'),
+                            ->content(fn ($record) => $record ? '₵'.number_format($record->cl_balance, 2) : 'Computed on save'),
                     ]),
             ]);
     }
@@ -93,9 +101,9 @@ class CashbookLoanResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListCashbookLoans::route('/'),
+            'index' => Pages\ListCashbookLoans::route('/'),
             'create' => Pages\CreateCashbookLoan::route('/create'),
-            'edit'   => Pages\EditCashbookLoan::route('/{record}/edit'),
+            'edit' => Pages\EditCashbookLoan::route('/{record}/edit'),
         ];
     }
 }

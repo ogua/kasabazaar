@@ -16,7 +16,11 @@ class InvestorPortfolioSummaryService
      */
     public function compute(string $investorId): array
     {
+        // excludingConverted(): a tranche settled into a successor by a capital
+        // conversion still exists as a row, but the successor now holds the same
+        // capital. Counting both would double every figure below.
         $investments = Investment::where('investor_id', $investorId)
+            ->excludingConverted()
             ->with('interestPayouts')
             ->get();
 
@@ -27,7 +31,13 @@ class InvestorPortfolioSummaryService
         // so unlike an investment tranche, its interest earned/owed lives entirely
         // in interestPayouts, not in (current_balance - principal_amount).
         $loanPayouts = $loans->flatMap->interestPayouts;
-        $loanInterestEarned = $loanPayouts->sum('amount');
+
+        // 'converted' payouts are included here on purpose: that interest was earned,
+        // it merely became principal in a successor tranche instead of being paid in
+        // cash. It is excluded from $loanInterestUnpaid below, since it is no longer owed.
+        $loanInterestEarned = $loanPayouts
+            ->reject(fn ($payout) => in_array($payout->status->value, ['skipped', 'reversed'], true))
+            ->sum('amount');
         $loanInterestUnpaid = $loanPayouts
             ->filter(fn ($payout) => in_array($payout->status->value, ['due', 'processing'], true))
             ->sum(fn ($payout) => (float) $payout->amount - (float) $payout->amount_paid);

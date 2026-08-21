@@ -13,6 +13,15 @@ enum InvestmentInterestPayoutStatus: string implements HasColor, HasLabel
     case skipped = 'skipped';
     case reversed = 'reversed';
 
+    /**
+     * Earned but never paid in cash — rolled into the principal of a successor
+     * tranche by a capital conversion. Unlike 'skipped' (never owed) or
+     * 'reversed' (cash left and was clawed back), this payout was genuinely
+     * earned, so it still counts toward interest accrued; it just is no longer
+     * owed as cash.
+     */
+    case converted = 'converted';
+
     public function getLabel(): ?string
     {
         return match ($this) {
@@ -21,6 +30,7 @@ enum InvestmentInterestPayoutStatus: string implements HasColor, HasLabel
             self::paid => 'Paid',
             self::skipped => 'Skipped',
             self::reversed => 'Reversed',
+            self::converted => 'Converted to Principal',
         };
     }
 
@@ -32,6 +42,7 @@ enum InvestmentInterestPayoutStatus: string implements HasColor, HasLabel
             self::paid => 'success',
             self::skipped => 'danger',
             self::reversed => 'danger',
+            self::converted => 'info',
         };
     }
 }

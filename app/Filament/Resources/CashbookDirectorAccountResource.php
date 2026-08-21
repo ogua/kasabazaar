@@ -15,11 +15,19 @@ class CashbookDirectorAccountResource extends Resource
     protected static ?string $model = CashbookDirectorAccount::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-user-circle';
+
     protected static ?string $navigationGroup = 'Cashbook';
+
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?int $navigationSort = 3;
+
     protected static ?string $navigationLabel = "Director's Account";
-    protected static ?string $modelLabel = "Director Account Entry";
+
+    protected static ?string $modelLabel = 'Director Account Entry';
+
     protected static ?string $pluralModelLabel = "Director's Account";
+
     protected static bool $isScopedToTenant = false;
 
     public static function form(Form $form): Form
@@ -48,7 +56,7 @@ class CashbookDirectorAccountResource extends Resource
                     ->schema([
                         Forms\Components\Placeholder::make('cl_balance')
                             ->label('Closing Balance (auto-computed)')
-                            ->content(fn ($record) => $record ? '₵' . number_format($record->cl_balance, 2) : 'Computed on save'),
+                            ->content(fn ($record) => $record ? '₵'.number_format($record->cl_balance, 2) : 'Computed on save'),
                     ]),
             ]);
     }
@@ -80,9 +88,9 @@ class CashbookDirectorAccountResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListCashbookDirectorAccounts::route('/'),
+            'index' => Pages\ListCashbookDirectorAccounts::route('/'),
             'create' => Pages\CreateCashbookDirectorAccount::route('/create'),
-            'edit'   => Pages\EditCashbookDirectorAccount::route('/{record}/edit'),
+            'edit' => Pages\EditCashbookDirectorAccount::route('/{record}/edit'),
         ];
     }
 }

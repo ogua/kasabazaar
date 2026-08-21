@@ -8,6 +8,7 @@ use App\Enums\InvestmentPayoutFrequency;
 use App\Enums\InvestmentStatus;
 use App\Service\ExchangeRateService;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -36,6 +37,7 @@ class Investment extends Model
         'last_interest_posted_through' => 'date',
         'payout_frequency' => InvestmentPayoutFrequency::class,
         'next_payout_due_date' => 'date',
+        'agreement_signature_affixed_at' => 'datetime',
     ];
 
     protected static function booted(): void
@@ -91,6 +93,22 @@ class Investment extends Model
                     ->addMonths($investment->payout_frequency->months());
             }
         });
+    }
+
+    /**
+     * Excludes tranches settled into a successor by a capital conversion. Any
+     * aggregate that sums across an investor's tranches MUST apply this, or a
+     * converted tranche and the successor holding the same capital are both
+     * counted and every money figure doubles.
+     */
+    public function scopeExcludingConverted(Builder $query): Builder
+    {
+        return $query->where('status', '!=', InvestmentStatus::converted->value);
+    }
+
+    public function isConverted(): bool
+    {
+        return $this->status === InvestmentStatus::converted;
     }
 
     /**
@@ -164,5 +182,23 @@ class Investment extends Model
     public function agreementFinalizedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'agreement_finalized_by');
+    }
+
+    /**
+     * The conversion that created this tranche, if it was issued as the successor
+     * of one or more settled tranches rather than funded with new money.
+     */
+    public function convertedFromConversion(): BelongsTo
+    {
+        return $this->belongsTo(InvestmentConversion::class, 'converted_from_conversion_id');
+    }
+
+    /**
+     * Conversions this tranche has been a source of — more than one when it was
+     * partially converted repeatedly.
+     */
+    public function conversionSources(): HasMany
+    {
+        return $this->hasMany(InvestmentConversionSource::class, 'source_investment_id');
     }
 }

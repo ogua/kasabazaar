@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\InvestmentInterestPayout;
 use App\Models\User;
+use App\Models\InvestmentInterestPayout;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class InvestmentInterestPayoutPolicy

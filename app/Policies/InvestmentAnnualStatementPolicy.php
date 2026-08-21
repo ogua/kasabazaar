@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\InvestmentAnnualStatement;
 use App\Models\User;
+use App\Models\InvestmentAnnualStatement;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class InvestmentAnnualStatementPolicy

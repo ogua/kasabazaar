@@ -24,6 +24,7 @@ class EditInvestment extends EditRecord
     {
         return [
             InvestmentResource::postInterestHeaderAction(),
+            InvestmentResource::convertCapitalHeaderAction(),
             Actions\ViewAction::make(),
 
             // Only safe to delete outright when nothing about it has become real yet —

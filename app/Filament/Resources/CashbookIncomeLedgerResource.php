@@ -16,11 +16,19 @@ class CashbookIncomeLedgerResource extends Resource
     protected static ?string $model = CashbookIncomeLedger::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-arrow-trending-up';
+
     protected static ?string $navigationGroup = 'Cashbook';
+
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?int $navigationSort = 6;
+
     protected static ?string $navigationLabel = 'Income Ledger';
+
     protected static ?string $modelLabel = 'Income Ledger Entry';
+
     protected static ?string $pluralModelLabel = 'Income Ledger';
+
     protected static bool $isScopedToTenant = false;
 
     public static function form(Form $form): Form
@@ -92,9 +100,9 @@ class CashbookIncomeLedgerResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListCashbookIncomeLedgers::route('/'),
+            'index' => Pages\ListCashbookIncomeLedgers::route('/'),
             'create' => Pages\CreateCashbookIncomeLedger::route('/create'),
-            'edit'   => Pages\EditCashbookIncomeLedger::route('/{record}/edit'),
+            'edit' => Pages\EditCashbookIncomeLedger::route('/{record}/edit'),
         ];
     }
 }

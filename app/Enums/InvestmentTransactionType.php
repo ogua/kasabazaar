@@ -13,6 +13,14 @@ enum InvestmentTransactionType: string implements HasColor, HasLabel
     case withdrawal = 'withdrawal';
     case adjustment = 'adjustment';
 
+    /**
+     * The two halves of a capital conversion: capital leaving a source tranche
+     * and the same capital arriving in its successor. Always created as a pair
+     * sharing a reference_id, so a statement can tie one to the other.
+     */
+    case conversion_out = 'conversion_out';
+    case conversion_in = 'conversion_in';
+
     public function getLabel(): ?string
     {
         return match ($this) {
@@ -21,6 +29,8 @@ enum InvestmentTransactionType: string implements HasColor, HasLabel
             self::interest_payout => 'Interest Payout',
             self::withdrawal => 'Withdrawal',
             self::adjustment => 'Adjustment',
+            self::conversion_out => 'Converted Out',
+            self::conversion_in => 'Converted In',
         };
     }
 
@@ -32,6 +42,8 @@ enum InvestmentTransactionType: string implements HasColor, HasLabel
             self::interest_payout => 'warning',
             self::withdrawal => 'danger',
             self::adjustment => 'gray',
+            self::conversion_out => 'warning',
+            self::conversion_in => 'success',
         };
     }
 }

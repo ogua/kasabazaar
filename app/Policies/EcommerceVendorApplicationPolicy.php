@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\EcommerceVendorApplication;
 use App\Models\User;
+use App\Models\EcommerceVendorApplication;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class EcommerceVendorApplicationPolicy

@@ -17,6 +17,48 @@
             'docSubtitle' => $investment->reference,
         ])
 
+        @if (($conversion ?? null) && $conversion->sources->isNotEmpty())
+            <div class="valuation-box" style="border-color: #1d4ed8; background: #eff6ff;">
+                <strong>Conversion of Existing Capital.</strong>
+                The principal recorded below is not a new deposit. On
+                {{ $conversion->conversion_date->format('F j, Y') }} the
+                {{ $conversion->sources->count() === 1 ? 'holding' : 'holdings' }} listed here
+                {{ $conversion->sources->count() === 1 ? 'was' : 'were' }} settled and re-issued as this
+                {{ strtolower($conversion->direction->targetCapitalType()->getLabel()) }} under
+                conversion reference {{ $conversion->reference }}. This Agreement supersedes the prior
+                agreement{{ $conversion->sources->count() === 1 ? '' : 's' }} for
+                {{ $conversion->sources->count() === 1 ? 'that holding' : 'those holdings' }}; all other
+                terms are set out below.
+
+                <table class="data-table" style="margin-top: 10px;">
+                    <thead>
+                        <tr>
+                            <th>Prior Reference</th>
+                            <th class="text-right">Principal Settled</th>
+                            <th class="text-right">Accrued Interest</th>
+                            <th class="text-right">Amount Carried Forward</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($conversion->sources as $source)
+                            <tr>
+                                <td>{{ $source->sourceInvestment?->reference ?? '—' }}</td>
+                                <td class="text-right">${{ number_format($source->principal_at_conversion, 2) }}</td>
+                                <td class="text-right">${{ number_format($source->interest_at_conversion, 2) }}</td>
+                                <td class="text-right">${{ number_format($source->amount_rolled, 2) }}</td>
+                            </tr>
+                        @endforeach
+                        <tr>
+                            <td><strong>Total</strong></td>
+                            <td class="text-right"><strong>${{ number_format($conversion->total_principal_rolled, 2) }}</strong></td>
+                            <td class="text-right"><strong>${{ number_format($conversion->total_interest_rolled, 2) }}</strong></td>
+                            <td class="text-right"><strong>${{ number_format($conversion->total_amount, 2) }}</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        @endif
+
         @if ($investment->status->value === 'pending_payment')
             <div class="valuation-box" style="border-color: #b45309; background: #fffbeb;">
                 <strong>Preview — Payment Not Yet Received.</strong>
@@ -188,25 +230,12 @@
 
         @include('pdf.partials.investment-legal-boilerplate')
 
-        <div class="signature-block">
-            <div class="signature-column">
-                <div class="signature-line">
-                    {{ $investor->name }}<br>
-                    {{ $partyLabel }}<br>
-                    Date: {{date('F j, Y')}}
-                </div>
-            </div>
-            <div class="signature-column">
-                @if (file_exists(public_path('images/shipping-signature.png')))
-                    <img src="{{ URL::to('images/shipping-signature.png') }}" alt="Authorized Signature" style="max-height: 60px;">
-                @endif
-                <div class="signature-line">
-                    Founder &amp; CVO<br>
-                    KasaBazaar Group Of Companies<br>
-                    Date: {{date('F j, Y')}}
-                </div>
-            </div>
-        </div>
+        @include('pdf.partials.investment-signature-block', [
+            'signatureName' => $investment->agreement_signature_name ?: $investor->name,
+            'signatureDate' => $investment->agreement_signature_affixed_at ?? now(),
+            'acknowledgedAt' => $investment->agreement_signed_at,
+            'partyLabel' => $partyLabel,
+        ])
     </div>
 </body>
 

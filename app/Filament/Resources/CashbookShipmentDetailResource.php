@@ -15,11 +15,19 @@ class CashbookShipmentDetailResource extends Resource
     protected static ?string $model = CashbookShipmentDetail::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-truck';
+
     protected static ?string $navigationGroup = 'Cashbook';
+
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static ?int $navigationSort = 2;
+
     protected static ?string $navigationLabel = 'Shipment Details';
+
     protected static ?string $modelLabel = 'Shipment Expense';
+
     protected static ?string $pluralModelLabel = 'Shipment Details';
+
     protected static bool $isScopedToTenant = false;
 
     public static function form(Form $form): Form
@@ -63,7 +71,7 @@ class CashbookShipmentDetailResource extends Resource
                     ->schema([
                         Forms\Components\Placeholder::make('total')
                             ->label('Computed Total')
-                            ->content(fn ($record) => $record ? '₵' . number_format($record->total, 2) : 'Saved on create'),
+                            ->content(fn ($record) => $record ? '₵'.number_format($record->total, 2) : 'Saved on create'),
                     ]),
             ]);
     }
@@ -110,9 +118,9 @@ class CashbookShipmentDetailResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index'  => Pages\ListCashbookShipmentDetails::route('/'),
+            'index' => Pages\ListCashbookShipmentDetails::route('/'),
             'create' => Pages\CreateCashbookShipmentDetail::route('/create'),
-            'edit'   => Pages\EditCashbookShipmentDetail::route('/{record}/edit'),
+            'edit' => Pages\EditCashbookShipmentDetail::route('/{record}/edit'),
         ];
     }
 }

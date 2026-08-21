@@ -12,9 +12,11 @@
         <div class="row justify-content-center">
             <div class="col-lg-10">
 
-                <p class="text-muted mb-4"><em>Last updated: April 27, 2026</em></p>
+                <p class="text-muted mb-4"><em>Last updated: August 20, 2026</em></p>
 
-                <p>Rose Door to Door Shipping and Delivery Service, operated by <strong>KasaBazaar Limited</strong> ("we", "us", or "our"), is committed to protecting the privacy of our customers and website visitors. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website or use our shipping and logistics services.</p>
+                <p>Rose Door to Door Shipping and Delivery Service, operated by <strong>{{ config('group.company.legal_name') }}</strong> ("we", "us", or "our"), is committed to protecting the privacy of our customers and website visitors. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website or use our shipping and logistics services.</p>
+
+                <p>RDD Shipping is the freight logistics arm of the <a href="{{ config('group.parent.url') }}" target="_blank" rel="noopener">{{ config('group.parent.name') }}</a>. <strong>This policy covers RDD Shipping only.</strong> The group's other companies are separately operated and publish their own privacy policies on their own sites — see section 3a below.</p>
 
                 <p>By using our services, you agree to the collection and use of information in accordance with this policy.</p>
 
@@ -63,8 +65,26 @@
                 <ul>
                     <li><strong>Service Providers:</strong> With trusted partners such as payment processors (Paystack), logistics partners, and warehouse operators strictly for fulfilling your shipment.</li>
                     <li><strong>Legal Requirements:</strong> When required by law, regulation, or government authority in Ghana or the United States.</li>
-                    <li><strong>Business Protection:</strong> To protect the rights, property, or safety of KasaBazaar Limited, our customers, or the public.</li>
+                    <li><strong>Business Protection:</strong> To protect the rights, property, or safety of {{ config('group.company.legal_name') }}, our customers, or the public.</li>
                 </ul>
+
+                <h6 class="mt-4" id="group-sharing">a) Sharing Within the {{ config('group.parent.name') }}</h6>
+                <p>RDD Shipping is one of four companies in the group. The others are:</p>
+                <ul>
+                    @foreach (config('group.companies') as $company)
+                        <li>
+                            <strong>{{ $company['name'] }}</strong> — {{ $company['role'] }}
+                            (<a href="{{ $company['url'] }}" target="_blank" rel="noopener">{{ $company['url_label'] }}</a>).
+                        </li>
+                    @endforeach
+                </ul>
+                <p>We share personal data with these companies only where there is a specific operational reason, and only the minimum needed:</p>
+                <ul>
+                    <li><strong>KASAROSE</strong> passes us recipient names, delivery addresses, phone numbers and parcel details for the marketplace orders we carry, and we return tracking events so shoppers can follow a shipment. Data about a KASAROSE order that we did not carry stays with KASAROSE.</li>
+                    <li><strong>Neoride Africa</strong> receives recipient name, address and phone number where its riders complete a last-mile delivery on our behalf in Kumasi and Ejisu.</li>
+                    <li><strong>KasaBazaar</strong> provides shared corporate functions — finance, accounting and group-level customer support — and its staff may access shipment and payment records for those purposes.</li>
+                </ul>
+                <p>Each company is responsible for its own use of the data it receives. <strong>Marketing lists are not shared between group companies</strong>, and we do not track you across the group's websites.</p>
 
                 <hr class="my-4">
 

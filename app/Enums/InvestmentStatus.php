@@ -12,6 +12,14 @@ enum InvestmentStatus: string implements HasColor, HasLabel
     case withdrawn = 'withdrawn';
     case closed = 'closed';
 
+    /**
+     * Settled into a successor tranche of the other capital type — deliberately
+     * distinct from withdrawn/closed, which both mean money went back to the
+     * investor. Converted capital is still held by the company, just under a
+     * different instrument, so no report may treat it as returned.
+     */
+    case converted = 'converted';
+
     public function getLabel(): ?string
     {
         return match ($this) {
@@ -19,6 +27,7 @@ enum InvestmentStatus: string implements HasColor, HasLabel
             self::active => 'Active',
             self::withdrawn => 'Withdrawn',
             self::closed => 'Closed',
+            self::converted => 'Converted',
         };
     }
 
@@ -29,6 +38,7 @@ enum InvestmentStatus: string implements HasColor, HasLabel
             self::active => 'success',
             self::withdrawn => 'gray',
             self::closed => 'danger',
+            self::converted => 'info',
         };
     }
 }

@@ -164,6 +164,43 @@ class InvestmentPaymentService
         });
     }
 
+    /**
+     * Activate a tranche whose "deposit" is capital rolled over from one or more
+     * settled tranches rather than new money arriving. Kept on the same activation
+     * path as markPaid()/recordManualDeposit() so every tranche in the system goes
+     * active and opens its ledger the same way — the only differences are that no
+     * gateway or receipt is involved, and the opening row is typed conversion_in
+     * rather than contribution so a statement can pair it with the matching
+     * conversion_out on the source.
+     */
+    public function recordConversionDeposit(Investment $investment, string $conversionId, string $conversionReference): Investment
+    {
+        return DB::transaction(function () use ($investment, $conversionId, $conversionReference) {
+            $investment->update([
+                'deposit_gateway' => 'conversion',
+                'payment_reference' => $conversionReference,
+                'status' => InvestmentStatus::active->value,
+            ]);
+
+            if (! $investment->transactions()->where('type', InvestmentTransactionType::conversion_in->value)->exists()) {
+                InvestmentTransaction::create([
+                    'investment_id' => $investment->id,
+                    'investor_id' => $investment->investor_id,
+                    'date' => $investment->start_date,
+                    'type' => InvestmentTransactionType::conversion_in->value,
+                    'op_balance' => 0,
+                    'credit' => $investment->principal_amount,
+                    'posted' => true,
+                    'posted_at' => now(),
+                    'reference_id' => $conversionId,
+                    'description' => "Capital converted in under {$conversionReference}.",
+                ]);
+            }
+
+            return $investment->fresh();
+        });
+    }
+
     private function createContributionLedgerRow(Investment $investment): void
     {
         if ($investment->transactions()->where('type', InvestmentTransactionType::contribution->value)->exists()) {

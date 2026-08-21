@@ -45,6 +45,13 @@ class InvestorDocumentController extends InvestorBaseController
 
         $request->validate([
             'signed_agreement' => 'required|file|mimes:pdf,jpg,jpeg,png|max:10240',
+            // The agreement carries the investor's name already affixed as the
+            // signature, so the return upload is the act of assent rather than the
+            // signing itself. This explicit confirmation, with the originating IP,
+            // is what evidences that assent.
+            'acknowledged' => 'accepted',
+        ], [
+            'acknowledged.accepted' => 'You must confirm that you have read and agree to the terms of this agreement.',
         ]);
 
         $path = $request->file('signed_agreement')->store('investment-agreements/signed', 'public');
@@ -53,6 +60,7 @@ class InvestorDocumentController extends InvestorBaseController
             'signed_agreement_path' => $path,
             'agreement_status' => InvestmentAgreementStatus::pending_review,
             'agreement_signed_at' => now(),
+            'agreement_acknowledged_ip' => $request->ip(),
         ]);
 
         return $this->success(new InvestmentResource($investment->fresh()), 'Signed agreement uploaded. Our team will review it and confirm once finalized.');

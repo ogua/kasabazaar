@@ -1,0 +1,5 @@
+# Font binaries are licensed assets — kept out of version control and deployed
+# alongside the release. See README.md in this directory.
+*
+!.gitignore
+!README.md

@@ -46,12 +46,23 @@
           </ul>
         </div>
 
+        {{-- Group cross-links. Driven by config/group.php, which is mirrored in
+             the group site, KASAROSE and Neoride repos — see CLAUDE.md. --}}
         <div class="col-lg-3 col-md-3 footer-links">
-          <h4>Others Services</h4>
+          <h4>Our Group</h4>
           <ul>
-            <li><a href="#">Real Estate</a></li>
-            <li><a href="#">Import & Export</a></li>
-            <li><a href="#">Property Management</a></li>
+            @foreach (config('group.companies') as $company)
+              <li>
+                <a href="{{ $company['url'] }}" target="_blank" rel="noopener" title="{{ $company['role'] }}">
+                  {{ $company['name'] }}
+                </a>
+              </li>
+            @endforeach
+            <li>
+              <a href="{{ config('group.parent.companies_url') }}" target="_blank" rel="noopener">
+                {{ config('group.parent.name') }}
+              </a>
+            </li>
           </ul>
         </div>
 
@@ -59,7 +70,11 @@
     </div>
 
     <div class="container mt-4 text-center copyright">
-      <p>© {{ date('Y') }} <strong class="px-1 sitename">Rose Door to Door Shipping & Delivery Service</strong> — All Rights Reserved</p>
+      <p>© {{ date('Y') }} <strong class="px-1 sitename">{{ config('group.company.full_name') }}</strong> — All Rights Reserved</p>
+      <p class="small mb-0">
+        A company of the
+        <a href="{{ config('group.parent.url') }}" target="_blank" rel="noopener">{{ config('group.parent.name') }}</a>
+      </p>
       <div class="credits">
         <!-- All the links in the footer should remain intact. -->
         <!-- You can delete the links only if you've purchased the pro version. -->

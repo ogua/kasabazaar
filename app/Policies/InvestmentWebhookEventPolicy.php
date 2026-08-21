@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\InvestmentWebhookEvent;
 use App\Models\User;
+use App\Models\InvestmentWebhookEvent;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class InvestmentWebhookEventPolicy
