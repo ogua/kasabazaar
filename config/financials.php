@@ -16,6 +16,20 @@ return [
      */
     'presentation_currency' => 'USD',
 
+    /*
+     * Which records trading revenue and costs are read from.
+     *
+     *   'records'  — shipments, expenses and external income (ACCRUAL: revenue when a
+     *                shipment is raised, costs when incurred). The unpaid remainder is
+     *                what accounts receivable carries, so the two statements articulate.
+     *   'cashbook' — the cashbook's monthly income/expenditure ledgers (CASH: revenue
+     *                when received, costs when paid).
+     *
+     * Only ever one of them. The cashbook records the cash side of the very same
+     * shipments and expenses, so reading both would count every transaction twice.
+     */
+    'trading_source' => env('FINANCIALS_TRADING_SOURCE', 'records'),
+
     'company' => [
         'name' => env('FINANCIALS_COMPANY_NAME', 'Rose Door to Door & Delivery Company Limited'),
         'registration_number' => env('FINANCIALS_COMPANY_REG_NO'),

@@ -5,11 +5,9 @@ namespace App\Filament\Resources;
 use App\Enums\AccountSubtype;
 use App\Enums\AccountType;
 use App\Filament\Resources\ChartOfAccountResource\Pages;
-use App\Models\AccountBalance;
 use App\Models\ChartOfAccount;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Forms\Get;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -148,15 +146,21 @@ class ChartOfAccountResource extends Resource
      */
     public static function dataSourceFor(ChartOfAccount $account): string
     {
+        $viaRecords = \App\Service\FinancialStatementService::tradingSource() === 'records';
+
         return match (true) {
-            str_starts_with($account->code, 'INC-') && $account->code !== 'INC-OTHER' => 'Cashbook income ledger',
-            $account->code === 'INC-OTHER' => 'Income records (external income)',
-            $account->code === 'EXP-SALARIES_WAGES' => 'Payroll entries + cashbook expenditure ledger',
+            $account->code === 'INC-FREIGHT' => $viaRecords ? 'Shipment totals raised in the year' : 'Not used (cashbook source)',
+            $account->code === 'INC-SERVICE' => $viaRecords ? 'Income records in mapped categories' : 'Not used (cashbook source)',
+            str_starts_with($account->code, 'INC-') && $account->code !== 'INC-OTHER' => $viaRecords ? 'Not used (records source)' : 'Cashbook income ledger',
+            $account->code === 'INC-OTHER' => 'Income records (external / unmapped categories)',
+            $account->code === 'EXP-SALARIES_WAGES' => 'Payroll entries',
             $account->code === 'EXP-INVESTOR-INTEREST' => 'Posted interest credits on investment tranches',
             $account->code === 'EXP-LOAN-INTEREST' => 'Interest payouts on loan tranches',
-            str_starts_with($account->code, 'EXP-') => 'Cashbook expenditure ledger',
-            $account->code === 'AST-BANK' => 'Cashbook closing bank balance',
-            $account->code === 'AST-MOMO' => 'Cashbook closing mobile-money balance',
+            str_starts_with($account->code, 'EXP-') => $viaRecords
+                ? 'Expense records in mapped categories'
+                : 'Cashbook expenditure ledger',
+            $account->code === 'AST-BANK' => 'Cashbook closing bank balance, else carried-forward keyed balance',
+            $account->code === 'AST-MOMO' => 'Cashbook closing mobile-money balance, else carried-forward keyed balance',
             $account->code === 'AST-AR' => 'Unpaid shipment balances (total less paid)',
             $account->code === 'AST-FIXED' => 'Accumulated fixed-asset spend (cashbook)',
             $account->code === 'AST-ACC-DEP' => 'Accumulated depreciation (cashbook)',
@@ -168,8 +172,7 @@ class ChartOfAccountResource extends Resource
             $account->code === 'LIA-LOANS' => 'Cashbook loans',
             $account->code === 'LIA-WHT' => 'Cashbook withholding tax',
             $account->code === 'EQY-RETAINED' => 'Prior-year retained earnings + this year\'s result',
-            $account->code === 'EQY-CAPITAL' => 'Manually entered',
-            default => 'Manually entered',
+            default => 'Carried-forward keyed balance',
         };
     }
 

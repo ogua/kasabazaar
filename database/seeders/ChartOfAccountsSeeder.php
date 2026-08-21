@@ -6,6 +6,8 @@ use App\Enums\AccountSubtype;
 use App\Enums\ExpenditureLedgerType;
 use App\Enums\IncomeLedgerType;
 use App\Models\ChartOfAccount;
+use App\Models\ExpenseCategory;
+use App\Models\IncomeCategory;
 use Illuminate\Database\Seeder;
 
 /**
@@ -59,6 +61,89 @@ class ChartOfAccountsSeeder extends Seeder
         // sheet carries the investor liability, which any lender will query.
         $this->upsert('EXP-INVESTOR-INTEREST', 'Investor Interest — Compounding', AccountSubtype::finance_cost, 'Finance Costs', $sort += 10);
         $this->upsert('EXP-LOAN-INTEREST', 'Investor Interest — Loans', AccountSubtype::finance_cost, 'Finance Costs', $sort += 10);
+
+        // Trading accounts. The cashbook ledger types above cover the cashbook-based
+        // path; these cover the shipment/expense records the business actually runs on.
+        foreach ($this->tradingAccounts() as $code => $definition) {
+            $this->upsert($code, $definition[0], $definition[1], $definition[2], $sort += 10);
+        }
+
+        $this->mapCategories();
+    }
+
+    /**
+     * @return array<string, array{0: string, 1: AccountSubtype, 2: string}>
+     */
+    private function tradingAccounts(): array
+    {
+        return [
+            'INC-FREIGHT' => ['Freight & Shipping Revenue', AccountSubtype::revenue, 'Revenue'],
+            'INC-SERVICE' => ['Service & Handling Fees', AccountSubtype::revenue, 'Revenue'],
+
+            'EXP-CUSTOMS' => ['Customs & Duties', AccountSubtype::cost_of_sales, 'Cost of Sales'],
+            'EXP-PORT' => ['Port Charges', AccountSubtype::cost_of_sales, 'Cost of Sales'],
+            'EXP-STORAGE' => ['Storage & Warehousing', AccountSubtype::cost_of_sales, 'Cost of Sales'],
+            'EXP-DOCUMENTATION' => ['Documentation', AccountSubtype::cost_of_sales, 'Cost of Sales'],
+            'EXP-PACKAGING' => ['Packaging', AccountSubtype::cost_of_sales, 'Cost of Sales'],
+            'EXP-AGENT' => ['Agent Fees', AccountSubtype::cost_of_sales, 'Cost of Sales'],
+            'EXP-INSURANCE' => ['Insurance', AccountSubtype::operating_expense, 'Operating Expenses'],
+            'EXP-FUEL' => ['Fuel', AccountSubtype::operating_expense, 'Operating Expenses'],
+            'EXP-MAINTENANCE' => ['Vehicle & Equipment Maintenance', AccountSubtype::operating_expense, 'Operating Expenses'],
+            'EXP-MISC' => ['Other Operating Costs', AccountSubtype::operating_expense, 'Operating Expenses'],
+        ];
+    }
+
+    /**
+     * Point each seeded expense/income category at the account it reports under, so
+     * the statement engine reads the mapping rather than hardcoding category names.
+     * Only fills a category that has not been mapped by hand — a deliberate mapping
+     * made in the admin panel is never overwritten by re-running this seeder.
+     */
+    private function mapCategories(): void
+    {
+        $expenseMap = [
+            'CUSTOMS' => 'EXP-CUSTOMS',
+            'TRANSPORT' => 'EXP-TRANSPORTATION',
+            'STORAGE' => 'EXP-STORAGE',
+            'DOCUMENTATION' => 'EXP-DOCUMENTATION',
+            'INSURANCE' => 'EXP-INSURANCE',
+            'PORT' => 'EXP-PORT',
+            'PACKAGING' => 'EXP-PACKAGING',
+            'AGENT' => 'EXP-AGENT',
+            'FUEL' => 'EXP-FUEL',
+            'MAINTENANCE' => 'EXP-MAINTENANCE',
+            'COMMUNICATION' => 'EXP-TELEPHONE_INTERNET',
+            'MISC' => 'EXP-MISC',
+        ];
+
+        $incomeMap = [
+            'STORAGE' => 'INC-SERVICE',
+            'DOCUMENTATION' => 'INC-SERVICE',
+            'REPACKAGING' => 'INC-SERVICE',
+            'HANDLING' => 'INC-SERVICE',
+            'LATE_FEES' => 'INC-SERVICE',
+            'CONSULTING' => 'INC-OTHER',
+            'RENTAL' => 'INC-OTHER',
+            'COMMISSION' => 'INC-OTHER',
+            'INTEREST' => 'INC-OTHER',
+            'INSURANCE_REFUND' => 'INC-OTHER',
+            'CUSTOMS_REFUND' => 'INC-OTHER',
+            'OTHER' => 'INC-OTHER',
+        ];
+
+        $accounts = ChartOfAccount::pluck('id', 'code');
+
+        foreach ($expenseMap as $categoryCode => $accountCode) {
+            ExpenseCategory::where('code', $categoryCode)
+                ->whereNull('chart_of_account_id')
+                ->update(['chart_of_account_id' => $accounts[$accountCode] ?? null]);
+        }
+
+        foreach ($incomeMap as $categoryCode => $accountCode) {
+            IncomeCategory::where('code', $categoryCode)
+                ->whereNull('chart_of_account_id')
+                ->update(['chart_of_account_id' => $accounts[$accountCode] ?? null]);
+        }
     }
 
     /**

@@ -10,14 +10,19 @@ use App\Models\CashbookExpenditureLedger;
 use App\Models\CashbookIncomeLedger;
 use App\Models\ChartOfAccount;
 use App\Models\Client;
+use App\Models\Expense;
+use App\Models\ExpenseCategory;
 use App\Models\FiscalPeriod;
 use App\Models\Investment;
 use App\Models\InvestmentTransaction;
 use App\Models\Investor;
 use App\Models\Shipment;
+use App\Models\User;
 use App\Service\FinancialStatementService;
 use Carbon\Carbon;
 use Database\Seeders\ChartOfAccountsSeeder;
+use Database\Seeders\ExpenseCategorySeeder;
+use Database\Seeders\IncomeCategorySeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
@@ -33,10 +38,16 @@ class FinancialStatementServiceTest extends TestCase
 
     private ?Branch $branch = null;
 
+    private ?User $staff = null;
+
     protected function setUp(): void
     {
         parent::setUp();
 
+        // Order matters and mirrors DatabaseSeeder: the categories must exist before
+        // ChartOfAccountsSeeder can point them at their accounts.
+        $this->seed(ExpenseCategorySeeder::class);
+        $this->seed(IncomeCategorySeeder::class);
         $this->seed(ChartOfAccountsSeeder::class);
         $this->service = app(FinancialStatementService::class);
     }
@@ -70,6 +81,9 @@ class FinancialStatementServiceTest extends TestCase
 
     public function test_a_derived_profit_and_loss_translates_the_ghs_cashbook_into_usd(): void
     {
+        // The cashbook is the alternative trading source, not the default.
+        config()->set('financials.trading_source', 'cashbook');
+
         $this->derivedPeriod();
 
         // GHS 100,000 of shipping income at a 10.0 closing rate = USD 10,000.
@@ -458,6 +472,128 @@ class FinancialStatementServiceTest extends TestCase
         $this->assertEqualsWithDelta(20000.00, $sheet['totals']['total_liabilities'], 0.01);
         $this->assertEqualsWithDelta(80000.00, $sheet['totals']['total_equity'], 0.01);
         $this->assertTrue($sheet['is_balanced'], 'Translation must not break the balance.');
+    }
+
+    /**
+     * The default source. The business runs on shipments and expense records, not the
+     * cashbook, so this is the path that produces its real statements.
+     */
+    public function test_a_derived_profit_and_loss_reads_shipments_and_expense_records(): void
+    {
+        $this->derivedPeriod();
+        $client = $this->client();
+
+        $this->shipmentOwing($client, total: 12000, paid: 5000, createdAt: '2026-03-04');
+        $this->shipmentOwing($client, total: 8000, paid: 8000, createdAt: '2026-04-11');
+
+        // Customs maps to cost of sales, fuel to operating expenses.
+        $this->expense('CUSTOMS', 3000, '2026-03-10');
+        $this->expense('FUEL', 1000, '2026-04-02');
+
+        $statement = $this->service->profitAndLoss(self::DERIVED_YEAR);
+
+        // Revenue is recognised when the shipment is raised, not when it is paid.
+        $this->assertEqualsWithDelta(20000.00, $statement['totals']['revenue'], 0.01);
+        $this->assertEqualsWithDelta(3000.00, $statement['totals']['cost_of_sales'], 0.01);
+        $this->assertEqualsWithDelta(17000.00, $statement['totals']['gross_profit'], 0.01);
+        $this->assertEqualsWithDelta(1000.00, $statement['totals']['operating_expenses'], 0.01);
+        $this->assertEqualsWithDelta(16000.00, $statement['totals']['net_profit'], 0.01);
+    }
+
+    /**
+     * The two sources record the cash and accrual sides of the same transactions, so
+     * only one may ever be read — otherwise every trade is counted twice.
+     */
+    public function test_the_cashbook_is_ignored_while_records_are_the_trading_source(): void
+    {
+        $this->derivedPeriod();
+
+        CashbookIncomeLedger::create([
+            'month' => 6, 'year' => self::DERIVED_YEAR, 'ledger_type' => 'shipping',
+            'op_balance' => 0, 'credit' => 100000, 'debit' => 0,
+        ]);
+
+        $this->shipmentOwing($this->client(), total: 5000, paid: 0, createdAt: '2026-06-01');
+
+        $statement = $this->service->profitAndLoss(self::DERIVED_YEAR);
+
+        // The shipment alone — not the shipment plus GHS 100,000 of cashbook receipts.
+        $this->assertEqualsWithDelta(5000.00, $statement['totals']['revenue'], 0.01);
+    }
+
+    public function test_an_unmapped_expense_category_still_reaches_the_statement(): void
+    {
+        $this->derivedPeriod();
+
+        // No chart_of_account_id — must land in the catch-all rather than vanish.
+        $this->expense('UNMAPPED', 750, '2026-05-05', mapped: false);
+
+        $statement = $this->service->profitAndLoss(self::DERIVED_YEAR);
+
+        $this->assertEqualsWithDelta(750.00, $statement['totals']['operating_expenses'], 0.01);
+    }
+
+    /**
+     * With no cashbook there is no cash figure anywhere in the system, so a keyed
+     * opening balance has to carry into later derived years or the balance sheet can
+     * never be made to balance.
+     */
+    public function test_a_keyed_cash_balance_carries_into_a_derived_year(): void
+    {
+        $this->derivedPeriod();
+
+        FiscalPeriod::updateOrCreate(
+            ['year' => 2025],
+            [
+                'start_date' => '2025-01-01',
+                'end_date' => '2025-12-31',
+                'source' => FiscalPeriodSource::manual->value,
+                'entry_currency' => 'USD',
+            ]
+        );
+
+        $this->keyIn(2025, 'AST-BANK', closing: 45000);
+        $this->keyIn(2025, 'EQY-CAPITAL', closing: 45000);
+
+        $sheet = $this->service->balanceSheet(self::DERIVED_YEAR);
+
+        $cash = collect($sheet['assets']['current'])->firstWhere('statement_line', 'Cash & Bank');
+        $this->assertNotNull($cash, 'A keyed cash balance must appear on a derived year.');
+        $this->assertEqualsWithDelta(45000.00, $cash['amount'], 0.01);
+
+        $this->assertEqualsWithDelta(45000.00, collect($sheet['equity'])
+            ->firstWhere('statement_line', 'Share Capital')['amount'], 0.01);
+    }
+
+    private function expense(string $categoryCode, float $amount, string $date, bool $mapped = true): Expense
+    {
+        $category = ExpenseCategory::firstOrCreate(
+            ['code' => $categoryCode],
+            ['name' => $categoryCode, 'is_active' => true]
+        );
+
+        if (! $mapped) {
+            $category->update(['chart_of_account_id' => null]);
+        }
+
+        return Expense::create([
+            'shipment_id' => $this->shipmentOwing($this->client(), 0, 0, $date)->id,
+            'expense_category_id' => $category->id,
+            'branch_id' => $this->branch()->id,
+            'recorded_by' => $this->staff()->id,
+            'reference' => 'EXP-'.uniqid(),
+            'title' => $categoryCode.' cost',
+            'amount_usd' => $amount,
+            'exchange_rate' => 10,
+            'amount_ghs' => $amount * 10,
+            'expense_date' => $date,
+            'expense_stage' => 'during_shipment',
+        ]);
+    }
+
+    private function staff(): User
+    {
+        return $this->staff ??= User::factory()->create();
     }
 
     private function keyIn(int $year, string $code, float $movement = 0, ?float $closing = null): void

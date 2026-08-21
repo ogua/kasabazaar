@@ -2,20 +2,22 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms;
-use Filament\Tables;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
-use App\Models\IncomeCategory;
-use Filament\Resources\Resource;
 use App\Filament\Resources\IncomeCategoryResource\Pages;
+use App\Models\IncomeCategory;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
 
 class IncomeCategoryResource extends Resource
 {
     protected static ?string $model = IncomeCategory::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-tag';
+
     protected static ?string $navigationGroup = 'Finance';
+
     protected static ?int $navigationSort = 4;
 
     protected static bool $isScopedToTenant = false;
@@ -34,6 +36,20 @@ class IncomeCategoryResource extends Resource
                             ->unique(ignoreRecord: true)
                             ->maxLength(50)
                             ->helperText('Unique code for this category'),
+                        Forms\Components\Select::make('chart_of_account_id')
+                            ->label('Reports Under')
+                            ->relationship(
+                                'chartOfAccount',
+                                'name',
+                                fn ($query) => $query->where('type', App\Enums\AccountType::income->value)
+                                    ->where('is_active', true)
+                                    ->orderBy('sort_order')
+                            )
+                            ->getOptionLabelFromRecordUsing(fn ($record) => $record->code.' — '.$record->name)
+                            ->searchable()
+                            ->preload()
+                            ->helperText('The statement line incomes in this category report under. Leave blank and they fall into the catch-all account.'),
+
                         Forms\Components\Textarea::make('description')
                             ->rows(3),
                         Forms\Components\Toggle::make('is_active')
@@ -56,6 +72,12 @@ class IncomeCategoryResource extends Resource
                 Tables\Columns\TextColumn::make('incomes_count')
                     ->counts('incomes')
                     ->label('Incomes'),
+                Tables\Columns\TextColumn::make('chartOfAccount.name')
+                    ->label('Reports Under')
+                    ->placeholder('Unmapped — catch-all')
+                    ->badge()
+                    ->color(fn ($state) => $state ? 'success' : 'warning'),
+
                 Tables\Columns\IconColumn::make('is_active')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('created_at')

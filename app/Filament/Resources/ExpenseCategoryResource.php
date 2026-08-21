@@ -2,20 +2,22 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms;
-use Filament\Tables;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
-use App\Models\ExpenseCategory;
-use Filament\Resources\Resource;
 use App\Filament\Resources\ExpenseCategoryResource\Pages;
+use App\Models\ExpenseCategory;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
 
 class ExpenseCategoryResource extends Resource
 {
     protected static ?string $model = ExpenseCategory::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-tag';
+
     protected static ?string $navigationGroup = 'Finance';
+
     protected static ?int $navigationSort = 2;
 
     protected static bool $isScopedToTenant = false;
@@ -34,6 +36,20 @@ class ExpenseCategoryResource extends Resource
                             ->unique(ignoreRecord: true)
                             ->maxLength(50)
                             ->helperText('Unique code for this category'),
+                        Forms\Components\Select::make('chart_of_account_id')
+                            ->label('Reports Under')
+                            ->relationship(
+                                'chartOfAccount',
+                                'name',
+                                fn ($query) => $query->where('type', App\Enums\AccountType::expense->value)
+                                    ->where('is_active', true)
+                                    ->orderBy('sort_order')
+                            )
+                            ->getOptionLabelFromRecordUsing(fn ($record) => $record->code.' — '.$record->name)
+                            ->searchable()
+                            ->preload()
+                            ->helperText('The statement line expenses in this category report under. Leave blank and they fall into the catch-all account.'),
+
                         Forms\Components\Textarea::make('description')
                             ->rows(3),
                         Forms\Components\Toggle::make('is_active')
@@ -56,6 +72,12 @@ class ExpenseCategoryResource extends Resource
                 Tables\Columns\TextColumn::make('expenses_count')
                     ->counts('expenses')
                     ->label('Expenses'),
+                Tables\Columns\TextColumn::make('chartOfAccount.name')
+                    ->label('Reports Under')
+                    ->placeholder('Unmapped — catch-all')
+                    ->badge()
+                    ->color(fn ($state) => $state ? 'success' : 'warning'),
+
                 Tables\Columns\IconColumn::make('is_active')
                     ->boolean(),
                 Tables\Columns\TextColumn::make('created_at')

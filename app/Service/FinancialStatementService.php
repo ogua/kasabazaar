@@ -17,6 +17,7 @@ use App\Models\CashbookIncomeLedger;
 use App\Models\CashbookLoan;
 use App\Models\CashbookWithholdingTax;
 use App\Models\ChartOfAccount;
+use App\Models\Expense;
 use App\Models\FiscalPeriod;
 use App\Models\Income;
 use App\Models\Investment;
@@ -41,13 +42,16 @@ use Illuminate\Support\Collection;
  * translated at the fiscal period's closing rate; per-row rates are used wherever a
  * record carries one (incomes, expenses, shipments, investments all snapshot theirs).
  *
- * REVENUE RECOGNITION — the cashbook is the single source for trading revenue and
- * expenditure, deliberately. Shipment totals and the  table are NOT added to
- * the P&L: the cashbook already records the cash side of those same transactions, so
- * counting both would double every figure. The consequence is that the P&L is prepared
- * on a CASH basis (revenue when received, costs when paid) rather than an accrual one.
- * Shipments reach the statements only through accounts receivable on the balance sheet,
- * which is what carries the unbilled/unpaid accrual side.
+ * REVENUE RECOGNITION — trading revenue and costs come from exactly one source, set by
+ * config('financials.trading_source'):
+ *
+ *   'records'  (default) — shipments, expenses and external income. An ACCRUAL view:
+ *                          revenue when a shipment is raised, costs when incurred, with
+ *                          the unpaid remainder carried as accounts receivable.
+ *   'cashbook'           — the cashbook's monthly ledgers. A CASH view.
+ *
+ * Never both: the cashbook records the cash side of the very same shipments and
+ * expenses, so reading both would count every transaction twice.
  */
 class FinancialStatementService
 {
@@ -257,22 +261,13 @@ class FinancialStatementService
             }
         };
 
-        // Revenue and expenditure from the cashbook's monthly ledgers — the real
-        // accounting backbone. Kept in GHS, so translated at the closing rate.
-        foreach (CashbookIncomeLedger::where('year', $year)->get()->groupBy('ledger_type.value') as $ledgerType => $rows) {
-            $add('INC-'.strtoupper((string) $ledgerType), $this->ghsToUsd((float) $rows->sum('credit'), $rate));
+        if (self::tradingSource() === 'cashbook') {
+            $this->addCashbookTrading($add, $year, $rate);
+        } else {
+            $this->addRecordsTrading($add, $year);
         }
 
-        foreach (CashbookExpenditureLedger::where('year', $year)->get()->groupBy('ledger_type.value') as $ledgerType => $rows) {
-            $add('EXP-'.strtoupper((string) $ledgerType), $this->ghsToUsd((float) $rows->sum('debit'), $rate));
-        }
-
-        // Income and expense records carry their own snapshotted rate, so they are
-        // summed directly in USD rather than translated at the closing rate.
-        $add('INC-OTHER', (float) Income::where('status', IncomeStatus::Received)
-            ->whereYear('income_date', $year)
-            ->sum('amount_usd'));
-
+        // Payroll is not part of either trading source — it has its own records.
         $add('EXP-SALARIES_WAGES', (float) PayrollEntry::whereHas(
             'payrollPeriod',
             fn ($query) => $query->whereYear('pay_date', $year)
@@ -290,6 +285,74 @@ class FinancialStatementService
             ->sum('amount'));
 
         return $lines;
+    }
+
+    /**
+     * Trading revenue and costs from the operational records the business actually
+     * keeps: shipments raised, expenses incurred, external income received.
+     *
+     * This is an ACCRUAL view — a shipment is revenue when it is raised, not when the
+     * client pays. The unpaid remainder is what accounts receivable carries on the
+     * balance sheet, so the two articulate.
+     */
+    private function addRecordsTrading(callable $add, int $year): void
+    {
+        // shipments.total is denominated in USD, matching the presentation currency.
+        $add('INC-FREIGHT', (float) Shipment::whereYear('created_at', $year)->sum('total'));
+
+        // Income and expense records each snapshot their own exchange rate at the
+        // transaction date, so their USD columns are used directly rather than
+        // retranslated at the year-end rate.
+        $externalIncome = Income::query()
+            ->where('status', IncomeStatus::Received)
+            ->whereYear('income_date', $year)
+            ->with('category.chartOfAccount')
+            ->get()
+            ->groupBy(fn (Income $income) => $income->category?->chartOfAccount?->code ?? 'INC-OTHER');
+
+        foreach ($externalIncome as $accountCode => $rows) {
+            $add((string) $accountCode, (float) $rows->sum('amount_usd'));
+        }
+
+        $expenses = Expense::query()
+            ->whereYear('expense_date', $year)
+            ->with('category.chartOfAccount')
+            ->get()
+            ->groupBy(fn (Expense $expense) => $expense->category?->chartOfAccount?->code ?? 'EXP-MISC');
+
+        foreach ($expenses as $accountCode => $rows) {
+            $add((string) $accountCode, (float) $rows->sum('amount_usd'));
+        }
+    }
+
+    /**
+     * Trading revenue and costs from the cashbook's monthly ledgers. A CASH view —
+     * revenue when received, costs when paid. Kept in GHS, so translated at the
+     * period's closing rate.
+     */
+    private function addCashbookTrading(callable $add, int $year, float $rate): void
+    {
+        foreach (CashbookIncomeLedger::where('year', $year)->get()->groupBy('ledger_type.value') as $ledgerType => $rows) {
+            $add('INC-'.strtoupper((string) $ledgerType), $this->ghsToUsd((float) $rows->sum('credit'), $rate));
+        }
+
+        foreach (CashbookExpenditureLedger::where('year', $year)->get()->groupBy('ledger_type.value') as $ledgerType => $rows) {
+            $add('EXP-'.strtoupper((string) $ledgerType), $this->ghsToUsd((float) $rows->sum('debit'), $rate));
+        }
+
+        $add('INC-OTHER', (float) Income::where('status', IncomeStatus::Received)
+            ->whereYear('income_date', $year)
+            ->sum('amount_usd'));
+    }
+
+    /**
+     * Which set of records trading revenue and costs are read from. Only ever one of
+     * them: the cashbook records the cash side of the very same shipments and
+     * expenses, so reading both would count every transaction twice.
+     */
+    public static function tradingSource(): string
+    {
+        return config('financials.trading_source', 'records') === 'cashbook' ? 'cashbook' : 'records';
     }
 
     /**
@@ -391,19 +454,67 @@ class FinancialStatementService
         // Retained earnings roll forward: whatever prior years closed at, plus this
         // year's result. Prior years come from account_balances, which is where a
         // manually keyed year records its own closing equity.
-        $priorRetained = (float) AccountBalance::where('fiscal_year', '<', $year)
-            ->whereHas('account', fn ($query) => $query->where('code', 'EQY-RETAINED'))
-            ->orderByDesc('fiscal_year')
-            ->first()?->closing_balance;
+        $priorRetained = $this->carriedForwardBalance($year - 1, 'EQY-RETAINED');
 
         $add('EQY-RETAINED', round($priorRetained + $this->profitAndLossNetOnly($period), 2));
 
-        $add('EQY-CAPITAL', (float) AccountBalance::where('fiscal_year', '<=', $year)
-            ->whereHas('account', fn ($query) => $query->where('code', 'EQY-CAPITAL'))
-            ->orderByDesc('fiscal_year')
-            ->first()?->closing_balance);
+        $add('EQY-CAPITAL', $this->carriedForwardBalance($year, 'EQY-CAPITAL'));
+
+        // Anything the derivation could not produce falls back to a manually keyed
+        // balance. Several real positions have no operational record behind them —
+        // cash at bank when the cashbook is unused, share capital, inventory, vehicles
+        // — and without this the balance sheet can never be made to balance.
+        $derived = $lines->map(fn (array $line) => $line['account']->code)->all();
+
+        foreach ($accounts as $code => $account) {
+            if (in_array($code, $derived, true) || ! $account->type->isBalanceSheet()) {
+                continue;
+            }
+
+            $add((string) $code, $this->carriedForwardBalance($year, (string) $code));
+        }
 
         return $lines;
+    }
+
+    /**
+     * The most recent manually keyed closing balance for an account at or before the
+     * given year. A balance-sheet position carries forward until it is restated, so
+     * cash or share capital keyed for 2025 still stands in 2026 unless re-keyed.
+     */
+    private function carriedForwardBalance(int $year, string $code): float
+    {
+        $balance = AccountBalance::where('fiscal_year', '<=', $year)
+            ->whereHas('account', fn ($query) => $query->where('code', $code))
+            ->orderByDesc('fiscal_year')
+            ->first();
+
+        if (! $balance) {
+            return 0.0;
+        }
+
+        // Translated using the entry currency and rate of the year it was keyed for,
+        // not the year being reported: a 2024 balance keyed in Cedis was keyed at the
+        // 2024 rate, and re-translating it at a later rate would restate history.
+        return $this->toPresentationCurrency(
+            (float) $balance->closing_balance,
+            $this->periodFor($balance->fiscal_year)
+        );
+    }
+
+    /**
+     * Convert a figure held in a fiscal period's entry currency into the presentation
+     * currency. A no-op when the two already match.
+     */
+    private function toPresentationCurrency(float $amount, FiscalPeriod $period): float
+    {
+        if (! $period->needsTranslation()) {
+            return round($amount, 2);
+        }
+
+        $rate = $this->closingRate($period);
+
+        return $rate > 0 ? round($amount / $rate, 2) : round($amount, 2);
     }
 
     /**
@@ -438,12 +549,6 @@ class FinancialStatementService
         // The accountant's Ghana books are kept in GHS while these statements present
         // in USD. Reading the keyed figures verbatim would overstate the year by the
         // exchange rate and label the result USD — on a document going to a lender.
-        $divisor = $period->needsTranslation() ? $this->closingRate($period) : 1.0;
-
-        if ($divisor <= 0) {
-            $divisor = 1.0;
-        }
-
         return AccountBalance::where('fiscal_year', $year)
             ->with('account')
             ->get()
@@ -453,9 +558,9 @@ class FinancialStatementService
                 'account' => $balance->account,
                 // A P&L account's figure for the year is its movement; a balance-sheet
                 // account's is where it stood at the year end.
-                'amount' => round((float) ($balance->account->type->isBalanceSheet()
+                'amount' => $this->toPresentationCurrency((float) ($balance->account->type->isBalanceSheet()
                     ? $balance->closing_balance
-                    : $balance->movement) / $divisor, 2),
+                    : $balance->movement), $period),
             ])
             ->values();
     }
