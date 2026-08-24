@@ -51,8 +51,34 @@ class FinancialStatementEntry extends Page implements HasForms
 
     public function mount(): void
     {
-        $this->selectedYear = FinancialStatementService::firstRecordedYear() - 1;
+        $this->selectedYear = self::latestKeyableYear();
         $this->loadBalances();
+    }
+
+    /**
+     * Years whose figures have to be keyed by hand — those predating the first year
+     * this system holds transactions for.
+     *
+     * A derived year is deliberately NOT offered. Keying one would flip it to
+     * 'manual', and its P&L and balance sheet would stop reading live shipments,
+     * expenses and investor records — silently replacing real trading figures with
+     * whatever was typed. Balances keyed for the last manual year already carry
+     * forward into every derived year that follows, so there is nothing to gain.
+     *
+     * @return array<int, string>
+     */
+    public static function keyableYears(): array
+    {
+        $latest = self::latestKeyableYear();
+
+        return collect(range($latest, $latest - 5))
+            ->mapWithKeys(fn (int $year) => [$year => (string) $year])
+            ->all();
+    }
+
+    public static function latestKeyableYear(): int
+    {
+        return FinancialStatementService::firstRecordedYear() - 1;
     }
 
     public function form(Form $form): Form
@@ -61,12 +87,11 @@ class FinancialStatementEntry extends Page implements HasForms
             ->schema([
                 Select::make('selectedYear')
                     ->label('Financial Year')
-                    ->options(collect(range(FinancialStatementService::firstRecordedYear(), FinancialStatementService::firstRecordedYear() - 6))
-                        ->mapWithKeys(fn (int $year) => [$year => (string) $year])
-                        ->all())
+                    ->options(self::keyableYears())
                     ->live()
                     ->afterStateUpdated(fn () => $this->loadBalances())
-                    ->required(),
+                    ->required()
+                    ->helperText('Only years before '.FinancialStatementService::firstRecordedYear().' can be keyed — later years are built from live records.'),
 
                 // Without this the keyed figures would be read as USD. A Ghana set of
                 // accounts is kept in Cedis, so the statements would be overstated by
@@ -178,6 +203,17 @@ class FinancialStatementEntry extends Page implements HasForms
 
     public function save(): void
     {
+        if ($this->selectedYear >= FinancialStatementService::firstRecordedYear()) {
+            Notification::make()
+                ->title($this->selectedYear.' is built from live records')
+                ->body('Keying balances here would replace its real shipment, expense and investor figures with whatever is typed. Key the last prior year instead — its balances carry forward automatically.')
+                ->danger()
+                ->persistent()
+                ->send();
+
+            return;
+        }
+
         $period = $this->period();
 
         if ($period->status === FiscalPeriodStatus::locked) {
@@ -236,6 +272,16 @@ class FinancialStatementEntry extends Page implements HasForms
 
     public function lock(): void
     {
+        if ($this->selectedYear >= FinancialStatementService::firstRecordedYear()) {
+            Notification::make()
+                ->title($this->selectedYear.' is built from live records')
+                ->body('There is nothing to lock — this year is derived, not keyed.')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
         if ($this->entryCurrency === 'GHS' && ! filled($this->closingRate)) {
             Notification::make()
                 ->title('A year-end exchange rate is required')

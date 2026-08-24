@@ -24,6 +24,16 @@
             selected above; the statements translate them into USD for presentation.
         </x-slot>
 
+        <div class="mb-4 rounded-lg border border-gray-300 bg-gray-50 p-4 dark:border-white/10 dark:bg-white/5">
+            <p class="text-sm text-gray-700 dark:text-gray-300">
+                <strong>{{ \App\Service\FinancialStatementService::firstRecordedYear() }} onwards is not listed here.</strong>
+                Those years are built from live shipment, expense, payroll and investor records, so there is
+                nothing to key. Balances you enter for
+                {{ \App\Filament\Pages\FinancialStatementEntry::latestKeyableYear() }} — cash at bank, share
+                capital, vehicles — carry forward into every later year automatically, until you restate them.
+            </p>
+        </div>
+
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-4">
             <div class="rounded-lg bg-gray-50 p-4 ring-1 ring-gray-950/5 dark:bg-white/5 dark:ring-white/10">
                 <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Total Debits</div>
@@ -50,6 +60,19 @@
                     {{ $check['balances'] ? 'The trial balance articulates.' : 'Debits and credits must agree before the year can be locked.' }}
                 </div>
             </div>
+        </div>
+
+        {{-- Getting this wrong throws the balance sheet out by exactly the year's
+             profit, and nothing else on the page would reveal why. --}}
+        <div class="mb-4 rounded-lg border border-info-300 bg-info-50 p-4 dark:border-info-700 dark:bg-info-950/50">
+            <p class="text-sm text-info-800 dark:text-info-200">
+                <strong>Which Retained Earnings figure to enter.</strong>
+                If you are keying the revenue and expense lines below as well as the balance-sheet ones,
+                enter the <strong>opening</strong> retained earnings (1 January
+                {{ $this->selectedYear }}) — the year's profit is already represented by those lines, and
+                entering the closing figure would count it twice. If you are keying balance-sheet accounts
+                only, enter the <strong>closing</strong> figure (31 December {{ $this->selectedYear }}).
+            </p>
         </div>
 
         @if ($this->entryCurrency === 'GHS')

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\AccountType;
 use App\Filament\Resources\IncomeCategoryResource\Pages;
 use App\Models\IncomeCategory;
 use Filament\Forms;
@@ -41,7 +42,7 @@ class IncomeCategoryResource extends Resource
                             ->relationship(
                                 'chartOfAccount',
                                 'name',
-                                fn ($query) => $query->where('type', App\Enums\AccountType::income->value)
+                                fn ($query) => $query->where('type', AccountType::income->value)
                                     ->where('is_active', true)
                                     ->orderBy('sort_order')
                             )

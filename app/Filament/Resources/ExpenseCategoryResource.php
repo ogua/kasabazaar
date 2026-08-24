@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\AccountType;
 use App\Filament\Resources\ExpenseCategoryResource\Pages;
 use App\Models\ExpenseCategory;
 use Filament\Forms;
@@ -41,7 +42,7 @@ class ExpenseCategoryResource extends Resource
                             ->relationship(
                                 'chartOfAccount',
                                 'name',
-                                fn ($query) => $query->where('type', App\Enums\AccountType::expense->value)
+                                fn ($query) => $query->where('type', AccountType::expense->value)
                                     ->where('is_active', true)
                                     ->orderBy('sort_order')
                             )

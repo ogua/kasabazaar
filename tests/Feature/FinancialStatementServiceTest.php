@@ -606,6 +606,24 @@ class FinancialStatementServiceTest extends TestCase
         $this->assertSame([], $statement['unmapped_categories']['expenses']);
     }
 
+    /**
+     * Keying a derived year would flip it to 'manual' and its statements would stop
+     * reading live records — silently replacing real trading figures with whatever was
+     * typed. The entry screen must not offer those years at all.
+     */
+    public function test_prior_year_entry_only_offers_years_that_have_to_be_keyed(): void
+    {
+        $years = array_keys(\App\Filament\Pages\FinancialStatementEntry::keyableYears());
+        $firstRecorded = \App\Service\FinancialStatementService::firstRecordedYear();
+
+        $this->assertNotEmpty($years);
+        $this->assertSame($firstRecorded - 1, max($years), 'The latest keyable year must precede the first derived year.');
+
+        foreach ($years as $year) {
+            $this->assertLessThan($firstRecorded, $year, "{$year} is derived and must not be keyable.");
+        }
+    }
+
     private function expense(string $categoryCode, float $amount, string $date, bool $mapped = true): Expense
     {
         $category = ExpenseCategory::firstOrCreate(
