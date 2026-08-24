@@ -2,12 +2,12 @@
 
 namespace App\Filament\Pages;
 
-use App\Exports\BalanceSheetExport;
-use App\Filament\Pages\Concerns\RendersFinancialStatement;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Filament\Pages\Page;
+use App\Exports\BalanceSheetExport;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Concerns\InteractsWithForms;
+use App\Filament\Pages\Concerns\RendersFinancialStatement;
 
 class BalanceSheet extends Page implements HasForms
 {
@@ -24,6 +24,11 @@ class BalanceSheet extends Page implements HasForms
     protected static ?string $navigationLabel = 'Balance Sheet';
 
     protected static string $view = 'filament.pages.balance-sheet';
+
+    public static function getNavigationBadge(): ?string
+    {
+        return 'New';
+    }
 
     public function form(Form $form): Form
     {

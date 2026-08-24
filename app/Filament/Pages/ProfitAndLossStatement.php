@@ -2,12 +2,12 @@
 
 namespace App\Filament\Pages;
 
-use App\Exports\ProfitAndLossExport;
-use App\Filament\Pages\Concerns\RendersFinancialStatement;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Filament\Pages\Page;
+use App\Exports\ProfitAndLossExport;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Concerns\InteractsWithForms;
+use App\Filament\Pages\Concerns\RendersFinancialStatement;
 
 class ProfitAndLossStatement extends Page implements HasForms
 {
@@ -48,5 +48,10 @@ class ProfitAndLossStatement extends Page implements HasForms
     protected function pdfFilename(): string
     {
         return 'profit-and-loss';
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        return 'New';
     }
 }

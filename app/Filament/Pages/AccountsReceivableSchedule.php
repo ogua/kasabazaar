@@ -2,14 +2,14 @@
 
 namespace App\Filament\Pages;
 
-use App\Exports\AccountsReceivableExport;
-use App\Filament\Pages\Concerns\RendersFinancialStatement;
 use Carbon\Carbon;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Filament\Pages\Page;
+use Filament\Forms\Contracts\HasForms;
+use App\Exports\AccountsReceivableExport;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Concerns\InteractsWithForms;
+use App\Filament\Pages\Concerns\RendersFinancialStatement;
 
 class AccountsReceivableSchedule extends Page implements HasForms
 {
@@ -29,6 +29,11 @@ class AccountsReceivableSchedule extends Page implements HasForms
 
     /** Ageing is always stated as at an explicit date, never an implicit "today". */
     public ?string $asOf = null;
+
+    public static function getNavigationBadge(): ?string
+    {
+        return 'New';
+    }
 
     public function mount(): void
     {

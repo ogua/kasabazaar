@@ -2,20 +2,20 @@
 
 namespace App\Filament\Pages;
 
-use App\Enums\FiscalPeriodSource;
-use App\Enums\FiscalPeriodStatus;
+use Filament\Forms\Form;
+use Filament\Pages\Page;
+use App\Models\FiscalPeriod;
+use Filament\Actions\Action;
 use App\Models\AccountBalance;
 use App\Models\ChartOfAccount;
-use App\Models\FiscalPeriod;
-use App\Service\FinancialStatementService;
-use Filament\Actions\Action;
+use App\Enums\FiscalPeriodSource;
+use App\Enums\FiscalPeriodStatus;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Form;
+use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
-use Filament\Pages\Page;
+use App\Service\FinancialStatementService;
+use Filament\Forms\Concerns\InteractsWithForms;
 
 /**
  * Keys in a year's closing balances from the accountant's books, for years that
@@ -48,6 +48,11 @@ class FinancialStatementEntry extends Page implements HasForms
 
     /** GHS per USD at the year end, used to translate the figures above. */
     public ?string $closingRate = null;
+
+    public static function getNavigationBadge(): ?string
+    {
+        return 'New';
+    }
 
     public function mount(): void
     {
