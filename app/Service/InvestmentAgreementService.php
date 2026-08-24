@@ -23,7 +23,7 @@ class InvestmentAgreementService
 
         self::affixSignature($investment);
 
-        return Pdf::loadView('pdf.investment-agreement', [
+        $pdf = Pdf::loadView('pdf.investment-agreement', [
             'investment' => $investment,
             'investor' => $investment->investor,
             'valuation' => $isLoan ? null : app(InvestmentInterestService::class)->valuationAsOf($investment, $asOfDate),
@@ -39,11 +39,13 @@ class InvestmentAgreementService
             'asOfDate' => $asOfDate,
         ])
             ->setPaper('a4', 'portrait')
-            ->setOptions([
+            ->setOptions(array_merge([
                 'isHtml5ParserEnabled' => true,
                 'isRemoteEnabled' => true,
                 'defaultFont' => 'sans-serif',
-            ]);
+            ], SignatureFont::pdfOptions()));
+
+        return SignatureFont::register($pdf);
     }
 
     public static function generateCombinedPdf(Investor $investor, ?Carbon $asOfDate = null): \Barryvdh\DomPDF\PDF
@@ -98,7 +100,7 @@ class InvestmentAgreementService
             ? ($segmentedValuations->max(fn (array $valuation) => $valuation['as_of']) ?? $asOfDate)
             : $asOfDate;
 
-        return Pdf::loadView('pdf.investment-agreement-combined', [
+        $pdf = Pdf::loadView('pdf.investment-agreement-combined', [
             'investor' => $investor,
             'investments' => $investments,
             'loanInvestments' => $loanInvestments,
@@ -114,11 +116,13 @@ class InvestmentAgreementService
             'asOfDate' => $reflectedAsOfDate,
         ])
             ->setPaper('a4', 'portrait')
-            ->setOptions([
+            ->setOptions(array_merge([
                 'isHtml5ParserEnabled' => true,
                 'isRemoteEnabled' => true,
                 'defaultFont' => 'sans-serif',
-            ]);
+            ], SignatureFont::pdfOptions()));
+
+        return SignatureFont::register($pdf);
     }
 
     public static function downloadPdf(Investment $investment, ?Carbon $asOfDate = null)

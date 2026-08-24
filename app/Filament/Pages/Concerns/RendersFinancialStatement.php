@@ -81,7 +81,10 @@ trait RendersFinancialStatement
     {
         $statement = $this->statement();
 
-        $pdf = Pdf::loadView($this->pdfView(), ['statement' => $statement])
+        $pdf = Pdf::loadView($this->pdfView(), [
+            'statement' => $statement,
+            'orientation' => $this->pdfOrientation(),
+        ])
             ->setPaper('a4', $this->pdfOrientation())
             ->setOptions([
                 'isHtml5ParserEnabled' => true,

@@ -8,6 +8,7 @@ use App\Models\AccountBalance;
 use App\Models\Branch;
 use App\Models\CashbookExpenditureLedger;
 use App\Models\CashbookIncomeLedger;
+use App\Models\CashPosition;
 use App\Models\ChartOfAccount;
 use App\Models\Client;
 use App\Models\Expense;
@@ -622,6 +623,63 @@ class FinancialStatementServiceTest extends TestCase
         foreach ($years as $year) {
             $this->assertLessThan($firstRecorded, $year, "{$year} is derived and must not be keyable.");
         }
+    }
+
+    /**
+     * Nothing else in the system knows the bank balance, so without a recorded
+     * position the sheet carries receivables and no cash and cannot balance.
+     */
+    public function test_a_recorded_cash_position_supplies_the_bank_balance(): void
+    {
+        $this->derivedPeriod();
+
+        $sheet = $this->service->balanceSheet(self::DERIVED_YEAR);
+        $this->assertTrue($sheet['missing_cash_position'], 'A year with no position must say so.');
+        $this->assertNull(collect($sheet['assets']['current'])->firstWhere('statement_line', 'Cash & Bank'));
+
+        CashPosition::create([
+            'as_of_date' => '2026-09-30',
+            'bank_balance' => 900000,
+            'momo_balance' => 100000,
+            'currency' => 'GHS',
+            'exchange_rate' => 10.0,
+        ]);
+
+        $sheet = $this->service->balanceSheet(self::DERIVED_YEAR);
+
+        $this->assertFalse($sheet['missing_cash_position']);
+
+        // GHS 1,000,000 at 10.0 = USD 100,000.
+        $cash = collect($sheet['assets']['current'])->firstWhere('statement_line', 'Cash & Bank');
+        $this->assertNotNull($cash);
+        $this->assertEqualsWithDelta(100000.00, $cash['amount'], 0.01);
+    }
+
+    public function test_the_latest_position_at_or_before_the_year_end_is_used(): void
+    {
+        $this->derivedPeriod();
+
+        foreach ([['2026-03-31', 50000], ['2026-09-30', 80000]] as [$date, $bank]) {
+            CashPosition::create([
+                'as_of_date' => $date,
+                'bank_balance' => $bank,
+                'momo_balance' => 0,
+                'currency' => 'USD',
+            ]);
+        }
+
+        // A later position that the 2026 sheet must not reach forward for.
+        CashPosition::create([
+            'as_of_date' => '2027-02-28',
+            'bank_balance' => 999999,
+            'momo_balance' => 0,
+            'currency' => 'USD',
+        ]);
+
+        $sheet = $this->service->balanceSheet(self::DERIVED_YEAR);
+        $cash = collect($sheet['assets']['current'])->firstWhere('statement_line', 'Cash & Bank');
+
+        $this->assertEqualsWithDelta(80000.00, $cash['amount'], 0.01);
     }
 
     private function expense(string $categoryCode, float $amount, string $date, bool $mapped = true): Expense

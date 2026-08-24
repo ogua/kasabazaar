@@ -1,5 +1,6 @@
-# Font binaries are licensed assets — kept out of version control and deployed
-# alongside the release. See README.md in this directory.
+# DomPDF writes its compiled font cache here — regenerated on demand, never committed.
 *
 !.gitignore
 !README.md
+!signature.ttf
+!signature-LICENSE.txt

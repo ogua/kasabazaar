@@ -16,6 +16,7 @@ use App\Models\CashbookExpenditureLedger;
 use App\Models\CashbookIncomeLedger;
 use App\Models\CashbookLoan;
 use App\Models\CashbookWithholdingTax;
+use App\Models\CashPosition;
 use App\Models\ChartOfAccount;
 use App\Models\Expense;
 use App\Models\FiscalPeriod;
@@ -158,6 +159,9 @@ class FinancialStatementService
             ],
             'is_balanced' => abs($imbalance) < 0.01,
             'imbalance' => $imbalance,
+            // The commonest reason a derived year does not balance: no bank statement
+            // position has been recorded, so the sheet carries receivables and no cash.
+            'missing_cash_position' => $period->isDerived() && CashPosition::asOf($period->end_date->copy()) === null,
         ];
     }
 
@@ -435,8 +439,18 @@ class FinancialStatementService
             ->orderByDesc('created_at')
             ->first();
 
-        $add('AST-BANK', $this->ghsToUsd((float) ($lastEntry->bank_balance ?? 0), $rate));
-        $add('AST-MOMO', $this->ghsToUsd((float) ($lastEntry->momo_balance ?? 0), $rate));
+        // Cash, in order of authority: a recorded bank statement position, then the
+        // cashbook's running balance, then whatever was keyed for a prior year. A
+        // stated position wins because it has been reconciled against a statement.
+        $cashPosition = CashPosition::asOf($period->end_date->copy());
+
+        if ($cashPosition) {
+            $add('AST-BANK', $cashPosition->bankInPresentationCurrency());
+            $add('AST-MOMO', $cashPosition->momoInPresentationCurrency());
+        } else {
+            $add('AST-BANK', $this->ghsToUsd((float) ($lastEntry->bank_balance ?? 0), $rate));
+            $add('AST-MOMO', $this->ghsToUsd((float) ($lastEntry->momo_balance ?? 0), $rate));
+        }
 
         $receivables = $this->accountsReceivable($year, $period->end_date->copy());
         $add('AST-AR', (float) $receivables['totals']['outstanding']);

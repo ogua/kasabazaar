@@ -123,6 +123,29 @@ class InvestmentConversionDocumentTest extends TestCase
         $this->assertSame('Fiifi Mensah', $this->loan->fresh()->agreement_signature_name);
     }
 
+    /**
+     * DomPDF falls back to a default face silently when a font cannot be loaded, so a
+     * PDF that merely renders proves nothing. This asserts the script face is actually
+     * embedded in the output.
+     */
+    public function test_the_signature_font_is_embedded_in_the_agreement(): void
+    {
+        $font = storage_path('fonts/signature.ttf');
+
+        if (! file_exists($font)) {
+            $this->markTestSkipped('No signature font installed — the block degrades to italic serif by design.');
+        }
+
+        $output = InvestmentAgreementService::generatePdf($this->loan->fresh())->output();
+
+        $this->assertStringStartsWith('%PDF', $output);
+        $this->assertMatchesRegularExpression(
+            '/GreatVibes|SignatureScript/i',
+            $output,
+            'The script face must be embedded, not silently substituted.'
+        );
+    }
+
     public function test_the_combined_agreement_renders_and_excludes_converted_tranches_from_its_totals(): void
     {
         $pdf = InvestmentAgreementService::generateCombinedPdf($this->investor->fresh());

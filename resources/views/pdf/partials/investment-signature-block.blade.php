@@ -4,52 +4,31 @@
     // (Investor::booted() recomposes `name` from title/first_name/other_names on every
     // save). Falls back to the live name for tranches predating the snapshot column.
     $signatureName = $signatureName ?? $investor->name;
-    $signatureFont = storage_path('fonts/signature.ttf');
-    $hasSignatureFont = file_exists($signatureFont);
+    // The face is registered against DomPDF directly by App\Service\SignatureFont —
+    // @font-face does not resolve a local file in this build and falls back silently.
+    $hasSignatureFont = \App\Service\SignatureFont::isInstalled();
+    $signatureFamily = \App\Service\SignatureFont::FAMILY;
 @endphp
 
-@if ($hasSignatureFont)
-    <style>
-        @font-face {
-            font-family: 'SignatureScript';
-            font-style: normal;
-            font-weight: 400;
-            src: url('{{ $signatureFont }}') format('truetype');
-        }
-    </style>
-@endif
-
-<style>
-    /* Without the licensed script face installed, this degrades to an oversized
-       italic serif rather than silently rendering the name in body text — the same
-       file_exists() guard the header uses for the company logo and countersignature. */
-    .affixed-signature {
-        font-family: {{ $hasSignatureFont ? "'SignatureScript', " : '' }}'DejaVu Serif', serif;
-        font-style: {{ $hasSignatureFont ? 'normal' : 'italic' }};
-        font-size: {{ $hasSignatureFont ? '26px' : '20px' }};
-        color: #1a1a2e;
-        min-height: 34px;
-        padding-bottom: 2px;
-    }
-
-    .signature-attestation {
-        font-size: 9px;
-        color: #666;
-        margin-top: 6px;
-        width: 90%;
-        line-height: 1.4;
-    }
-</style>
+@php
+    // Inline rather than a class: dompdf does not reliably apply a <style> block that
+    // appears in the body, and this partial is included mid-document. Without the
+    // script face installed it degrades to an oversized italic serif.
+    $signatureStyle = $hasSignatureFont
+        ? "font-family: '{$signatureFamily}', serif; font-style: normal; font-size: 30px;"
+        : "font-family: 'DejaVu Serif', serif; font-style: italic; font-size: 20px;";
+    $attestationStyle = 'font-size: 9px; color: #666; margin-top: 6px; width: 90%; line-height: 1.4;';
+@endphp
 
 <div class="signature-block">
     <div class="signature-column">
-        <div class="affixed-signature">{{ $signatureName }}</div>
+        <div style="{{ $signatureStyle }} color: #1a1a2e; min-height: 34px; padding-bottom: 2px;">{{ $signatureName }}</div>
         <div class="signature-line">
             {{ $signatureName }}<br>
             {{ $partyLabel }}<br>
             Date: {{ ($signatureDate ?? now())->format('F j, Y') }}
         </div>
-        <div class="signature-attestation">
+        <div style="{{ $attestationStyle }}">
             Signed electronically by {{ $signatureName }} on {{ ($signatureDate ?? now())->format('F j, Y') }}.
             @if (! empty($acknowledgedAt))
                 Acknowledged by return upload on {{ $acknowledgedAt->format('F j, Y') }}.

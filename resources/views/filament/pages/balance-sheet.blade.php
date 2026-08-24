@@ -17,8 +17,15 @@
                 <p class="font-semibold text-warning-800 dark:text-warning-200">This balance sheet does not balance.</p>
                 <p class="mt-1 text-sm text-warning-700 dark:text-warning-300">
                     Total assets differ from liabilities plus equity by {{ $money($statement['imbalance']) }}.
-                    This usually means an account has not been recorded for the year — most often share
-                    capital or brought-forward retained earnings. Resolve it before issuing this statement.
+                    @if ($statement['missing_cash_position'] ?? false)
+                        <strong>No cash position has been recorded for this year</strong>, so the sheet shows
+                        receivables and no bank balance — that is almost certainly the whole gap. Record one
+                        under Reports → Cash Positions.
+                    @else
+                        This usually means an account has not been recorded for the year — most often share
+                        capital or brought-forward retained earnings.
+                    @endif
+                    Resolve it before issuing this statement.
                 </p>
             </div>
         </x-filament::section>

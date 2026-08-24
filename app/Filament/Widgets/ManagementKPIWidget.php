@@ -2,23 +2,26 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Shipment;
-use App\Models\Payment;
-use App\Models\Expense;
 use App\Models\Client;
+use App\Models\Expense;
+use App\Models\Payment;
+use App\Models\Shipment;
 use App\Service\ExchangeRateService;
-use Filament\Widgets\StatsOverviewWidget\Stat;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
+use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\On;
 
 class ManagementKPIWidget extends BaseWidget
 {
     protected static ?int $sort = 4;
-    protected int | string | array $columnSpan = 'full';
+
+    protected int|string|array $columnSpan = 'full';
 
     public ?string $startDate = null;
+
     public ?string $endDate = null;
+
     public ?string $containerNumber = null;
 
     public function mount(): void
@@ -127,19 +130,22 @@ class ManagementKPIWidget extends BaseWidget
 
         // === OPERATIONAL METRICS ===
 
-        // Outstanding Receivables
-        $outstandingQuery = DB::table('shipments')
-            ->leftJoin('payments', function($join) {
-                $join->on('payments.shipment_id', '=', 'shipments.id')
-                    ->where('payments.payment_type', '=', 'credit');
-            });
+        // Outstanding Receivables.
+        //
+        // Summed per shipment off the maintained `paid` column rather than joining to
+        // payments: a LEFT JOIN duplicates the shipment row once per payment, so
+        // SUM(shipments.total) counted any shipment with two payments twice and
+        // overstated this figure. Only shipments still owing are counted, which is the
+        // same definition FinancialStatementService::accountsReceivable() uses for the
+        // bank-facing schedule — the two now agree.
+        $outstandingQuery = DB::table('shipments')->whereRaw('total > paid');
+
         if ($containerNumber) {
             $outstandingQuery->where('shipments.container_number', $containerNumber);
         }
-        $outstandingReceivables = $outstandingQuery
-            ->selectRaw('
-                SUM(shipments.total) - COALESCE(SUM(payments.amount_usd), COALESCE(SUM(payments.amount), 0)) as outstanding
-            ')
+
+        $outstandingReceivables = (float) $outstandingQuery
+            ->selectRaw('COALESCE(SUM(shipments.total - shipments.paid), 0) as outstanding')
             ->value('outstanding') ?: 0;
 
         // Total Debt/Receivables Ratio (Days Sales Outstanding equivalent)
@@ -162,17 +168,17 @@ class ManagementKPIWidget extends BaseWidget
         $newClients = Client::whereBetween('created_at', [$startDate, $endDate])->count();
 
         // Period label
-        $periodLabel = $days <= 31 ? "({$days} days)" : "(" . round($days / 30, 1) . " months)";
-        $filterLabel = $containerNumber ? ' [CON' . $containerNumber . ']' : '';
+        $periodLabel = $days <= 31 ? "({$days} days)" : '('.round($days / 30, 1).' months)';
+        $filterLabel = $containerNumber ? ' [CON'.$containerNumber.']' : '';
 
         return [
-            Stat::make('Avg. Shipment Value', '$' . number_format($avgShipmentValue, 2))
+            Stat::make('Avg. Shipment Value', '$'.number_format($avgShipmentValue, 2))
                 ->description('Average value per shipment')
                 ->descriptionIcon('heroicon-m-calculator')
                 ->color('info')
                 ->chart($this->getShipmentValueTrend()),
 
-            Stat::make('Collection Efficiency', number_format($collectionRate, 1) . '%')
+            Stat::make('Collection Efficiency', number_format($collectionRate, 1).'%')
                 ->description(
                     $collectionRate >= 80
                         ? 'Excellent collection rate'
@@ -181,7 +187,7 @@ class ManagementKPIWidget extends BaseWidget
                 ->descriptionIcon($collectionRate >= 80 ? 'heroicon-m-check-circle' : 'heroicon-m-exclamation-triangle')
                 ->color($collectionRate >= 80 ? 'success' : ($collectionRate >= 60 ? 'warning' : 'danger')),
 
-            Stat::make('Avg. Payment Time', number_format($avgPaymentDays, 1) . ' days')
+            Stat::make('Avg. Payment Time', number_format($avgPaymentDays, 1).' days')
                 ->description(
                     $avgPaymentDays <= 7
                         ? 'Fast payment processing'
@@ -191,36 +197,36 @@ class ManagementKPIWidget extends BaseWidget
                 ->color($avgPaymentDays <= 7 ? 'success' : ($avgPaymentDays <= 14 ? 'warning' : 'danger')),
 
             Stat::make('Active Clients', $activeClients)
-                ->description('New: ' . $newClients . ' | Total: ' . Client::count())
+                ->description('New: '.$newClients.' | Total: '.Client::count())
                 ->descriptionIcon('heroicon-m-user-group')
                 ->color('info'),
 
-            Stat::make('Revenue Growth', number_format(abs($revenueGrowth), 1) . '%')
+            Stat::make('Revenue Growth', number_format(abs($revenueGrowth), 1).'%')
                 ->description(
                     $revenueGrowth >= 0
-                        ? 'vs last month (+$' . number_format($currentRate > 0 ? ($monthRevenue - $lastMonthRevenue) / $currentRate : 0, 2) . ')'
-                        : 'vs last month (-$' . number_format($currentRate > 0 ? ($lastMonthRevenue - $monthRevenue) / $currentRate : 0, 2) . ')'
+                        ? 'vs last month (+$'.number_format($currentRate > 0 ? ($monthRevenue - $lastMonthRevenue) / $currentRate : 0, 2).')'
+                        : 'vs last month (-$'.number_format($currentRate > 0 ? ($lastMonthRevenue - $monthRevenue) / $currentRate : 0, 2).')'
                 )
                 ->descriptionIcon($revenueGrowth >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($revenueGrowth >= 0 ? 'success' : 'danger')
                 ->chart($this->getRevenueGrowthTrend()),
 
-            Stat::make('Shipment Growth', number_format(abs($shipmentGrowth), 1) . '%')
+            Stat::make('Shipment Growth', number_format(abs($shipmentGrowth), 1).'%')
                 ->description(
                     $shipmentGrowth >= 0
-                        ? 'vs last month (+' . ($thisMonthShipments - $lastMonthShipments) . ' shipments)'
-                        : 'vs last month (-' . ($lastMonthShipments - $thisMonthShipments) . ' shipments)'
+                        ? 'vs last month (+'.($thisMonthShipments - $lastMonthShipments).' shipments)'
+                        : 'vs last month (-'.($lastMonthShipments - $thisMonthShipments).' shipments)'
                 )
                 ->descriptionIcon($shipmentGrowth >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($shipmentGrowth >= 0 ? 'success' : 'danger'),
 
-            Stat::make('Outstanding Receivables', '$' . number_format($outstandingReceivables, 2))
-                ->description('Days Sales Outstanding: ' . number_format($dso, 1) . ' days')
+            Stat::make('Outstanding Receivables', '$'.number_format($outstandingReceivables, 2))
+                ->description('Days Sales Outstanding: '.number_format($dso, 1).' days')
                 ->descriptionIcon('heroicon-m-banknotes')
                 ->color($dso <= 30 ? 'success' : ($dso <= 60 ? 'warning' : 'danger')),
 
-            Stat::make('Operating Efficiency', number_format(100 - $expenseRatio, 1) . '%')
-                ->description('Expense Ratio: ' . number_format($expenseRatio, 1) . '% of revenue')
+            Stat::make('Operating Efficiency', number_format(100 - $expenseRatio, 1).'%')
+                ->description('Expense Ratio: '.number_format($expenseRatio, 1).'% of revenue')
                 ->descriptionIcon('heroicon-m-chart-bar')
                 ->color($expenseRatio <= 30 ? 'success' : ($expenseRatio <= 50 ? 'warning' : 'danger')),
         ];
@@ -249,6 +255,7 @@ class ManagementKPIWidget extends BaseWidget
             $avg = $query->avg('total') ?: 0;
             $data[] = $avg;
         }
+
         return $data;
     }
 
@@ -275,6 +282,7 @@ class ManagementKPIWidget extends BaseWidget
             $revenue = $query->sum('total_ghs') ?: 0;
             $data[] = $revenue;
         }
+
         return $data;
     }
 }

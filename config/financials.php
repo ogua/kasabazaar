@@ -30,8 +30,19 @@ return [
      */
     'trading_source' => env('FINANCIALS_TRADING_SOURCE', 'records'),
 
+    /*
+     * Letterhead for the bank-facing statements. These are the details a lender or
+     * auditor reads off the top of the page, so they live here rather than in a blade.
+     * The logo is resolved from public/ and simply omitted if the file is missing.
+     */
     'company' => [
         'name' => env('FINANCIALS_COMPANY_NAME', 'Rose Door to Door & Delivery Company Limited'),
         'registration_number' => env('FINANCIALS_COMPANY_REG_NO'),
+        'logo' => env('FINANCIALS_COMPANY_LOGO', 'images/logo.png'),
+        'address' => env('FINANCIALS_COMPANY_ADDRESS', 'Adako Jachie, Ejisu, Kumasi, Ghana'),
+        'phone_ghana' => env('FINANCIALS_COMPANY_PHONE_GH', '+233 50 972 5081 / +233 50 972 5073'),
+        'phone_usa' => env('FINANCIALS_COMPANY_PHONE_US', '+1 (773) 970-0129 / +1 (574) 440-7460'),
+        'email' => env('FINANCIALS_COMPANY_EMAIL', 'kasabazaar109@gmail.com'),
+        'website' => env('FINANCIALS_COMPANY_WEBSITE', 'rddshipping.com'),
     ],
 ];
