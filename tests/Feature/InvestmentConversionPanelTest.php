@@ -7,6 +7,7 @@ use App\Enums\InvestmentConversionSourceMode;
 use App\Enums\InvestmentConversionStatus;
 use App\Enums\InvestmentStatus;
 use App\Filament\Resources\InvestmentConversionResource\Pages\ListInvestmentConversions;
+use App\Filament\Resources\InvestmentConversionResource\Pages\ViewInvestmentConversion;
 use App\Filament\Resources\InvestmentResource\Pages\ListInvestments;
 use App\Models\Branch;
 use App\Models\Investment;
@@ -16,6 +17,8 @@ use App\Models\InvestmentRateSetting;
 use App\Models\InvestmentTransaction;
 use App\Models\Investor;
 use App\Models\User;
+use App\Notifications\InvestmentConversionStatusUpdated;
+use App\Service\InvestmentConversionService;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Livewire\Livewire;
@@ -34,11 +37,11 @@ class InvestmentConversionPanelTest extends TestCase
      * (ViewAction/EditAction URLs need a {tenant}) without one set. Same setup
      * ImpersonationTest uses; super_admin bypasses the resource policies.
      */
-    private function actingAsAdminWithTenant(): User
+    private function actingAsAdminWithTenant(string $roleName = 'super_admin'): User
     {
         // assignRole() needs a role on the model's default guard (web, per
         // config/auth.php) — not the 'sanctum'-guarded role PermissionSeeder creates.
-        $role = Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
+        $role = Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
 
         // filament-shield is configured with define_via_gate => false, so super_admin
         // carries no implicit bypass — it holds whatever permissions shield:generate
@@ -81,6 +84,8 @@ class InvestmentConversionPanelTest extends TestCase
 
     private Investment $investment;
 
+    private User $investorUser;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -104,6 +109,11 @@ class InvestmentConversionPanelTest extends TestCase
             'status' => InvestmentStatus::active->value,
             'last_interest_posted_year' => now()->year,
             'last_interest_posted_through' => now()->toDateString(),
+        ]);
+
+        $this->investorUser = User::factory()->create([
+            'investor_id' => $this->investor->id,
+            'status' => 'active',
         ]);
 
         InvestmentTransaction::create([
@@ -242,5 +252,167 @@ class InvestmentConversionPanelTest extends TestCase
         Livewire::actingAs($this->staff)
             ->test(ListInvestmentConversions::class)
             ->assertTableActionHidden('execute', $conversion);
+    }
+
+    public function test_approving_a_request_notifies_the_investor(): void
+    {
+        $conversion = $this->pendingConversion();
+
+        Livewire::actingAs($this->staff)
+            ->test(ListInvestmentConversions::class)
+            ->callTableAction('approve', $conversion, [
+                'target_annual_rate' => 9,
+                'target_payout_frequency' => 'quarterly',
+            ])
+            ->assertHasNoTableActionErrors();
+
+        $notification = $this->investorNotifications()->first();
+
+        $this->assertNotNull($notification, 'The investor was not told their request was approved.');
+        $this->assertSame('approved', $notification->data['status']);
+        $this->assertStringContainsString($conversion->fresh()->reference, $notification->data['body']);
+    }
+
+    public function test_rejecting_a_request_notifies_the_investor_with_the_reason(): void
+    {
+        $conversion = $this->pendingConversion();
+
+        Livewire::actingAs($this->staff)
+            ->test(ListInvestmentConversions::class)
+            ->callTableAction('reject', $conversion, ['rejection_reason' => 'Board has not signed off.'])
+            ->assertHasNoTableActionErrors();
+
+        $notification = $this->investorNotifications()->first();
+
+        $this->assertNotNull($notification, 'The investor was not told their request was rejected.');
+        $this->assertSame('rejected', $notification->data['status']);
+        $this->assertStringContainsString('Board has not signed off.', $notification->data['body']);
+    }
+
+    public function test_a_super_admin_can_reverse_an_executed_conversion_from_the_table(): void
+    {
+        $conversion = $this->executedConversion();
+        $target = $conversion->targetInvestment;
+
+        Livewire::actingAs($this->staff)
+            ->test(ListInvestmentConversions::class)
+            ->callTableAction('reverse', $conversion, ['reason' => 'Recorded against the wrong tranche.'])
+            ->assertHasNoTableActionErrors();
+
+        $this->assertSame(InvestmentConversionStatus::cancelled, $conversion->fresh()->status);
+
+        $source = $this->investment->fresh();
+        $this->assertSame(InvestmentStatus::active, $source->status);
+        $this->assertEqualsWithDelta(12000.00, (float) $source->current_balance, 0.01);
+
+        $this->assertSoftDeleted('investments', ['id' => $target->id]);
+
+        $notification = $this->investorNotifications()->first();
+        $this->assertNotNull($notification, 'The investor was not told the conversion was reversed.');
+        $this->assertSame('cancelled', $notification->data['status']);
+        $this->assertStringContainsString('Recorded against the wrong tranche.', $notification->data['body']);
+    }
+
+    public function test_reversing_is_hidden_from_staff_without_the_super_admin_role(): void
+    {
+        $conversion = $this->executedConversion();
+        $officer = $this->actingAsAdminWithTenant('investor_officer');
+
+        Livewire::actingAs($officer)
+            ->test(ListInvestmentConversions::class)
+            ->assertTableActionHidden('reverse', $conversion)
+            ->assertTableActionVisible('approve', $this->pendingConversion());
+    }
+
+    public function test_staff_can_decide_a_conversion_from_its_view_page(): void
+    {
+        $conversion = $this->pendingConversion();
+
+        Livewire::actingAs($this->staff)
+            ->test(ViewInvestmentConversion::class, ['record' => $conversion->id])
+            ->assertActionVisible('approve')
+            ->assertActionVisible('reject')
+            ->assertActionHidden('execute')
+            ->assertActionHidden('reverse')
+            ->callAction('approve', [
+                'target_annual_rate' => 9,
+                'target_payout_frequency' => 'quarterly',
+            ])
+            ->assertHasNoActionErrors();
+
+        $this->assertSame(InvestmentConversionStatus::approved, $conversion->fresh()->status);
+    }
+
+    public function test_an_executed_conversion_can_be_reversed_from_its_view_page(): void
+    {
+        $conversion = $this->executedConversion();
+
+        Livewire::actingAs($this->staff)
+            ->test(ViewInvestmentConversion::class, ['record' => $conversion->id])
+            ->assertActionVisible('reverse')
+            ->callAction('reverse', ['reason' => 'Wrong conversion date.'])
+            ->assertHasNoActionErrors();
+
+        $this->assertSame(InvestmentConversionStatus::cancelled, $conversion->fresh()->status);
+        $this->assertSame(InvestmentStatus::active, $this->investment->fresh()->status);
+    }
+
+    private function pendingConversion(): InvestmentConversion
+    {
+        $conversion = InvestmentConversion::create([
+            'investor_id' => $this->investor->id,
+            'direction' => InvestmentConversionDirection::to_loan->value,
+            'conversion_date' => now()->toDateString(),
+            'status' => InvestmentConversionStatus::pending_approval->value,
+            'requested_by_investor' => true,
+            'target_contract_term_months' => 24,
+        ]);
+
+        InvestmentConversionSource::create([
+            'investment_conversion_id' => $conversion->id,
+            'source_investment_id' => $this->investment->id,
+            'mode' => InvestmentConversionSourceMode::full->value,
+        ]);
+
+        return $conversion;
+    }
+
+    /**
+     * An approved conversion put through the service, with the execution notification
+     * cleared so a test can assert on whatever the decision under test sends next.
+     */
+    private function executedConversion(): InvestmentConversion
+    {
+        $conversion = InvestmentConversion::create([
+            'investor_id' => $this->investor->id,
+            'direction' => InvestmentConversionDirection::to_loan->value,
+            'conversion_date' => now()->toDateString(),
+            'status' => InvestmentConversionStatus::approved->value,
+            'target_contract_term_months' => 24,
+            'target_payout_frequency' => 'quarterly',
+            'target_annual_rate' => 9,
+        ]);
+
+        InvestmentConversionSource::create([
+            'investment_conversion_id' => $conversion->id,
+            'source_investment_id' => $this->investment->id,
+            'mode' => InvestmentConversionSourceMode::full->value,
+        ]);
+
+        app(InvestmentConversionService::class)->execute($conversion, $this->staff);
+
+        $this->investorUser->notifications()->delete();
+
+        return $conversion->fresh();
+    }
+
+    /**
+     * @return \Illuminate\Database\Eloquent\Collection<int, \Illuminate\Notifications\DatabaseNotification>
+     */
+    private function investorNotifications(): \Illuminate\Database\Eloquent\Collection
+    {
+        return $this->investorUser->notifications()
+            ->where('type', InvestmentConversionStatusUpdated::class)
+            ->get();
     }
 }

@@ -8,14 +8,17 @@ use App\Enums\InvestmentConversionStatus;
 use App\Enums\InvestmentPayoutFrequency;
 use App\Filament\Resources\InvestmentConversionResource\Pages;
 use App\Models\InvestmentConversion;
+use App\Notifications\InvestmentConversionStatusUpdated;
 use App\Service\InvestmentConversionService;
+use App\Service\InvestorNotifier;
+use Filament\Actions\Action as PageAction;
 use Filament\Forms;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\Action as TableAction;
 use Filament\Tables\Table;
 
 class InvestmentConversionResource extends Resource
@@ -161,12 +164,27 @@ class InvestmentConversionResource extends Resource
                 Tables\Filters\SelectFilter::make('direction')->options(InvestmentConversionDirection::class),
             ])
             ->actions([
-                self::approveAction(),
-                self::rejectAction(),
-                self::executeAction(),
-                self::reverseAction(),
+                ...self::reviewActions(),
                 Tables\Actions\ViewAction::make(),
             ]);
+    }
+
+    /**
+     * The four decisions staff can take on a conversion, shared by the table rows and
+     * the view page's header so a conversion can be worked from either place. Table
+     * rows and page headers use different Action classes, hence the class parameter.
+     *
+     * @param  class-string<TableAction|PageAction>  $actionClass
+     * @return array<int, TableAction|PageAction>
+     */
+    public static function reviewActions(string $actionClass = TableAction::class): array
+    {
+        return [
+            self::approveAction($actionClass),
+            self::rejectAction($actionClass),
+            self::executeAction($actionClass),
+            self::reverseAction($actionClass),
+        ];
     }
 
     /**
@@ -174,9 +192,9 @@ class InvestmentConversionResource extends Resource
      * grant the two exceptions here, mirroring how a withdrawal request's
      * exception_approved is granted at approval rather than at submission.
      */
-    private static function approveAction(): Action
+    public static function approveAction(string $actionClass = TableAction::class): TableAction|PageAction
     {
-        return Action::make('approve')
+        return $actionClass::make('approve')
             ->label('Approve')
             ->icon('heroicon-o-check-circle')
             ->color('success')
@@ -216,6 +234,11 @@ class InvestmentConversionResource extends Resource
                     'reviewed_at' => now(),
                 ]);
 
+                InvestorNotifier::notify(
+                    $record->investor_id,
+                    new InvestmentConversionStatusUpdated($record->fresh())
+                );
+
                 Notification::make()
                     ->title('Conversion approved')
                     ->body('Use "Execute" to settle the source tranches and issue the successor.')
@@ -224,9 +247,9 @@ class InvestmentConversionResource extends Resource
             });
     }
 
-    private static function rejectAction(): Action
+    public static function rejectAction(string $actionClass = TableAction::class): TableAction|PageAction
     {
-        return Action::make('reject')
+        return $actionClass::make('reject')
             ->label('Reject')
             ->icon('heroicon-o-x-circle')
             ->color('danger')
@@ -248,13 +271,18 @@ class InvestmentConversionResource extends Resource
                     'reviewed_at' => now(),
                 ]);
 
+                InvestorNotifier::notify(
+                    $record->investor_id,
+                    new InvestmentConversionStatusUpdated($record->fresh())
+                );
+
                 Notification::make()->title('Conversion rejected')->success()->send();
             });
     }
 
-    private static function executeAction(): Action
+    public static function executeAction(string $actionClass = TableAction::class): TableAction|PageAction
     {
-        return Action::make('execute')
+        return $actionClass::make('execute')
             ->label('Execute')
             ->icon('heroicon-o-play')
             ->color('primary')
@@ -283,6 +311,8 @@ class InvestmentConversionResource extends Resource
                     return;
                 }
 
+                $record->refresh();
+
                 Notification::make()
                     ->title('Conversion executed')
                     ->body("Issued {$target->reference} for \$".number_format((float) $target->principal_amount, 2).'. Its agreement is ready for the investor to review.')
@@ -292,13 +322,16 @@ class InvestmentConversionResource extends Resource
             });
     }
 
-    private static function reverseAction(): Action
+    public static function reverseAction(string $actionClass = TableAction::class): TableAction|PageAction
     {
-        return Action::make('reverse')
+        return $actionClass::make('reverse')
             ->label('Reverse')
             ->icon('heroicon-o-arrow-uturn-left')
             ->color('danger')
-            ->visible(fn (InvestmentConversion $record) => $record->status === InvestmentConversionStatus::executed)
+            // Reversing unwinds posted ledger rows and voids an issued agreement — the
+            // same bar the interest-credit reversal on TransactionsRelationManager sets.
+            ->visible(fn (InvestmentConversion $record) => $record->status === InvestmentConversionStatus::executed
+                && (auth()->user()?->hasRole('super_admin') ?? false))
             ->requiresConfirmation()
             ->modalDescription('This restores the source tranches to their pre-conversion balances and removes the successor tranche. Any agreement already issued for the successor becomes void — tell the investor.')
             ->form([
@@ -319,6 +352,8 @@ class InvestmentConversionResource extends Resource
 
                     return;
                 }
+
+                $record->refresh();
 
                 Notification::make()->title('Conversion reversed')->success()->send();
             });

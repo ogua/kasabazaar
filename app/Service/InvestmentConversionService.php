@@ -16,6 +16,7 @@ use App\Models\InvestmentRateOverride;
 use App\Models\InvestmentTransaction;
 use App\Models\Investor;
 use App\Models\User;
+use App\Notifications\InvestmentConversionStatusUpdated;
 use App\Notifications\InvestmentConverted;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -522,6 +523,11 @@ class InvestmentConversionService
                 'reviewed_by' => $staff->id,
                 'reviewed_at' => now(),
             ]);
+
+            InvestorNotifier::notify(
+                $conversion->investor_id,
+                new InvestmentConversionStatusUpdated($conversion->fresh(), $reason)
+            );
         });
     }
 }
