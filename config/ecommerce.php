@@ -18,7 +18,7 @@ return [
      * arbitrary caller-supplied URL.
      */
     'checkout_callback_urls' => [
-        'mobile' => env('ECOMMERCE_MOBILE_CHECKOUT_CALLBACK_URL', 'rdd-client://payment/complete'),
+        'mobile' => env('ECOMMERCE_MOBILE_CHECKOUT_CALLBACK_URL', env('MOBILE_APP_SCHEME', 'rddshipping').'://payment/complete'),
         'web' => env('KMARKET_CHECKOUT_CALLBACK_URL'),
     ],
 

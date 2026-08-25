@@ -3,9 +3,10 @@
 namespace App\Filament\Resources\ClientResource\Pages;
 
 use App\Models\User;
+use App\Services\CustomerAccountProvisioner;
 use Filament\Actions;
 use Filament\Facades\Filament;
-use Illuminate\Support\Facades\Hash;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use App\Filament\Resources\ClientResource;
 
@@ -27,37 +28,47 @@ class EditClient extends EditRecord
 
     public function afterSave(): void
     {
-        //add new client to users records for login
         $record = $this->record;
+        $login = $record->email ?: $record->phone;
 
-        $email_or_phone = $record->email ? $record->email : $record->phone;
+        if (! $login) {
+            return;
+        }
 
-        if ($email_or_phone) {
-            $data = [
+        $existing = User::where('client_id', $record->id)->first()
+            ?? User::where('email', $login)->first();
+
+        if ($existing) {
+            // Keep the login in step with the client record. The password is
+            // deliberately untouched — editing a client must never reset it.
+            $existing->update([
                 'name' => $record->name,
-                'email' =>  $email_or_phone,
+                'email' => $login,
                 'phone' => $record->phone,
-            ];
+                'client_id' => $record->id,
+            ]);
 
-            $check = User::where('email', $email_or_phone)->first();
+            return;
+        }
 
-            if ($check) {
-                User::where('email', $email_or_phone)
-                    ->update($data);
-            } else {
+        // The client had no login (e.g. an email was only just added), so
+        // provision one now and invite them to set a password.
+        $result = app(CustomerAccountProvisioner::class)
+            ->provision($record, Filament::getTenant()?->id);
 
-                $data = [
-                    'name' => $record->name,
-                    'email' => $email_or_phone,
-                    'phone' => $record->phone,
-                    'password' => Hash::make('password'),
-                    'role' => "customer",
-                    'branch_id' => Filament::getTenant()->id,
-                    'client_id' => $record->id
-                ];
-
-                User::create($data);
-            }
+        if ($result['status'] === CustomerAccountProvisioner::CREATED_INVITED) {
+            Notification::make()
+                ->title('Login created and invited')
+                ->body('A password set-up link has been emailed to the client.')
+                ->success()
+                ->send();
+        } elseif ($result['status'] === CustomerAccountProvisioner::CREATED_NO_EMAIL) {
+            Notification::make()
+                ->title('Login created, but no invite sent')
+                ->body('This client has no email address, so they cannot set a password.')
+                ->warning()
+                ->persistent()
+                ->send();
         }
     }
 }

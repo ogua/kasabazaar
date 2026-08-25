@@ -2,11 +2,10 @@
 
 namespace App\Filament\Resources\ClientResource\Pages;
 
-use App\Models\User;
 use Filament\Actions;
 use App\Models\Client;
+use App\Services\CustomerAccountProvisioner;
 use Filament\Facades\Filament;
-use Illuminate\Support\Facades\Hash;
 use Filament\Notifications\Notification;
 use App\Filament\Resources\ClientResource;
 use Filament\Resources\Pages\CreateRecord;
@@ -46,23 +45,37 @@ class CreateClient extends CreateRecord
 
     public function afterCreate(): void
     {
-        //add new client to users records for login
-        $record = $this->record;
+        // Give the client a mobile-app login with a random password, and invite
+        // them to set their own. Never assign a shared default: these accounts
+        // gate payment history, saved addresses and in-app checkout.
+        $result = app(CustomerAccountProvisioner::class)
+            ->provision($this->record, Filament::getTenant()?->id);
 
-        $email_or_phone = $record->email ? $record->email : $record->phone;
+        match ($result['status']) {
+            CustomerAccountProvisioner::CREATED_INVITED => Notification::make()
+                ->title('Client created and invited')
+                ->body('A password set-up link has been emailed to the client.')
+                ->success()
+                ->send(),
 
-        if ($email_or_phone) {
-            $data = [
-                'name' => $record->name,
-                'email' => $email_or_phone,
-                'phone' => $record->phone,
-                'password' => Hash::make('password'),
-                'role' => "customer",
-                'branch_id' => Filament::getTenant()->id,
-                'client_id' => $record->id
-            ];
+            CustomerAccountProvisioner::CREATED_NO_EMAIL => Notification::make()
+                ->title('Login created, but no invite sent')
+                ->body('This client has no email address, so they cannot set a password. Add an email and save to send the invite.')
+                ->warning()
+                ->persistent()
+                ->send(),
 
-            User::create($data);
-        }
+            CustomerAccountProvisioner::ALREADY_EXISTS => Notification::make()
+                ->title('An account already uses this email or phone')
+                ->body('The existing login was left untouched.')
+                ->warning()
+                ->send(),
+
+            default => Notification::make()
+                ->title('No login created')
+                ->body('Add an email address or phone number to give this client app access.')
+                ->warning()
+                ->send(),
+        };
     }
 }

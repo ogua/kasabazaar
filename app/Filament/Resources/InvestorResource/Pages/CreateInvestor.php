@@ -7,6 +7,8 @@ use App\Models\User;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 
 class CreateInvestor extends CreateRecord
 {
@@ -30,19 +32,33 @@ class CreateInvestor extends CreateRecord
             return;
         }
 
-        User::create([
+        $user = User::create([
             'name' => $record->name,
             'email' => $record->email,
             'phone' => $record->phone,
-            'password' => Hash::make('password'),
+            // Random and never disclosed. The investor claims the account via the
+            // reset link below — a shared default password would expose capital
+            // balances, withdrawal requests and conversions to anyone who guessed it.
+            'password' => Hash::make(Str::random(48)),
             'role' => 'investor',
             'investor_id' => $record->id,
         ]);
 
+        $invited = true;
+
+        try {
+            Password::broker()->sendResetLink(['email' => $record->email]);
+        } catch (\Throwable $e) {
+            report($e);
+            $invited = false;
+        }
+
         Notification::make()
             ->title('Portal login created')
-            ->body("A default login was created for {$record->email} with password \"password\". Advise the investor to change it after first login.")
-            ->success()
+            ->body($invited
+                ? "A password set-up link has been emailed to {$record->email}."
+                : "The login was created, but the set-up email to {$record->email} could not be sent. Ask the investor to use Forgot Password.")
+            ->{$invited ? 'success' : 'warning'}()
             ->send();
     }
 }

@@ -67,4 +67,13 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
+    /*
+     * URL scheme of the mobile app that in-app payments should bounce back to
+     * (see the /app/payment-complete route). Staff, client and investor now
+     * share one binary, so this is the rdd-shipping app's scheme.
+     */
+    'mobile' => [
+        'scheme' => env('MOBILE_APP_SCHEME', 'rddshipping'),
+    ],
+
 ];

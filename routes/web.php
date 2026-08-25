@@ -139,11 +139,14 @@ Route::get('/paid-successfully', PaymentsuccessfulPage::class)
 
 // Paystack redirects here after a payment made from the mobile app.
 // Serves a tiny page that immediately deep-links back into the app so the
-// in-app auth-session browser closes itself. Scheme matches the customer
-// app's "scheme" in app.json.
+// in-app auth-session browser closes itself. The scheme must match the
+// "scheme" in the mobile app's app.json; it is env-driven so it can be
+// repointed without a code deploy (see config/services.php mobile.scheme).
+// The deep link only auto-closes the browser: the app confirms the payment
+// by verifying the reference, so a scheme mismatch degrades UX, not payments.
 Route::get('/app/payment-complete', function (\Illuminate\Http\Request $request) {
     $reference = $request->query('reference', $request->query('trxref', ''));
-    $deepLink = 'rddshippingclient://pay?reference='.urlencode($reference);
+    $deepLink = config('services.mobile.scheme').'://pay?reference='.urlencode($reference);
 
     return response(
         '<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1">'
