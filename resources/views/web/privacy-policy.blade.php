@@ -12,7 +12,7 @@
         <div class="row justify-content-center">
             <div class="col-lg-10">
 
-                <p class="text-muted mb-4"><em>Last updated: August 20, 2026</em></p>
+                <p class="text-muted mb-4"><em>Last updated: August 31, 2026</em></p>
 
                 <p>Rose Door to Door Shipping and Delivery Service, operated by <strong>{{ config('group.company.legal_name') }}</strong> ("we", "us", or "our"), is committed to protecting the privacy of our customers and website visitors. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website or use our shipping and logistics services.</p>
 
@@ -29,6 +29,7 @@
                 <h6 class="mt-3">a) Personal Information You Provide</h6>
                 <ul>
                     <li>Full name, phone number, and email address</li>
+                    <li>Your mobile number and consent to receive SMS notifications, captured when you book a shipment</li>
                     <li>Sender and recipient addresses (in the USA and Ghana)</li>
                     <li>Shipment details: item description, weight, dimensions, and declared value</li>
                     <li>Payment information processed through our payment partner (Paystack)</li>
@@ -50,11 +51,23 @@
                 <ul>
                     <li>To process, manage, and track your shipments between the USA and Ghana</li>
                     <li>To communicate with you about your shipment status, invoices, and receipts</li>
+                    <li>To send SMS/text message notifications about your shipment status and payments, where you have opted in</li>
                     <li>To process payments securely via our payment processor</li>
                     <li>To respond to your inquiries, complaints, and feedback</li>
                     <li>To generate shipping labels, packing slips, and delivery documents</li>
                     <li>To improve our website, services, and customer experience</li>
                     <li>To comply with legal obligations applicable in Ghana and the United States</li>
+                </ul>
+
+                <h6 class="mt-4" id="sms-notifications">a) SMS / Text Message Notifications</h6>
+                <p>When you book a shipment, you may provide a mobile number and opt in to receive SMS (text message) updates about that shipment. If you opt in, we send automated transactional messages triggered by activity on your order — such as booking confirmation, pickup, departure, customs and container clearance, out-for-delivery and delivery confirmation, payment receipts, and tracking-number updates.</p>
+                <ul>
+                    <li><strong>Consent:</strong> SMS updates are sent only to numbers that opted in during booking. Opting in is not a condition of using our services.</li>
+                    <li><strong>Message frequency:</strong> Varies with shipment activity — typically 3–10 messages over the life of a shipment.</li>
+                    <li><strong>Rates:</strong> Message and data rates may apply, depending on your mobile carrier and plan.</li>
+                    <li><strong>Opting out:</strong> Reply <strong>STOP</strong> to any message to unsubscribe, or <strong>HELP</strong> for assistance. You may also contact us using the details in section 12.</li>
+                    <li><strong>Providers:</strong> Messages are delivered through our messaging providers, Twilio and Arkesel, acting as data processors on our behalf.</li>
+                    <li><strong>No sharing:</strong> Mobile numbers collected for SMS notifications, and your opt-in consent, are never sold, rented, or shared with third parties or other group companies for their own marketing or promotional purposes.</li>
                 </ul>
 
                 <hr class="my-4">
@@ -63,7 +76,7 @@
                 <h4 class="mt-4">3. Sharing of Your Information</h4>
                 <p>We do not sell or rent your personal information to third parties. We may share your information only in the following circumstances:</p>
                 <ul>
-                    <li><strong>Service Providers:</strong> With trusted partners such as payment processors (Paystack), logistics partners, and warehouse operators strictly for fulfilling your shipment.</li>
+                    <li><strong>Service Providers:</strong> With trusted partners such as payment processors (Paystack), SMS/messaging providers (Twilio, Arkesel), logistics partners, and warehouse operators strictly for fulfilling your shipment.</li>
                     <li><strong>Legal Requirements:</strong> When required by law, regulation, or government authority in Ghana or the United States.</li>
                     <li><strong>Business Protection:</strong> To protect the rights, property, or safety of {{ config('group.company.legal_name') }}, our customers, or the public.</li>
                 </ul>
