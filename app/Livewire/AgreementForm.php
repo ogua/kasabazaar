@@ -2,16 +2,15 @@
 
 namespace App\Livewire;
 
-use App\Filament\Client\Pages\PageSuccessfully;
-use Filament\Forms;
-use App\Models\User;
-use Livewire\Component;
 use App\Models\Shipment;
+use App\Models\User;
+use App\Services\ShipmentPaymentService;
+use Filament\Forms;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Illuminate\Contracts\View\View;
-use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Matscode\Paystack\Transaction;
+use Livewire\Component;
 
 class AgreementForm extends Component implements HasForms
 {
@@ -46,26 +45,17 @@ class AgreementForm extends Component implements HasForms
         $shipment->is_agreement_agreed = $data['disclaima_aggreed'];
         $shipment->save();
 
-        $secretKey = env('PAYSTACK_SECRET_KEY');
-        // creating the transaction object
-        $Transaction = new Transaction($secretKey);
+        $amount = $shipment->outstanding_balance > 0
+            ? $shipment->outstanding_balance
+            : (float) $shipment->total;
 
-        $amount = $shipment->total;
+        $url = app(ShipmentPaymentService::class)->initialize(
+            $shipment,
+            (float) $amount,
+            route('paid-successfully'),
+        );
 
-        $response = (object) $Transaction
-            ->setCallbackUrl(route('paid-successfully'))
-            ->setEmail($shipment->client?->email)
-            ->setAmount($amount)
-            ->setMetadata([
-                'fullname' => $shipment->client?->name,
-                'phone' => $shipment->client?->phone,
-                'email' => $shipment->client?->email,
-                'reference' => $shipment->shipping_reference,
-                'shipment_id' => $shipment->id,
-            ])
-            ->initialize();
-
-        return redirect()->to($response->authorizationUrl);
+        return redirect()->to($url);
     }
 
     public function render(): View

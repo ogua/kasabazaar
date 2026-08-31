@@ -103,6 +103,21 @@
                                 </div>
                             </div>
                             @endif
+                            @if(!empty($result['msc_tracking_number']))
+                            <div class="col-12">
+                                <div class="d-flex align-items-start gap-2">
+                                    <i class="bi bi-water text-muted mt-1"></i>
+                                    <div>
+                                        <div class="text-muted small">MSC Tracking Number</div>
+                                        <div class="fw-semibold">{{ $result['msc_tracking_number'] }}</div>
+                                        <a href="{{ $result['msc_tracking_url'] }}" target="_blank" rel="noopener"
+                                           class="btn btn-outline-secondary btn-sm mt-2">
+                                            <i class="bi bi-box-arrow-up-right me-1"></i>Track live on MSC
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>

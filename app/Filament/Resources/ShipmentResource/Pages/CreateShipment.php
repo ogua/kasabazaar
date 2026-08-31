@@ -15,8 +15,6 @@ use App\Models\Shipment;
 use App\Models\ShipmentItem;
 use App\Models\ShipmentUpdate;
 use App\Models\State;
-use App\Service\InvoiceService;
-use App\Service\NotificationService;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Components\Hidden;
@@ -26,7 +24,6 @@ use Filament\Resources\Pages\CreateRecord;
 use Icetalker\FilamentTableRepeater\Forms\Components\TableRepeater;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Auth as FacadesAuth;
-use Illuminate\Support\Facades\Concurrency;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 
 class CreateShipment extends CreateRecord
@@ -73,6 +70,31 @@ class CreateShipment extends CreateRecord
                 ->numeric()
                 ->prefix('$')
                 ->live(onBlur: true),
+
+            Forms\Components\Toggle::make('is_vehicle')
+                ->label('This item is a vehicle')
+                ->live()
+                ->inline(false),
+
+            Forms\Components\TextInput::make('vin')
+                ->label('VIN / Chassis Number')
+                ->maxLength(255)
+                ->visible(fn (Forms\Get $get) => (bool) $get('is_vehicle')),
+
+            Forms\Components\TextInput::make('vehicle_make')
+                ->label('Make')
+                ->maxLength(255)
+                ->visible(fn (Forms\Get $get) => (bool) $get('is_vehicle')),
+
+            Forms\Components\TextInput::make('vehicle_model')
+                ->label('Model')
+                ->maxLength(255)
+                ->visible(fn (Forms\Get $get) => (bool) $get('is_vehicle')),
+
+            Forms\Components\TextInput::make('vehicle_year')
+                ->label('Year')
+                ->maxLength(4)
+                ->visible(fn (Forms\Get $get) => (bool) $get('is_vehicle')),
         ];
 
         return $schema;
@@ -1083,8 +1105,8 @@ class CreateShipment extends CreateRecord
 
         $left = $amountopay - $paid;
 
-        // Determine invoice status
-        $invoiceStatus = 'pending';
+        // Determine invoice status (invoices.status enum is unpaid|partial|paid)
+        $invoiceStatus = 'unpaid';
         if ($paid >= $amountopay && $amountopay > 0) {
             $invoiceStatus = 'paid';
         } elseif ($paid > 0) {
@@ -1104,18 +1126,8 @@ class CreateShipment extends CreateRecord
             'remarks' => 'Shipment created - '.ucfirst($shipment->status->value),
         ]);
 
-        $message = $this->buildNotificationMessage($shipment);
-
-        $email = $shipment->client?->email;
-        $phone = $shipment->client?->phone;
-
-        if ($email || $phone) {
-            Concurrency::defer([
-                fn () => $phone ? NotificationService::sendSmsToSender($phone, $message) : null,
-                fn () => $email ? $this->sendInvoiceToClient($shipment) : null,
-            ]);
-        }
-
+        // The shipment's `created` event fires ShipmentObserver, which sends the
+        // client the tracking + payment-link email and SMS (see ShipmentNotifier).
     }
 
     protected function getCreatedNotification(): ?Notification
@@ -1139,38 +1151,5 @@ class CreateShipment extends CreateRecord
             ])
             ->persistent()
             ->send();
-    }
-
-    protected function buildNotificationMessage($shipment): string
-    {
-        $clientName = $shipment->client?->name ?? 'Customer';
-        $trackingNumber = $shipment->tracking_number;
-        $total = number_format($shipment->total, 2);
-        $from = $shipment->origin_branch_id;
-        $to = $shipment->destination_branch_id;
-
-        if (! $shipment->public_view_token) {
-            $shipment->public_view_token = \App\Models\Shipment::generatePublicViewToken();
-            $shipment->save();
-        }
-
-        $url = route('public-shipment-view', $shipment->public_view_token);
-
-        return "Dear {$clientName}, your shipment has been created. ".
-            "Tracking: {$trackingNumber}. ".
-            "Route: {$from} to {$to}. ".
-            "Total: \${$total}. ".
-            "View Details: {$url}. ".
-            'Thank you for choosing Rose Door To Door Shipping!';
-    }
-
-    protected function sendInvoiceToClient($shipment): void
-    {
-        try {
-            InvoiceService::sendInvoiceEmail($shipment);
-            logger()->info("Invoice sent to {$shipment->client?->email} for shipment {$shipment->shipping_reference}");
-        } catch (\Exception $e) {
-            logger()->error('Failed to send invoice: '.$e->getMessage());
-        }
     }
 }

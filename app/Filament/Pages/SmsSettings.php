@@ -16,11 +16,15 @@ class SmsSettings extends Page implements HasForms
 {
     use InteractsWithForms;
 
-    protected static ?string $navigationIcon  = 'heroicon-o-cog-6-tooth';
+    protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
+
     protected static ?string $navigationGroup = 'Settings';
+
     protected static ?string $navigationLabel = 'SMS Settings';
-    protected static ?int    $navigationSort  = 99;
-    protected static string  $view            = 'filament.pages.sms-settings';
+
+    protected static ?int $navigationSort = 99;
+
+    protected static string $view = 'filament.pages.sms-settings';
 
     public ?array $data = [];
 
@@ -32,12 +36,14 @@ class SmsSettings extends Page implements HasForms
     public function mount(): void
     {
         $this->form->fill([
-            'sms_driver'     => SystemSetting::get('sms_driver',     config('services.sms.default', 'twilio')),
-            'twilio_sid'     => SystemSetting::get('twilio_sid',     config('services.twilio.sid')),
-            'twilio_token'   => SystemSetting::get('twilio_token',   config('services.twilio.token')),
-            'twilio_from'    => SystemSetting::get('twilio_from',    config('services.twilio.from')),
-            'mnotify_key'    => SystemSetting::get('mnotify_key',    config('services.mnotify.key')),
+            'sms_driver' => SystemSetting::get('sms_driver', config('services.sms.default', 'twilio')),
+            'twilio_sid' => SystemSetting::get('twilio_sid', config('services.twilio.sid')),
+            'twilio_token' => SystemSetting::get('twilio_token', config('services.twilio.token')),
+            'twilio_from' => SystemSetting::get('twilio_from', config('services.twilio.from')),
+            'mnotify_key' => SystemSetting::get('mnotify_key', config('services.mnotify.key')),
             'mnotify_sender' => SystemSetting::get('mnotify_sender', config('services.mnotify.sender', 'RDDSHIP')),
+            'arkesel_key' => SystemSetting::get('arkesel_key', config('services.arkesel.key')),
+            'arkesel_sender' => SystemSetting::get('arkesel_sender', config('services.arkesel.sender', 'RDDSHIP')),
         ]);
     }
 
@@ -46,17 +52,32 @@ class SmsSettings extends Page implements HasForms
         return $form
             ->schema([
                 Section::make('SMS Provider')
-                    ->description('Choose which SMS platform is used to send notifications.')
+                    ->description('Alerts route automatically by destination number: Ghana numbers (+233… or a local 0XXXXXXXXX) go through Arkesel, all other numbers go through Twilio. The provider below is only used for numbers that cannot be classified.')
                     ->schema([
                         Select::make('sms_driver')
-                            ->label('Default SMS Provider')
+                            ->label('Fallback SMS Provider')
                             ->options([
-                                'twilio'  => 'Twilio (recommended)',
+                                'twilio' => 'Twilio',
+                                'arkesel' => 'Arkesel',
                                 'mnotify' => 'MNotify',
                             ])
                             ->default('twilio')
                             ->required(),
                     ]),
+
+                Section::make('Arkesel Configuration')
+                    ->description('Credentials from your Arkesel account (arkesel.com). Used for Ghana numbers.')
+                    ->schema([
+                        TextInput::make('arkesel_key')
+                            ->label('API Key')
+                            ->password()
+                            ->revealable(),
+                        TextInput::make('arkesel_sender')
+                            ->label('Sender ID')
+                            ->placeholder('RDDSHIP')
+                            ->maxLength(11),
+                    ])
+                    ->columns(1),
 
                 Section::make('Twilio Configuration')
                     ->description('Credentials from your Twilio Console (console.twilio.com).')

@@ -190,6 +190,12 @@ Route::get('/shipment-form-expired', function () {
 Route::get('/my-shipment/{token}', [PublicShipmentController::class, 'show'])
     ->name('public-shipment-view');
 
+// Flexible part-payment from the no-login portal (any amount up to the balance).
+Route::post('/my-shipment/{token}/pay', [PublicShipmentController::class, 'pay'])
+    ->name('public-shipment-pay');
+Route::get('/my-shipment/{token}/paid', [PublicShipmentController::class, 'paid'])
+    ->name('public-shipment-paid');
+
 // API Routes for internal use
 Route::prefix('api')->middleware('web')->group(function () {
     Route::get('/previous-receivers', [\App\Http\Controllers\Api\ReceiverController::class, 'getPreviousReceivers'])

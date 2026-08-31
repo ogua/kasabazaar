@@ -50,6 +50,12 @@ class ExpenseCategorySeeder extends Seeder
                 'is_active' => true,
             ],
             [
+                'name' => 'Demurrage',
+                'code' => 'DEMURRAGE',
+                'description' => 'Shipping-line demurrage and container detention charges',
+                'is_active' => true,
+            ],
+            [
                 'name' => 'Packaging',
                 'code' => 'PACKAGING',
                 'description' => 'Boxes, pallets, wrapping, and packaging materials',

@@ -10,7 +10,6 @@ use App\Models\ShipmentRequest;
 use App\Models\User;
 use App\Notifications\ShipmentRequestApproved;
 use App\Service\InvoiceService;
-use App\Service\NotificationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
@@ -121,7 +120,9 @@ class ShipmentRequestApprovalService
                 }
             }
 
-            // Email + SMS to client
+            // The shipment's `created` event fires ShipmentObserver, which sends
+            // the client the tracking + payment-link email and SMS. This block
+            // additionally emails the signed invoice PDF.
             $paymentUrl = route('make-payment', $shipment->id);
 
             if ($client->email) {
@@ -140,14 +141,6 @@ class ShipmentRequestApprovalService
                     );
                 } catch (\Throwable) {
                 }
-            }
-
-            if ($client->phone) {
-                NotificationService::sendSmsToSender(
-                    $client->phone,
-                    "Hi {$client->name}, your shipment request has been approved! ".
-                    "Ref: {$shipment->shipping_reference}. Pay here: {$paymentUrl}"
-                );
             }
 
             return $shipment;

@@ -463,6 +463,26 @@ class ShipmentResource extends Resource
                                                             ->label('Value ($)')
                                                             ->numeric()
                                                             ->prefix('$'),
+                                                        Forms\Components\Toggle::make('is_vehicle')
+                                                            ->label('Vehicle?')
+                                                            ->live()
+                                                            ->inline(false),
+                                                        Forms\Components\TextInput::make('vin')
+                                                            ->label('VIN / Chassis')
+                                                            ->visible(fn (Forms\Get $get) => (bool) $get('is_vehicle'))
+                                                            ->maxLength(255),
+                                                        Forms\Components\TextInput::make('vehicle_make')
+                                                            ->label('Make')
+                                                            ->visible(fn (Forms\Get $get) => (bool) $get('is_vehicle'))
+                                                            ->maxLength(255),
+                                                        Forms\Components\TextInput::make('vehicle_model')
+                                                            ->label('Model')
+                                                            ->visible(fn (Forms\Get $get) => (bool) $get('is_vehicle'))
+                                                            ->maxLength(255),
+                                                        Forms\Components\TextInput::make('vehicle_year')
+                                                            ->label('Year')
+                                                            ->visible(fn (Forms\Get $get) => (bool) $get('is_vehicle'))
+                                                            ->maxLength(4),
                                                     ]),
                                             ])
                                             ->compact()
@@ -641,6 +661,14 @@ class ShipmentResource extends Resource
                             ])
                             ->columns(2),
 
+                        Forms\Components\Section::make('Ocean / MSC Tracking')
+                            ->description('The MSC booking or bill-of-lading number. Saving a new value emails and SMSes the client a live MSC tracking link.')
+                            ->schema([
+                                Forms\Components\TextInput::make('msc_tracking_number')
+                                    ->label('MSC Tracking Number')
+                                    ->maxLength(255),
+                            ]),
+
                         Forms\Components\Section::make('')
                             ->schema([
                                 Forms\Components\Placeholder::make('invoice_notice')
@@ -704,6 +732,15 @@ class ShipmentResource extends Resource
                 Tables\Columns\TextColumn::make('tracking_number')
                     ->searchable()
                     ->copyable(),
+
+                Tables\Columns\TextColumn::make('msc_tracking_number')
+                    ->label('MSC Tracking')
+                    ->placeholder('Not assigned')
+                    ->badge()
+                    ->color(fn ($state) => filled($state) ? 'info' : 'gray')
+                    ->searchable()
+                    ->copyable()
+                    ->toggleable(isToggledHiddenByDefault: false),
 
                 Tables\Columns\TextColumn::make('origin_branch_id')
                     ->label('From')
@@ -1300,6 +1337,8 @@ class ShipmentResource extends Resource
             )
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
+                    \App\Filament\Tables\Actions\UpdateMscTrackingBulkAction::make(),
+
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ])

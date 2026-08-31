@@ -2,15 +2,9 @@
 
 namespace App\Livewire;
 
-use App\Models\Invoice;
-use App\Models\Payment;
-use Livewire\Component;
-use App\Models\Shipment;
 use App\Models\Transaction;
-use App\Service\NotificationService;
-use Illuminate\Support\Facades\Concurrency;
+use Livewire\Component;
 use Unicodeveloper\Paystack\Facades\Paystack;
-
 
 class PaymentsuccessfulPage extends Component
 {
@@ -24,11 +18,11 @@ class PaymentsuccessfulPage extends Component
 
             $paymentDetails = Paystack::getPaymentData();
 
-           // dd($paymentDetails);
+            // dd($paymentDetails);
 
             $paymentdata = $paymentDetails['data'];
 
-            $amount =  number_format(((int) $paymentdata['amount'] / 100),2);
+            $amount = number_format(((int) $paymentdata['amount'] / 100), 2);
 
             $ref = $paymentdata['reference'];
 
@@ -63,75 +57,26 @@ class PaymentsuccessfulPage extends Component
                 'mobile_money_number' => $paymentdata['authorization']['mobile_money_number'],
                 'full_name' => $paymentdata['customer']['last_name'].' '.$paymentdata['customer']['first_name'],
                 'code' => $paymentdata['customer']['customer_code'],
-                //'email' => $paymentdata['customer']['email'],
-               // 'phone' => $paymentdata['customer']['phone'],
+                // 'email' => $paymentdata['customer']['email'],
+                // 'phone' => $paymentdata['customer']['phone'],
                 'log_start_time' => $paymentdata['log']['start_time'],
                 'log_spent_time' => $paymentdata['log']['time_spent'],
                 'log_attempts' => $paymentdata['log']['attempts'],
                 'log_errors' => $paymentdata['log']['errors'],
             ];
 
-            $check = Transaction::where('reference',$ref)
-            ->where('shipment_id',$shippingid)
-            ->first();
+            $check = Transaction::where('reference', $ref)
+                ->where('shipment_id', $shippingid)
+                ->first();
 
-            if (!$check) {
+            if (! $check) {
                 $new = new Transaction($data);
                 $new->save();
-
-                //update shipment
-                $shipping = Shipment::where('id',$shippingid)->first();
-                $amountopay = $shipping->total;
-                $paid = (int) $shipping->payments->sum('amount') + (float) str_replace(',', '', $amount);
-
-                $shipping->total = $amountopay;
-                $shipping->paid = $paid;
-
-                $left = $amountopay - $paid;
-
-                if ($left > 0) {
-                    $shipping->payment_status = 'partial';
-                }else{
-                    $shipping->payment_status = 'paid';
-                }
-
-                $shipping->save();
-
-                Invoice::where('shipment_id',$shippingid)->update([
-                    'status' => $left < 1 ? 'paid' : 'partial',
-                ]);
-
-                // Create the serial number
-                $reff = "REFF".date('y-m-dhmis');
-
-                //add payment to shipment
-                $paymentsdata = [
-                    'branch_id' => $shipping->branch_id,
-                    'shipment_id' => $shipping->id,
-                    'payment_ref' => 'REF:' . date('Ymdhms'),
-                    'balance' => $left,
-                    'amount' => (float) str_replace(',', '', $amount),
-                    'paying_method' => $paymentdata['channel'],
-                    'paid_on' => date('Y-m-d H:i:s'),
-                    'payment_type' => 'credit',
-                ];
-
-            //  dd($paymentsdata);
-
-                $pay = new Payment($paymentsdata);
-                $pay->save();
-
-                $phone = $paymentdata['metadata']['phone'];
-                $email = $paymentdata['metadata']['email'];
-
-                $message = "Payment Received Successfully. Thank you for choosing KasaBaZaar Rose Door To Door";
-
-               //notify sender by mail and sms
-                Concurrency::defer([
-                    fn () => NotificationService::sendSmsToSender($phone,$message),
-                    fn () => NotificationService::sendMailToSender($email,$message),
-                ]);
             }
+
+            // Verify + record the payment (idempotent on the reference).
+            // PaymentObserver fires the email + SMS confirmation.
+            app(\App\Services\ShipmentPaymentService::class)->verify($ref);
         }
 
     }

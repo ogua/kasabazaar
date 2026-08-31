@@ -78,25 +78,27 @@ class CustomerPaymentController extends CustomerBaseController
             $shipment = Shipment::where('client_id', $this->clientId())->find($shipmentId);
 
             if ($shipment) {
-                $exchangeRate = $shipment->exchange_rate_at_shipment ?? 1;
                 $amountGhs = round($data['amount'] / 100, 2);
 
-                $payment = Payment::create([
-                    'shipment_id' => $shipmentId,
-                    'branch_id' => $shipment->branch_id,
-                    'amount_usd' => $amountUsd,
-                    'amount_ghs' => $amountGhs,
-                    'paying_method' => 'paystack',
-                    'payment_ref' => $data['reference'],
-                    'paid_on' => now(),
-                    'user_id' => auth()->id(),
-                ]);
+                // Idempotent — a repeated verify call must not double-record.
+                $payment = Payment::firstOrNew(['payment_ref' => $data['reference']]);
 
-                $paidTotal = $shipment->payments()->sum('amount_usd');
-                $shipment->update([
-                    'paid' => $paidTotal,
-                    'payment_status' => $paidTotal >= $shipment->total ? 'paid' : 'partial',
-                ]);
+                if (! $payment->exists) {
+                    $payment->fill([
+                        'shipment_id' => $shipmentId,
+                        'branch_id' => $shipment->branch_id,
+                        'payment_type' => 'credit',
+                        'currency' => 'USD',
+                        'amount' => $amountUsd,
+                        'amount_usd' => $amountUsd,
+                        'amount_ghs' => $amountGhs,
+                        'paying_method' => $data['channel'] ?? 'paystack',
+                        'paid_on' => now(),
+                        'user_id' => auth()->id(),
+                    ])->save();
+
+                    $shipment->recalculatePaymentStatus();
+                }
 
                 return $this->success($this->formatPayment($payment->load('shipment')), 'Payment recorded successfully.');
             }

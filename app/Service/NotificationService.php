@@ -61,12 +61,87 @@ class NotificationService
 
     public static function sendSmsToSender(string $phone, string $message): void
     {
-        $driver = SystemSetting::get('sms_driver', config('services.sms.default', 'twilio'));
+        $driver = self::resolveSmsDriverForPhone($phone);
 
         match ($driver) {
+            'arkesel' => self::sendViaArkesel($phone, $message),
             'mnotify' => self::sendViaMNotify($phone, $message),
             default => self::sendViaTwilio($phone, $message),
         };
+    }
+
+    /**
+     * Route by the destination number: Ghana numbers (+233… or a local
+     * 0XXXXXXXXX) go through Arkesel, everything else through Twilio. A number
+     * we cannot classify falls back to the configured default driver.
+     */
+    public static function resolveSmsDriverForPhone(string $phone): string
+    {
+        $digits = preg_replace('/\D+/', '', $phone);
+
+        if (str_starts_with($digits, '233') && strlen($digits) >= 11 && strlen($digits) <= 12) {
+            return 'arkesel';
+        }
+
+        if (strlen($digits) === 10 && str_starts_with($digits, '0')) {
+            return 'arkesel';
+        }
+
+        if (strlen($digits) === 9 && ! str_starts_with($digits, '0')) {
+            // bare Ghana subscriber number, e.g. 24XXXXXXX
+            return 'arkesel';
+        }
+
+        if ($digits !== '') {
+            return 'twilio';
+        }
+
+        return SystemSetting::get('sms_driver', config('services.sms.default', 'twilio'));
+    }
+
+    /**
+     * Normalise a Ghana number to the 233XXXXXXXXX form Arkesel expects.
+     */
+    private static function normalizeGhana(string $phone): string
+    {
+        $digits = preg_replace('/\D+/', '', $phone);
+
+        if (str_starts_with($digits, '233')) {
+            return $digits;
+        }
+
+        if (strlen($digits) === 10 && str_starts_with($digits, '0')) {
+            return '233'.substr($digits, 1);
+        }
+
+        if (strlen($digits) === 9) {
+            return '233'.$digits;
+        }
+
+        return $digits;
+    }
+
+    private static function sendViaArkesel(string $phone, string $message): void
+    {
+        $key = SystemSetting::get('arkesel_key', config('services.arkesel.key'));
+        $sender = SystemSetting::get('arkesel_sender', config('services.arkesel.sender', 'RDDSHIP'));
+
+        if (! $key) {
+            logger()->warning('Arkesel SMS skipped — API key not configured.');
+
+            return;
+        }
+
+        try {
+            Http::withHeaders(['api-key' => $key])
+                ->post('https://sms.arkesel.com/api/v2/sms/send', [
+                    'sender' => $sender,
+                    'message' => $message,
+                    'recipients' => [self::normalizeGhana($phone)],
+                ]);
+        } catch (\Throwable $e) {
+            logger()->error('Arkesel SMS failed: '.$e->getMessage());
+        }
     }
 
     private static function sendViaTwilio(string $phone, string $message): void

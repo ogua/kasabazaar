@@ -7,12 +7,11 @@ use App\Filament\Resources\ShipmentResource;
 use App\Jobs\BulkContainerShipmentStatusJob;
 use App\Models\Shipment;
 use App\Models\ShipmentContainer;
-use App\Service\NotificationService;
+use App\Services\ShipmentNotifier;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
-use Illuminate\Support\Facades\Mail;
 
 class ListShipments extends ListRecords
 {
@@ -116,49 +115,13 @@ class ListShipments extends ListRecords
                     // Notify clients only when clearance state actually changes
                     if ($notifyClients && $previous !== $nowCleared) {
                         $shipments = Shipment::query()
-                            ->with('client')
                             ->where('container_number', '=', $containerNumber)
                             ->get();
 
-                        $updatedAt = now()->format('j M Y, g:i A');
-                        $statusKey = $nowCleared ? 'cleared' : 'pending';
-                        $clearanceText = $nowCleared
-                            ? 'Your container has been cleared at customs.'
-                            : 'Your container clearance status has been updated.';
+                        $event = $nowCleared ? 'container_cleared' : 'container_update';
 
                         foreach ($shipments as $s) {
-                            $client = $s->client;
-                            if (! $client) {
-                                continue;
-                            }
-
-                            if ($client->email) {
-                                try {
-                                    Mail::send('emails.shipment_status_updated', [
-                                        'clientName' => $client->name,
-                                        'shipmentRef' => $s->shipping_reference,
-                                        'containerRef' => $containerRef,
-                                        'status' => $statusKey,
-                                        'note' => $data['review'] ?? null,
-                                        'updatedAt' => $updatedAt,
-                                        'receiverName' => $s->receivers()->value('receiver_name'),
-                                    ], fn ($msg) => $msg
-                                        ->to($client->email)
-                                        ->subject("Container Update — {$s->shipping_reference}")
-                                    );
-                                } catch (\Throwable $e) {
-                                    logger()->error('Container clearance email failed: '.$e->getMessage());
-                                }
-                            }
-
-                            if ($client->phone) {
-                                $sms = "Hi {$client->name}, {$clearanceText} Shipment: {$s->shipping_reference} ({$containerRef}).";
-                                if (! empty($data['review'])) {
-                                    $sms .= ' Note: '.$data['review'];
-                                }
-                                $sms .= ' — Rose Door to Door';
-                                NotificationService::sendSmsToSender($client->phone, $sms);
-                            }
+                            ShipmentNotifier::sent($s, $event, ['note' => $data['review'] ?? null]);
                         }
                     }
 

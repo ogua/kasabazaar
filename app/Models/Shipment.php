@@ -17,6 +17,13 @@ class Shipment extends Model
 
     protected $guarded = ['id'];
 
+    /**
+     * Set to true before saving to stop {@see \App\Observers\ShipmentObserver}
+     * from firing client email/SMS lifecycle alerts for this save (e.g. a bulk
+     * back-office correction). Not persisted.
+     */
+    public bool $suppressLifecycleAlerts = false;
+
     protected $casts = [
         'status' => ShippingStatus::class,
         'insurance_accepted' => 'boolean',
@@ -28,6 +35,7 @@ class Shipment extends Model
         'exchange_rate_at_shipment' => 'decimal:4',
         'total' => 'decimal:2',
         'total_ghs' => 'decimal:2',
+        'msc_tracking_updated_at' => 'datetime',
     ];
 
     // Automatically update related items after saving
@@ -35,6 +43,10 @@ class Shipment extends Model
     {
         // Before creating, capture exchange rate
         static::creating(function ($shipping) {
+            if (blank($shipping->public_view_token)) {
+                $shipping->public_view_token = self::generatePublicViewToken();
+            }
+
             if (! $shipping->exchange_rate_at_shipment) {
                 try {
                     $exchangeService = app(ExchangeRateService::class);
@@ -395,6 +407,62 @@ class Shipment extends Model
     public function getNetProfitUsdAttribute(): float
     {
         return $this->total - $this->total_expenses_usd;
+    }
+
+    /**
+     * Total amount paid against this shipment, in USD. `payments.amount` is
+     * always the USD figure (see Payment::booted()).
+     */
+    public function getAmountPaidAttribute(): float
+    {
+        return (float) $this->payments()->sum('amount');
+    }
+
+    /**
+     * Outstanding balance in USD, never negative.
+     */
+    public function getOutstandingBalanceAttribute(): float
+    {
+        return max(0, (float) $this->total - $this->amount_paid);
+    }
+
+    /**
+     * Re-derive `paid` / `payment_status` from the payment rows and mirror the
+     * result onto the invoice. Call this after recording or removing a payment.
+     */
+    public function recalculatePaymentStatus(): void
+    {
+        $paid = $this->amount_paid;
+
+        $status = $paid <= 0
+            ? 'pending'
+            : ($paid >= (float) $this->total ? 'paid' : 'partial');
+
+        $this->forceFill([
+            'paid' => $paid,
+            'payment_status' => $status,
+        ])->saveQuietly();
+
+        $this->invoice?->forceFill([
+            'status' => match ($status) {
+                'paid' => 'paid',
+                'partial' => 'partial',
+                default => 'unpaid',
+            },
+        ])->save();
+    }
+
+    /**
+     * Public MSC "track a shipment" URL for this shipment's booking / BL number.
+     */
+    public function mscTrackingUrl(): ?string
+    {
+        if (blank($this->msc_tracking_number)) {
+            return null;
+        }
+
+        return rtrim(config('services.msc.tracking_url'), '/')
+            .'?agencyPath=msc&trackingNumber='.urlencode($this->msc_tracking_number);
     }
 
     /**

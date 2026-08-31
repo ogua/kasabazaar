@@ -15,6 +15,49 @@
 
     <div class="container" data-aos="fade-up" data-aos-delay="100">
 
+        @if (session('portal_status'))
+            <div class="alert alert-info">{{ session('portal_status') }}</div>
+        @endif
+        @if (session('portal_error'))
+            <div class="alert alert-danger">{{ session('portal_error') }}</div>
+        @endif
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                @foreach ($errors->all() as $error)
+                    <div>{{ $error }}</div>
+                @endforeach
+            </div>
+        @endif
+
+        {{-- Track your shipment --}}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="service-item p-4">
+                    <h4 class="mb-3">Track Your Shipment</h4>
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <div class="text-muted small">Tracking Number</div>
+                            <div class="fw-bold">{{ $shipment->tracking_number ?? 'N/A' }}</div>
+                            @if ($shipment->tracking_number)
+                                <a href="{{ route('our-tracking') }}?query={{ urlencode($shipment->tracking_number) }}"
+                                   target="_blank" class="btn btn-outline-primary btn-sm mt-2">Track shipment</a>
+                            @endif
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <div class="text-muted small">MSC / Ocean Tracking</div>
+                            @if ($shipment->msc_tracking_number)
+                                <div class="fw-bold">{{ $shipment->msc_tracking_number }}</div>
+                                <a href="{{ $shipment->mscTrackingUrl() }}" target="_blank"
+                                   class="btn btn-outline-secondary btn-sm mt-2">Track live on MSC</a>
+                            @else
+                                <div class="text-muted">Not yet assigned</div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- Status & Route --}}
         <div class="row mb-4">
             <div class="col-12">
@@ -44,46 +87,89 @@
         </div>
 
         {{-- Payment Summary --}}
+        @php
+            $balanceDue = $shipment->outstanding_balance;
+        @endphp
         <div class="row mb-4">
             <div class="col-12">
                 <div class="service-item p-4">
                     <h4 class="mb-3">Payment Summary</h4>
                     <div class="row">
                         <div class="col-md-3 mb-2">
-                            <div class="text-muted small">Total</div>
-                            <div class="fw-bold">${{ number_format($shipment->total, 2) }}</div>
+                            <div class="text-muted small">Shipping Cost</div>
+                            <div>${{ number_format((float) $shipment->shipping_cost, 2) }}</div>
                         </div>
                         <div class="col-md-3 mb-2">
+                            <div class="text-muted small">Insurance</div>
+                            <div>${{ number_format((float) $shipment->insurance, 2) }}</div>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <div class="text-muted small">VAT</div>
+                            <div>${{ number_format((float) $shipment->vat, 2) }}</div>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <div class="text-muted small">Total</div>
+                            <div class="fw-bold">${{ number_format((float) $shipment->total, 2) }}</div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-3 mb-2">
                             <div class="text-muted small">Paid</div>
-                            <div class="fw-bold text-success">${{ number_format($shipment->paid, 2) }}</div>
+                            <div class="fw-bold text-success">${{ number_format($shipment->amount_paid, 2) }}</div>
                         </div>
                         <div class="col-md-3 mb-2">
                             <div class="text-muted small">Balance Due</div>
-                            <div class="fw-bold text-danger">${{ number_format($shipment->total - $shipment->paid, 2) }}</div>
-                        </div>
-                        <div class="col-md-3 mb-2 d-flex align-items-end">
-                            @if (($shipment->total - $shipment->paid) > 0)
-                                <a href="{{ route('make-payment', ['record' => $shipment]) }}" target="_blank" class="btn btn-primary">Pay Now</a>
-                            @endif
+                            <div class="fw-bold text-danger">${{ number_format($balanceDue, 2) }}</div>
                         </div>
                     </div>
 
+                    @if ($balanceDue > 0)
+                        <form method="POST" action="{{ route('public-shipment-pay', $shipment->public_view_token) }}" class="row g-2 align-items-end mt-3">
+                            @csrf
+                            <div class="col-sm-4">
+                                <label class="form-label text-muted small mb-1">Amount to pay (USD)</label>
+                                <input type="number" name="amount" class="form-control"
+                                       step="0.01" min="1" max="{{ number_format($balanceDue, 2, '.', '') }}"
+                                       value="{{ old('amount', number_format($balanceDue, 2, '.', '')) }}" required>
+                            </div>
+                            <div class="col-sm-4">
+                                <button type="submit" class="btn btn-primary">Pay with Paystack</button>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-text">You can pay any amount towards your balance, bit by bit, until it is cleared.</div>
+                            </div>
+                        </form>
+                    @endif
+
                     @if ($shipment->payments->isNotEmpty())
-                        <table class="table mt-3">
+                        <h5 class="mt-4 mb-2">Transactions</h5>
+                        <div class="table-responsive">
+                        <table class="table mt-1">
                             <thead>
-                                <tr><th>Reference</th><th>Method</th><th>Amount</th><th>Date</th></tr>
+                                <tr><th>Reference</th><th>Method</th><th>Amount</th><th>Balance After</th><th>Date</th><th></th></tr>
                             </thead>
                             <tbody>
-                                @foreach ($shipment->payments as $payment)
+                                @php
+                                    $ordered = $shipment->payments->sortBy(fn ($p) => $p->paid_on ?? $p->created_at)->values();
+                                    $running = 0;
+                                @endphp
+                                @foreach ($ordered as $payment)
+                                    @php
+                                        $running += (float) $payment->amount;
+                                        $balanceAfter = max(0, (float) $shipment->total - $running);
+                                    @endphp
                                     <tr>
                                         <td>{{ $payment->payment_ref }}</td>
                                         <td>{{ $payment->paying_method }}</td>
-                                        <td>${{ number_format($payment->amount, 2) }}</td>
+                                        <td>${{ number_format((float) $payment->amount, 2) }}</td>
+                                        <td>${{ number_format($balanceAfter, 2) }}</td>
                                         <td>{{ $payment->paid_on ? \Carbon\Carbon::parse($payment->paid_on)->format('M d, Y') : 'N/A' }}</td>
+                                        <td><a href="{{ route('payment-receipt', $payment->id) }}" target="_blank" class="btn btn-outline-secondary btn-sm">Receipt</a></td>
                                     </tr>
                                 @endforeach
                             </tbody>
                         </table>
+                        </div>
                     @endif
 
                     <div class="mt-3 d-flex gap-2">
@@ -120,6 +206,33 @@
                         </div>
                     @empty
                         <p class="text-muted">No receiver details on this shipment yet.</p>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+
+        {{-- Status Timeline --}}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="service-item p-4">
+                    <h4 class="mb-3">Status Timeline</h4>
+                    @forelse ($shipment->statusupdate as $update)
+                        <div class="d-flex justify-content-between border-bottom py-2">
+                            <div>
+                                <span class="fw-bold">{{ ucfirst($update->status) }}</span>
+                                @if ($update->location)
+                                    <span class="text-muted">— {{ $update->location }}</span>
+                                @endif
+                                @if ($update->remarks)
+                                    <div class="text-muted small">{{ $update->remarks }}</div>
+                                @endif
+                            </div>
+                            <div class="text-muted small text-nowrap">
+                                {{ $update->updated_at ? \Carbon\Carbon::parse($update->updated_at)->format('M d, Y g:i A') : '' }}
+                            </div>
+                        </div>
+                    @empty
+                        <p class="text-muted">No status history recorded yet.</p>
                     @endforelse
                 </div>
             </div>

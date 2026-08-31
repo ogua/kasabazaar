@@ -5,6 +5,7 @@ namespace App\Filament\Client\Resources;
 use App\Filament\Client\Concerns\HasShipmentMediaAction;
 use App\Filament\Client\Resources\ShipmentResource\Pages;
 use App\Filament\Client\Widgets\ShipmentstatisticsWidget;
+use App\Filament\Tables\Actions\UpdateMscTrackingBulkAction;
 use App\Models\Shipment;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\RepeatableEntry;
@@ -59,6 +60,9 @@ class ShipmentResource extends Resource
                 Tables\Columns\TextColumn::make('status')->label('Shipping Status')->badge(),
 
                 Tables\Columns\TextColumn::make('tracking_number')->searchable(),
+
+                Tables\Columns\TextColumn::make('msc_tracking_number')->label('MSC Tracking')->placeholder('Not assigned')->badge()->color(fn ($state) => filled($state) ? 'info' : 'gray')->searchable()->copyable(),
+
                 Tables\Columns\TextColumn::make('origin_branch_id')->label('Shipping From')->icon('heroicon-m-arrow-up')->iconColor('danger')->searchable(),
 
                 Tables\Columns\TextColumn::make('destination_branch_id')->label('Shipping To')->icon('heroicon-m-arrow-down')->iconColor('warning')->searchable(),
@@ -139,6 +143,9 @@ class ShipmentResource extends Resource
                         ->modalHeading('Payment Information')
                         ->modalSubmitAction(false),
                 ]),
+            ])
+            ->bulkActions([
+                UpdateMscTrackingBulkAction::make(),
             ]);
     }
 

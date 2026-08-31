@@ -14,7 +14,10 @@ class SmsChannel
         }
 
         $order = $notification->order ?? null;
-        $phone = $order?->deliveryDetail?->phone ?? $notifiable->phone ?? null;
+        $phone = $notifiable->routeNotificationFor('sms', $notification)
+            ?? $order?->deliveryDetail?->phone
+            ?? $notifiable->phone
+            ?? null;
 
         if (! $phone) {
             return;

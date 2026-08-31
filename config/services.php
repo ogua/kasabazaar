@@ -57,8 +57,21 @@ return [
         'from' => env('TWILIO_FROM'),
     ],
 
+    'arkesel' => [
+        'key' => env('ARKESEL_API_KEY'),
+        'sender' => env('ARKESEL_SENDER_ID', 'RDDSHIP'),
+    ],
+
     'sms' => [
         'default' => env('SMS_DRIVER', 'twilio'),
+    ],
+
+    /*
+     * Base URL for MSC's public "track a shipment" page. The MSC booking /
+     * bill-of-lading number is appended as ?agencyPath=msc&trackingNumber=...
+     */
+    'msc' => [
+        'tracking_url' => env('MSC_TRACKING_URL', 'https://www.msc.com/en/track-a-shipment'),
     ],
 
     'stripe' => [
