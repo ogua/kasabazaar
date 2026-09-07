@@ -4,7 +4,7 @@
         <div class="flex items-center justify-center">
             <img
                 alt="UniMAC logo"
-                src="{{ asset('images/kasabazaar-logo.png') }}"
+                src="{{ asset('images/kasarose-logo.png') }}"
                 style="height: 4rem;" class="flex items-center justify-center mb-4 text-center fi-logo"
             />
 
@@ -17,7 +17,7 @@
 
         <div class="p-4 text-center border border-dashed rounded-md bg-gray-50">
             <p class="text-center text-gray-600">Payment was successful! Your shipment is being processed..</p>
-            <p class="text-center text-gray-600">Thank you for choosing KasaBazaar</p>
+            <p class="text-center text-gray-600">Thank you for choosing KASAROSE LOGISTICS</p>
             <div class="mt-5" style="margin-top: 20px;">
                 <x-filament::button
                     href="/client"

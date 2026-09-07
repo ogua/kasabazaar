@@ -3,8 +3,8 @@
 
       <a href="{{ route('home-page') }}" class="logo d-flex align-items-center">
         <!-- Uncomment the line below if you also wish to use an image logo -->
-         <img src="{{ URL::to('images/Kasabazaar-logo.jpg') }}" alt="">
-         {{-- <img src="{{ URL::to('images/Kasabazaar-logo-w3.png') }}" alt=""> --}}
+         <img src="{{ URL::to('images/kasarose-logo.png') }}" alt="">
+         {{-- <img src="{{ URL::to('images/kasarose-logo.png') }}" alt=""> --}}
         {{-- <h1 class="sitename">RDTD</h1> --}}
       </a>
 

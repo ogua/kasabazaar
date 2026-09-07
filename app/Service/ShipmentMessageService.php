@@ -3,12 +3,12 @@
 namespace App\Service;
 
 use App\Models\Client;
-use App\Models\Shipment;
 use App\Models\MessageTemplate;
+use App\Models\Shipment;
 use App\Models\ShipmentMessage;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Auth;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 
 class ShipmentMessageService
 {
@@ -84,11 +84,14 @@ class ShipmentMessageService
                     'status' => 'failed',
                     'error_message' => 'No recipients found',
                 ]);
+
                 return;
             }
 
             foreach ($recipients as $client) {
-                if (!$client) continue;
+                if (! $client) {
+                    continue;
+                }
 
                 // Prepare data for placeholder replacement
                 $data = self::prepareMessageData($client, $message);
@@ -129,7 +132,7 @@ class ShipmentMessageService
 
         $data = [
             'client_name' => $client->name ?? '',
-            'company_name' => 'Rose Door To Door Shipping',
+            'company_name' => 'KASAROSE LOGISTICS',
         ];
 
         if ($shipment) {
@@ -142,8 +145,8 @@ class ShipmentMessageService
                 'origin' => $shipment->origin_branch_id ?? '',
                 'destination' => $shipment->destination_branch_id ?? '',
                 'status' => $shipment->status?->value ?? '',
-                'total' => '$' . number_format($shipment->total ?? 0, 2),
-                'balance' => '$' . number_format(max($balance, 0), 2),
+                'total' => '$'.number_format($shipment->total ?? 0, 2),
+                'balance' => '$'.number_format(max($balance, 0), 2),
                 'estimated_delivery' => $shipment->estimated_delivery_date
                     ? \Carbon\Carbon::parse($shipment->estimated_delivery_date)->format('j M Y')
                     : 'TBD',
@@ -163,8 +166,9 @@ class ShipmentMessageService
     protected static function replacePlaceholders(string $text, array $data): string
     {
         foreach ($data as $key => $value) {
-            $text = str_replace('{{' . $key . '}}', $value, $text);
+            $text = str_replace('{{'.$key.'}}', $value, $text);
         }
+
         return $text;
     }
 

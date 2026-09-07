@@ -4,11 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Link Expired - Rose Door To Door Shipping</title>
+    <title>Link Expired - KASAROSE LOGISTICS</title>
     <link rel="manifest" href="/site.webmanifest">
     <meta name="theme-color" content="#1e40af">
-    <link rel="icon" href="/images/kasabazaar-logo.png">
-    <link rel="apple-touch-icon" href="/images/kasabazaar-logo.png">
+    <link rel="icon" href="/images/favicon-32x32.png">
+    <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -39,10 +39,10 @@
             </div>
 
             <div class="mt-8 pt-6 border-t border-gray-200">
-                @if (file_exists(public_path('images/kasabazaar-logo.png')))
-                    <img src="{{ asset('images/kasabazaar-logo.png') }}" alt="Logo" class="h-12 mx-auto">
+                @if (file_exists(public_path('images/kasarose-logo.png')))
+                    <img src="{{ asset('images/kasarose-logo.png') }}" alt="Logo" class="h-12 mx-auto">
                 @else
-                    <p class="text-red-600 font-bold">Rose Door To Door Shipping</p>
+                    <p class="text-red-600 font-bold">KASAROSE LOGISTICS</p>
                 @endif
             </div>
         </div>

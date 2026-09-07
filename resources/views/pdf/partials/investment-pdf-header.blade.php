@@ -155,8 +155,8 @@
 
 <div class="header">
     <div class="header-left">
-        @if (file_exists(public_path('images/kasabazaar-logo.png')))
-            <img src="{{ URL::to('images/kasabazaar-logo.png') }}" alt="Logo" class="logo">
+        @if (file_exists(public_path('images/kasarose-logo.png')))
+            <img src="{{ URL::to('images/kasarose-logo.png') }}" alt="Logo" class="logo">
         @endif
         <div class="company-name">KasaBazaar Group Of Companies</div>
     </div>

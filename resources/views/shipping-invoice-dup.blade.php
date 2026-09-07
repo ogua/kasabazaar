@@ -11,7 +11,7 @@
             <!-- Header -->
             <div class="flex justify-between items-center border-b-4 border-royalblue-600 pb-4 mb-6">
                 <div>
-                    <img src="{{ asset('images/logo.png') }}" alt="Logo Watermark" style="width: 300px;">
+                    <img src="{{ asset('images/kasarose-logo.png') }}" alt="Logo Watermark" style="width: 300px;">
                 </div>
                 <div class="text-right">
                     <p class="text-lg font-bold text-red-600">Shipping Invoice</p>
@@ -179,7 +179,7 @@
             <!-- Footer -->
             <div class="mt-10 text-center">
                 <p class="text-lg font-bold text-royalblue-700">
-                    Thank you for shipping with Rose Door To Door Packaging And Shipping Company!
+                    Thank you for shipping with KASAROSE LOGISTICS!
                 </p>
             </div>
         </div>

@@ -5,7 +5,7 @@
         <div class="col-lg-3 col-md-3 footer-about">
           <a href="/" class="logo d-flex align-items-center">
             {{-- <span class="sitename">KasaBazaar</span> --}}
-            <img src="{{ URL::to('images/Kasabazaar-logo.jpg') }}" alt="">
+            <img src="{{ URL::to('images/kasarose-logo.png') }}" alt="">
           </a>
           <div class="pt-3 footer-contact">
             <p>USA</p>

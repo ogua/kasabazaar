@@ -89,7 +89,7 @@
 
 {{-- ── HEADER ───────────────────────────────────────────────── --}}
 <div class="page-header">
-    <div class="company-name">Rose Door to Door and Delivery Company</div>
+    <div class="company-name">KASAROSE LOGISTICS</div>
     <div class="company-sub">Kasabazaar Limited · Plot 17, Block A, Adako Jachie, Ejisu · Tel: 050 9725073</div>
     <div class="report-title">CASHBOOK REPORT</div>
     <div class="report-period">{{ $monthName }}</div>
@@ -209,7 +209,7 @@
 <div class="page-break"></div>
 
 <div class="page-header">
-    <div class="company-name">Rose Door to Door and Delivery Company</div>
+    <div class="company-name">KASAROSE LOGISTICS</div>
     <div class="report-title">CASHBOOK ENTRIES — {{ $monthName }}</div>
 </div>
 

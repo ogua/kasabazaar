@@ -5,7 +5,7 @@
 | KasaBazaar Group of Companies
 |--------------------------------------------------------------------------
 |
-| Single source of truth for RDD Shipping's place in the group and for the
+| Single source of truth for KASAROSE LOGISTICS' place in the group and for the
 | sister companies its public website links out to. The same roster is
 | mirrored in the other three repositories — see the "Group of Companies"
 | section of CLAUDE.md before editing anything here:
@@ -29,8 +29,8 @@ return [
     */
 
     'company' => [
-        'name' => 'RDD Shipping',
-        'full_name' => 'Rose Door to Door Shipping & Delivery Service',
+        'name' => 'KASAROSE LOGISTICS',
+        'full_name' => 'KASAROSE LOGISTICS',
         'legal_name' => env('GROUP_LEGAL_NAME') ?: 'KasaBazaar Limited',
         'tagline' => 'Your Trusted Partner for Global Shipments.',
         'role' => "The group's freight logistics arm",
@@ -80,7 +80,7 @@ return [
             'key' => 'kasarose',
             'name' => 'KASAROSE',
             'role' => 'Ecommerce marketplace',
-            'description' => "The group's multi-vendor marketplace, where vetted Ghanaian vendors sell direct to shoppers nationwide. RDD Shipping carries a share of KASAROSE deliveries — nationwide road freight and anything arriving from the US warehouse.",
+            'description' => "The group's multi-vendor marketplace, where vetted Ghanaian vendors sell direct to shoppers nationwide. KASAROSE LOGISTICS carries a share of KASAROSE deliveries — nationwide road freight and anything arriving from the US warehouse.",
             // CONFIRM BEFORE LAUNCH: kasarose.com is the intended marketplace
             // domain but is not yet verified as live. Override with
             // KASAROSE_SITE_URL rather than editing the fallback.

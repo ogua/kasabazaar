@@ -26,7 +26,7 @@
 </head>
 <body>
     <div class="header">
-        <div class="company-name"><span class="rose">ROSE</span> DOOR TO DOOR SHIPPING AND DELIVERY CO</div>
+        <div class="company-name"><span class="rose">KASAROSE</span> LOGISTICS</div>
     </div>
 
     <div class="alert-banner">
@@ -83,7 +83,7 @@
     </div>
 
     <div class="footer">
-        <p>This is an automated notification from the Kasabazaar platform.</p>
+        <p>This is an automated notification from the KASAROSE LOGISTICS platform.</p>
     </div>
 </body>
 </html>

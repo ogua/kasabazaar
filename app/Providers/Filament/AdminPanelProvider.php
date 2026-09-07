@@ -43,9 +43,9 @@ class AdminPanelProvider extends PanelProvider
             ->sidebarCollapsibleOnDesktop()
             ->tenant(Branch::class)
             ->tenantRegistration(RegisterBranch::class)
-            ->brandLogo(asset('images/kasabazaar-logo.png'))
+            ->brandLogo(asset('images/kasarose-logo.png'))
             ->brandLogoHeight('4rem')
-            ->favicon(asset('images/kasabazaar-logo.png'))
+            ->favicon(asset('images/favicon-32x32.png'))
             // ->spa()
             ->colors([
                 'primary' => Color::hex('#A0043C'),

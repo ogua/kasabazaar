@@ -448,13 +448,13 @@
         <!-- Header -->
         <div class="header">
             <div class="header-left">
-                @if (file_exists(public_path('images/kasabazaar-logo.png')))
-                    <img src="{{ URL::to('images/kasabazaar-logo.png') }}" alt="Logo" class="logo"
+                @if (file_exists(public_path('images/kasarose-logo.png')))
+                    <img src="{{ URL::to('images/kasarose-logo.png') }}" alt="Logo" class="logo"
                         style="max-width: 200px;position: relative; top: -30px;">
                 @endif
 
                 {{-- <div class="company-name">
-                    <span class="rose">ROSE</span> DOOR TO DOOR SHIPPING AND DELIVERY CO
+                    <span class="rose">KASAROSE</span> LOGISTICS
                 </div> --}}
 
                 {{-- <div class="company-info">
@@ -766,7 +766,7 @@
         <div class="footer">
             <p style="font-size: 11px;">Goods shipped without insurance cover does not guarantee full compensation in case of damage or loss.</p>
             <p style="font-size: 11px;">All used and Non-Manufactured packed items are shipped without warranty.</p>
-            <p style="font-weight: bold">Thank you for choosing Rose Door To Door Shipping and Delivery Co!</p>
+            <p style="font-weight: bold">Thank you for choosing KASAROSE LOGISTICS!</p>
         </div>
     </div>
 </body>

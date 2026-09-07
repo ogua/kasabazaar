@@ -41,13 +41,13 @@
                 <div class="flex-shrink-0 -mt-8">
                     <div
                     class="w-24 h-24 bg-white rounded-lg shadow-2xl flex items-center justify-center ring-4 ring-white">
-                    <img src="{{ asset('images/logo.png') }}" alt="Logo Watermark" class="w-32">
+                    <img src="{{ asset('images/kasarose-logo.png') }}" alt="Logo Watermark" class="w-32">
                 </div>
             </div>
             
             <div>
                 <h3 class="text-gray-800 text-xl font-bold">
-                    <span class="text-red-600">ROSE</span> DOOR TO DOOR SHIPPING AND DELIVERY CO
+                    <span class="text-red-600">KASAROSE</span> LOGISTICS
                 </h3>
                 <p class="text-sm text-gray-600 mt-1 font-bold">
                     <span class="text-[#4169E1]">GH</span> - Adako Jachie, Ejisu - Kumasi, Ghana

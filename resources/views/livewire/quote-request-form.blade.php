@@ -5,7 +5,7 @@
                 <i class="bi bi-check-circle-fill text-success" style="font-size: 3.5rem;"></i>
             </div>
             <h4 class="text-success mb-2">Request Sent!</h4>
-            <p class="text-muted mb-4">Thank you for choosing Rose Door to Door. We'll get back to you with a personalized quote shortly.</p>
+            <p class="text-muted mb-4">Thank you for choosing KASAROSE LOGISTICS. We'll get back to you with a personalized quote shortly.</p>
             <button wire:click="submitAnother" class="btn btn-outline-secondary btn-sm">
                 Submit Another Request
             </button>

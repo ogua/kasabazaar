@@ -21,7 +21,7 @@
                     <div class="flex justify-between items-center">
                         <div class="flex items-center gap-4">
                             <div class="bg-white rounded-lg p-2 shadow-md">
-                                <img src="{{ asset('images/logo.png') }}" alt="Logo" class="h-12 w-auto">
+                                <img src="{{ asset('images/kasarose-logo.png') }}" alt="Logo" class="h-12 w-auto">
                             </div>
                             <div>
                                 <h1 class="text-white text-xl font-bold">Customer Feedback</h1>
@@ -29,7 +29,7 @@
                             </div>
                         </div>
                         <div class="text-right text-white">
-                            <p class="text-sm font-medium">Rose Door To Door</p>
+                            <p class="text-sm font-medium">KASAROSE LOGISTICS</p>
                             <p class="text-xs text-blue-100">Shipping & Delivery</p>
                         </div>
                     </div>
@@ -76,7 +76,7 @@
 
                     <!-- Footer -->
                     <div class="bg-red-600 text-white p-4 text-center">
-                        <p class="font-semibold">Thank you for choosing Rose Door To Door Shipping!</p>
+                        <p class="font-semibold">Thank you for choosing KASAROSE LOGISTICS!</p>
                         <p class="text-sm text-red-100 mt-1">Your satisfaction is our priority</p>
                     </div>
                 </div>
@@ -119,7 +119,7 @@
                     <!-- Footer -->
                     <div class="bg-gradient-to-r from-red-500 to-red-600 text-white p-4">
                         <div class="flex flex-col sm:flex-row justify-between items-center gap-2">
-                            <p class="font-semibold text-center sm:text-left">Rose Door To Door Shipping & Delivery</p>
+                            <p class="font-semibold text-center sm:text-left">KASAROSE LOGISTICS</p>
                             <div class="flex items-center gap-4 text-sm">
                                 <span class="flex items-center gap-1">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

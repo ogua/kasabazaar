@@ -5,11 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Complete Your Shipment - Rose Door To Door Shipping</title>
+    <title>Complete Your Shipment - KASAROSE LOGISTICS</title>
     <link rel="manifest" href="/site.webmanifest">
     <meta name="theme-color" content="#1e40af">
-    <link rel="icon" href="/images/kasabazaar-logo.png">
-    <link rel="apple-touch-icon" href="/images/kasabazaar-logo.png">
+    <link rel="icon" href="/images/favicon-32x32.png">
+    <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .receiver-card {
@@ -27,10 +27,10 @@
         <div class="bg-white rounded-lg shadow-md p-6 mb-6">
             <div class="flex items-center justify-between">
                 <div>
-                    @if (file_exists(public_path('images/kasabazaar-logo.png')))
-                        <img src="{{ asset('images/kasabazaar-logo.png') }}" alt="Logo" class="h-16">
+                    @if (file_exists(public_path('images/kasarose-logo.png')))
+                        <img src="{{ asset('images/kasarose-logo.png') }}" alt="Logo" class="h-16">
                     @else
-                        <h1 class="text-2xl font-bold text-red-600">Rose Door To Door Shipping</h1>
+                        <h1 class="text-2xl font-bold text-red-600">KASAROSE LOGISTICS</h1>
                     @endif
                 </div>
                 <div class="text-right">

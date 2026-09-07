@@ -4,7 +4,7 @@
         <div class="flex items-center justify-center">
             <img
                 alt="UniMAC logo"
-                src="{{ asset('images/kasabazaar-logo.png') }}"
+                src="{{ asset('images/kasarose-logo.png') }}"
                 style="height: 4rem;" class="flex items-center justify-center mb-4 text-left fi-logo"
             />
 

@@ -2,18 +2,18 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms;
-use Filament\Tables;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
-use Filament\Facades\Filament;
-use App\Models\EcommerceProduct;
-use Filament\Resources\Resource;
 use App\Enums\EcommerceInventoryLogType;
-use Illuminate\Database\Eloquent\Builder;
-use App\Services\EcommerceInventoryService;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\EcommerceProductResource\Pages;
+use App\Models\EcommerceProduct;
+use App\Services\EcommerceInventoryService;
+use Filament\Facades\Filament;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class EcommerceProductResource extends Resource
 {
@@ -37,7 +37,7 @@ class EcommerceProductResource extends Resource
                             ->required()
                             ->maxLength(255),
                         Forms\Components\Hidden::make('vendor_id')
-                            ->default("5aaf5434-5126-4bf3-9380-4248e0b4c4fb"),
+                            ->default('5aaf5434-5126-4bf3-9380-4248e0b4c4fb'),
                         Forms\Components\TextInput::make('sku')
                             ->label('SKU')
                             ->maxLength(100)
@@ -142,7 +142,7 @@ class EcommerceProductResource extends Resource
                     ->label('Image')
                     ->getStateUsing(fn (EcommerceProduct $record) => $record->images->first()?->path)
                     ->disk('public')
-                    ->defaultImageUrl(asset('images/kasabazaar-logo.png')),
+                    ->defaultImageUrl(asset('images/kasarose-logo.png')),
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable(),

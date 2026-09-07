@@ -1,6 +1,6 @@
 @extends('web.sub-template')
 
-@section('heading','Terms & Conditions - Rose Door To Door Shipping & Logistics')
+@section('heading','Terms & Conditions - KASAROSE LOGISTICS')
 
 @section('sub-heading','Terms & Conditions')
 
@@ -14,9 +14,9 @@
 
                 <p class="text-muted mb-4"><em>Last updated: August 31, 2026</em></p>
 
-                <p>These Terms &amp; Conditions ("Terms") govern your use of the Rose Door to Door Shipping and Delivery Service website and the shipping, package-forwarding and logistics services provided by <strong>{{ config('group.company.legal_name') }}</strong> ("RDD Shipping", "we", "us", or "our"). By requesting a quote, booking a shipment, or using this website, you agree to these Terms and to our <a href="{{ route('privacy-policy') }}">Privacy Policy</a>.</p>
+                <p>These Terms &amp; Conditions ("Terms") govern your use of the KASAROSE LOGISTICS website and the shipping, package-forwarding and logistics services provided by <strong>{{ config('group.company.legal_name') }}</strong> ("KASAROSE LOGISTICS", "we", "us", or "our"). By requesting a quote, booking a shipment, or using this website, you agree to these Terms and to our <a href="{{ route('privacy-policy') }}">Privacy Policy</a>.</p>
 
-                <p>RDD Shipping is the freight logistics arm of the <a href="{{ config('group.parent.url') }}" target="_blank" rel="noopener">{{ config('group.parent.name') }}</a>. These Terms cover RDD Shipping only; the group's other companies operate separately and publish their own terms — see section 12.</p>
+                <p>KASAROSE LOGISTICS is the freight logistics arm of the <a href="{{ config('group.parent.url') }}" target="_blank" rel="noopener">{{ config('group.parent.name') }}</a>. These Terms cover KASAROSE LOGISTICS only; the group's other companies operate separately and publish their own terms — see section 12.</p>
 
                 <hr class="my-4">
 
@@ -77,7 +77,7 @@
                 <h4 class="mt-4">8. SMS / Text Message Terms</h4>
                 <p>When you book a shipment, you may opt in to receive SMS (text message) notifications about that shipment. By providing your mobile number and opting in, you agree to the following:</p>
                 <ul>
-                    <li><strong>Program description:</strong> RDD Shipping sends automated transactional messages about your shipment — booking confirmation, pickup, departure, customs and container clearance, out-for-delivery and delivery confirmation, payment receipts, and tracking-number updates.</li>
+                    <li><strong>Program description:</strong> KASAROSE LOGISTICS sends automated transactional messages about your shipment — booking confirmation, pickup, departure, customs and container clearance, out-for-delivery and delivery confirmation, payment receipts, and tracking-number updates.</li>
                     <li><strong>Consent:</strong> Messages are sent only to numbers that opted in during booking. Consent to receive SMS is not a condition of purchasing any goods or services.</li>
                     <li><strong>Message frequency:</strong> Varies with shipment activity — typically 3–10 messages over the life of a shipment.</li>
                     <li><strong>Cost:</strong> Message and data rates may apply, depending on your mobile carrier and plan.</li>
@@ -90,7 +90,7 @@
 
                 <!-- 9 -->
                 <h4 class="mt-4">9. Website Use and Intellectual Property</h4>
-                <p>The RDD Shipping name, logo, website design, text and images belong to {{ config('group.company.legal_name') }} or its licensors and may not be used without written permission. You may not scrape the site, interfere with its operation, attempt to access other users' accounts, or use it for any unlawful purpose.</p>
+                <p>The KASAROSE LOGISTICS name, logo, website design, text and images belong to {{ config('group.company.legal_name') }} or its licensors and may not be used without written permission. You may not scrape the site, interfere with its operation, attempt to access other users' accounts, or use it for any unlawful purpose.</p>
 
                 <hr class="my-4">
 
@@ -102,13 +102,13 @@
 
                 <!-- 11 -->
                 <h4 class="mt-4">11. Indemnity</h4>
-                <p>You agree to indemnify RDD Shipping against any claims, penalties, duties, fines and costs arising from inaccurate shipment information you provide, from shipping prohibited or restricted items, or from your breach of these Terms.</p>
+                <p>You agree to indemnify KASAROSE LOGISTICS against any claims, penalties, duties, fines and costs arising from inaccurate shipment information you provide, from shipping prohibited or restricted items, or from your breach of these Terms.</p>
 
                 <hr class="my-4">
 
                 <!-- 12 -->
                 <h4 class="mt-4">12. Our Sister Companies</h4>
-                <p>RDD Shipping is one of the companies in the {{ config('group.parent.name') }}. The others are:</p>
+                <p>KASAROSE LOGISTICS is one of the companies in the {{ config('group.parent.name') }}. The others are:</p>
                 <ul>
                     @foreach (config('group.companies') as $company)
                         <li>
@@ -117,7 +117,7 @@
                         </li>
                     @endforeach
                 </ul>
-                <p>Each is a separate business with its own terms, contracts and liabilities. These Terms govern RDD Shipping only. Where we carry a shipment on behalf of KASAROSE, or where Neoride Africa completes a last-mile delivery on our behalf, RDD Shipping remains your point of contact for that shipment. If you buy a service from one of those companies in its own right, that company's terms apply to it, not these.</p>
+                <p>Each is a separate business with its own terms, contracts and liabilities. These Terms govern KASAROSE LOGISTICS only. Where we carry a shipment on behalf of KASAROSE, or where Neoride Africa completes a last-mile delivery on our behalf, KASAROSE LOGISTICS remains your point of contact for that shipment. If you buy a service from one of those companies in its own right, that company's terms apply to it, not these.</p>
 
                 <hr class="my-4">
 

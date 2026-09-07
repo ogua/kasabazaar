@@ -66,7 +66,7 @@ class EcommerceCategoryResource extends Resource
             ->columns([
                 Tables\Columns\ImageColumn::make('image')
                     ->circular()
-                    ->defaultImageUrl(asset('images/kasabazaar-logo.png')),
+                    ->defaultImageUrl(asset('images/kasarose-logo.png')),
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->sortable(),

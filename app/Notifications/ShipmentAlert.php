@@ -77,7 +77,7 @@ class ShipmentAlert extends Notification implements ShouldQueue
             $mail->action($balance > 0 ? 'View shipment & pay balance' : 'View shipment activity', $this->portalUrl());
         }
 
-        return $mail->line('Thank you for shipping with RDD Shipping.');
+        return $mail->line('Thank you for shipping with KASAROSE LOGISTICS.');
     }
 
     public function toSms(object $notifiable): string
@@ -86,7 +86,7 @@ class ShipmentAlert extends Notification implements ShouldQueue
         $ref = $shipment->shipping_reference ?? $shipment->tracking_number ?? 'shipment';
         $balance = (float) $shipment->outstanding_balance;
 
-        $parts = ["KasaBazaar: {$ref} - {$this->sentence()}"];
+        $parts = ["KASAROSE LOGISTICS: {$ref} - {$this->sentence()}"];
 
         if ($this->event === 'msc_updated' && $shipment->msc_tracking_number) {
             $parts[] = "MSC no: {$shipment->msc_tracking_number}. Live: ".$shipment->mscTrackingUrl();

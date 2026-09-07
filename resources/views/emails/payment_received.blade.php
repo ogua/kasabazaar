@@ -80,7 +80,7 @@
 <body>
     <div class="header">
         <div class="company-name">
-            <span class="rose">ROSE</span> DOOR TO DOOR SHIPPING AND DELIVERY CO
+            <span class="rose">KASAROSE</span> LOGISTICS
         </div>
     </div>
 

@@ -12,15 +12,15 @@
         @if ($favicon = filament()->getFavicon())
             <link rel="icon" href="{{ $favicon }}" />
             @else
-            <link rel="icon" href="/images/kasabazaar-logo.png" />
+            <link rel="icon" href="/images/favicon-32x32.png" />
         @endif
 
         <link rel="manifest" href="/site.webmanifest">
         <meta name="theme-color" content="#1e40af">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="default">
-        <meta name="apple-mobile-web-app-title" content="Kasabazaar">
-        <link rel="apple-touch-icon" href="/images/kasabazaar-logo.png">
+        <meta name="apple-mobile-web-app-title" content="KASAROSE LOGISTICS">
+        <link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
 
         <style>
             [x-cloak] {

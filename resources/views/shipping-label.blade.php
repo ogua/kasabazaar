@@ -320,8 +320,8 @@
             <!-- Header with Logo -->
             <div class="label-header">
                 <div class="company-info">
-                    <img src="/images/kasabazaar-logo.png" alt="Logo" class="company-logo">
-                    <div class="company-name">Rose Door to Door Shipping and Delivery Services</div>
+                    <img src="/images/kasarose-logo.png" alt="Logo" class="company-logo">
+                    <div class="company-name">KASAROSE LOGISTICS</div>
                 </div>
             </div>
 

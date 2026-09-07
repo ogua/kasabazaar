@@ -129,14 +129,14 @@
 <body>
     <div class="header">
         <div class="company-name">
-            <span class="rose">ROSE</span> DOOR TO DOOR SHIPPING AND DELIVERY CO
+            <span class="rose">KASAROSE</span> LOGISTICS
         </div>
     </div>
 
     <div class="content">
         <p class="greeting">Dear {{ $clientName }},</p>
 
-        <p>Thank you for choosing Rose Door To Door Shipping and Delivery Co. Please find attached your shipping invoice for reference.</p>
+        <p>Thank you for choosing KASAROSE LOGISTICS. Please find attached your shipping invoice for reference.</p>
 
         <div class="details-box">
             <div class="detail-row">

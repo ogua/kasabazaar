@@ -36,9 +36,9 @@ return [
      * The logo is resolved from public/ and simply omitted if the file is missing.
      */
     'company' => [
-        'name' => env('FINANCIALS_COMPANY_NAME', 'Rose Door to Door & Delivery Company Limited'),
+        'name' => env('FINANCIALS_COMPANY_NAME', 'KASAROSE LOGISTICS'),
         'registration_number' => env('FINANCIALS_COMPANY_REG_NO'),
-        'logo' => env('FINANCIALS_COMPANY_LOGO', 'images/logo.png'),
+        'logo' => env('FINANCIALS_COMPANY_LOGO', 'images/kasarose-logo.png'),
         'address' => env('FINANCIALS_COMPANY_ADDRESS', 'Adako Jachie, Ejisu, Kumasi, Ghana'),
         'phone_ghana' => env('FINANCIALS_COMPANY_PHONE_GH', '+233 50 972 5081 / +233 50 972 5073'),
         'phone_usa' => env('FINANCIALS_COMPANY_PHONE_US', '+1 (773) 970-0129 / +1 (574) 440-7460'),

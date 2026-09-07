@@ -54,7 +54,7 @@ class VendorResource extends Resource
                 Tables\Columns\ImageColumn::make('logo_path')
                     ->label('Logo')
                     ->circular()
-                    ->defaultImageUrl(asset('images/kasabazaar-logo.png')),
+                    ->defaultImageUrl(asset('images/kasarose-logo.png')),
                 Tables\Columns\TextColumn::make('business_name')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('user.email')->label('Owner Email')->searchable(),
                 Tables\Columns\TextColumn::make('status')->badge(),

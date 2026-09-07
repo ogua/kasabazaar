@@ -1,8 +1,8 @@
 {
     "id": "/admin",
-    "name": "Kasabazaar - Door to Door Shipping",
-    "short_name": "Rose Shipping",
-    "description": "Kasabazaar - Rose Door to Door Shipping Management System - Track shipments, manage clients, and handle logistics efficiently.",
+    "name": "KASAROSE LOGISTICS",
+    "short_name": "KASAROSE LOGISTICS",
+    "description": "KASAROSE LOGISTICS Management System - Track shipments, manage clients, and handle logistics efficiently.",
     "start_url": "/admin",
     "display": "standalone",
     "background_color": "#ffffff",

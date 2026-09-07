@@ -1,6 +1,6 @@
 @extends('web.sub-template')
 
-@section('heading','About - Rose Door To Door Shipping & Logistics')
+@section('heading','About - KASAROSE LOGISTICS')
 
 @section('sub-heading','About')
 
@@ -12,23 +12,23 @@
     <div class="container">
         <div class="row position-relative">
             {{-- <div class="col-lg-5 about-img" data-aos="zoom-out" data-aos-delay="200">
-                <img src="assets/shipping-images/shipping (5).JPG" alt="Rose Door to Door Shipping Image">
+                <img src="assets/shipping-images/shipping (5).JPG" alt="KASAROSE LOGISTICS Image">
             </div> --}}
 
             <div class="col-lg-12" data-aos="fade-up" data-aos-delay="100">
                 <h2 class="inner-title">About Us</h2>
                 <div class="our-storys">
-                    <h4>Rose Door to Door Shipping & Delivery</h4>
+                    <h4>KASAROSE LOGISTICS</h4>
                     <h3>Our Story</h3>
-                    <p>This most trusted and reliable freight forwarding company, Rose Door to Door Shipping and Delivery from KasaBazaar Limited, has become a household name in Ghana and the African communities in the United States of America, especially in Michigan, Indiana, New York, Kentucky, and more. It was registered and incorporated in 2020.</p>
+                    <p>This most trusted and reliable freight forwarding company, KASAROSE LOGISTICS, operated by KasaBazaar Limited, has become a household name in Ghana and the African communities in the United States of America, especially in Michigan, Indiana, New York, Kentucky, and more. It was registered and incorporated in 2020.</p>
                     
                     <p>Our dedicated and professional staff are experienced in freight forwarding and home delivery services. Our shipping experts are dedicated to anticipating and meeting your shipping needs whenever they arise. Our customers enjoy peace of mind and happiness whenever their goods are with us because of the excellent services we have been providing over the years.</p>
                     
                     <p>We are ideally positioned to successfully navigate the global shipping market while remaining committed to delivering the highest level of customer service.</p>
 
-                    <p>The global supply chain in the shipping industry is becoming highly complex and vulnerable. With a dedicated team of professionals, Rose Door to Door Shipping and Delivery is well positioned to provide exceptional logistics solutions. Over the years, we have been simplifying our customers' supply chain processes.</p>
+                    <p>The global supply chain in the shipping industry is becoming highly complex and vulnerable. With a dedicated team of professionals, KASAROSE LOGISTICS is well positioned to provide exceptional logistics solutions. Over the years, we have been simplifying our customers' supply chain processes.</p>
 
-                    <p>From the sender’s residence or point of contact to the recipient’s residence or point of contact, Rose Door to Door Shipping and Delivery ships and delivers goods to and from the USA and Ghana.</p>
+                    <p>From the sender’s residence or point of contact to the recipient’s residence or point of contact, KASAROSE LOGISTICS ships and delivers goods to and from the USA and Ghana.</p>
 
                     <div class="watch-video d-flex align-items-center position-relative">
                         <i class="bi bi-play-circle"></i>

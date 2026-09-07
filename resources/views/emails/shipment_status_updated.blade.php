@@ -36,7 +36,7 @@
 <body>
     <div class="header">
         <div class="company-name">
-            <span class="rose">ROSE</span> DOOR TO DOOR SHIPPING AND DELIVERY CO
+            <span class="rose">KASAROSE</span> LOGISTICS
         </div>
     </div>
 
@@ -108,7 +108,7 @@
     </p>
 
     <div class="footer">
-        <p><strong>Thank you for choosing Rose Door To Door!</strong></p>
+        <p><strong>Thank you for choosing KASAROSE LOGISTICS!</strong></p>
         <div class="contact-info">
             <p><strong>Ghana Office:</strong> Adako Jachie, Ejisu - Kumasi</p>
             <p>+233 509725073 / +233 50 9725081</p>

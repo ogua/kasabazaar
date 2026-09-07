@@ -1,6 +1,6 @@
 @extends('web.sub-template')
 
-@section('heading', $blogplost?->title.' - Rose Door To Door Shipping & Logistics')
+@section('heading', $blogplost?->title.' - KASAROSE LOGISTICS')
 
 @section('sub-heading', $blogplost?->title ?? 'Rose To Door Shipping & Logistics')
 

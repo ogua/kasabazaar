@@ -4,12 +4,12 @@
 <head>
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
-  <title>@yield('heading', 'KasaBazaar Shipping & Logistics')</title>
-  <meta name="description" content="@yield('meta_description', 'Rose Door to Door Shipping & Delivery — reliable door-to-door shipping between the USA and Ghana. Air freight, sea freight, e-commerce deliveries and more.')">
-  <meta name="keywords" content="@yield('meta_keywords', 'shipping Ghana, door to door delivery, freight forwarding, air freight, sea freight, e-commerce shipping, KasaBazaar, Rose Door to Door')">
+  <title>@yield('heading', 'KASAROSE LOGISTICS')</title>
+  <meta name="description" content="@yield('meta_description', 'KASAROSE LOGISTICS — reliable door-to-door shipping between the USA and Ghana. Air freight, sea freight, e-commerce deliveries and more.')">
+  <meta name="keywords" content="@yield('meta_keywords', 'shipping Ghana, door to door delivery, freight forwarding, air freight, sea freight, e-commerce shipping, KasaBazaar, KASAROSE LOGISTICS')">
 
   <!-- Favicons -->
-  <link rel="icon" href="assets/img/kasabazaar-logo.png" />
+  <link rel="icon" href="assets/img/favicon-32x32.png" />
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com" rel="preconnect">
   <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>

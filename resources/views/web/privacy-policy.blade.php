@@ -1,6 +1,6 @@
 @extends('web.sub-template')
 
-@section('heading','Privacy Policy - Rose Door To Door Shipping & Logistics')
+@section('heading','Privacy Policy - KASAROSE LOGISTICS')
 
 @section('sub-heading','Privacy Policy')
 
@@ -14,9 +14,9 @@
 
                 <p class="text-muted mb-4"><em>Last updated: August 31, 2026</em></p>
 
-                <p>Rose Door to Door Shipping and Delivery Service, operated by <strong>{{ config('group.company.legal_name') }}</strong> ("we", "us", or "our"), is committed to protecting the privacy of our customers and website visitors. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website or use our shipping and logistics services.</p>
+                <p>KASAROSE LOGISTICS, operated by <strong>{{ config('group.company.legal_name') }}</strong> ("we", "us", or "our"), is committed to protecting the privacy of our customers and website visitors. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website or use our shipping and logistics services.</p>
 
-                <p>RDD Shipping is the freight logistics arm of the <a href="{{ config('group.parent.url') }}" target="_blank" rel="noopener">{{ config('group.parent.name') }}</a>. <strong>This policy covers RDD Shipping only.</strong> The group's other companies are separately operated and publish their own privacy policies on their own sites — see section 3a below.</p>
+                <p>KASAROSE LOGISTICS is the freight logistics arm of the <a href="{{ config('group.parent.url') }}" target="_blank" rel="noopener">{{ config('group.parent.name') }}</a>. <strong>This policy covers KASAROSE LOGISTICS only.</strong> The group's other companies are separately operated and publish their own privacy policies on their own sites — see section 3a below.</p>
 
                 <p>By using our services, you agree to the collection and use of information in accordance with this policy.</p>
 
@@ -83,7 +83,7 @@
                 </ul>
 
                 <h6 class="mt-4" id="group-sharing">a) Sharing Within the {{ config('group.parent.name') }}</h6>
-                <p>RDD Shipping is one of four companies in the group. The others are:</p>
+                <p>KASAROSE LOGISTICS is one of four companies in the group. The others are:</p>
                 <ul>
                     @foreach (config('group.companies') as $company)
                         <li>

@@ -1,12 +1,12 @@
 <x-layouts.app>
     <div class="bg-gray-100 py-10"
-        style="background-image: url('/images/kasabazaarr-logo.png'); background-size: cover; background-position: center;">
+        style="background-image: url('/images/kasarose-logo.png'); background-size: cover; background-position: center;">
         <div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg">
             <!-- Header -->
             <div class="flex justify-between items-center border-b pb-4 mb-6">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-700">KasaBazaar</h1>
-                    <p class="text-sm text-gray-500">Rose Door to Door Shipping and Delivery</p>
+                    <h1 class="text-2xl font-bold text-gray-700">KASAROSE LOGISTICS</h1>
+                    <p class="text-sm text-gray-500">KASAROSE LOGISTICS</p>
                     <p class="text-sm text-gray-500">Packing List</p>
                 </div>
                 <div>
@@ -153,7 +153,7 @@
 
             <!-- Footer -->
             <div class="mt-8 text-center text-sm text-gray-500">
-                <p>Thank you for shipping with KasaBazaar!</p>
+                <p>Thank you for shipping with KASAROSE LOGISTICS!</p>
             </div>
         </div>
     </div>

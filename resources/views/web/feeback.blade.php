@@ -1,6 +1,6 @@
 @extends('web.sub-template')
 
-@section('heading','Customer Feedback - Rose Door To Door Shipping & Logistics')
+@section('heading','Customer Feedback - KASAROSE LOGISTICS')
 
 @section('sub-heading','Customer Feedback')
 

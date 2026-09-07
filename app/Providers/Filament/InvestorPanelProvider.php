@@ -38,9 +38,9 @@ class InvestorPanelProvider extends PanelProvider
             ->login()
             ->profile()
             ->sidebarCollapsibleOnDesktop()
-            ->brandLogo(asset('images/kasabazaar-logo.png'))
+            ->brandLogo(asset('images/kasarose-logo.png'))
             ->brandLogoHeight('4rem')
-            ->favicon(asset('images/kasabazaar-logo.png'))
+            ->favicon(asset('images/favicon-32x32.png'))
             ->colors([
                 'primary' => Color::hex('#A0043C'),
                 'info' => Color::hex('#003151'),

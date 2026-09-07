@@ -1,9 +1,9 @@
-const CACHE_NAME = 'kasabazaar-v1';
+const CACHE_NAME = 'kasarose-logistics-v1';
 const OFFLINE_URL = '/offline.html';
 
 // Assets to cache on install
 const PRECACHE_ASSETS = [
-    '/images/kasabazaar-logo.png',
+    '/images/kasarose-logo.png',
     '/images/web-app-manifest-192x192.png',
     '/images/web-app-manifest-512x512.png',
     '/favicon.ico'
