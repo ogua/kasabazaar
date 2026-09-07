@@ -86,7 +86,7 @@ class ShipmentAlert extends Notification implements ShouldQueue
         $ref = $shipment->shipping_reference ?? $shipment->tracking_number ?? 'shipment';
         $balance = (float) $shipment->outstanding_balance;
 
-        $parts = ["RDD Shipping: {$ref} — {$this->sentence()}"];
+        $parts = ["KasaBazaar: {$ref} - {$this->sentence()}"];
 
         if ($this->event === 'msc_updated' && $shipment->msc_tracking_number) {
             $parts[] = "MSC no: {$shipment->msc_tracking_number}. Live: ".$shipment->mscTrackingUrl();
@@ -99,6 +99,8 @@ class ShipmentAlert extends Notification implements ShouldQueue
         if ($this->portalUrl()) {
             $parts[] = 'Details & pay: '.$this->portalUrl();
         }
+
+        $parts[] = 'Reply STOP to opt out, HELP for help.';
 
         return implode(' ', $parts);
     }

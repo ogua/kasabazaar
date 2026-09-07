@@ -60,7 +60,7 @@
                 </ul>
 
                 <h6 class="mt-4" id="sms-notifications">a) SMS / Text Message Notifications</h6>
-                <p>When you book a shipment, you may provide a mobile number and opt in to receive SMS (text message) updates about that shipment. If you opt in, we send automated transactional messages triggered by activity on your order — such as booking confirmation, pickup, departure, customs and container clearance, out-for-delivery and delivery confirmation, payment receipts, and tracking-number updates.</p>
+                <p>When you book a shipment, you may provide a mobile number and opt in to receive SMS (text message) updates about that shipment. If you opt in, we send automated transactional messages triggered by activity on your order — such as booking confirmation, pickup, departure, customs and container clearance, out-for-delivery and delivery confirmation, payment receipts, and tracking-number updates. These messages are sent under the <strong>KasaBazaar</strong> name.</p>
                 <ul>
                     <li><strong>Consent:</strong> SMS updates are sent only to numbers that opted in during booking. Opting in is not a condition of using our services.</li>
                     <li><strong>Message frequency:</strong> Varies with shipment activity — typically 3–10 messages over the life of a shipment.</li>
@@ -69,6 +69,7 @@
                     <li><strong>Providers:</strong> Messages are delivered through our messaging providers, Twilio and Arkesel, acting as data processors on our behalf.</li>
                     <li><strong>No sharing:</strong> Mobile numbers collected for SMS notifications, and your opt-in consent, are never sold, rented, or shared with third parties or other group companies for their own marketing or promotional purposes.</li>
                 </ul>
+                <p>This programme is also documented at <a href="{{ config('group.parent.url') }}/sms-terms.php" target="_blank" rel="noopener">{{ parse_url(config('group.parent.url'), PHP_URL_HOST) }}/sms-terms.php</a>.</p>
 
                 <hr class="my-4">
 
