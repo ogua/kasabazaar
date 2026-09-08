@@ -42,7 +42,7 @@ class FinancialReportController extends BaseApiController
         // Expense query
         $expenseBase = Expense::whereBetween('expense_date', [$start, $end]);
         if ($conNum) {
-            $expenseBase->whereHas('shipment', fn ($q) => $q->where('container_number', (int) $conNum));
+            $expenseBase->forContainer($conNum);
         }
 
         // Shipment query
@@ -74,7 +74,7 @@ class FinancialReportController extends BaseApiController
             ->orderBy('container_number')
             ->get()
             ->map(function ($row) use ($start, $end) {
-                $expGhs = Expense::whereHas('shipment', fn ($q) => $q->where('container_number', $row->container_number))
+                $expGhs = Expense::forContainer($row->container_number)
                     ->whereBetween('expense_date', [$start, $end])
                     ->sum('amount_ghs');
 
@@ -153,8 +153,11 @@ class FinancialReportController extends BaseApiController
         $perPage = (int) $request->input('per_page', 50);
         $page = (int) $request->input('page', 1);
 
+        $containerNumber = $request->input('container_number');
+
         $paginated = Expense::with(['category', 'branch', 'recordedBy', 'shipment'])
             ->whereBetween('expense_date', [$start, $end])
+            ->when($containerNumber, fn ($q) => $q->forContainer($containerNumber))
             ->orderBy('expense_date', 'desc')
             ->paginate($perPage, ['*'], 'page', $page);
 
@@ -202,7 +205,9 @@ class FinancialReportController extends BaseApiController
             'amount_ghs' => (float) $e->amount_ghs,
             'exchange_rate' => (float) $e->exchange_rate,
             'branch' => $e->branch?->name ?? 'N/A',
-            'shipment_ref' => $e->shipment?->shipping_reference ?? 'General',
+            'expense_for' => $e->expense_for?->value ?? 'shipment',
+            'shipment_ref' => $e->subject_reference ?? 'General',
+            'container_number' => $e->container_number,
             'recorded_by' => $e->recordedBy?->name ?? 'System',
             'expense_stage' => $e->expense_stage?->value ?? 'N/A',
         ]);

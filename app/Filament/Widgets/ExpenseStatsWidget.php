@@ -13,7 +13,9 @@ class ExpenseStatsWidget extends BaseWidget
     protected static ?int $sort = 3;
 
     public ?string $startDate = null;
+
     public ?string $endDate = null;
+
     public ?string $containerNumber = null;
 
     public function mount(): void
@@ -45,18 +47,14 @@ class ExpenseStatsWidget extends BaseWidget
         // Current period expenses
         $currentExpensesQuery = Expense::whereBetween('expense_date', [$startDate, $endDate]);
         if ($containerNumber) {
-            $currentExpensesQuery->whereHas('shipment', function ($query) use ($containerNumber) {
-                $query->where('container_number', $containerNumber);
-            });
+            $currentExpensesQuery->forContainer($containerNumber);
         }
         $thisMonthExpenses = $currentExpensesQuery->sum('amount_usd');
 
         // Previous period expenses
         $previousExpensesQuery = Expense::whereBetween('expense_date', [$prevStartDate, $prevEndDate]);
         if ($containerNumber) {
-            $previousExpensesQuery->whereHas('shipment', function ($query) use ($containerNumber) {
-                $query->where('container_number', $containerNumber);
-            });
+            $previousExpensesQuery->forContainer($containerNumber);
         }
         $lastMonthExpenses = $previousExpensesQuery->sum('amount_usd');
 
@@ -72,9 +70,7 @@ class ExpenseStatsWidget extends BaseWidget
             ->orderByDesc('total');
 
         if ($containerNumber) {
-            $topCategoryQuery->whereHas('shipment', function ($query) use ($containerNumber) {
-                $query->where('container_number', $containerNumber);
-            });
+            $topCategoryQuery->forContainer($containerNumber);
         }
 
         $topCategory = $topCategoryQuery->first();
@@ -82,24 +78,22 @@ class ExpenseStatsWidget extends BaseWidget
         // GHS expenses for the period
         $currentExpensesGhsQuery = Expense::whereBetween('expense_date', [$startDate, $endDate]);
         if ($containerNumber) {
-            $currentExpensesGhsQuery->whereHas('shipment', function ($query) use ($containerNumber) {
-                $query->where('container_number', $containerNumber);
-            });
+            $currentExpensesGhsQuery->forContainer($containerNumber);
         }
         $thisMonthExpensesGhs = $currentExpensesGhsQuery->sum('amount_ghs');
 
         // Calculate days in period for label
-        $periodLabel = $days <= 31 ? "({$days} days)" : "(" . round($days / 30, 1) . " months)";
-        $filterLabel = $containerNumber ? ' [CON' . $containerNumber . ']' : '';
+        $periodLabel = $days <= 31 ? "({$days} days)" : '('.round($days / 30, 1).' months)';
+        $filterLabel = $containerNumber ? ' [CON'.$containerNumber.']' : '';
 
         return [
-            Stat::make('Expenses (USD) ' . $periodLabel . $filterLabel, '$' . number_format($thisMonthExpenses, 2))
-                ->description($change >= 0 ? abs(round($change, 1)) . '% increase' : abs(round($change, 1)) . '% decrease')
+            Stat::make('Expenses (USD) '.$periodLabel.$filterLabel, '$'.number_format($thisMonthExpenses, 2))
+                ->description($change >= 0 ? abs(round($change, 1)).'% increase' : abs(round($change, 1)).'% decrease')
                 ->descriptionIcon($change >= 0 ? 'heroicon-m-arrow-trending-up' : 'heroicon-m-arrow-trending-down')
                 ->color($change >= 0 ? 'danger' : 'success'),
 
             Stat::make('Top Category', $topCategory?->category?->name ?? 'N/A')
-                ->description($topCategory ? '$' . number_format($topCategory->total, 2) : '')
+                ->description($topCategory ? '$'.number_format($topCategory->total, 2) : '')
                 ->descriptionIcon('heroicon-m-chart-pie'),
         ];
     }

@@ -12,6 +12,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 class ExpensesExport implements FromCollection, WithHeadings, WithMapping, WithStyles
 {
     protected $start_date;
+
     protected $end_date;
 
     public function __construct($start_date, $end_date)
@@ -39,7 +40,8 @@ class ExpensesExport implements FromCollection, WithHeadings, WithMapping, WithS
             'Amount (GHS)',
             'Exchange Rate',
             'Branch',
-            'Shipment',
+            'For',
+            'Shipment / Container',
             'Stage',
             'Recorded By',
         ];
@@ -56,7 +58,8 @@ class ExpensesExport implements FromCollection, WithHeadings, WithMapping, WithS
             $expense->amount_ghs,
             $expense->exchange_rate,
             $expense->branch?->name ?? 'N/A',
-            $expense->shipment?->shipping_reference ?? 'General',
+            $expense->expense_for?->getLabel() ?? 'Specific Shipment',
+            $expense->subject_reference ?? 'General',
             $expense->expense_stage?->value ?? 'N/A',
             $expense->recordedBy?->name ?? 'System',
         ];

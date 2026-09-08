@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Enums\ExpenseScope;
 use App\Enums\IncomeStatus;
 use App\Models\Client;
 use App\Models\Expense;
@@ -100,7 +101,11 @@ class ReportService
 
         return $grouped->map(function ($containerShipments, $seq) {
             $revenue = $containerShipments->sum('total');
-            $expenses = $containerShipments->sum(fn ($s) => $s->expenses->sum('amount_usd'));
+            $directContainerExpenses = (float) Expense::query()
+                ->where('expense_for', ExpenseScope::Container)
+                ->where('container_number', $seq)
+                ->sum('amount_usd');
+            $expenses = $containerShipments->sum(fn ($s) => $s->expenses->sum('amount_usd')) + $directContainerExpenses;
 
             $clients = $containerShipments->groupBy('client_id')->map(function ($clientShipments) {
                 $client = $clientShipments->first()->client;

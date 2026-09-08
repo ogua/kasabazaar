@@ -78,7 +78,8 @@
                 <th>Description</th>
                 <th class="text-right">Amount (USD)</th>
                 <th class="text-right">Amount (GHS)</th>
-                <th>Shipment</th>
+                <th>For</th>
+                <th>Shipment / Container</th>
                 <th>Stage</th>
             </tr>
         </thead>
@@ -91,6 +92,7 @@
                     <td>{{ Str::limit($expense['description'] ?? 'N/A', 30) }}</td>
                     <td class="text-right">${{ number_format($expense['amount_usd'], 2) }}</td>
                     <td class="text-right">₵{{ number_format($expense['amount_ghs'], 2) }}</td>
+                    <td style="font-size: 10px;">{{ $expense['expense_for'] ?? 'Specific Shipment' }}</td>
                     <td style="font-size: 10px;">{{ $expense['shipment_ref'] }}</td>
                     <td>{{ $expense['expense_stage'] }}</td>
                 </tr>

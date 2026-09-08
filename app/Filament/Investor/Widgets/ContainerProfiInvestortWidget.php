@@ -78,6 +78,9 @@ class ContainerProfiInvestortWidget extends Widget
 
             $shipments = Shipment::whereIn('id', $shipmentIds)->get();
 
+            // Numeric container number (e.g. "51" from "CON51") for container-scoped expenses
+            $containerNumber = preg_replace('/\D/', '', $containerRef);
+
             // Get payments in both USD and GHS
             $payments = Payment::where('payment_type', 'credit')
                 ->whereIn('shipment_id', $shipmentIds)
@@ -86,8 +89,11 @@ class ContainerProfiInvestortWidget extends Widget
             $paymentsReceivedUsd = $payments->sum('amount_usd') ?: $payments->sum('amount');
             $paymentsReceivedGhs = $payments->sum('amount_ghs') ?: 0;
 
-            // Get expenses in both USD and GHS
-            $expensesData = Expense::whereIn('shipment_id', $shipmentIds)
+            // Get expenses in both USD and GHS — member-shipment expenses plus
+            // any booked directly against the container
+            $expensesData = Expense::query()
+                ->where(fn ($q) => $q->whereIn('shipment_id', $shipmentIds)
+                    ->orWhere('container_number', $containerNumber))
                 ->get();
 
             $expensesUsd = $expensesData->sum('amount_usd') ?: 0;

@@ -156,9 +156,7 @@ class ManagementKPIWidget extends BaseWidget
         // Expense to Revenue Ratio
         $monthExpensesQuery = Expense::whereBetween('expense_date', [$startDate, $endDate]);
         if ($containerNumber) {
-            $monthExpensesQuery->whereHas('shipment', function ($query) use ($containerNumber) {
-                $query->where('container_number', $containerNumber);
-            });
+            $monthExpensesQuery->forContainer($containerNumber);
         }
         $monthExpenses = $monthExpensesQuery->sum('amount_ghs');
 

@@ -2,13 +2,13 @@
 
 namespace App\Filament\Pages;
 
-use Filament\Pages\Page;
-use App\Filament\Widgets\ExpenseStatsWidget;
-use App\Filament\Widgets\ExpensesByCategoryChart;
-use Filament\Actions\Action;
 use App\Exports\ExpensesExport;
-use Maatwebsite\Excel\Facades\Excel;
+use App\Filament\Widgets\ExpensesByCategoryChart;
+use App\Filament\Widgets\ExpenseStatsWidget;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Filament\Actions\Action;
+use Filament\Pages\Page;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ExpenseReport extends Page
 {
@@ -25,6 +25,7 @@ class ExpenseReport extends Page
     protected static ?string $navigationLabel = 'Expense Report';
 
     public ?string $start_date = null;
+
     public ?string $end_date = null;
 
     public function mount(): void
@@ -61,14 +62,14 @@ class ExpenseReport extends Page
 
         return response()->streamDownload(function () use ($pdf) {
             echo $pdf->output();
-        }, 'expense-report-' . $this->start_date . '-to-' . $this->end_date . '.pdf');
+        }, 'expense-report-'.$this->start_date.'-to-'.$this->end_date.'.pdf');
     }
 
     public function downloadExcel()
     {
         return Excel::download(
             new ExpensesExport($this->start_date, $this->end_date),
-            'expense-report-' . $this->start_date . '-to-' . $this->end_date . '.xlsx'
+            'expense-report-'.$this->start_date.'-to-'.$this->end_date.'.xlsx'
         );
     }
 
@@ -101,7 +102,8 @@ class ExpenseReport extends Page
                     'amount_ghs' => $expense->amount_ghs,
                     'exchange_rate' => $expense->exchange_rate,
                     'branch' => $expense->branch?->name ?? 'N/A',
-                    'shipment_ref' => $expense->shipment?->shipping_reference ?? 'General',
+                    'expense_for' => $expense->expense_for?->getLabel() ?? 'Specific Shipment',
+                    'shipment_ref' => $expense->subject_reference ?? 'General',
                     'recorded_by' => $expense->recordedBy?->name ?? 'System',
                     'expense_stage' => $expense->expense_stage?->value ?? 'N/A',
                 ];
@@ -133,8 +135,8 @@ class ExpenseReport extends Page
         $byCategory = \App\Models\Expense::with('category')
             ->whereBetween('expense_date', [$startDate, $endDate])
             ->get()
-            ->groupBy(fn($e) => $e->category?->name ?? 'Uncategorized')
-            ->map(fn($group) => [
+            ->groupBy(fn ($e) => $e->category?->name ?? 'Uncategorized')
+            ->map(fn ($group) => [
                 'count' => $group->count(),
                 'total_usd' => $group->sum('amount_usd'),
                 'total_ghs' => $group->sum('amount_ghs'),
@@ -145,8 +147,8 @@ class ExpenseReport extends Page
         // By stage
         $byStage = \App\Models\Expense::whereBetween('expense_date', [$startDate, $endDate])
             ->get()
-            ->groupBy(fn($e) => $e->expense_stage?->value ?? 'N/A')
-            ->map(fn($group) => [
+            ->groupBy(fn ($e) => $e->expense_stage?->value ?? 'N/A')
+            ->map(fn ($group) => [
                 'count' => $group->count(),
                 'total_usd' => $group->sum('amount_usd'),
                 'total_ghs' => $group->sum('amount_ghs'),

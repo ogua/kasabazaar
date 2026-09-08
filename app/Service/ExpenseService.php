@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Enums\ExpenseScope;
 use App\Models\Expense;
 use App\Models\Shipment;
 use Carbon\Carbon;
@@ -17,25 +18,56 @@ class ExpenseService
     }
 
     /**
-     * Create expense with auto currency conversion
+     * Create a shipment-scoped expense with auto currency conversion.
      */
     public function createExpense(Shipment $shipment, array $data): Expense
     {
-        // Get current exchange rate if not provided
+        $data = $this->withConvertedAmount($data);
+        $data['expense_for'] = ExpenseScope::Shipment;
+        $data['shipment_id'] = $shipment->id;
+        $data['container_number'] = null;
+        $data['branch_id'] = $shipment->branch_id;
+
+        return Expense::create($data);
+    }
+
+    /**
+     * Create a container-scoped expense (not tied to a single shipment).
+     */
+    public function createContainerExpense(string $containerNumber, array $data, ?string $branchId = null): Expense
+    {
+        $data = $this->withConvertedAmount($data);
+        $data['expense_for'] = ExpenseScope::Container;
+        $data['container_number'] = $containerNumber;
+        $data['shipment_id'] = null;
+        $data['branch_id'] = $branchId
+            ?? Shipment::where('container_number', $containerNumber)->value('branch_id');
+
+        return Expense::create($data);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function withConvertedAmount(array $data): array
+    {
         if (empty($data['exchange_rate'])) {
             $data['exchange_rate'] = $this->exchangeRateService->getCurrentRate();
         }
 
-        // Calculate GHS amount
+        $rate = (float) $data['exchange_rate'];
+
+        if (empty($data['amount_usd']) && ! empty($data['amount_ghs']) && $rate > 0) {
+            $data['amount_usd'] = round((float) $data['amount_ghs'] / $rate, 2);
+        }
+
         $data['amount_ghs'] = $this->exchangeRateService->convertWithRate(
-            $data['amount_usd'],
+            $data['amount_usd'] ?? 0,
             $data['exchange_rate']
         );
 
-        $data['shipment_id'] = $shipment->id;
-        $data['branch_id'] = $shipment->branch_id;
-
-        return Expense::create($data);
+        return $data;
     }
 
     /**
@@ -55,6 +87,31 @@ class ExpenseService
                 'total_ghs' => $items->sum('amount_ghs'),
             ]),
             'by_stage' => $expenses->groupBy('expense_stage')->map(fn ($items) => [
+                'count' => $items->count(),
+                'total_usd' => $items->sum('amount_usd'),
+                'total_ghs' => $items->sum('amount_ghs'),
+            ]),
+            'expenses' => $expenses,
+        ];
+    }
+
+    /**
+     * Get the expense summary for a whole container: expenses booked directly
+     * against the container plus every expense on its member shipments.
+     */
+    public function getContainerExpenseSummary(string $containerNumber): array
+    {
+        $expenses = Expense::forContainer($containerNumber)->with('category')->get();
+
+        return [
+            'container_number' => $containerNumber,
+            'container_ref' => 'CON'.$containerNumber,
+            'total_usd' => $expenses->sum('amount_usd'),
+            'total_ghs' => $expenses->sum('amount_ghs'),
+            'count' => $expenses->count(),
+            'direct_total_usd' => $expenses->where('expense_for', ExpenseScope::Container)->sum('amount_usd'),
+            'shipment_total_usd' => $expenses->where('expense_for', ExpenseScope::Shipment)->sum('amount_usd'),
+            'by_category' => $expenses->groupBy('category.name')->map(fn ($items) => [
                 'count' => $items->count(),
                 'total_usd' => $items->sum('amount_usd'),
                 'total_ghs' => $items->sum('amount_ghs'),

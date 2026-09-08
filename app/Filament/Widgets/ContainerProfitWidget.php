@@ -11,11 +11,15 @@ use Livewire\Attributes\On;
 class ContainerProfitWidget extends Widget
 {
     protected static ?int $sort = 2;
-    protected int | string | array $columnSpan = 'full';
+
+    protected int|string|array $columnSpan = 'full';
+
     protected static string $view = 'filament.widgets.container-profit-widget';
 
     public ?string $startDate = null;
+
     public ?string $endDate = null;
+
     public ?string $containerNumber = null;
 
     public function mount(): void
@@ -57,11 +61,12 @@ class ContainerProfitWidget extends Widget
                         'created_at' => $shipment->created_at,
                     ];
                 }
+
                 return null;
             })
             ->filter()
             ->groupBy('container_ref')
-            ->map(fn($group) => $group->sortBy('created_at')->first())
+            ->map(fn ($group) => $group->sortBy('created_at')->first())
             ->sortByDesc('created_at')
             ->take(10)
             ->pluck('container_ref');
@@ -73,6 +78,9 @@ class ContainerProfitWidget extends Widget
 
             $shipments = Shipment::whereIn('id', $shipmentIds)->get();
 
+            // Numeric container number (e.g. "51" from "CON51") for container-scoped expenses
+            $containerNumber = preg_replace('/\D/', '', $containerRef);
+
             // Get payments in both USD and GHS
             $payments = Payment::where('payment_type', 'credit')
                 ->whereIn('shipment_id', $shipmentIds)
@@ -81,8 +89,11 @@ class ContainerProfitWidget extends Widget
             $paymentsReceivedUsd = $payments->sum('amount_usd') ?: $payments->sum('amount');
             $paymentsReceivedGhs = $payments->sum('amount_ghs') ?: 0;
 
-            // Get expenses in both USD and GHS
-            $expensesData = Expense::whereIn('shipment_id', $shipmentIds)
+            // Get expenses in both USD and GHS — member-shipment expenses plus
+            // any booked directly against the container
+            $expensesData = Expense::query()
+                ->where(fn ($q) => $q->whereIn('shipment_id', $shipmentIds)
+                    ->orWhere('container_number', $containerNumber))
                 ->get();
 
             $expensesUsd = $expensesData->sum('amount_usd') ?: 0;

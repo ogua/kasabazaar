@@ -2,26 +2,31 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms;
-use Filament\Tables;
+use App\Enums\ExpenseScope;
+use App\Enums\ExpenseStage;
+use App\Filament\Resources\ExpenseResource\Pages;
+use App\Models\Branch;
 use App\Models\Expense;
+use App\Models\Shipment;
+use App\Models\ShipmentContainer;
+use App\Service\ExchangeRateService;
+use Filament\Forms;
+use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use App\Models\Shipment;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
-use App\Enums\ExpenseStage;
 use Filament\Resources\Resource;
-use App\Service\ExchangeRateService;
+use Filament\Tables;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use App\Filament\Resources\ExpenseResource\Pages;
 
 class ExpenseResource extends Resource
 {
     protected static ?string $model = Expense::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-banknotes';
+
     protected static ?string $navigationGroup = 'Finance';
+
     protected static ?int $navigationSort = 1;
 
     protected static bool $isScopedToTenant = false;
@@ -30,14 +35,30 @@ class ExpenseResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\Section::make('Shipment & Category')
+                Forms\Components\Section::make('What is this expense for?')
                     ->schema([
+                        Forms\Components\Radio::make('expense_for')
+                            ->label('Record this expense against')
+                            ->options(ExpenseScope::class)
+                            ->default(ExpenseScope::Shipment->value)
+                            ->required()
+                            ->live()
+                            ->inline()
+                            ->columnSpanFull()
+                            ->afterStateUpdated(function (Set $set, $state): void {
+                                if ($state === ExpenseScope::Container->value) {
+                                    $set('shipment_id', null);
+                                } else {
+                                    $set('container_number', null);
+                                }
+                            }),
                         Forms\Components\Select::make('shipment_id')
                             ->label('Shipment')
                             ->relationship('shipment', 'shipping_reference')
                             ->searchable()
                             ->preload()
                             ->required()
+                            ->visible(fn (Get $get): bool => $get('expense_for') !== ExpenseScope::Container->value)
                             ->reactive()
                             ->afterStateUpdated(function (Set $set, $state) {
                                 if ($state) {
@@ -46,6 +67,20 @@ class ExpenseResource extends Resource
                                         $set('branch_id', $shipment->branch_id);
                                     }
                                 }
+                            }),
+                        Forms\Components\Select::make('container_number')
+                            ->label('Container')
+                            ->options(fn (): array => static::containerOptions())
+                            ->searchable()
+                            ->required()
+                            ->visible(fn (Get $get): bool => $get('expense_for') === ExpenseScope::Container->value)
+                            ->reactive()
+                            ->afterStateUpdated(function (Set $set, $state) {
+                                if (! $state) {
+                                    return;
+                                }
+                                $branchId = Shipment::where('container_number', $state)->value('branch_id');
+                                $set('branch_id', $branchId ?? Branch::query()->value('id'));
                             }),
                         Forms\Components\Select::make('expense_category_id')
                             ->label('Category')
@@ -81,39 +116,56 @@ class ExpenseResource extends Resource
                     ->columns(2),
 
                 Forms\Components\Section::make('Amount')
+                    ->description('Enter either the USD or the GHS amount — the other is calculated from the exchange rate.')
                     ->schema([
                         Forms\Components\TextInput::make('amount_usd')
                             ->label('Amount (USD)')
                             ->numeric()
-                            ->required()
+                            ->requiredWithout('amount_ghs')
                             ->prefix('$')
-                            ->reactive()
-                            ->afterStateUpdated(function (Get $get, Set $set) {
-                                $amount = floatval($get('amount_usd'));
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function (Get $get, Set $set, $state): void {
+                                $usd = floatval($state);
                                 $rate = floatval($get('exchange_rate'));
-                                if ($amount && $rate) {
-                                    $set('amount_ghs', round($amount * $rate, 2));
+                                if ($usd > 0 && $rate > 0) {
+                                    $set('amount_ghs', round($usd * $rate, 2));
                                 }
                             }),
                         Forms\Components\TextInput::make('exchange_rate')
                             ->label('Exchange Rate')
-                            ->numeric()
+                           // ->numeric()
                             ->required()
                             ->default(fn () => app(ExchangeRateService::class)->getCurrentRate())
-                            ->reactive()
-                            ->afterStateUpdated(function (Get $get, Set $set) {
-                                $amount = floatval($get('amount_usd'));
-                                $rate = floatval($get('exchange_rate'));
-                                if ($amount && $rate) {
-                                    $set('amount_ghs', round($amount * $rate, 2));
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function (Get $get, Set $set, $state): void {
+                                $rate = floatval($state);
+                                if ($rate <= 0) {
+                                    return;
+                                }
+                                $usd = floatval($get('amount_usd'));
+                                if ($usd > 0) {
+                                    $set('amount_ghs', round($usd * $rate, 2));
+
+                                    return;
+                                }
+                                $ghs = floatval($get('amount_ghs'));
+                                if ($ghs > 0) {
+                                    $set('amount_usd', round($ghs / $rate, 2));
                                 }
                             }),
                         Forms\Components\TextInput::make('amount_ghs')
                             ->label('Amount (GHS)')
                             ->numeric()
+                            ->requiredWithout('amount_usd')
                             ->prefix('GH₵')
-                            ->disabled()
-                            ->dehydrated(),
+                            ->live(onBlur: true)
+                            ->afterStateUpdated(function (Get $get, Set $set, $state): void {
+                                $ghs = floatval($state);
+                                $rate = floatval($get('exchange_rate'));
+                                if ($ghs > 0 && $rate > 0) {
+                                    $set('amount_usd', round($ghs / $rate, 2));
+                                }
+                            }),
                     ])
                     ->columns(3),
 
@@ -132,6 +184,30 @@ class ExpenseResource extends Resource
             ]);
     }
 
+    /**
+     * Container numbers that shipments have been assigned to, plus any tracked
+     * container-clearance records, keyed for a Select ("51" => "CON51").
+     *
+     * @return array<string, string>
+     */
+    protected static function containerOptions(): array
+    {
+        $fromShipments = Shipment::query()
+            ->whereNotNull('container_number')
+            ->distinct()
+            ->pluck('container_number');
+
+        $fromContainers = ShipmentContainer::query()->pluck('container_number');
+
+        return $fromShipments
+            ->merge($fromContainers)
+            ->map(fn ($number) => (string) $number)
+            ->unique()
+            ->sortByDesc(fn (string $number) => (int) $number)
+            ->mapWithKeys(fn (string $number) => [$number => 'CON'.$number])
+            ->all();
+    }
+
     public static function table(Table $table): Table
     {
         return $table
@@ -139,10 +215,17 @@ class ExpenseResource extends Resource
                 Tables\Columns\TextColumn::make('reference')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('shipment.shipping_reference')
-                    ->label('Shipment')
-                    ->searchable()
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('expense_for')
+                    ->label('For')
+                    ->badge(),
+                Tables\Columns\TextColumn::make('subject_reference')
+                    ->label('Shipment / Container')
+                    ->searchable(query: function (Builder $query, string $search): Builder {
+                        return $query
+                            ->where('container_number', 'like', "%{$search}%")
+                            ->orWhereHas('shipment', fn (Builder $q) => $q->where('shipping_reference', 'like', "%{$search}%"));
+                    })
+                    ->placeholder('—'),
                 Tables\Columns\TextColumn::make('category.name')
                     ->label('Category')
                     ->badge(),
@@ -167,6 +250,9 @@ class ExpenseResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('expense_for')
+                    ->label('For')
+                    ->options(ExpenseScope::class),
                 Tables\Filters\SelectFilter::make('expense_category_id')
                     ->relationship('category', 'name')
                     ->label('Category'),
