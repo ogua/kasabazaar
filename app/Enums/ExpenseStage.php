@@ -18,7 +18,7 @@ enum ExpenseStage: string implements HasLabel, HasColor
             self::PreShipment => 'Pre-Shipment',
             self::DuringShipment => 'During Shipment',
             self::PostShipment => 'Post-Shipment',
-            self::Delivery => 'Delivery,
+            self::Delivery => 'Delivery',
         };
     }
 
