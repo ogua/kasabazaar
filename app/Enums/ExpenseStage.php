@@ -10,6 +10,7 @@ enum ExpenseStage: string implements HasLabel, HasColor
     case PreShipment = 'pre_shipment';
     case DuringShipment = 'during_shipment';
     case PostShipment = 'post_shipment';
+    case Delivery = 'delivery';
 
     public function getLabel(): ?string
     {
@@ -17,6 +18,7 @@ enum ExpenseStage: string implements HasLabel, HasColor
             self::PreShipment => 'Pre-Shipment',
             self::DuringShipment => 'During Shipment',
             self::PostShipment => 'Post-Shipment',
+            self::Delivery => 'Delivery,
         };
     }
 
@@ -26,6 +28,7 @@ enum ExpenseStage: string implements HasLabel, HasColor
             self::PreShipment => 'warning',
             self::DuringShipment => 'info',
             self::PostShipment => 'success',
+            self::Delivery => 'danger',
         };
     }
 }
