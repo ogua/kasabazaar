@@ -55,7 +55,7 @@
         }
 
         .print-controls button {
-            background: #4CAF50;
+            background: #A0043C;
             color: white;
             border: none;
             padding: 8px 24px;
@@ -66,7 +66,7 @@
         }
 
         .print-controls button:hover {
-            background: #45a049;
+            background: #7d0330;
         }
 
         .print-controls .back-btn {

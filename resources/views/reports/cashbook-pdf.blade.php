@@ -32,10 +32,10 @@
         }
         .card-label  { font-size: 8px; color: #777; text-transform: uppercase; letter-spacing: 0.4px; }
         .card-value  { font-size: 14px; font-weight: bold; margin-top: 3px; }
-        .card-value.green  { color: #1a6b3a; }
+        .card-value.green  { color: #16a34a; }
         .card-value.red    { color: #A0043C; }
         .card-value.blue   { color: #003151; }
-        .card-value.purple { color: #6B21A8; }
+        .card-value.purple { color: #003151; }
 
         /* ── Tables ─────────────────────────────────────────── */
         table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 9px; }
@@ -50,7 +50,7 @@
         .text-right  { text-align: right; }
         .text-center { text-align: center; }
         .fw-bold     { font-weight: bold; }
-        .text-green  { color: #1a6b3a; }
+        .text-green  { color: #16a34a; }
         .text-red    { color: #A0043C; }
         .text-blue   { color: #003151; }
 
@@ -71,7 +71,7 @@
         .recon-total { display: flex; justify-content: space-between; padding: 4px 0; font-weight: bold; border-top: 2px solid #A0043C; margin-top: 4px; }
 
         /* ── WHT table ─────────────────────────────────────── */
-        .wht-table th { background: #6B21A8; }
+        .wht-table th { background: #003151; }
 
         /* ── Signature block ────────────────────────────────── */
         .signature-block {
@@ -270,7 +270,7 @@
 
 {{-- ── WHT BREAKDOWN (if any) ───────────────────────────────── --}}
 @if(!empty($whtEntries))
-<div class="section-heading" style="background:#6B21A8;">Withholding Tax Breakdown</div>
+<div class="section-heading">Withholding Tax Breakdown</div>
 <table class="wht-table">
     <thead>
         <tr>

@@ -83,6 +83,7 @@ class ShipmentController extends BaseApiController
             'recorded_by' => auth()->id(),
             'external_token' => Shipment::generateExternalToken(),
             'client_existence' => $shipmentType,
+            'description' => $request->input('description'),
         ]);
 
         // Create receivers and their items
@@ -145,7 +146,7 @@ class ShipmentController extends BaseApiController
             'status', 'payment_status', 'destination_branch_id',
             'estimated_delivery_date', 'shipping_cost', 'total', 'paid',
             'vat_percentage', 'insurance_accepted', 'insurance',
-            'is_received', 'delivered_at',
+            'is_received', 'delivered_at', 'description',
         ]);
 
         $notNullableFields = ['total', 'paid', 'insurance', 'vat_percentage', 'insurance_accepted'];
@@ -263,6 +264,56 @@ class ShipmentController extends BaseApiController
         ], 'Media uploaded.', 201);
     }
 
+    /**
+     * Record an agent-based delivery for a shipment — a parallel concept to
+     * the fleet Trip/TripShipment delivery flow (see ShipmentDelivery model),
+     * for agents who hand-deliver items outside the vehicle/driver system.
+     */
+    public function recordDelivery(Request $request, string $id): JsonResponse
+    {
+        abort_unless(auth()->user()->can('update_shipment'), 403);
+
+        $shipment = Shipment::whereIn('branch_id', $this->userBranchIds())->findOrFail($id);
+
+        $request->validate([
+            'clearing_agent_id' => 'required|uuid|exists:clearing_agents,id',
+            'delivered_at' => 'nullable|date',
+            'delivery_notes' => 'nullable|string',
+            'receiver_signature' => 'nullable|file|image|max:5120',
+        ]);
+
+        $signaturePath = null;
+        if ($request->hasFile('receiver_signature')) {
+            $signaturePath = $request->file('receiver_signature')->store("shipment-delivery-signatures/{$id}", 'public');
+        }
+
+        $deliveredAt = $request->input('delivered_at', now());
+
+        $delivery = \App\Models\ShipmentDelivery::create([
+            'shipment_id' => $shipment->id,
+            'clearing_agent_id' => $request->input('clearing_agent_id'),
+            'delivered_at' => $deliveredAt,
+            'delivery_notes' => $request->input('delivery_notes'),
+            'receiver_signature' => $signaturePath,
+            'recorded_by' => auth()->id(),
+        ]);
+
+        // Use the model's own save() (not a relation-scoped update()) so
+        // ShipmentObserver's status:delivered notification still fires.
+        $shipment->status = 'delivered';
+        $shipment->delivered_at = $deliveredAt;
+        $shipment->save();
+
+        return $this->success([
+            'id' => $delivery->id,
+            'shipment_id' => $delivery->shipment_id,
+            'clearing_agent_id' => $delivery->clearing_agent_id,
+            'delivered_at' => $delivery->delivered_at,
+            'delivery_notes' => $delivery->delivery_notes,
+            'receiver_signature' => $delivery->receiver_signature ? asset('storage/'.$delivery->receiver_signature) : null,
+        ], 'Delivery recorded.', 201);
+    }
+
     public function items(Request $request, string $id): JsonResponse
     {
         abort_unless(auth()->user()->can('view_shipment'), 403);
@@ -342,6 +393,8 @@ class ShipmentController extends BaseApiController
             'shipped_at' => $s->shipped_at,
             'estimated_delivery_date' => $s->estimated_delivery_date,
             'delivered_at' => $s->delivered_at,
+            'description' => $s->description,
+            'public_view_token' => $s->public_view_token,
             'created_at' => $s->created_at,
             'client' => $s->client ? [
                 'id' => $s->client->id,

@@ -502,6 +502,23 @@ class Shipment extends Model
         return $this->belongsTo(ShipmentContainer::class, 'container_number', 'container_number');
     }
 
+    /**
+     * Full agent-delivery history for this shipment (separate from the fleet
+     * Trip/TripShipment delivery system — see ShipmentDelivery for why).
+     */
+    public function deliveries(): HasMany
+    {
+        return $this->hasMany(ShipmentDelivery::class);
+    }
+
+    /**
+     * The most recent agent-recorded delivery, if any.
+     */
+    public function latestDelivery(): HasOne
+    {
+        return $this->hasOne(ShipmentDelivery::class)->latestOfMany('delivered_at');
+    }
+
     // Custom method to update shipment_id for related items
     public function updateItemsShipmentId()
     {

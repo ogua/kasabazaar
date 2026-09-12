@@ -14,19 +14,20 @@
         .header {
             text-align: center;
             margin-bottom: 30px;
-            border-bottom: 2px solid #333;
+            border-bottom: 2px solid #A0043C;
             padding-bottom: 10px;
         }
 
         .header h1 {
             margin: 0;
             font-size: 20px;
-            color: #e63946;
+            color: #A0043C;
         }
 
         .header h2 {
             margin: 5px 0;
             font-size: 16px;
+            color: #003151;
         }
 
         table {
@@ -36,7 +37,7 @@
         }
 
         table th {
-            background-color: #333;
+            background-color: #003151;
             color: white;
             padding: 8px;
             text-align: left;

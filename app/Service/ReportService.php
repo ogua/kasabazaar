@@ -37,7 +37,7 @@ class ReportService
         $yearSuffix = substr((string) $year, -2);
 
         $query = Shipment::where('shipping_reference', 'like', "%-{$yearSuffix}-%")
-            ->with(['client', 'receivers.items', 'expenses', 'payments']);
+            ->with(['client', 'receivers.items', 'expenses', 'payments', 'containerStatus.clearingAgent', 'latestDelivery.clearingAgent', 'media']);
 
         if ($containerSequence !== null) {
             $query->where('container_number', $containerSequence);
@@ -54,7 +54,7 @@ class ReportService
         $yearSuffix = substr((string) $year, -2);
 
         return Shipment::where('shipping_reference', 'like', "%-{$yearSuffix}-%")
-            ->with(['client', 'expenses'])
+            ->with(['client', 'expenses', 'containerStatus.clearingAgent', 'latestDelivery.clearingAgent', 'media'])
             ->get();
     }
 
@@ -63,7 +63,7 @@ class ReportService
      */
     public function shipmentsByDateRange(?string $startDate = null, ?string $endDate = null)
     {
-        $query = Shipment::with(['client', 'receivers.items.product', 'expenses', 'payments']);
+        $query = Shipment::with(['client', 'receivers.items.product', 'expenses', 'payments', 'containerStatus.clearingAgent', 'latestDelivery.clearingAgent', 'media']);
 
         if ($startDate && $endDate) {
             $query->whereBetween('created_at', [$startDate, Carbon::parse($endDate)->endOfDay()]);
@@ -407,7 +407,7 @@ class ReportService
     public function clientShipmentHistory(int|string $clientId, ?string $startDate = null, ?string $endDate = null)
     {
         $query = Shipment::where('client_id', $clientId)
-            ->with(['client', 'receivers.items.product', 'expenses.category', 'payments']);
+            ->with(['client', 'receivers.items.product', 'expenses.category', 'payments', 'containerStatus.clearingAgent', 'latestDelivery.clearingAgent', 'media']);
 
         if ($startDate && $endDate) {
             $query->whereBetween('created_at', [$startDate, $endDate]);

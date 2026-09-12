@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\Cashbook\CashbookEntryController;
 use App\Http\Controllers\Api\V1\Cashbook\CashbookLedgerController;
 use App\Http\Controllers\Api\V1\Cashbook\CashbookLoanController;
 use App\Http\Controllers\Api\V1\Cashbook\CashbookWHTController;
+use App\Http\Controllers\Api\V1\ClearingAgentController;
 use App\Http\Controllers\Api\V1\ClientController;
 use App\Http\Controllers\Api\V1\ContactMessageController;
 use App\Http\Controllers\Api\V1\ContainerController;
@@ -92,6 +93,10 @@ Route::prefix('v1')->group(function () {
         Route::get('shipments/{id}/media', [ShipmentController::class, 'media']);
         Route::post('shipments/{id}/media', [ShipmentController::class, 'uploadMedia']);
         Route::get('shipments/{id}/items', [ShipmentController::class, 'items']);
+        Route::post('shipments/{id}/deliveries', [ShipmentController::class, 'recordDelivery']);
+
+        // Clearing agents (used by both office staff and drivers for delivery attribution)
+        Route::get('clearing-agents', [ClearingAgentController::class, 'index']);
 
         // Clients
         Route::apiResource('clients', ClientController::class);

@@ -50,13 +50,13 @@
                     <span class="text-red-600">KASAROSE</span> LOGISTICS
                 </h3>
                 <p class="text-sm text-gray-600 mt-1 font-bold">
-                    <span class="text-[#4169E1]">GH</span> - Adako Jachie, Ejisu - Kumasi, Ghana
+                    <span class="text-[#003151]">GH</span> - Adako Jachie, Ejisu - Kumasi, Ghana
                 </p>
                 <p class="text-sm text-gray-600 font-bold">
                     +233 509725073 / +233 50 9725081
                 </p>
                 <p class="text-sm text-gray-600 mt-2 font-bold">
-                    <span class="text-[#4169E1]">USA</span> - Westfield, Indiana - USA
+                    <span class="text-[#003151]">USA</span> - Westfield, Indiana - USA
                 </p>
                 <p class="text-sm text-gray-600 font-bold">
                     +1 (773) 970-0129 / +1 (574) 440-7460
@@ -89,16 +89,16 @@
     <!-- Receipt details -->
     <div class="flex justify-between items-start p-6">
         <div>
-            <p class="text-xl text-[#4169E1] font-extrabold uppercase">Receipt To</p>
+            <p class="text-xl text-[#003151] font-extrabold uppercase">Receipt To</p>
             <h4 class="text-lg font-semibold text-gray-800 uppercase">
                 {{ $shipping->client?->name }}
             </h4>
         </div>
         
         <div class="text-right">
-            <p class="text-xl text-[#4169E1] font-extrabold uppercase">Receipt No</p>
+            <p class="text-xl text-[#003151] font-extrabold uppercase">Receipt No</p>
             <h4 class="text-lg font-semibold">{{ $shipping->shipping_reference }}</h4>
-            <p class="text-xl text-[#4169E1] font-extrabold">Date</p>
+            <p class="text-xl text-[#003151] font-extrabold">Date</p>
             <p class="text-sm font-medium">
                 {{ date('j-M-y', strtotime($shipping->created_at)) }}
             </p>

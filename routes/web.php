@@ -79,6 +79,14 @@ Route::get('/payment-receipt/{payment}', [ShippingController::class, 'paymentRec
 Route::get('/print-quotation/{record}', [ShippingController::class, 'printquotation'])
     ->name('print-quotation');
 
+// Scannable QR label lookup — secured by the shipment's existing unguessable
+// public_view_token (same trust model as /my-shipment/{token} above), not
+// session auth, so a printed label works for both staff and any scanner.
+// Deliberately excludes receiver PII — see shipment-label-print.blade.php.
+Route::get('/shipment-label/{token}', [ShippingController::class, 'shipmentLabelLookup'])
+    ->middleware('throttle:60,1')
+    ->name('shipment-label-lookup');
+
 // Signed (not session-authenticated) so both the Filament portals and the mobile
 // app's in-app browser — which has no shared session cookie — can open the same
 // links. Every place that generates these URLs must use URL::signedRoute().

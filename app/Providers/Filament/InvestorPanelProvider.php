@@ -42,8 +42,8 @@ class InvestorPanelProvider extends PanelProvider
             ->brandLogoHeight('4rem')
             ->favicon(asset('images/favicon-32x32.png'))
             ->colors([
-                'primary' => Color::hex('#A0043C'),
-                'info' => Color::hex('#003151'),
+                'primary' => Color::hex(config('brand.primary')),
+                'info' => Color::hex(config('brand.info')),
             ])
             ->discoverResources(in: app_path('Filament/Investor/Resources'), for: 'App\\Filament\\Investor\\Resources')
             ->discoverPages(in: app_path('Filament/Investor/Pages'), for: 'App\\Filament\\Investor\\Pages')

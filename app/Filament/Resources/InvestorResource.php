@@ -133,6 +133,7 @@ class InvestorResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn ($query) => $query->withCount('users'))
             ->columns([
                 Tables\Columns\TextColumn::make('display_name')
                     ->label('Name')
@@ -152,6 +153,14 @@ class InvestorResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => $state === 'active' ? 'success' : 'gray'),
+
+                Tables\Columns\IconColumn::make('has_login')
+                    ->label('Login')
+                    ->boolean()
+                    ->getStateUsing(fn (Investor $record) => $record->users_count > 0)
+                    ->tooltip(fn (Investor $record) => $record->users_count > 0
+                        ? 'Has a portal login'
+                        : 'No portal login yet'),
 
                 Tables\Columns\TextColumn::make('default_annual_rate')
                     ->label('Rate')
@@ -174,6 +183,15 @@ class InvestorResource extends Resource
                         'active' => 'Active',
                         'inactive' => 'Inactive',
                     ]),
+                Tables\Filters\TernaryFilter::make('has_login')
+                    ->label('Portal Login')
+                    ->placeholder('All investors')
+                    ->trueLabel('Has login')
+                    ->falseLabel('No login')
+                    ->queries(
+                        true: fn ($query) => $query->has('users'),
+                        false: fn ($query) => $query->doesntHave('users'),
+                    ),
             ])
             ->actions([
                 Tables\Actions\Action::make('reveal')
@@ -260,6 +278,51 @@ class InvestorResource extends Resource
                         }
 
                         return redirect()->to(\App\Service\ImpersonationService::startUrl($target));
+                    }),
+
+                Tables\Actions\Action::make('reset_password')
+                    ->label('Reset Password')
+                    ->icon('heroicon-o-key')
+                    ->color('warning')
+                    ->visible(fn (Investor $record) => $record->users()->count() > 0)
+                    ->form(fn (Investor $record) => $record->users()->count() > 1 ? [
+                        Forms\Components\Select::make('user_id')
+                            ->label('Reset Password For')
+                            ->options($record->users()->pluck('name', 'id'))
+                            ->required(),
+                    ] : [])
+                    ->requiresConfirmation()
+                    ->modalHeading('Reset Investor Password')
+                    ->modalDescription(fn (Investor $record) => "A password reset link will be emailed to {$record->name}'s portal login.")
+                    ->action(function (Investor $record, array $data) {
+                        $target = isset($data['user_id'])
+                            ? $record->users()->find($data['user_id'])
+                            : $record->users()->first();
+
+                        if (! $target) {
+                            \Filament\Notifications\Notification::make()
+                                ->title('No portal login found for this investor')
+                                ->danger()
+                                ->send();
+
+                            return;
+                        }
+
+                        try {
+                            \Illuminate\Support\Facades\Password::broker()->sendResetLink(['email' => $target->email]);
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('Reset link sent to '.$target->email)
+                                ->success()
+                                ->send();
+                        } catch (\Throwable $e) {
+                            report($e);
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('Failed to send reset link')
+                                ->danger()
+                                ->send();
+                        }
                     }),
 
                 Tables\Actions\Action::make('downloadStatement')

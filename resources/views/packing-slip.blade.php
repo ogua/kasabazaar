@@ -3,11 +3,11 @@
         style="background-image: url('/images/kasarose-logo.png'); background-size: cover; background-position: center;">
         <div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-lg">
             <!-- Header -->
-            <div class="flex justify-between items-center border-b pb-4 mb-6">
+            <div class="flex justify-between items-center border-b-2 border-[#A0043C] pb-4 mb-6">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-700">KASAROSE LOGISTICS</h1>
+                    <h1 class="text-2xl font-bold text-[#A0043C]">KASAROSE LOGISTICS</h1>
                     <p class="text-sm text-gray-500">KASAROSE LOGISTICS</p>
-                    <p class="text-sm text-gray-500">Packing List</p>
+                    <p class="text-sm text-[#003151] font-semibold">Packing List</p>
                 </div>
                 <div>
                     <p class="text-sm text-gray-500">Date: <span class="font-medium">{{ $shipping->created_at }}</span>
@@ -19,7 +19,7 @@
 
             <!-- Shipping Information -->
             <div class="mb-6">
-                <h2 class="text-lg font-semibold text-gray-700 mt-4">Shipping Information</h2>
+                <h2 class="text-lg font-semibold text-[#A0043C] mt-4">Shipping Information</h2>
                 <div class="space-y-4 p-4 border rounded-lg bg-gray-50">
                     <p class="text-sm text-gray-500">Shipping From: <span
                             class="font-medium">{{ $shipping->origin_branch_id }}</span></p>
@@ -80,7 +80,7 @@
                     <!-- Loop through receivers -->
                     @foreach ($shipping->receivers as $receiver)
                         <div class="p-4 border rounded-lg bg-gray-50">
-                            <h2 class="text-lg font-semibold text-gray-700">Receiver {{ $loop->iteration }} </h2>
+                            <h2 class="text-lg font-semibold text-[#A0043C]">Receiver {{ $loop->iteration }} </h2>
                             <hr>
                             <p class="text-sm text-gray-500">Name: <span
                                     class="font-medium">{{ $receiver->receiver_name }}</span></p>
@@ -97,15 +97,15 @@
 
                         <!-- Items -->
                         <div>
-                            <h2 class="text-lg font-semibold text-gray-700">Shipment Items</h2>
+                            <h2 class="text-lg font-semibold text-[#A0043C]">Shipment Items</h2>
                             <table class="w-full mt-4 text-left border">
                                 <thead>
-                                    <tr class="bg-gray-100">
-                                        <th class="p-2 border text-sm font-medium text-gray-600">#</th>
-                                        <th class="p-2 border text-sm font-medium text-gray-600">Item</th>
-                                        <th class="p-2 border text-sm font-medium text-gray-600">Box No</th>
-                                        <th class="p-2 border text-sm font-medium text-gray-600">Quantity</th>
-                                        <th class="p-2 border text-sm font-medium text-gray-600">Value</th>
+                                    <tr class="bg-[#003151]">
+                                        <th class="p-2 border text-sm font-medium text-white">#</th>
+                                        <th class="p-2 border text-sm font-medium text-white">Item</th>
+                                        <th class="p-2 border text-sm font-medium text-white">Box No</th>
+                                        <th class="p-2 border text-sm font-medium text-white">Quantity</th>
+                                        <th class="p-2 border text-sm font-medium text-white">Value</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -132,7 +132,7 @@
                             <!-- Display Total Quantity -->
                             <div class="mt-4 text-right">
                                 <p class="text-sm font-bold text-gray-700">Total Quantity: <span
-                                        class="text-blue-500">{{ $totalQuantity }}</span></p>
+                                        class="text-[#A0043C]">{{ $totalQuantity }}</span></p>
                             </div>
                         </div>
 

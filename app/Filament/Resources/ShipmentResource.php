@@ -5,11 +5,13 @@ namespace App\Filament\Resources;
 use App\Enums\ShippingStatus;
 use App\Filament\Resources\ShipmentResource\Pages;
 use App\Models\City;
+use App\Models\ClearingAgent;
 use App\Models\Client;
 use App\Models\Country;
 use App\Models\CustomerFeedback;
 use App\Models\Product;
 use App\Models\Shipment;
+use App\Models\ShipmentDelivery;
 use App\Models\ShipmentMedia;
 use App\Models\ShipmentUpdate;
 use App\Models\State;
@@ -729,6 +731,14 @@ class ShipmentResource extends Resource
                     ->label('Status')
                     ->badge(),
 
+                Tables\Columns\IconColumn::make('latestDelivery.id')
+                    ->label('Delivered By Agent')
+                    ->boolean()
+                    ->tooltip(fn ($record) => $record->latestDelivery
+                        ? "Delivered by {$record->latestDelivery->clearingAgent?->name}"
+                        : 'No agent-recorded delivery yet')
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('tracking_number')
                     ->searchable()
                     ->copyable(),
@@ -817,6 +827,54 @@ class ShipmentResource extends Resource
             ])
             ->actions(
                 [
+                    Tables\Actions\Action::make('record_delivery')
+                        ->label('Record Delivery')
+                        ->icon('heroicon-o-truck')
+                        ->color('success')
+                        ->modalWidth('lg')
+                        ->modalHeading('Record Delivery')
+                        ->modalDescription('Record which agent delivered this shipment\'s items to the receiver.')
+                        ->form([
+                            Forms\Components\Select::make('clearing_agent_id')
+                                ->label('Delivered By (Agent)')
+                                ->options(fn () => ClearingAgent::query()->active()->pluck('name', 'id'))
+                                ->searchable()
+                                ->required(),
+                            Forms\Components\DateTimePicker::make('delivered_at')
+                                ->label('Delivered At')
+                                ->default(now())
+                                ->required(),
+                            Forms\Components\Textarea::make('delivery_notes')
+                                ->label('Delivery Notes')
+                                ->rows(3),
+                            Forms\Components\FileUpload::make('receiver_signature')
+                                ->label('Receiver Signature (optional)')
+                                ->image()
+                                ->directory('shipment-delivery-signatures'),
+                        ])
+                        ->action(function (Shipment $record, array $data): void {
+                            ShipmentDelivery::create([
+                                'shipment_id' => $record->id,
+                                'clearing_agent_id' => $data['clearing_agent_id'],
+                                'delivered_at' => $data['delivered_at'],
+                                'delivery_notes' => $data['delivery_notes'] ?? null,
+                                'receiver_signature' => $data['receiver_signature'] ?? null,
+                                'recorded_by' => auth()->id(),
+                            ]);
+
+                            // Use the model's own save() (not a relation-scoped update())
+                            // so ShipmentObserver's status:delivered notification still fires.
+                            $record->status = 'delivered';
+                            $record->delivered_at = $data['delivered_at'];
+                            $record->save();
+
+                            \Filament\Notifications\Notification::make()
+                                ->title('Delivery Recorded')
+                                ->success()
+                                ->send();
+                        })
+                        ->modalSubmitActionLabel('Save Delivery'),
+
                     ActionGroup::make([
                         Tables\Actions\EditAction::make(),
                         Tables\Actions\DeleteAction::make(),
@@ -1385,6 +1443,8 @@ class ShipmentResource extends Resource
             'index' => Pages\ListShipments::route('/'),
             'create' => Pages\CreateShipment::route('/create'),
             'edit' => Pages\EditShipment::route('/{record}/edit'),
+            'upload-evidence' => Pages\UploadShipmentEvidence::route('/{record}/upload-evidence'),
+            'print-label' => Pages\PrintShipmentLabel::route('/{record}/print-label'),
         ];
     }
 }

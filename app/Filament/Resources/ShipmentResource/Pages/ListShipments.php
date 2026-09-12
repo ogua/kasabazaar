@@ -5,6 +5,8 @@ namespace App\Filament\Resources\ShipmentResource\Pages;
 use App\Enums\ShippingStatus;
 use App\Filament\Resources\ShipmentResource;
 use App\Jobs\BulkContainerShipmentStatusJob;
+use App\Models\ClearingAgent;
+use App\Models\ContainerClearance;
 use App\Models\Shipment;
 use App\Models\ShipmentContainer;
 use App\Services\ShipmentNotifier;
@@ -62,13 +64,22 @@ class ListShipments extends ListRecords
                                 ->first();
                             $set('is_cleared', $container?->is_cleared ?? false);
                             $set('review', $container?->review ?? '');
+                            $set('clearing_agent_id', $container?->clearing_agent_id);
                         }),
 
                     Forms\Components\Toggle::make('is_cleared')
                         ->label('Container Cleared at Customs')
                         ->onColor('success')
                         ->offColor('danger')
+                        ->live()
                         ->helperText('Toggle ON when this container has been cleared at customs.'),
+
+                    Forms\Components\Select::make('clearing_agent_id')
+                        ->label('Clearing Agent')
+                        ->options(fn () => ClearingAgent::query()->active()->pluck('name', 'id'))
+                        ->searchable()
+                        ->required(fn (Forms\Get $get) => (bool) $get('is_cleared'))
+                        ->helperText('Which agent cleared (or is responsible for) this container.'),
 
                     Forms\Components\Textarea::make('review')
                         ->label('Review / Notes')
@@ -100,14 +111,31 @@ class ListShipments extends ListRecords
                         ->where('container_number', '=', $containerNumber)
                         ->value('is_cleared');
 
+                    $clearingAgentId = $data['clearing_agent_id'] ?? null;
+                    $clearedAt = $nowCleared ? now() : null;
+
                     ShipmentContainer::updateOrCreate(
                         ['container_number' => $containerNumber],
                         [
                             'container_year' => $year,
                             'is_cleared' => $nowCleared,
                             'review' => $data['review'] ?? null,
+                            'clearing_agent_id' => $clearingAgentId,
+                            'cleared_at' => $clearedAt,
                         ]
                     );
+
+                    if ($clearingAgentId) {
+                        ContainerClearance::create([
+                            'container_number' => $containerNumber,
+                            'container_year' => $year,
+                            'clearing_agent_id' => $clearingAgentId,
+                            'is_cleared' => $nowCleared,
+                            'review' => $data['review'] ?? null,
+                            'recorded_by' => auth()->id(),
+                            'cleared_at' => $clearedAt ?? now(),
+                        ]);
+                    }
 
                     $label = $nowCleared ? 'marked as Cleared' : 'marked as Not Cleared';
                     $containerRef = 'CON'.$containerNumber;

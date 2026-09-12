@@ -102,7 +102,22 @@ class ShippingController extends Controller
      */
     public function printquotation(Quotation $record)
     {
+        $record->load(['items.product', 'branch', 'client', 'enteredBy']);
+
         return view('quotation', ['quotation' => $record]);
+    }
+
+    /**
+     * Public, token-secured QR label lookup for a shipment — scanned off the
+     * physical box label. Same trust model as /my-shipment/{token}: an
+     * unguessable public_view_token, not session auth.
+     */
+    public function shipmentLabelLookup(string $token)
+    {
+        $shipping = Shipment::where('public_view_token', $token)->firstOrFail();
+        $shipping->load(['receivers.items.product', 'containerStatus']);
+
+        return view('shipment-label-print', compact('shipping'));
     }
 
     /**

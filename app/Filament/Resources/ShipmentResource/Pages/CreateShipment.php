@@ -936,6 +936,11 @@ class CreateShipment extends CreateRecord
                                 ->helperText('Any special instructions or notes from the client')
                                 ->rows(3)
                                 ->columnSpanFull(),
+                            Forms\Components\Textarea::make('description')
+                                ->label('Shipment Description')
+                                ->helperText('Internal/general description of this shipment — appears on the invoice')
+                                ->rows(3)
+                                ->columnSpanFull(),
                         ]),
 
                     Forms\Components\Section::make('Status')
@@ -1003,7 +1008,7 @@ class CreateShipment extends CreateRecord
 
     protected function getRedirectUrl(): string
     {
-        return $this->getResource()::getUrl('index');
+        return $this->getResource()::getUrl('upload-evidence', ['record' => $this->getRecord()]);
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array

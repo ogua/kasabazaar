@@ -5,11 +5,11 @@
     <title>Expense Report</title>
     <style>
         body { font-family: Arial, sans-serif; font-size: 12px; }
-        h1 { font-size: 24px; margin-bottom: 10px; }
-        h2 { font-size: 18px; margin-top: 20px; margin-bottom: 10px; }
+        h1 { font-size: 24px; margin-bottom: 10px; color: #A0043C; border-bottom: 3px solid #A0043C; padding-bottom: 8px; }
+        h2 { font-size: 18px; margin-top: 20px; margin-bottom: 10px; color: #003151; }
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; font-weight: bold; }
+        th { background-color: #003151; color: #fff; font-weight: bold; }
         .text-right { text-align: right; }
         .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
         .summary-card { border: 1px solid #ddd; padding: 10px; }

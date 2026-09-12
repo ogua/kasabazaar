@@ -14,14 +14,14 @@
         .header {
             text-align: center;
             margin-bottom: 30px;
-            border-bottom: 2px solid #333;
+            border-bottom: 2px solid #A0043C;
             padding-bottom: 10px;
         }
 
         .header h1 {
             margin: 0;
             font-size: 20px;
-            color: #e63946;
+            color: #A0043C;
         }
 
         .header h2 {
@@ -52,7 +52,7 @@
             margin: 10px 0;
             padding: 10px;
             background-color: #fff;
-            border-left: 3px solid #e63946;
+            border-left: 3px solid #A0043C;
         }
 
         .receiver-name {
@@ -75,7 +75,7 @@
         }
 
         table th {
-            background-color: #333;
+            background-color: #003151;
             color: white;
             padding: 8px;
             text-align: left;
@@ -153,6 +153,22 @@
                             (Rate: {{ number_format($shipment->exchange_rate_at_shipment, 4) }})
                         @endif
                     </div>
+                    @if ($shipment->containerStatus)
+                        <div>Container: {{ $shipment->containerStatus->container_ref }}
+                            &mdash; {{ $shipment->containerStatus->is_cleared ? 'Cleared' : 'Pending Clearance' }}
+                            @if ($shipment->containerStatus->clearingAgent)
+                                by {{ $shipment->containerStatus->clearingAgent->name }}
+                            @endif
+                        </div>
+                    @endif
+                    @if ($shipment->latestDelivery)
+                        <div>Delivered By: {{ $shipment->latestDelivery->clearingAgent?->name ?? 'Unknown Agent' }}
+                            @if ($shipment->latestDelivery->delivered_at)
+                                on {{ $shipment->latestDelivery->delivered_at->format('M d, Y') }}
+                            @endif
+                        </div>
+                    @endif
+                    <div>Evidence Photos/Videos: {{ $shipment->media?->count() ?? 0 }}</div>
                 </div>
 
                 @foreach ($shipment->receivers as $receiver)

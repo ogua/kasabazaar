@@ -28,7 +28,7 @@
         .header {
             display: table;
             width: 100%;
-            border-bottom: 3px solid #dc2626;
+            border-bottom: 3px solid #A0043C;
         }
 
         .header-left {
@@ -59,7 +59,7 @@
         }
 
         .company-name .rose {
-            color: #dc2626;
+            color: #A0043C;
         }
 
         .company-info {
@@ -69,12 +69,12 @@
         }
 
         .company-info .location-label {
-            color: #4169E1;
+            color: #003151;
             font-weight: bold;
         }
 
         .amount-box {
-            background: #dc2626;
+            background: #003151;
             color: white;
             padding: 10px;
             border-radius: 8px;
@@ -103,7 +103,7 @@
         .invoice-title {
             font-size: 20px;
             font-weight: bold;
-            color: #4169E1;
+            color: #003151;
             text-transform: uppercase;
             margin-bottom: 5px;
         }
@@ -124,8 +124,8 @@
         .section-title {
             font-size: 14px;
             font-weight: bold;
-            color: #4169E1;
-            border-bottom: 2px solid #dc2626;
+            color: #A0043C;
+            border-bottom: 2px solid #A0043C;
             padding-bottom: 5px;
             margin-bottom: 10px;
         }
@@ -158,7 +158,7 @@
         }
 
         .info-value {
-            color: #4169E1;
+            color: #003151;
         }
 
         table {
@@ -174,7 +174,7 @@
             text-align: left;
             font-size: 11px;
             font-weight: bold;
-            border-bottom: 2px solid #dc2626;
+            border-bottom: 2px solid #A0043C;
         }
 
         td {
@@ -194,7 +194,7 @@
         }
 
         .receiver-box {
-            background: #1e40af;
+            background: #003151;
             color: white;
             padding: 12px;
             border-radius: 6px;
@@ -213,7 +213,7 @@
         }
 
         .receiver-table th {
-            background: #4169E1;
+            background: #003151;
         }
 
         .totals-section {
@@ -274,7 +274,7 @@
         }
 
         .grand-total {
-            background: #dc2626;
+            background: #003151;
             color: white;
         }
 
@@ -319,7 +319,7 @@
         .footer {
             margin-top: 30px;
             padding: 10px;
-            background: #dc2626;
+            background: #A0043C;
             color: white;
             text-align: center;
             border-radius: 6px;
@@ -332,7 +332,7 @@
 
         .tracking-info {
             background: #f0f9ff;
-            border: 1px solid #4169E1;
+            border: 1px solid #003151;
             border-radius: 6px;
             padding: 10px;
             margin-bottom: 15px;
@@ -347,7 +347,7 @@
         .tracking-number {
             font-size: 16px;
             font-weight: bold;
-            color: #4169E1;
+            color: #003151;
         }
 
         .page-break {
@@ -648,6 +648,14 @@
             </div>
         @endif
 
+        <!-- Shipment Description -->
+        @if ($shipping->description)
+            <div class="client-note-box">
+                <div class="client-note-title">Shipment Description:</div>
+                <div class="client-note-content">{{ $shipping->description }}</div>
+            </div>
+        @endif
+
         <!-- Insurance Status -->
         <div style="margin-bottom: 15px;">
             @if ($shipping->insurance_accepted)
@@ -666,7 +674,7 @@
             <div class="totals-left" style="margin-right: 20px;">
                 <div class="payment-section">
                     <div class="payment-title"
-                        style="text-align: center;font-weight: bold;font-size: 16px;color: #4169E1;">Payment Methods:
+                        style="text-align: center;font-weight: bold;font-size: 16px;color: #003151;">Payment Methods:
                     </div>
                     <div class="payment-methods">
                         <div class="payment-method">
