@@ -44,7 +44,7 @@
         @endif
         <div class="signature-line">
             Founder &amp; CVO<br>
-            KasaBazaar Group Of Companies<br>
+            KASAROSE LOGISTICS<br>
             Date: {{ ($signatureDate ?? now())->format('F j, Y') }}
         </div>
     </div>

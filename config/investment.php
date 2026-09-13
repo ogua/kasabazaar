@@ -21,7 +21,7 @@ return [
     'stuck_pending_payment_hours' => 1,
 
     'legal' => [
-        'governing_law' => 'This Agreement shall be governed by and construed in accordance with the laws applicable to KasaBazaar Group Of Companies in its jurisdiction of registration.',
+        'governing_law' => 'This Agreement shall be governed by and construed in accordance with the laws applicable to KASAROSE LOGISTICS in its jurisdiction of registration.',
 
         // Loan-type agreements only. Fixed company-wide wording — not a per-investment
         // field — so every loan uses identical, consistent terms.

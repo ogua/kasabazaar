@@ -24,6 +24,46 @@ class ShippingController extends Controller
     }
 
     /**
+     * Display the printable Delivery Report (proof-of-delivery document) for
+     * a shipment — carried by the delivery agent and signed by the receiver.
+     */
+    public function deliveryReport(Shipment $id)
+    {
+        $shipping = $id;
+        $shipping->load([
+            'client',
+            'receivers.items.product',
+            'receivers.mcountry',
+            'receivers.mstate',
+            'receivers.mcity',
+            'containerStatus.clearingAgent',
+            'latestDelivery.clearingAgent',
+        ]);
+
+        return view('delivery-report', compact('shipping'));
+    }
+
+    /**
+     * Download the Delivery Report as a PDF (force download).
+     */
+    public function downloadDeliveryReport(Shipment $id)
+    {
+        $shipping = $id;
+        $shipping->load([
+            'client',
+            'receivers.items.product',
+            'receivers.mcountry',
+            'receivers.mstate',
+            'receivers.mcity',
+            'containerStatus.clearingAgent',
+            'latestDelivery.clearingAgent',
+        ]);
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('delivery-report', compact('shipping'))
+            ->download("delivery-report-{$shipping->shipping_reference}.pdf");
+    }
+
+    /**
      * Display shipping label view (for Brother QL-1110NWB printer)
      * Label size: 4" x 6" (102mm x 152mm)
      */

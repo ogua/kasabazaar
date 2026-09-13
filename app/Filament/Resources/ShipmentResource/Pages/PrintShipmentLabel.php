@@ -27,4 +27,9 @@ class PrintShipmentLabel extends Page
     {
         return route('shipment-label-lookup', $this->record->public_view_token);
     }
+
+    public function getBarcodeLabelUrl(): string
+    {
+        return route('shipping-label', $this->record->id);
+    }
 }

@@ -24,8 +24,8 @@
         ])
 
         <div class="section">
-            <p>This statement reflects the full history of investments held by {{ $investor->name }} with KasaBazaar
-                Group Of Companies, as of {{ $asOfDate->format('F j, Y') }}.</p>
+            <p>This statement reflects the full history of investments held by {{ $investor->name }} with KASAROSE
+                LOGISTICS, as of {{ $asOfDate->format('F j, Y') }}.</p>
         </div>
 
         @foreach ($investments as $investment)
@@ -241,7 +241,7 @@
                 @endif
                 <div class="signature-line">
                     Founder &amp; CVO<br>
-                    KasaBazaar Group Of Companies<br>
+                    KASAROSE LOGISTICS<br>
                     Date: {{ now()->format('F j, Y') }}
                 </div>
             </div>

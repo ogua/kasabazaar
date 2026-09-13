@@ -30,7 +30,7 @@
         ])
 
         <div class="section">
-            <p>This {{ $docTitle }} ("Agreement") is entered into between KasaBazaar Group Of Companies
+            <p>This {{ $docTitle }} ("Agreement") is entered into between KASAROSE LOGISTICS
                 ("Company") and {{ $investor->name }} ("{{ $partyLabel }}"), covering all
                 @if ($hasInvestments && $hasLoans)
                     investment and loan tranches held by the {{ $partyLabel }}

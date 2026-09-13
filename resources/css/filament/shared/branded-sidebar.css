@@ -1,0 +1,98 @@
+/* ── Branded sidebar + topbar ─────────────────────────────────────────────
+   Colors sampled directly from the KASAROSE logo (public/images/kasarose-logo.png):
+   blue #055F9C and red #EF4136. Sidebar nav uses the logo blue, the header row
+   and topbar use the logo red. The logo itself has black text on a transparent
+   background, so it sits on a white badge inside the red header to stay
+   legible. These override Filament's default light/dark theme unconditionally,
+   since this chrome is meant to stay branded regardless of the user's own
+   light/dark toggle. ─────────────────────────────────────────────────────── */
+
+/* Sidebar */
+.fi-sidebar {
+    background-color: #055F9C !important;
+}
+
+.fi-sidebar-header {
+    background-color: #EF4136 !important;
+    border-bottom: 3px solid #055F9C !important;
+    box-shadow: none !important;
+}
+
+.fi-sidebar-header .fi-logo {
+    /* No solid badge behind the logo — a soft white halo instead, so the
+       transparent artwork (including its own red accent piece) stays
+       distinct from the red header without a hard box edge. */
+    filter:
+        drop-shadow(0 0 1px #fff)
+        drop-shadow(0 0 2px #fff)
+        drop-shadow(0 0 5px rgb(255 255 255 / 0.85)) !important;
+}
+
+.fi-sidebar-header .fi-color-gray {
+    color: rgb(255 255 255 / 0.85) !important;
+}
+
+.fi-sidebar-header .fi-color-gray:hover,
+.fi-sidebar-header .fi-color-gray:focus-visible {
+    color: #ffffff !important;
+}
+
+.fi-sidebar-group-label {
+    color: rgb(255 255 255 / 0.65) !important;
+}
+
+.fi-sidebar-item-label {
+    color: rgb(255 255 255 / 0.85) !important;
+}
+
+.fi-sidebar-item-icon {
+    color: rgb(255 255 255 / 0.65) !important;
+}
+
+.fi-sidebar-item-grouped-border > div.w-px {
+    background-color: rgb(255 255 255 / 0.25) !important;
+}
+
+.fi-sidebar-item-button:hover,
+.fi-sidebar-item-button:focus-visible {
+    background-color: rgb(255 255 255 / 0.12) !important;
+}
+
+.fi-active > .fi-sidebar-item-button {
+    background-color: rgb(255 255 255 / 0.16) !important;
+    box-shadow: inset 3px 0 0 0 #EF4136 !important;
+}
+
+.fi-active .fi-sidebar-item-label,
+.fi-active .fi-sidebar-item-icon {
+    color: #ffffff !important;
+}
+
+/* Branch/tenant switcher trigger sits inside the blue nav area too */
+.fi-tenant-menu-trigger:hover,
+.fi-tenant-menu-trigger:focus-visible {
+    background-color: rgb(255 255 255 / 0.12) !important;
+}
+
+.fi-tenant-menu-trigger span.text-gray-950 {
+    color: #ffffff !important;
+}
+
+.fi-tenant-menu-trigger span.text-gray-500 {
+    color: rgb(255 255 255 / 0.65) !important;
+}
+
+/* Topbar */
+.fi-topbar nav {
+    background-color: #EF4136 !important;
+    box-shadow: none !important;
+}
+
+.fi-topbar .fi-color-gray {
+    color: rgb(255 255 255 / 0.85) !important;
+}
+
+.fi-topbar .fi-color-gray:hover,
+.fi-topbar .fi-color-gray:focus-visible {
+    color: #ffffff !important;
+}

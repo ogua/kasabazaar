@@ -849,6 +849,7 @@ class ShipmentResource extends Resource
                                 ->rows(3),
                             Forms\Components\FileUpload::make('receiver_signature')
                                 ->label('Receiver Signature (optional)')
+                                ->helperText('Upload a live signature, or a photo of the signed printed Delivery Report.')
                                 ->image()
                                 ->directory('shipment-delivery-signatures'),
                         ])
@@ -1005,6 +1006,16 @@ class ShipmentResource extends Resource
                             ->color('gray')
                             ->icon('heroicon-m-tag')
                             ->url(fn ($record) => route('shipping-label', $record->id), shouldOpenInNewTab: true),
+
+                        Tables\Actions\Action::make('Delivery Report')
+                            ->icon('heroicon-m-clipboard-document-check')
+                            ->color('warning')
+                            ->url(fn ($record) => route('delivery-report', $record->id), shouldOpenInNewTab: true),
+
+                        Tables\Actions\Action::make('Download Delivery Report')
+                            ->icon('heroicon-m-arrow-down-tray')
+                            ->color('warning')
+                            ->url(fn ($record) => route('delivery-report-download', $record->id), shouldOpenInNewTab: true),
 
                         Tables\Actions\Action::make('payments')
                             ->label('Payments')

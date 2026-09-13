@@ -70,8 +70,8 @@
         @endif
 
         <div class="section">
-            <p>This {{ $isLoan ? 'Loan' : 'Investment' }} Agreement ("Agreement") is entered into between KasaBazaar
-                Group Of Companies ("Company") and {{ $investor->name }} ("{{ $partyLabel }}").</p>
+            <p>This {{ $isLoan ? 'Loan' : 'Investment' }} Agreement ("Agreement") is entered into between KASAROSE
+                LOGISTICS ("Company") and {{ $investor->name }} ("{{ $partyLabel }}").</p>
         </div>
 
         <div class="section">

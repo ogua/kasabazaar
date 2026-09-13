@@ -58,7 +58,7 @@ class UploadShipmentEvidence extends Page implements HasForms
             ->statePath('data');
     }
 
-    public function upload(): void
+    public function uploadEvidence(): void
     {
         $data = $this->form->getState();
 

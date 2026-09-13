@@ -44,7 +44,7 @@
 </head>
 <body>
     <div class="header">
-        <div class="company-name">KasaBazaar Group Of Companies</div>
+        <div class="company-name">KASAROSE LOGISTICS</div>
     </div>
 
     <div class="content">

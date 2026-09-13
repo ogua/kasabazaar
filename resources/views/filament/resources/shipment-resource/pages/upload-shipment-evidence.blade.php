@@ -4,11 +4,11 @@
         has been saved. Upload evidence photos/videos of the items now, or skip — you can always add media later.
     </div>
 
-    <form wire:submit="upload">
+    <form wire:submit="uploadEvidence">
         {{ $this->form }}
 
         <div class="mt-6 flex items-center gap-3">
-            <x-filament::button type="submit" wire:loading.attr="disabled" wire:target="upload">
+            <x-filament::button type="submit" wire:loading.attr="disabled" wire:target="uploadEvidence">
                 Upload &amp; Continue
             </x-filament::button>
 
