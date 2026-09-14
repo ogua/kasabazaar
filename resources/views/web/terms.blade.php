@@ -74,7 +74,7 @@
                 <hr class="my-4">
 
                 <!-- 8 -->
-                <h4 class="mt-4">8. SMS / Text Message Terms</h4>
+                <h4 class="mt-4" id="sms-terms">8. SMS / Text Message Terms</h4>
                 <p>When you book a shipment, you may opt in to receive SMS (text message) notifications about that shipment. By providing your mobile number and opting in, you agree to the following:</p>
                 <ul>
                     <li><strong>Program description:</strong> KASAROSE LOGISTICS sends automated transactional messages about your shipment — booking confirmation, pickup, departure, customs and container clearance, out-for-delivery and delivery confirmation, payment receipts, and tracking-number updates.</li>

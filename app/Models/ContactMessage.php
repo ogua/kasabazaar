@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class ContactMessage extends Model
 {
@@ -14,6 +14,7 @@ class ContactMessage extends Model
 
     protected $casts = [
         'replied_at' => 'datetime',
+        'sms_opt_in' => 'boolean',
     ];
 
     public const STATUSES = [

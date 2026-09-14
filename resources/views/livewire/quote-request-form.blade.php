@@ -31,10 +31,29 @@
                 </div>
 
                 <div class="col-12">
-                    <input type="text" wire:model="phone"
+                    <input type="text" wire:model.live="phone"
                         class="form-control"
                         placeholder="Your Phone (Optional)">
                 </div>
+
+                @if($phone !== '')
+                    <div class="col-12">
+                        <div class="form-check">
+                            <input type="checkbox" wire:model="smsOptIn"
+                                class="form-check-input @error('smsOptIn') is-invalid @enderror"
+                                id="smsOptIn">
+                            <label class="form-check-label small" for="smsOptIn">
+                                I agree to receive SMS text messages from <strong>KASAROSE LOGISTICS</strong> about
+                                this quote and any resulting shipment (booking confirmation, pickup, customs and
+                                delivery updates). Message frequency varies. Msg &amp; data rates may apply. Reply
+                                <strong>STOP</strong> to opt out or <strong>HELP</strong> for help. See our
+                                <a href="{{ route('terms') }}#sms-terms" target="_blank">SMS Terms</a> and
+                                <a href="{{ route('privacy-policy') }}" target="_blank">Privacy Policy</a>.
+                            </label>
+                            @error('smsOptIn') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                        </div>
+                    </div>
+                @endif
 
                 <div class="col-12">
                     <textarea wire:model="message"
