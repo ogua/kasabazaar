@@ -4,6 +4,9 @@ namespace App\Notifications;
 
 use App\Models\Shipment;
 use App\Notifications\Channels\SmsChannel;
+use App\Notifications\Channels\WhatsappChannel;
+use App\Notifications\Messages\WhatsappTemplateMessage;
+use App\Services\Whatsapp\WhatsappSettings;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -14,7 +17,7 @@ use Illuminate\Notifications\Notification;
  * on dispatch/delivery, the receivers) should hear from us: creation, each
  * status change, an MSC tracking number becoming available, and every payment.
  *
- * It is delivered over email + SMS to on-demand routes built by
+ * It is delivered over email plus WhatsApp or SMS to on-demand routes built by
  * {@see \App\Services\ShipmentNotifier}. In-app / push notifications stay with
  * the dedicated notifications fired from the observers.
  */
@@ -41,11 +44,56 @@ class ShipmentAlert extends Notification implements ShouldQueue
             $channels[] = 'mail';
         }
 
-        if ($notifiable->routeNotificationFor('sms')) {
+        // ShipmentNotifier routes the phone as either 'whatsapp' or 'sms', never both.
+        if ($notifiable->routeNotificationFor('whatsapp')) {
+            $channels[] = WhatsappChannel::class;
+        } elseif ($notifiable->routeNotificationFor('sms')) {
             $channels[] = SmsChannel::class;
         }
 
         return $channels;
+    }
+
+    /**
+     * The WhatsApp event (template mapping key in WhatsappSettings) a shipment event goes out as.
+     */
+    public static function whatsappEventFor(string $event): string
+    {
+        return match (true) {
+            str_starts_with($event, 'status:') => 'status',
+            in_array($event, ['container_cleared', 'container_update'], true) => 'container_update',
+            default => $event,
+        };
+    }
+
+    public function toWhatsapp(object $notifiable): ?WhatsappTemplateMessage
+    {
+        $shipment = $this->shipment;
+        $name = $this->context['recipient_name'] ?? 'there';
+        $ref = $shipment->shipping_reference ?? $shipment->tracking_number ?? 'your shipment';
+        $event = self::whatsappEventFor($this->event);
+        $balance = (float) $shipment->outstanding_balance;
+
+        $params = match ($event) {
+            'created' => [$name, $ref],
+            'status' => [$name, $ref, $this->statusLabel(), $balance > 0 ? 'USD '.number_format($balance, 2) : 'None'],
+            'msc_updated' => [$name, $ref, $shipment->msc_tracking_number],
+            'container_update' => [$name, $ref, $this->headline().$this->noteSuffix()],
+            'payment_received' => [$name, $this->paymentAmount() ?? 'your payment', $ref],
+            default => null,
+        };
+
+        if ($params === null) {
+            return null;
+        }
+
+        return new WhatsappTemplateMessage(
+            sender: WhatsappSettings::SENDER_LOGISTICS,
+            event: $event,
+            params: $params,
+            buttonUrlSuffix: $shipment->public_view_token,
+            reference: $ref,
+        );
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -169,11 +217,30 @@ class ShipmentAlert extends Notification implements ShouldQueue
 
     private function paymentSentence(): string
     {
-        $payment = $this->context['payment'] ?? null;
-        $amount = $payment ? number_format((float) ($payment->amount_usd ?? $payment->amount), 2) : null;
+        $amount = $this->paymentAmount();
 
         return $amount
-            ? "We have received your payment of USD {$amount}. Thank you."
+            ? "We have received your payment of {$amount}. Thank you."
             : 'We have received a payment on your shipment. Thank you.';
+    }
+
+    private function paymentAmount(): ?string
+    {
+        $payment = $this->context['payment'] ?? null;
+
+        return $payment ? 'USD '.number_format((float) ($payment->amount_usd ?? $payment->amount), 2) : null;
+    }
+
+    private function statusLabel(): string
+    {
+        return match ($this->event) {
+            'status:pending' => 'received',
+            'status:pickup' => 'out for pickup',
+            'status:shipped' => 'in transit',
+            'status:cleared' => 'cleared customs',
+            'status:delivered' => 'delivered',
+            'status:cancelled' => 'cancelled',
+            default => str_replace('status:', '', $this->event),
+        };
     }
 }

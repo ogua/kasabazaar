@@ -3,7 +3,9 @@
 namespace App\Notifications\Ecommerce;
 
 use App\Models\EcommerceOrder;
-use App\Notifications\Channels\SmsChannel;
+use App\Notifications\Concerns\RoutesTextToWhatsapp;
+use App\Notifications\Messages\WhatsappTemplateMessage;
+use App\Services\Whatsapp\WhatsappSettings;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -11,13 +13,13 @@ use Illuminate\Notifications\Notification;
 
 class EcommerceOrderPaymentConfirmed extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, RoutesTextToWhatsapp;
 
     public function __construct(public readonly EcommerceOrder $order) {}
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail', SmsChannel::class];
+        return ['database', 'mail', $this->textChannel($notifiable)];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -49,5 +51,16 @@ class EcommerceOrderPaymentConfirmed extends Notification implements ShouldQueue
     private function trackingUrl(): string
     {
         return rtrim(config('app.frontend_url'), '/')."/track-order?order_number={$this->order->order_number}";
+    }
+
+    public function toWhatsapp(object $notifiable): ?WhatsappTemplateMessage
+    {
+        return new WhatsappTemplateMessage(
+            sender: WhatsappSettings::SENDER_MARKETPLACE,
+            event: 'order_payment',
+            params: [$notifiable->name ?? 'Customer', $this->order->order_number, 'GHS '.number_format((float) $this->order->total_ghs, 2)],
+            buttonUrlSuffix: $this->order->order_number,
+            reference: $this->order->order_number,
+        );
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ShipmentResource\Pages;
 
 use App\Enums\ShippingStatus;
+use App\Filament\Forms\WhatsappConsentToggle;
 use App\Filament\Resources\ClientResource;
 use App\Filament\Resources\ProductResource;
 use App\Filament\Resources\ShipmentResource;
@@ -369,6 +370,11 @@ class CreateShipment extends CreateRecord
                                 ->hidden()
                                 ->rows(2)
                                 ->columnSpanFull(),
+
+                            Forms\Components\Toggle::make('single_receiver_whatsapp_opt_in')
+                                ->label('Receiver agreed to WhatsApp updates')
+                                ->helperText('Tick only if the sender confirms this receiver agreed. Receivers can reply STOP at any time.')
+                                ->columnSpanFull(),
                         ])
                         ->visible(fn ($get) => $get('receiver_mode') === 'single'),
 
@@ -523,6 +529,11 @@ class CreateShipment extends CreateRecord
                                             Forms\Components\TextInput::make('receiver_id_number')
                                                 ->label('ID Number')
                                                 ->hidden(),
+
+                                            WhatsappConsentToggle::make(
+                                                'Agreed to WhatsApp updates',
+                                                'Tick only if the sender confirms this receiver agreed.'
+                                            ),
 
                                             Forms\Components\Select::make('country')
                                                 ->label('Country')
@@ -1052,6 +1063,7 @@ class CreateShipment extends CreateRecord
         unset($data['single_receiver_state']);
         unset($data['single_receiver_city']);
         unset($data['single_receiver_address']);
+        unset($data['single_receiver_whatsapp_opt_in']);
         unset($data['receiver_mode']);
 
         return $data;
@@ -1076,6 +1088,7 @@ class CreateShipment extends CreateRecord
                 'state_region' => $formData['single_receiver_state'] ?? null,
                 'city' => $formData['single_receiver_city'] ?? null,
                 'address' => $formData['single_receiver_address'] ?? null,
+                'whatsapp_opt_in_at' => ! empty($formData['single_receiver_whatsapp_opt_in']) ? now() : null,
             ]);
 
             $pickupItems = $shipment->pickupitems;

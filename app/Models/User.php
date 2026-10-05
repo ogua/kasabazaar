@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\UserStatus;
+use App\Models\Concerns\HasWhatsappConsent;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasTenants;
 use Filament\Panel;
@@ -22,7 +23,7 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements FilamentUser, HasTenants
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, HasUuids, Notifiable;
+    use HasApiTokens, HasFactory, HasUuids, HasWhatsappConsent, Notifiable;
 
     use HasRoles;
 

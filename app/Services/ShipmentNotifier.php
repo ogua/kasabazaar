@@ -4,13 +4,14 @@ namespace App\Services;
 
 use App\Models\Shipment;
 use App\Notifications\ShipmentAlert;
+use App\Services\Whatsapp\WhatsappSettings;
 use Illuminate\Support\Facades\Notification;
 
 /**
  * Single entry point for lifecycle alerts on a shipment. Every trigger
  * (creation, status change, MSC update, payment) calls
  * {@see ShipmentNotifier::sent()} — it decides who hears about it and fans the
- * {@see ShipmentAlert} out over email + SMS.
+ * {@see ShipmentAlert} out over email plus WhatsApp or SMS.
  *
  * Rule: the sender (the shipment's client) is alerted at every stage; the
  * receivers are only alerted on dispatch and delivery.
@@ -33,10 +34,21 @@ class ShipmentNotifier
 
             $recipients = self::recipients($shipment, $event);
 
+            $whatsappEvent = ShipmentAlert::whatsappEventFor($event);
+
             foreach ($recipients as $recipient) {
+                // Email always goes when there is an address; the phone gets WhatsApp
+                // (opted in, template mapped) or SMS — never both.
+                $textRoute = $recipient['phone'] && WhatsappSettings::shouldSend(
+                    $recipient['phone'],
+                    $recipient['whatsapp_consent'],
+                    WhatsappSettings::SENDER_LOGISTICS,
+                    $whatsappEvent
+                ) ? 'whatsapp' : 'sms';
+
                 $routes = array_filter([
                     'mail' => $recipient['email'],
-                    'sms' => $recipient['phone'],
+                    $textRoute => $recipient['phone'],
                 ]);
 
                 if ($routes === []) {
@@ -53,7 +65,7 @@ class ShipmentNotifier
     }
 
     /**
-     * @return array<int, array{name: string, email: ?string, phone: ?string}>
+     * @return array<int, array{name: string, email: ?string, phone: ?string, whatsapp_consent: bool}>
      */
     private static function recipients(Shipment $shipment, string $event): array
     {
@@ -65,6 +77,7 @@ class ShipmentNotifier
                 'name' => $client->name ?: 'there',
                 'email' => self::clean($client->email),
                 'phone' => self::clean($client->phone),
+                'whatsapp_consent' => $client->hasWhatsappConsent(),
             ];
         }
 
@@ -74,6 +87,7 @@ class ShipmentNotifier
                     'name' => $receiver->receiver_name ?: 'there',
                     'email' => self::clean($receiver->receiver_email),
                     'phone' => self::clean($receiver->receiver_phone),
+                    'whatsapp_consent' => $receiver->hasWhatsappConsent(),
                 ];
             }
         }
@@ -82,8 +96,8 @@ class ShipmentNotifier
     }
 
     /**
-     * @param  array<int, array{name: string, email: ?string, phone: ?string}>  $recipients
-     * @return array<int, array{name: string, email: ?string, phone: ?string}>
+     * @param  array<int, array{name: string, email: ?string, phone: ?string, whatsapp_consent: bool}>  $recipients
+     * @return array<int, array{name: string, email: ?string, phone: ?string, whatsapp_consent: bool}>
      */
     private static function dedupe(array $recipients): array
     {

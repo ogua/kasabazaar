@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Forms\WhatsappConsentToggle;
 use Filament\Forms;
 use App\Models\City;
 use Filament\Tables;
@@ -94,6 +95,11 @@ class ClientResource extends Resource
 
                     PhoneInput::make('phone')
                         ->label('Sender Phone number'),
+
+                    WhatsappConsentToggle::make(
+                        'Agreed to WhatsApp updates',
+                        'Only tick when the sender has agreed to receive shipment updates on WhatsApp. Otherwise they get SMS.'
+                    ),
 
                     Forms\Components\Select::make('country')
                         ->label('Sender country')

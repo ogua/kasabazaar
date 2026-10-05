@@ -153,6 +153,7 @@ class CustomerAuthController extends CustomerBaseController
             'state_region' => 'nullable|string|max:100',
             'city' => 'nullable|string|max:100',
             'address' => 'nullable|string',
+            'whatsapp_opt_in' => 'sometimes|boolean',
         ]);
 
         $user->update($request->only(['name', 'phone']));
@@ -161,6 +162,11 @@ class CustomerAuthController extends CustomerBaseController
             Client::where('id', $user->client_id)->update(
                 $request->only(['name', 'phone', 'country', 'state_region', 'city', 'address'])
             );
+        }
+
+        if ($request->has('whatsapp_opt_in')) {
+            $user->setWhatsappConsent($request->boolean('whatsapp_opt_in'));
+            $user->client?->setWhatsappConsent($request->boolean('whatsapp_opt_in'));
         }
 
         return $this->success($this->formatUser($user->fresh(['client', 'investor'])));
@@ -272,6 +278,7 @@ class CustomerAuthController extends CustomerBaseController
             'email' => $user->email,
             'phone' => $user->phone,
             'avatar' => $user->avatar,
+            'whatsapp_opt_in' => $user->hasWhatsappConsent(),
             'account_type' => $user->investor_id ? 'investor' : 'client',
             'client_id' => $user->client_id,
             'client' => $user->client ? [

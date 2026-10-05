@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Enums\ShippingStatus;
+use App\Filament\Forms\WhatsappConsentToggle;
 use App\Filament\Resources\ShipmentResource\Pages;
 use App\Models\City;
 use App\Models\ClearingAgent;
@@ -380,6 +381,11 @@ class ShipmentResource extends Resource
                                                     ])
                                                     ->native(false),
                                             ]),
+
+                                        WhatsappConsentToggle::make(
+                                            'Receiver agreed to WhatsApp updates',
+                                            'Tick only if the sender confirms this receiver agreed. Receivers can reply STOP at any time.'
+                                        )->columnSpanFull(),
 
                                         Forms\Components\Grid::make(4)
                                             ->schema([

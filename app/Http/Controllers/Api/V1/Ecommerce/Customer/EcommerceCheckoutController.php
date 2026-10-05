@@ -18,7 +18,13 @@ class EcommerceCheckoutController extends CustomerBaseController
         $data = $request->validate([
             'delivery_address_id' => 'required|uuid',
             'notes' => 'nullable|string|max:500',
+            'whatsapp_opt_in' => 'sometimes|boolean',
         ]);
+
+        // Recorded before the order exists, so the order-placed notification can already go out on WhatsApp.
+        if ($request->boolean('whatsapp_opt_in')) {
+            auth()->user()->setWhatsappConsent(true);
+        }
 
         try {
             $group = $this->orderService->createFromCart(

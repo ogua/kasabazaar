@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\Cashbook\CashbookLoanController;
 use App\Http\Controllers\Api\V1\Cashbook\CashbookWHTController;
 use App\Http\Controllers\Api\V1\ClearingAgentController;
 use App\Http\Controllers\Api\V1\ClientController;
+use App\Http\Controllers\Api\V1\WhatsappGatewayCallbackController;
 use App\Http\Controllers\Api\V1\ContactMessageController;
 use App\Http\Controllers\Api\V1\ContainerController;
 use App\Http\Controllers\Api\V1\Customer\CustomerAuthController;
@@ -72,6 +73,10 @@ Route::prefix('v1')->group(function () {
     Route::middleware('throttle:10,1')->post('auth/login', [AuthController::class, 'login']);
     Route::middleware('throttle:60,1')->get('shipments/track/{tracking_number}', [ShipmentController::class, 'publicTrack']);
     Route::get('exchange-rates/current', [ExchangeRateController::class, 'current']);
+
+    // Ogua WhatsApp gateway callbacks (signature-verified, no auth)
+    Route::post('webhooks/whatsapp-gateway', [WhatsappGatewayCallbackController::class, 'handle'])
+        ->name('webhooks.whatsapp-gateway');
 
     // ── Authenticated ────────────────────────────────────────────────────────
     Route::middleware(['auth:sanctum', 'active'])->group(function () {

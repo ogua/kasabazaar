@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasWhatsappConsent;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,9 +10,22 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Receiver extends Model
 {
-    use HasUuids;
+    use HasUuids, HasWhatsappConsent;
 
     protected $guarded = ['id'];
+
+    /**
+     * A receiver is a third party entered by the shipping client, so unless
+     * they opted in themselves, their WhatsApp consent is the client's attestation.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (self $receiver): void {
+            if ($receiver->whatsapp_opt_in_at && blank($receiver->whatsapp_opt_in_source)) {
+                $receiver->whatsapp_opt_in_source = 'client_attested';
+            }
+        });
+    }
 
     public function shipment(): BelongsTo
     {
