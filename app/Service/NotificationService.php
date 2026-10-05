@@ -133,12 +133,17 @@ class NotificationService
         }
 
         try {
-            Http::withHeaders(['api-key' => $key])
-                ->post('https://sms.arkesel.com/api/v2/sms/send', [
+            $response = Http::withHeaders(['api-key' => $key])
+                ->asForm()
+                ->post('https://sms.oguaschoolz.com/api/v2/sms/send', [
                     'sender' => $sender,
                     'message' => $message,
                     'recipients' => [self::normalizeGhana($phone)],
                 ]);
+
+            if ($response->failed()) {
+                logger()->error('Arkesel SMS failed: HTTP '.$response->status().' '.$response->body());
+            }
         } catch (\Throwable $e) {
             logger()->error('Arkesel SMS failed: '.$e->getMessage());
         }
