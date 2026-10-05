@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\EmploymentStatus;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,6 +10,22 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ShipmentMessage extends Model
 {
     use HasUuids;
+
+    /**
+     * Audiences a message can be sent to, keyed by the stored target_type.
+     *
+     * @var array<string, string>
+     */
+    public const TARGET_TYPES = [
+        'client' => 'Specific Client',
+        'shipment' => 'Specific Shipment',
+        'container' => 'All in Container',
+        'all' => 'All Clients',
+        'investor' => 'Specific Investor',
+        'all_investors' => 'All Active Investors',
+        'staff' => 'Specific Staff Member',
+        'all_staff' => 'All Active Staff (this branch)',
+    ];
 
     protected $guarded = ['id'];
 
@@ -41,8 +58,19 @@ class ShipmentMessage extends Model
         return $this->belongsTo(Shipment::class);
     }
 
+    public function investor(): BelongsTo
+    {
+        return $this->belongsTo(Investor::class);
+    }
+
+    public function staff(): BelongsTo
+    {
+        return $this->belongsTo(Staff::class);
+    }
+
     /**
-     * Get all recipients based on target type
+     * Get all recipients based on target type. Every recipient (Client,
+     * Investor or Staff) exposes name, email and phone.
      */
     public function getRecipients(): \Illuminate\Support\Collection
     {
@@ -55,6 +83,13 @@ class ShipmentMessage extends Model
                 ->pluck('client')
                 ->unique('id'),
             'all' => Client::all(),
+            'investor' => collect([$this->investor]),
+            'all_investors' => Investor::query()->where('status', 'active')->get(),
+            'staff' => collect([$this->staff]),
+            'all_staff' => Staff::query()
+                ->where('branch_id', $this->branch_id)
+                ->where('employment_status', EmploymentStatus::Active)
+                ->get(),
             default => collect(),
         };
     }
@@ -65,7 +100,7 @@ class ShipmentMessage extends Model
     public function getRecipientEmails(): array
     {
         return $this->getRecipients()
-            ->filter(fn($client) => $client && $client->email)
+            ->filter(fn ($client) => $client && $client->email)
             ->pluck('email')
             ->unique()
             ->values()
@@ -78,7 +113,7 @@ class ShipmentMessage extends Model
     public function getRecipientPhones(): array
     {
         return $this->getRecipients()
-            ->filter(fn($client) => $client && $client->phone)
+            ->filter(fn ($client) => $client && $client->phone)
             ->pluck('phone')
             ->unique()
             ->values()

@@ -2,14 +2,15 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms;
-use Filament\Tables;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
-use App\Models\ShipmentMessage;
-use Filament\Resources\Resource;
-use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\ShipmentMessageResource\Pages;
+use App\Models\ShipmentMessage;
+use Filament\Facades\Filament;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class ShipmentMessageResource extends Resource
 {
@@ -23,6 +24,8 @@ class ShipmentMessageResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    protected static bool $isScopedToTenant = false;
+
     public static function form(Form $form): Form
     {
         return $form->schema([
@@ -30,12 +33,7 @@ class ShipmentMessageResource extends Resource
                 ->schema([
                     Forms\Components\Select::make('target_type')
                         ->label('Send To')
-                        ->options([
-                            'client' => 'Specific Client',
-                            'shipment' => 'Specific Shipment',
-                            'container' => 'All in Container',
-                            'all' => 'All Clients',
-                        ])
+                        ->options(ShipmentMessage::TARGET_TYPES)
                         ->required()
                         ->live()
                         ->native(false),
@@ -45,6 +43,7 @@ class ShipmentMessageResource extends Resource
                         ->relationship('client', 'name')
                         ->searchable()
                         ->preload()
+                        ->required(fn ($get) => $get('target_type') === 'client')
                         ->visible(fn ($get) => $get('target_type') === 'client'),
 
                     Forms\Components\Select::make('shipment_id')
@@ -52,6 +51,7 @@ class ShipmentMessageResource extends Resource
                         ->relationship('shipment', 'shipping_reference')
                         ->searchable()
                         ->preload()
+                        ->required(fn ($get) => $get('target_type') === 'shipment')
                         ->visible(fn ($get) => $get('target_type') === 'shipment'),
 
                     Forms\Components\Select::make('container_number')
@@ -64,7 +64,25 @@ class ShipmentMessageResource extends Resource
                                 ->mapWithKeys(fn ($num) => [$num => "Container #$num"]);
                         })
                         ->searchable()
+                        ->required(fn ($get) => $get('target_type') === 'container')
                         ->visible(fn ($get) => $get('target_type') === 'container'),
+
+                    Forms\Components\Select::make('investor_id')
+                        ->label('Select Investor')
+                        ->relationship('investor', 'name')
+                        ->searchable()
+                        ->preload()
+                        ->required(fn ($get) => $get('target_type') === 'investor')
+                        ->visible(fn ($get) => $get('target_type') === 'investor'),
+
+                    Forms\Components\Select::make('staff_id')
+                        ->label('Select Staff Member')
+                        ->relationship('staff', 'name', fn (Builder $query) => $query
+                            ->when(Filament::getTenant(), fn (Builder $query, $branch) => $query->where('branch_id', $branch->id)))
+                        ->searchable()
+                        ->preload()
+                        ->required(fn ($get) => $get('target_type') === 'staff')
+                        ->visible(fn ($get) => $get('target_type') === 'staff'),
                 ])
                 ->columns(2),
 
@@ -118,11 +136,14 @@ class ShipmentMessageResource extends Resource
                 Tables\Columns\TextColumn::make('target_type')
                     ->label('Target')
                     ->badge()
+                    ->formatStateUsing(fn (string $state): string => ShipmentMessage::TARGET_TYPES[$state] ?? $state)
                     ->color(fn (string $state): string => match ($state) {
                         'client' => 'info',
                         'shipment' => 'success',
                         'container' => 'warning',
                         'all' => 'danger',
+                        'investor', 'all_investors' => 'primary',
+                        'staff', 'all_staff' => 'gray',
                         default => 'gray',
                     }),
 
@@ -138,6 +159,16 @@ class ShipmentMessageResource extends Resource
                 Tables\Columns\TextColumn::make('shipment.shipping_reference')
                     ->label('Shipment')
                     ->placeholder('-'),
+
+                Tables\Columns\TextColumn::make('investor.name')
+                    ->label('Investor')
+                    ->placeholder('-')
+                    ->toggleable(),
+
+                Tables\Columns\TextColumn::make('staff.name')
+                    ->label('Staff')
+                    ->placeholder('-')
+                    ->toggleable(),
 
                 Tables\Columns\TextColumn::make('container_number')
                     ->label('Container')
@@ -175,12 +206,7 @@ class ShipmentMessageResource extends Resource
             ->defaultSort('created_at', 'desc')
             ->filters([
                 Tables\Filters\SelectFilter::make('target_type')
-                    ->options([
-                        'client' => 'Client',
-                        'shipment' => 'Shipment',
-                        'container' => 'Container',
-                        'all' => 'All',
-                    ]),
+                    ->options(ShipmentMessage::TARGET_TYPES),
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
                         'pending' => 'Pending',

@@ -3,9 +3,11 @@
 namespace App\Service;
 
 use App\Models\Client;
+use App\Models\Investor;
 use App\Models\MessageTemplate;
 use App\Models\Shipment;
 use App\Models\ShipmentMessage;
+use App\Models\Staff;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -88,25 +90,25 @@ class ShipmentMessageService
                 return;
             }
 
-            foreach ($recipients as $client) {
-                if (! $client) {
+            foreach ($recipients as $recipient) {
+                if (! $recipient) {
                     continue;
                 }
 
                 // Prepare data for placeholder replacement
-                $data = self::prepareMessageData($client, $message);
+                $data = self::prepareMessageData($recipient, $message);
 
                 // Replace placeholders in subject and body
                 $subject = self::replacePlaceholders($message->subject, $data);
                 $body = self::replacePlaceholders($message->body, $data);
 
                 // Send based on channel
-                if (in_array($message->channel, ['email', 'both']) && $client->email) {
-                    self::sendEmail($client->email, $subject, $body);
+                if (in_array($message->channel, ['email', 'both']) && $recipient->email) {
+                    self::sendEmail($recipient->email, $subject, $body);
                 }
 
-                if (in_array($message->channel, ['sms', 'both']) && $client->phone) {
-                    self::sendSms($client->phone, strip_tags($body));
+                if (in_array($message->channel, ['sms', 'both']) && $recipient->phone) {
+                    self::sendSms($recipient->phone, strip_tags($body));
                 }
             }
 
@@ -124,14 +126,19 @@ class ShipmentMessageService
     }
 
     /**
-     * Prepare data for placeholder replacement
+     * Prepare data for placeholder replacement. The recipient may be a Client,
+     * Investor or Staff member; {{client_name}} stays as an alias of
+     * {{recipient_name}} so existing templates keep working.
+     *
+     * @return array<string, string>
      */
-    protected static function prepareMessageData(Client $client, ShipmentMessage $message): array
+    protected static function prepareMessageData(Client|Investor|Staff $recipient, ShipmentMessage $message): array
     {
         $shipment = $message->shipment;
 
         $data = [
-            'client_name' => $client->name ?? '',
+            'recipient_name' => $recipient->name ?? '',
+            'client_name' => $recipient->name ?? '',
             'company_name' => 'KASAROSE LOGISTICS',
         ];
 
