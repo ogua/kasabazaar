@@ -1,0 +1,12 @@
+/*
+ * Long action-group menus (e.g. the shipment row "⋮" menu) used to be taller
+ * than the space above AND below the row, so Floating UI's flip had nowhere
+ * to put them and the top items ended up off-screen / under the sticky topbar.
+ * Capping the height lets flip always find a side that fits; the rest scrolls.
+ */
+.fi-dropdown-panel:has(.fi-ac-grouped-action) {
+    max-height: min(40vh, 28rem);
+    max-height: min(40dvh, 28rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}

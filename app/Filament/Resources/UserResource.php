@@ -7,8 +7,10 @@ use App\Filament\Resources\UserResource\Pages;
 use App\Models\Branch;
 use App\Models\Investor;
 use App\Models\User;
+use App\Service\ImpersonationService;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -209,6 +211,32 @@ class UserResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('impersonate')
+                    ->label('Login As')
+                    ->icon('heroicon-o-arrow-right-on-rectangle')
+                    ->color('warning')
+                    ->requiresConfirmation()
+                    ->modalHeading(fn (User $record): string => "Login as {$record->name}")
+                    ->modalDescription('You will be logged in as this user until you stop impersonating.')
+                    ->visible(fn (User $record): bool => ImpersonationService::canImpersonate() && $record->id !== auth()->id())
+                    ->disabled(fn (User $record): bool => $record->status !== UserStatus::Active)
+                    ->tooltip(fn (User $record): ?string => $record->status !== UserStatus::Active ? 'Inactive users cannot be impersonated.' : null)
+                    ->action(function (User $record) {
+                        if (! ImpersonationService::canImpersonate()) {
+                            abort(403);
+                        }
+
+                        if ($record->status !== UserStatus::Active) {
+                            Notification::make()
+                                ->title('Cannot impersonate an inactive user')
+                                ->danger()
+                                ->send();
+
+                            return;
+                        }
+
+                        return redirect()->to(ImpersonationService::startUrl($record));
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

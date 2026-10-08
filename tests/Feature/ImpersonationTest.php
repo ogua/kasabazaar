@@ -4,12 +4,14 @@ namespace Tests\Feature;
 
 use App\Filament\Pages\ImpersonateUser;
 use App\Filament\Resources\InvestorResource\Pages\ListInvestors;
+use App\Filament\Resources\UserResource\Pages\ListUsers;
 use App\Models\Branch;
 use App\Models\Investor;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Livewire\Livewire;
+use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -23,6 +25,12 @@ class ImpersonationTest extends TestCase
         // guard (web, per config/auth.php) — distinct from the 'sanctum'-guarded
         // role PermissionSeeder creates for API authorization checks.
         $role = Role::firstOrCreate(['name' => 'super_admin', 'guard_name' => 'web']);
+
+        // Shield's super_admin has no gate bypass (define_via_gate=false), and the
+        // testing DB has no generated permissions, so grant what the list pages check.
+        foreach (['view_any_user', 'view_user', 'update_user', 'view_any_investor', 'view_investor', 'update_investor'] as $permission) {
+            $role->givePermissionTo(Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']));
+        }
 
         $user = User::factory()->create(['status' => 'active']);
         $user->assignRole($role);
@@ -246,5 +254,34 @@ class ImpersonationTest extends TestCase
             ->assertRedirect('/admin');
 
         $this->assertSame($admin->getAuthPassword(), session('password_hash_web'));
+    }
+
+    public function test_admin_can_impersonate_a_user_directly_from_users_row(): void
+    {
+        $admin = $this->superAdmin();
+        $target = User::factory()->create(['status' => 'active']);
+
+        $this->actingAsAdminWithTenant($admin);
+
+        $testable = Livewire::test(ListUsers::class)
+            ->callTableAction('impersonate', $target)
+            ->assertRedirectContains('/impersonate/start/'.$target->id);
+
+        $this->get($testable->effects['redirect'])->assertRedirect('/admin');
+
+        $this->assertSame($target->id, auth()->id());
+        $this->assertSame($admin->id, session('impersonate.original_id'));
+    }
+
+    public function test_users_row_impersonate_action_is_hidden_on_own_row_and_disabled_for_inactive_users(): void
+    {
+        $admin = $this->superAdmin();
+        $inactive = User::factory()->create(['status' => 'inactive']);
+
+        $this->actingAsAdminWithTenant($admin);
+
+        Livewire::test(ListUsers::class)
+            ->assertTableActionHidden('impersonate', $admin)
+            ->assertTableActionDisabled('impersonate', $inactive);
     }
 }

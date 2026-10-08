@@ -1,5 +1,6 @@
 @import '/vendor/filament/filament/resources/css/theme.css';
 @import '../shared/branded-sidebar.css';
+@import '../shared/action-dropdowns.css';
 
 @config 'tailwind.config.js';
 
