@@ -37,6 +37,10 @@ Route::name('storefront.')->group(function () {
     Route::get('/vendor/{vendor}', Storefront\VendorStorePage::class)->name('vendor');
     Route::get('/become-a-vendor', Storefront\BecomeAVendor::class)->name('become-vendor');
 
+    Route::get('/auctions', Storefront\AuctionListing::class)->name('auctions');
+    Route::get('/auctions/{slug}', Storefront\AuctionDetail::class)->name('auction');
+    Route::get('/auctions/{slug}/pay', Storefront\AuctionPayment::class)->name('auction.pay')->middleware('auth');
+
     Route::get('/cart', Storefront\CartPage::class)->name('cart');
     Route::get('/checkout', Storefront\Checkout::class)->name('checkout')->middleware('auth');
     Route::get('/checkout/callback', Storefront\CheckoutCallback::class)->name('checkout.callback')->middleware('auth');
@@ -59,6 +63,7 @@ Route::name('storefront.')->group(function () {
         Route::get('/', Storefront\Account\Dashboard::class)->name('dashboard');
         Route::get('/orders', Storefront\Account\Orders::class)->name('orders');
         Route::get('/orders/{order}', Storefront\Account\OrderDetail::class)->name('orders.show');
+        Route::get('/auctions', Storefront\Account\Auctions::class)->name('auctions');
         Route::get('/addresses', Storefront\Account\Addresses::class)->name('addresses');
         Route::get('/profile', Storefront\Account\Profile::class)->name('profile');
     });

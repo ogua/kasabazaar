@@ -48,7 +48,7 @@
                     ],
                     [
                         'q' => 'Who actually delivers my order?',
-                        'a' => 'The vendor, one of our courier partners, or one of the group\'s own companies — RDD Shipping for road freight and inbound international parcels, Neoride Africa for last-mile drops in Kumasi and Ejisu. Whoever carries it, you raise any problem with us.',
+                        'a' => 'The vendor, one of our courier partners, or one of the group\'s own companies — KASAROSE LOGISTICS for road freight and inbound international parcels, Neoride Africa for last-mile drops in Kumasi and Ejisu. Whoever carries it, you raise any problem with us.',
                         'link' => ['label' => 'About our group', 'route' => 'storefront.group'],
                     ],
                     [
@@ -74,6 +74,26 @@
                     [
                         'q' => 'What if the vendor refuses my return?',
                         'a' => 'Escalate it to us from the same order screen. We review the listing, photos, messages and delivery record and decide within five business days — and because we hold the payment, we can refund you without the vendor agreeing.',
+                    ],
+                ],
+                'Auctions' => [
+                    [
+                        'q' => 'How do auctions work?',
+                        'a' => 'Each lot has a starting price and a closing time. Sign in, enter a bid of at least the minimum shown, and confirm it. The highest bid when the clock runs out wins — unless the lot has a reserve that was not met.',
+                        'link' => ['label' => 'See live auctions', 'route' => 'storefront.auctions'],
+                    ],
+                    [
+                        'q' => 'Can I cancel a bid?',
+                        'a' => 'No. A bid is a commitment to buy at that price if you win, so check the amount before you confirm it.',
+                    ],
+                    [
+                        'q' => 'Why did the closing time change?',
+                        'a' => 'A bid in the final minutes extends the auction by a few minutes, so everyone gets a fair chance to respond instead of being out-bid in the last second.',
+                    ],
+                    [
+                        'q' => 'I won — how do I pay?',
+                        'a' => 'We email you and add a Pay now button to the auction page and to My Auctions in your account. Pay through the normal checkout within '.config('group.auctions.payment_window_hours').' hours; delivery charges are added there.',
+                        'link' => ['label' => 'Auction terms', 'route' => 'storefront.terms'],
                     ],
                 ],
                 'Selling on '.config('app.name') => [

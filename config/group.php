@@ -10,7 +10,7 @@
 | links out to. The roster is mirrored in the sister repositories; see the
 | "Group of Companies" section of CLAUDE.md before editing anything here:
 |
-|   kasabazaar         config/group.php           (RDD Shipping)
+|   kasabazaar         config/group.php           (KASAROSE LOGISTICS)
 |   neoride            parts/group_companies.php  (Neoride Africa)
 |
 | Any change to a company name, tagline, URL or legal-entity description must
@@ -73,11 +73,11 @@ return [
 
     'companies' => [
         [
-            'key' => 'rdd-shipping',
-            'name' => 'RDD Shipping',
+            'key' => 'kasarose-logistics',
+            'name' => 'KASAROSE LOGISTICS',
             'role' => 'Freight logistics and package forwarding',
             'tagline' => 'Your Trusted Partner for Global Shipments.',
-            'description' => "Rose Door-to-Door Shipping & Delivery Service is the group's logistics arm — air freight, ocean freight, ecommerce package forwarding and shipment tracking between the United States and Ghana. RDD Shipping carries KASAROSE deliveries that travel beyond a vendor's own delivery area.",
+            'description' => "KASAROSE LOGISTICS (Rose Door-to-Door Shipping & Delivery Service) is the group's logistics arm — air freight, ocean freight, ecommerce package forwarding and shipment tracking between the United States and Ghana. It carries KASAROSE deliveries that travel beyond a vendor's own delivery area.",
             'url' => env('RDD_SITE_URL') ?: 'https://rddshipping.com',
             'url_label' => 'rddshipping.com',
         ],
@@ -157,7 +157,7 @@ return [
         [
             'service' => 'Nationwide delivery (other regions)',
             'estimate' => '3–7 business days',
-            'notes' => 'Routed through the group\'s logistics network, including RDD Shipping road freight where required.',
+            'notes' => 'Routed through the group\'s logistics network, including KASAROSE LOGISTICS road freight where required.',
         ],
         [
             'service' => 'Bulky or oversized items',
@@ -167,7 +167,7 @@ return [
         [
             'service' => 'Items shipped from abroad',
             'estimate' => '10–21 business days',
-            'notes' => 'Handled by RDD Shipping. Measured from the day the item reaches our US warehouse, not from the day you ordered it.',
+            'notes' => 'Handled by KASAROSE LOGISTICS. Measured from the day the item reaches our US warehouse, not from the day you ordered it.',
         ],
     ],
 
@@ -180,6 +180,21 @@ return [
     'returns' => [
         'window_days' => 7,
         'refund_days' => 14,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Auctions
+    |--------------------------------------------------------------------------
+    |
+    | Published in the Terms of Use and on the auction pages. The backend
+    | enforces the real window (ECOMMERCE_AUCTION_PAYMENT_WINDOW_HOURS in the
+    | kasabazaar app) — keep the two in step.
+    |
+    */
+
+    'auctions' => [
+        'payment_window_hours' => (int) (env('AUCTION_PAYMENT_WINDOW_HOURS') ?: 48),
     ],
 
 ];

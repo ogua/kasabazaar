@@ -10,6 +10,7 @@
             'Who we are and what we do',
             'Your account',
             'Buying on the marketplace',
+            'Auctions',
             'Prices, payment and currency',
             'Delivery',
             'Returns, cancellations and refunds',
@@ -102,8 +103,27 @@
             </p>
         </section>
 
+        <section id="auctions">
+            <h2>5. Auctions</h2>
+            <p>
+                Some items are sold by timed auction instead of at a fixed price. These rules apply to auctions on top
+                of the rest of these terms.
+            </p>
+            <ul>
+                <li><strong>Who can bid.</strong> You must be signed in to a {{ config('app.name') }} account. Vendors may not bid on their own lots, or ask anyone to bid on their behalf.</li>
+                <li><strong>Bids are binding.</strong> A bid is an offer to buy the item at that price if you win. Once placed, a bid cannot be withdrawn.</li>
+                <li><strong>Minimum bids.</strong> The first bid must be at least the starting price; each later bid must beat the current bid by at least the increment shown on the auction page.</li>
+                <li><strong>Reserve prices.</strong> A lot may have a hidden reserve. The auction page shows whether it has been met. If the highest bid is below the reserve when the auction ends, the lot does not sell.</li>
+                <li><strong>Closing time.</strong> Where the auction page says so, a bid placed in the final minutes extends the closing time, so every bidder has a fair chance to respond.</li>
+                <li><strong>Winning.</strong> The highest valid bid when the auction closes wins, subject to any reserve. We tell the winner by email and on their account.</li>
+                <li><strong>Paying.</strong> The winner must pay through checkout within {{ config('group.auctions.payment_window_hours') }} hours of the auction closing. Delivery charges and any tax are added at checkout. If payment is not made in time, we may cancel the sale, offer the item to another bidder or relist it, and restrict the account from future auctions.</li>
+                <li><strong>After the sale.</strong> Auction purchases are delivered under our <a href="{{ route('storefront.delivery-policy') }}">Delivery Policy</a> and covered by our <a href="{{ route('storefront.returns') }}">Returns &amp; Refunds Policy</a> in the same way as any other order.</li>
+                <li><strong>Our rights.</strong> We may withdraw an auction before it ends — for example because of a listing error or suspected fraud — and may cancel bids we reasonably believe are not genuine.</li>
+            </ul>
+        </section>
+
         <section id="prices-payment-and-currency">
-            <h2>5. Prices, payment and currency</h2>
+            <h2>6. Prices, payment and currency</h2>
             <p>
                 Prices are shown in Ghana Cedis (GHS) and include any applicable VAT unless the listing says
                 otherwise. Delivery charges are shown separately at checkout before you pay.
@@ -120,7 +140,7 @@
         </section>
 
         <section id="delivery">
-            <h2>6. Delivery</h2>
+            <h2>7. Delivery</h2>
             <p>
                 Delivery windows, charges and coverage are set out in full in our
                 <a href="{{ route('storefront.delivery-policy') }}">Delivery Policy</a>. In summary: most orders in
@@ -129,7 +149,7 @@
             </p>
             <p>
                 Deliveries are carried by the vendor, by a partner courier, or by one of the group's own logistics
-                companies — <strong>RDD Shipping</strong> for road freight and inbound international parcels, and
+                companies — <strong>KASAROSE LOGISTICS</strong> for road freight and inbound international parcels, and
                 <strong>Neoride Africa</strong> for last-mile drops in Kumasi and Ejisu.
             </p>
             <p>
@@ -138,7 +158,7 @@
         </section>
 
         <section id="returns-cancellations-and-refunds">
-            <h2>7. Returns, cancellations and refunds</h2>
+            <h2>8. Returns, cancellations and refunds</h2>
             <p>
                 You may cancel an order at no cost any time before it is dispatched, from your
                 <a href="{{ route('storefront.account.orders') }}">order history</a>. After delivery, you have
@@ -153,7 +173,7 @@
         </section>
 
         <section id="selling-on-the-marketplace">
-            <h2>8. Selling on the marketplace</h2>
+            <h2>9. Selling on the marketplace</h2>
             <p>If your vendor application is approved, these additional terms apply to you:</p>
             <ul>
                 <li>You must be a legally registered business or a sole trader able to trade lawfully in Ghana, and you must give us accurate registration and settlement details.</li>
@@ -170,7 +190,7 @@
         </section>
 
         <section id="prohibited-items-and-conduct">
-            <h2>9. Prohibited items and conduct</h2>
+            <h2>10. Prohibited items and conduct</h2>
             <p>You may not list, buy or use the marketplace for:</p>
             <ul>
                 <li>counterfeit, stolen or illegally imported goods;</li>
@@ -187,7 +207,7 @@
         </section>
 
         <section id="intellectual-property">
-            <h2>10. Intellectual property</h2>
+            <h2>11. Intellectual property</h2>
             <p>
                 The {{ config('app.name') }} name, logo, site design, code and copy belong to
                 {{ config('group.company.legal_name') }} or its licensors. The KASAROSE mark and the marks of the other
@@ -198,7 +218,7 @@
         </section>
 
         <section id="content-you-submit">
-            <h2>11. Content you submit</h2>
+            <h2>12. Content you submit</h2>
             <p>
                 Reviews, questions, photos and messages you post must be your own, honest, and free of unlawful or
                 abusive material. By posting, you grant us a non-exclusive, royalty-free licence to display and
@@ -208,7 +228,7 @@
         </section>
 
         <section id="suspension-and-termination">
-            <h2>12. Suspension and termination</h2>
+            <h2>13. Suspension and termination</h2>
             <p>
                 You may close your account at any time. We may suspend or close an account, cancel orders or delist
                 products where we reasonably believe these terms have been breached, where required by law, or where
@@ -222,7 +242,7 @@
         </section>
 
         <section id="liability">
-            <h2>13. Liability</h2>
+            <h2>14. Liability</h2>
             <p>
                 We provide the marketplace with reasonable skill and care, but we do not warrant that it will be
                 uninterrupted or error-free, and we are not the manufacturer or, for vendor listings, the seller of
@@ -237,7 +257,7 @@
         </section>
 
         <section id="other-group-companies">
-            <h2>14. Other group companies</h2>
+            <h2>15. Other group companies</h2>
             <p>
                 {{ config('app.name') }} is the parent company of the {{ config('group.parent.name') }}. Its sister
                 companies are:
@@ -252,7 +272,7 @@
             </ul>
             <p>
                 Each is a separate business with its own terms, its own contracts and its own liabilities. These terms
-                govern {{ config('app.name') }} only. Where an order is carried by RDD Shipping or delivered by
+                govern {{ config('app.name') }} only. Where an order is carried by KASAROSE LOGISTICS or delivered by
                 Neoride Africa on our behalf, we remain your point of contact for that order and you do not need to
                 deal with them directly — but if you buy a service from one of those companies in its own right, that
                 company's terms apply to it, not these.
@@ -260,7 +280,7 @@
         </section>
 
         <section id="governing-law-and-disputes">
-            <h2>15. Governing law and disputes</h2>
+            <h2>16. Governing law and disputes</h2>
             <p>
                 These terms are governed by {{ config('group.legal.governing_law') }} and are subject to the exclusive
                 jurisdiction of {{ config('group.legal.jurisdiction') }}.
@@ -273,7 +293,7 @@
         </section>
 
         <section id="changes-to-these-terms">
-            <h2>16. Changes to these terms</h2>
+            <h2>17. Changes to these terms</h2>
             <p>
                 We may update these terms as the marketplace changes. The effective date at the top of this page shows
                 the current version. Material changes are announced by email or an on-site notice before they take

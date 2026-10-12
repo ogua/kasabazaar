@@ -15,6 +15,7 @@ class SitemapController extends Controller
             $sitemap = Sitemap::create()
                 ->add(Url::create(route('storefront.home'))->setPriority(1.0))
                 ->add(Url::create(route('storefront.shop'))->setPriority(0.9))
+                ->add(Url::create(route('storefront.auctions'))->setPriority(0.8))
                 ->add(Url::create(route('storefront.vendors'))->setPriority(0.7))
                 ->add(Url::create(route('storefront.become-vendor'))->setPriority(0.5))
                 ->add(Url::create(route('storefront.about'))->setPriority(0.4))

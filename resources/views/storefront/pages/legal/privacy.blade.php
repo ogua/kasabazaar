@@ -149,7 +149,7 @@
                 so, and only the minimum needed:
             </p>
             <ul>
-                <li><strong>RDD Shipping</strong> receives recipient name, delivery address, phone number and parcel details for orders it carries — including nationwide road freight and any item shipped in from abroad. It also processes tracking events so you can follow a shipment.</li>
+                <li><strong>KASAROSE LOGISTICS</strong> receives recipient name, delivery address, phone number and parcel details for orders it carries — including nationwide road freight and any item shipped in from abroad. It also processes tracking events so you can follow a shipment.</li>
                 <li><strong>Neoride Africa</strong> receives recipient name, delivery address and phone number for last-mile deliveries its riders complete in Kumasi and Ejisu.</li>
             </ul>
             <p>

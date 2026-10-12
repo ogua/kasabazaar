@@ -26,15 +26,23 @@
                 </a>
             </nav>
 
-            {{-- Hero: real admin-managed banners when available, brand panel otherwise --}}
-            @if ($banners->isNotEmpty())
+            {{-- Hero slider: banners managed in the kasabazaar admin (E-Commerce → Storefront Banners).
+                 Artwork is text-free; eyebrow, headline, supporting line and button are live text,
+                 set over the calm left side of each image. Brand panel when there are none. --}}
+            @if (count($banners))
+                @php
+                    $bannerHref = fn (?string $link) => blank($link) ? null : (\Illuminate\Support\Str::startsWith($link, ['http://', 'https://']) ? $link : url($link));
+                @endphp
                 <div
-                    class="relative group h-52 sm:h-72 lg:h-full rounded-lg overflow-hidden bg-navy-900"
+                    class="relative group h-64 sm:h-80 lg:h-full rounded-lg overflow-hidden bg-navy-950"
+                    role="region"
+                    aria-roledescription="carousel"
+                    aria-label="Featured"
                     x-data="{
                         active: 0,
-                        count: {{ $banners->count() }},
+                        count: {{ count($banners) }},
                         timer: null,
-                        start() { if (this.count > 1) { this.timer = setInterval(() => this.next(), 5000) } },
+                        start() { if (this.count > 1) { this.timer = setInterval(() => this.next(), 6000) } },
                         stop() { clearInterval(this.timer) },
                         next() { this.active = (this.active + 1) % this.count },
                         prev() { this.active = (this.active - 1 + this.count) % this.count },
@@ -42,45 +50,70 @@
                     x-init="start()"
                     @mouseenter="stop()"
                     @mouseleave="start()"
+                    @focusin="stop()"
                 >
                     @foreach ($banners as $index => $banner)
-                        <a
-                            href="{{ $banner->link_url ?? '#' }}"
+                        @php $href = $bannerHref($banner['link_url'] ?? null); @endphp
+                        <div
                             x-show="active === {{ $index }}"
+                            @if ($index > 0) x-cloak @endif
                             x-transition:enter="transition ease-out duration-500"
                             x-transition:enter-start="opacity-0"
                             x-transition:enter-end="opacity-100"
                             class="absolute inset-0"
+                            role="group"
+                            aria-roledescription="slide"
+                            aria-label="{{ $index + 1 }} of {{ count($banners) }}"
                         >
-                            <img src="{{ $banner->imageUrl() }}" alt="{{ $banner->title }}" class="w-full h-full object-cover" @if ($index > 0) loading="lazy" @endif>
-                            @if ($banner->title)
-                                <div class="absolute inset-0 bg-linear-to-t from-navy-950/70 via-navy-950/10 to-transparent"></div>
-                                <div class="absolute inset-x-0 bottom-0 p-5 sm:p-8">
-                                    <h1 class="font-display font-bold text-xl sm:text-3xl text-white max-w-lg text-balance">{{ $banner->title }}</h1>
+                            <img
+                                src="{{ $banner['image_url'] }}"
+                                alt=""
+                                class="w-full h-full object-cover object-right"
+                                @if ($index > 0) loading="lazy" @endif
+                            >
+                            <div class="absolute inset-0 bg-linear-to-r from-navy-950/85 via-navy-950/40 to-transparent sm:via-navy-950/20"></div>
+                            <div class="absolute inset-0 flex items-center">
+                                <div class="px-6 sm:px-10 w-full sm:w-3/5 lg:w-1/2">
+                                    @if (! empty($banner['eyebrow']))
+                                        <p class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-white/90 mb-3">
+                                            <span class="w-6 h-0.5 bg-accent"></span>
+                                            {{ $banner['eyebrow'] }}
+                                        </p>
+                                    @endif
+                                    <h2 class="font-display font-bold text-2xl sm:text-3xl 2xl:text-4xl leading-tight text-white text-balance">{{ $banner['title'] }}</h2>
+                                    @if (! empty($banner['subtitle']))
+                                        <p class="hidden sm:block mt-3 text-white/80 text-sm leading-relaxed">{{ $banner['subtitle'] }}</p>
+                                    @endif
+                                    @if ($href)
+                                        <a href="{{ $href }}" class="mt-5 inline-flex items-center gap-2 rounded-sm bg-accent px-5 py-2.5 text-sm font-semibold text-white hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+                                            {{ $banner['cta_label'] ?: 'Learn more' }}
+                                            <x-storefront.icon name="arrow-right" class="w-4 h-4" />
+                                        </a>
+                                    @endif
                                 </div>
-                            @endif
-                        </a>
+                            </div>
+                        </div>
                     @endforeach
 
-                    @if ($banners->count() > 1)
+                    @if (count($banners) > 1)
                         <button
                             @click="prev()"
-                            class="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-9 h-9 rounded-full bg-white/90 text-navy-900 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity hover:bg-white"
+                            class="absolute left-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center justify-center w-9 h-9 rounded-full bg-white/90 text-navy-900 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity hover:bg-white"
                             aria-label="Previous slide"
                         >
                             <x-storefront.icon name="chevron-left" class="w-5 h-5" />
                         </button>
                         <button
                             @click="next()"
-                            class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-9 h-9 rounded-full bg-white/90 text-navy-900 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity hover:bg-white"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:flex items-center justify-center w-9 h-9 rounded-full bg-white/90 text-navy-900 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity hover:bg-white"
                             aria-label="Next slide"
                         >
                             <x-storefront.icon name="chevron-right" class="w-5 h-5" />
                         </button>
 
-                        <div class="absolute bottom-3 right-4 flex gap-1.5">
+                        <div class="absolute bottom-4 left-6 sm:left-10 flex gap-1.5">
                             @foreach ($banners as $index => $banner)
-                                <button @click="active = {{ $index }}" class="w-5 h-1.5 rounded-full transition-colors" x-bind:class="active === {{ $index }} ? 'bg-accent' : 'bg-white/50'" aria-label="Show slide {{ $index + 1 }}"></button>
+                                <button @click="active = {{ $index }}" class="h-1.5 rounded-full transition-all" x-bind:class="active === {{ $index }} ? 'w-8 bg-accent' : 'w-4 bg-white/50 hover:bg-white/80'" aria-label="Show slide {{ $index + 1 }}"></button>
                             @endforeach
                         </div>
                     @endif
@@ -186,6 +219,16 @@
 
         @if ($error)
             <x-storefront.ui.alert variant="error">{{ $error }}</x-storefront.ui.alert>
+        @endif
+
+        @if (count($liveAuctions))
+            <x-storefront.home-section title="Live Auctions" icon="gavel" tone="deal" :href="route('storefront.auctions')">
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    @foreach ($liveAuctions as $auction)
+                        <x-storefront.auction-card :auction="$auction" />
+                    @endforeach
+                </div>
+            </x-storefront.home-section>
         @endif
 
         @if (count($categories))

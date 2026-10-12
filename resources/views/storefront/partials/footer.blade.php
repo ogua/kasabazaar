@@ -1,6 +1,6 @@
 {{-- Storefront footer: service strip, brand block, link columns, group strip, payments + copyright.
      The group companies row and the legal links are driven by config/group.php
-     — the roster is mirrored in the RDD Shipping and Neoride repositories, so
+     — the roster is mirrored in the KASAROSE LOGISTICS and Neoride repositories, so
      change it there too (see CLAUDE.md). --}}
 <footer class="mt-auto">
     {{-- Service strip --}}
@@ -52,6 +52,7 @@
                 @foreach ([
                     'Shop' => [
                         ['label' => 'All Products', 'route' => 'storefront.shop'],
+                        ['label' => 'Auctions', 'route' => 'storefront.auctions'],
                         ['label' => 'Vendors', 'route' => 'storefront.vendors'],
                         ['label' => 'My Wishlist', 'route' => 'storefront.wishlist'],
                         ['label' => 'View Cart', 'route' => 'storefront.cart'],

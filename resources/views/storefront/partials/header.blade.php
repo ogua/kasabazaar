@@ -5,6 +5,7 @@
     $mobileLinks = [
         ['label' => 'Home', 'route' => 'storefront.home', 'icon' => 'grid'],
         ['label' => 'Shop all products', 'route' => 'storefront.shop', 'icon' => 'tag'],
+        ['label' => 'Auctions', 'route' => 'storefront.auctions', 'icon' => 'gavel'],
         ['label' => 'Vendors', 'route' => 'storefront.vendors', 'icon' => 'store'],
         ['label' => 'Track Order', 'route' => 'storefront.track-order', 'icon' => 'truck'],
         ['label' => 'Wishlist', 'route' => 'storefront.wishlist', 'icon' => 'heart'],
@@ -114,6 +115,7 @@
                         @foreach ([
                             ['label' => 'My Account', 'route' => 'storefront.account.dashboard', 'icon' => 'user'],
                             ['label' => 'Orders', 'route' => 'storefront.account.orders', 'icon' => 'box'],
+                            ['label' => 'My Auctions', 'route' => 'storefront.account.auctions', 'icon' => 'gavel'],
                             ['label' => 'Wishlist', 'route' => 'storefront.wishlist', 'icon' => 'heart'],
                             ['label' => 'Track Order', 'route' => 'storefront.track-order', 'icon' => 'truck'],
                         ] as $item)
@@ -172,8 +174,9 @@
                     <li class="shrink-0">
                         <a href="{{ route('storefront.shop') }}" class="font-semibold {{ request()->routeIs('storefront.shop') ? 'text-white' : 'text-white/80 hover:text-white' }}">Shop All</a>
                     </li>
-                    @foreach (array_slice($headerCategories, 0, 7) as $category)
-                        <li class="shrink-0">
+                    {{-- 4 categories fit beside Auctions/Vendors/Sell at lg, 5 at xl; the rest live in All Categories. --}}
+                    @foreach (array_slice($headerCategories, 0, 5) as $category)
+                        <li @class(['shrink-0', 'hidden xl:block' => $loop->index >= 4])>
                             <a href="{{ route('storefront.category', $category['id']) }}" class="text-white/80 hover:text-white whitespace-nowrap">{{ $category['name'] }}</a>
                         </li>
                     @endforeach
@@ -181,6 +184,10 @@
             </nav>
 
             <div class="flex items-center gap-5 text-sm shrink-0">
+                <a href="{{ route('storefront.auctions') }}" class="flex items-center gap-1.5 font-semibold {{ request()->routeIs('storefront.auction*') ? 'text-white' : 'text-white/90 hover:text-white' }}">
+                    <x-storefront.icon name="gavel" class="w-4 h-4 text-accent" />
+                    Auctions
+                </a>
                 <a href="{{ route('storefront.vendors') }}" class="flex items-center gap-1.5 {{ request()->routeIs('storefront.vendors') ? 'text-white' : 'text-white/80 hover:text-white' }}">
                     <x-storefront.icon name="store" class="w-4 h-4" />
                     Vendors

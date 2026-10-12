@@ -36,10 +36,10 @@ repository and reference KASAROSE in their navigation, footers and legal pages:
 | Company | What it is | Repo | Stack |
 |---|---|---|---|
 | **KASAROSE** (parent) | Ecommerce marketplace | this repo | Laravel 12 + Livewire + Filament 4 |
-| RDD Shipping | Freight logistics & package forwarding | `C:\xampp\htdocs\Projects\kasabazaar` | Laravel 11 + Filament 3 |
+| KASAROSE LOGISTICS | Freight logistics & package forwarding | `C:\xampp\htdocs\Projects\kasabazaar` | Laravel 11 + Filament 3 |
 | Neoride Africa | Tricycle mobility, last-mile transport | `C:\xampp\htdocs\Projects\neoride` | Plain PHP template |
 
-(The RDD Shipping repo's directory is still named `kasabazaar`; that is a folder name, not a company.)
+(The KASAROSE LOGISTICS repo's directory is still named `kasabazaar`; that is a folder name, not a company.)
 
 **Every company roster lives in exactly one file per repo. Never hardcode a sister company's name or URL in a
 template — read it from the roster.**
@@ -47,11 +47,11 @@ template — read it from the roster.**
 | Repo | Roster file |
 |---|---|
 | kmarket (here) | [config/group.php](config/group.php) |
-| kasabazaar (RDD Shipping) | `config/group.php` |
+| kasabazaar (KASAROSE LOGISTICS) | `config/group.php` |
 | neoride | `parts/group_companies.php` |
 
 > **Pending sweep (October 2026).** The parent rename and KasaBazaar's removal were applied to this repo only. The
-> RDD Shipping and Neoride repos — and the old group site `kasabazar-website` — may still name the *KasaBazaar Group
+> KASAROSE LOGISTICS and Neoride repos — and the old group site `kasabazar-website` — may still name the *KasaBazaar Group
 > of Companies* and link to kasabazaar.com. Bring them in line before relying on the cross-links being consistent.
 
 ### The rule
@@ -66,7 +66,7 @@ Changes that always require the cross-repo sweep:
 - Changing any company's production domain.
 - Any edit to a privacy policy, terms of use, delivery policy, returns policy or cookie policy — each of these
   names the other companies and describes what data or work passes between them. If KASAROSE's privacy policy now
-  says RDD Shipping receives delivery addresses, RDD Shipping's privacy policy must say it receives them.
+  says KASAROSE LOGISTICS receives delivery addresses, KASAROSE LOGISTICS's privacy policy must say it receives them.
 - Changing the operational relationship between companies (who carries what, who is the point of contact).
 - Changing shared contact details (support email, published phone numbers, registered address).
 
@@ -86,6 +86,24 @@ panel work, anything under `app/Services/Kasabazaar/`.
 - `resources/views/storefront/pages/legal/*.blade.php` — the policies loop over `config('group.companies')`.
 - [resources/views/storefront/layouts/app.blade.php](resources/views/storefront/layouts/app.blade.php) — the
   `schema.org` `OnlineStore` JSON-LD, whose `parentOrganization` and `sameAs` come from the same config.
+
+## Auctions and storefront banners
+
+Both are **owned by the kasabazaar backend** — this repo stores neither.
+
+- **Auctions** (`/auctions`, `/auctions/{slug}`, `/auctions/{slug}/pay`, `/account/auctions`) read and write through
+  [AuctionsApi](app/Services/Kasabazaar/AuctionsApi.php). Lots, bids, the closing job, anti-sniping and the winner's
+  order all live in kasabazaar (`App\Services\AuctionService`, staff manage lots under E-Commerce → Auctions). The
+  storefront never sees a reserve price — only `has_reserve` / `reserve_met`. The winner pays through the same
+  `payments/initiate` → [CheckoutCallback](app/Livewire/Storefront/CheckoutCallback.php) hand-off as a cart order.
+  `config('group.auctions.payment_window_hours')` is published in the Terms and must match the backend's
+  `ECOMMERCE_AUCTION_PAYMENT_WINDOW_HOURS`.
+- **Banners** come from `GET marketplace/banners?position=…` via [BannersApi](app/Services/Kasabazaar/BannersApi.php)
+  and are edited under E-Commerce → Storefront Banners in kasabazaar. Artwork is text-free; eyebrow, headline,
+  subtitle and button are rendered as live text over the left half of the slide, so upload images that keep that
+  side calm (1440 × 800). The launch set and its seeder live in kasabazaar's `database/seeders/assets/banners/`.
+- The shared `countdown` Alpine component (auction cards and the bid panel) is registered in
+  [resources/js/app.js](resources/js/app.js).
 
 ## Legal pages
 

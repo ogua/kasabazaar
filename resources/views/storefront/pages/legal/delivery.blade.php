@@ -35,8 +35,8 @@
             </p>
             <p>
                 We do not currently deliver outside Ghana. If you need an item forwarded abroad, the group's freight
-                company <strong>RDD Shipping</strong>
-                (<a href="{{ collect(config('group.companies'))->firstWhere('key', 'rdd-shipping')['url'] }}" target="_blank" rel="noopener">rddshipping.com</a>)
+                company <strong>KASAROSE LOGISTICS</strong>
+                (<a href="{{ collect(config('group.companies'))->firstWhere('key', 'kasarose-logistics')['url'] }}" target="_blank" rel="noopener">rddshipping.com</a>)
                 handles international door-to-door shipping as a separate service.
             </p>
         </section>
@@ -96,7 +96,7 @@
             <ul>
                 <li><strong>The vendor's own delivery team</strong>, for local drops within their city.</li>
                 <li><strong>Our own riders and courier partners</strong>, for same-city delivery in Accra and Kumasi.</li>
-                <li><strong>RDD Shipping</strong> — the group's freight arm — for nationwide road freight and for anything arriving from our US warehouse.</li>
+                <li><strong>KASAROSE LOGISTICS</strong> — the group's freight arm — for nationwide road freight and for anything arriving from our US warehouse.</li>
                 <li><strong>Neoride Africa</strong> — the group's mobility company — for last-mile delivery in Kumasi and Ejisu.</li>
             </ul>
             <p>
@@ -121,7 +121,7 @@
             <p>
                 Statuses run: <strong>Pending</strong> → <strong>Confirmed</strong> → <strong>Processing</strong> →
                 <strong>Dispatched</strong> → <strong>Out for delivery</strong> → <strong>Delivered</strong>. We email
-                you at dispatch and again on delivery. Where a shipment is carried by RDD Shipping, its tracking
+                you at dispatch and again on delivery. Where a shipment is carried by KASAROSE LOGISTICS, its tracking
                 events are pulled through and shown on the same page.
             </p>
         </section>

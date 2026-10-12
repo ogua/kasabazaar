@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
 
-    <title>@hasSection('title')@yield('title') — {{ config('app.name') }}@else{{ config('app.name') }} — {{ config('group.company.tagline') }}@endif</title>
+    {{-- Blade pages set @section('title'); Livewire pages pass $title via ->title(). --}}
+    <title>@hasSection('title')@yield('title') — {{ config('app.name') }}@elseif (! empty($title)){{ $title }} — {{ config('app.name') }}@else{{ config('app.name') }} — {{ config('group.company.tagline') }}@endif</title>
     <meta name="description" content="@yield('meta_description', config('group.company.meta_description'))">
     <link rel="canonical" href="{{ url()->current() }}">
 

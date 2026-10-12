@@ -2,6 +2,7 @@
     $links = [
         ['label' => 'Dashboard', 'route' => 'storefront.account.dashboard', 'active' => 'storefront.account.dashboard', 'icon' => 'grid'],
         ['label' => 'Orders', 'route' => 'storefront.account.orders', 'active' => 'storefront.account.orders*', 'icon' => 'box'],
+        ['label' => 'My Auctions', 'route' => 'storefront.account.auctions', 'active' => 'storefront.account.auctions', 'icon' => 'gavel'],
         ['label' => 'Addresses', 'route' => 'storefront.account.addresses', 'active' => 'storefront.account.addresses', 'icon' => 'map-pin'],
         ['label' => 'Account Details', 'route' => 'storefront.account.profile', 'active' => 'storefront.account.profile', 'icon' => 'user'],
         ['label' => 'Wishlist', 'route' => 'storefront.wishlist', 'active' => 'storefront.wishlist', 'icon' => 'heart'],

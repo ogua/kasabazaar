@@ -44,7 +44,8 @@ class Login extends Component
         Auth::login($user, remember: true);
         session()->regenerate();
 
-        $this->redirect(route('storefront.account.dashboard'), navigate: false);
+        // Back to where they were (e.g. "sign in to bid"), else the dashboard.
+        $this->redirectIntended(route('storefront.account.dashboard'), navigate: false);
     }
 
     public function render()

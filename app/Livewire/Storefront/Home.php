@@ -3,7 +3,8 @@
 namespace App\Livewire\Storefront;
 
 use App\Livewire\Storefront\Concerns\HasCartActions;
-use App\Models\Banner;
+use App\Services\Kasabazaar\AuctionsApi;
+use App\Services\Kasabazaar\BannersApi;
 use App\Services\Kasabazaar\KasabazaarApiException;
 use App\Services\Kasabazaar\ProductsApi;
 use Illuminate\Support\Facades\Cache;
@@ -24,11 +25,13 @@ class Home extends Component
 
     public array $dealToday = [];
 
-    public $banners;
+    public array $banners = [];
+
+    public array $liveAuctions = [];
 
     public ?string $error = null;
 
-    public function mount(ProductsApi $productsApi): void
+    public function mount(ProductsApi $productsApi, BannersApi $bannersApi, AuctionsApi $auctionsApi): void
     {
         try {
             $home = Cache::remember('storefront.home', 60, fn () => $productsApi->home());
@@ -43,7 +46,19 @@ class Home extends Component
             $this->error = 'We\'re having trouble loading products right now. Please refresh or check back shortly.';
         }
 
-        $this->banners = Banner::active()->homepageHero()->orderBy('sort_order')->get();
+        // Banners and the auction strip are decoration: if either call fails the
+        // page still renders (brand hero / no strip) rather than erroring.
+        try {
+            $this->banners = Cache::remember('storefront.home.banners', 60, fn () => $bannersApi->forPosition('homepage_hero'));
+        } catch (KasabazaarApiException $e) {
+            Log::warning('storefront.home: failed to load banners', ['message' => $e->getMessage()]);
+        }
+
+        try {
+            $this->liveAuctions = Cache::remember('storefront.home.auctions', 30, fn () => $auctionsApi->list(['state' => 'current', 'per_page' => 5])->data);
+        } catch (KasabazaarApiException $e) {
+            Log::warning('storefront.home: failed to load auctions', ['message' => $e->getMessage()]);
+        }
     }
 
     public function render()

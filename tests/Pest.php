@@ -15,8 +15,8 @@ use Tests\TestCase;
 */
 
 // Feature tests migrate the in-memory sqlite database (see phpunit.xml) — the
-// storefront home page reads local `banners`, so without this the suite fails
-// on a missing table rather than on anything real.
+// storefront's local tables are users, sessions, cache and jobs; everything
+// commercial (products, auctions, banners) comes from the kasabazaar API.
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature');

@@ -1,7 +1,7 @@
 @extends('storefront.layouts.app')
 
 @section('title', 'Our Group')
-@section('meta_description', config('app.name') . ' is the parent company and ecommerce marketplace of the ' . config('group.parent.name') . ', alongside RDD Shipping and Neoride Africa.')
+@section('meta_description', config('app.name') . ' is the parent company and ecommerce marketplace of the ' . config('group.parent.name') . ', alongside KASAROSE LOGISTICS and Neoride Africa.')
 
 @section('content')
     <div class="bg-navy-900 text-white">

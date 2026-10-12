@@ -1,7 +1,7 @@
 # KASAROSE storefront (`kmarket`)
 
 KASAROSE is Ghana's multi-vendor ecommerce marketplace and the parent company of the **KASAROSE Group of
-Companies** (sister companies: RDD Shipping and Neoride Africa).
+Companies** (sister companies: KASAROSE LOGISTICS and Neoride Africa).
 
 This repository is the customer-facing storefront and the vendor self-service portal:
 
