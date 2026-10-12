@@ -1,7 +1,7 @@
 @extends('storefront.layouts.app')
 
 @section('title', 'Privacy Policy')
-@section('meta_description', 'How ' . config('app.name') . ' collects, uses, shares and protects your personal data, including the data shared with vendors and with the other KasaBazaar Group of Companies businesses.')
+@section('meta_description', 'How ' . config('app.name') . ' collects, uses, shares and protects your personal data, including the data shared with vendors and with the other ' . config('group.parent.name') . ' businesses.')
 
 @section('content')
     @php
@@ -27,12 +27,12 @@
             <h2>1. Who we are</h2>
             <p>
                 @if ($entity = config('group.company.legal_entity'))
-                    {{ config('app.name') }} is the online marketplace operated by <strong>{{ $entity }}</strong>, a
-                    company of the
+                    {{ config('app.name') }} is the online marketplace operated by <strong>{{ $entity }}</strong>, the
+                    parent company of the
                 @else
-                    {{ config('app.name') }} is the online marketplace of the
+                    {{ config('app.name') }} is the online marketplace and parent company of the
                 @endif
-                <a href="{{ config('group.parent.url') }}" target="_blank" rel="noopener">{{ config('group.parent.name') }}</a>.
+                <a href="{{ route('storefront.group') }}">{{ config('group.parent.name') }}</a>.
                 For the purposes of data protection law we are the <strong>data controller</strong> of the personal
                 data described in this policy.
             </p>
@@ -133,7 +133,8 @@
         <section id="sharing-within-our-group">
             <h2>5. Sharing within our group</h2>
             <p>
-                {{ config('app.name') }} is one of the {{ config('group.parent.name') }}'s businesses. The others are:
+                {{ config('app.name') }} is the parent company of the {{ config('group.parent.name') }}. Its sister
+                companies are:
             </p>
             <ul>
                 @foreach (config('group.companies') as $company)
@@ -150,7 +151,6 @@
             <ul>
                 <li><strong>RDD Shipping</strong> receives recipient name, delivery address, phone number and parcel details for orders it carries — including nationwide road freight and any item shipped in from abroad. It also processes tracking events so you can follow a shipment.</li>
                 <li><strong>Neoride Africa</strong> receives recipient name, delivery address and phone number for last-mile deliveries its riders complete in Kumasi and Ejisu.</li>
-                <li><strong>KasaBazaar</strong> provides shared corporate functions — finance, accounting, fraud review and group-level customer support — and its staff may access order and payment records for those purposes.</li>
             </ul>
             <p>
                 Each group company is responsible for its own use of the data it receives and publishes its own

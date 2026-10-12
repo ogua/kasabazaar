@@ -8,9 +8,25 @@
         $activeCategory ? ['label' => $activeCategory['name']] : null,
     ])" />
 
-    <div class="grid lg:grid-cols-4 gap-8">
-        <aside class="lg:col-span-1">
-            <div class="lg:sticky lg:top-16 space-y-6">
+    <div class="flex flex-wrap items-end justify-between gap-2 mb-5">
+        <h1 class="font-display font-bold text-2xl text-navy-900">{{ $activeCategory['name'] ?? 'All Products' }}</h1>
+        <p class="text-sm text-muted tabular-nums" wire:loading.class="opacity-50" wire:target="search,category_id,price_min,price_max,in_stock,sort,gotoPage,previousPage,nextPage">
+            {{ number_format($meta['total'] ?? count($products)) }} {{ Str::plural('result', $meta['total'] ?? count($products)) }}
+        </p>
+    </div>
+
+    <div class="grid lg:grid-cols-[240px_minmax(0,1fr)] gap-6 items-start" x-data="{ filtersOpen: false }">
+        <aside class="lg:sticky lg:top-32">
+            <button
+                type="button"
+                @click="filtersOpen = !filtersOpen"
+                :aria-expanded="filtersOpen"
+                class="lg:hidden flex w-full items-center justify-between rounded-lg border border-border bg-surface px-4 h-11 text-sm font-semibold text-navy-900"
+            >
+                <span class="flex items-center gap-2"><x-storefront.icon name="menu" class="w-4 h-4" /> Filters</span>
+                <x-storefront.icon name="chevron-down" class="w-4 h-4 transition-transform" x-bind:class="filtersOpen && 'rotate-180'" />
+            </button>
+            <div class="hidden lg:block mt-3 lg:mt-0 bg-surface border border-border rounded-lg divide-y divide-border [&>div]:p-4" :class="filtersOpen && 'block!'">
                 <div>
                     <h3 class="font-display font-semibold text-sm text-navy-900 uppercase tracking-wide mb-3">Search</h3>
                     <div class="relative">
@@ -43,19 +59,26 @@
                     </div>
                 </div>
 
-                <label class="flex items-center gap-2 text-sm text-fg cursor-pointer">
-                    <input type="checkbox" wire:model.live="in_stock" class="w-4 h-4 rounded-sm border-border text-accent focus:ring-accent">
-                    In stock only
-                </label>
+                <div>
+                    <label class="flex items-center gap-2 text-sm text-fg cursor-pointer">
+                        <input type="checkbox" wire:model.live="in_stock" class="w-4 h-4 rounded-sm border-border accent-accent">
+                        In stock only
+                    </label>
+                </div>
             </div>
         </aside>
 
-        <div class="lg:col-span-3">
-            <div class="flex items-center justify-between gap-4 mb-6">
-                <p class="text-sm text-muted" wire:loading.class="opacity-50" wire:target="search,category_id,price_min,price_max,in_stock,sort,gotoPage,previousPage,nextPage">
-                    {{ $meta['total'] ?? count($products) }} products found
+        <div class="min-w-0">
+            <div class="flex items-center justify-between gap-4 mb-3 bg-surface border border-border rounded-lg px-4 h-12">
+                <p class="text-sm text-muted truncate">
+                    @if ($search)
+                        Results for <span class="font-semibold text-fg">“{{ $search }}”</span>
+                    @else
+                        Showing {{ $activeCategory ? 'products in '.$activeCategory['name'] : 'all products' }}
+                    @endif
                 </p>
-                <select wire:model.live="sort" class="border border-border rounded-sm px-3 py-2 text-sm max-w-50 focus:outline-none focus-visible:outline-2 focus-visible:outline-accent">
+                <label for="listing-sort" class="sr-only">Sort by</label>
+                <select id="listing-sort" wire:model.live="sort" class="border border-border rounded-sm px-3 py-1.5 text-sm bg-surface max-w-50 focus:outline-none focus-visible:outline-2 focus-visible:outline-accent">
                     <option value="newest">Newest</option>
                     <option value="price_asc">Price: Low to High</option>
                     <option value="price_desc">Price: High to Low</option>
@@ -68,7 +91,7 @@
             @endif
 
             <div
-                class="grid grid-cols-2 md:grid-cols-3 gap-5 transition-opacity"
+                class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 transition-opacity"
                 wire:loading.class="opacity-40"
                 wire:target="search,category_id,price_min,price_max,in_stock,sort,gotoPage,previousPage,nextPage"
             >

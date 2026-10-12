@@ -21,7 +21,7 @@
                 </x-storefront.ui.empty-state>
             @endunless
         @else
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-5">
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                 @foreach ($products as $product)
                     <x-storefront.product-card :product="$product" />
                 @endforeach

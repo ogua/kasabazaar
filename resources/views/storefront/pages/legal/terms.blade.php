@@ -51,11 +51,11 @@
             <h2>2. Who we are and what we do</h2>
             <p>
                 @if ($entity = config('group.company.legal_entity'))
-                    {{ config('app.name') }} is operated by <strong>{{ $entity }}</strong>, a company of the
+                    {{ config('app.name') }} is operated by <strong>{{ $entity }}</strong>, the parent company of the
                 @else
-                    {{ config('app.name') }} is the marketplace of the
+                    {{ config('app.name') }} is the marketplace and parent company of the
                 @endif
-                <a href="{{ config('group.parent.url') }}" target="_blank" rel="noopener">{{ config('group.parent.name') }}</a>@if ($address = config('group.contact.address')), registered at {{ $address }}@endif.
+                <a href="{{ route('storefront.group') }}">{{ config('group.parent.name') }}</a>@if ($address = config('group.contact.address')), registered at {{ $address }}@endif.
             </p>
             <p>
                 We run a <strong>multi-vendor marketplace</strong>. Independent vendors list and sell their own
@@ -239,7 +239,8 @@
         <section id="other-group-companies">
             <h2>14. Other group companies</h2>
             <p>
-                {{ config('app.name') }} is one business within the {{ config('group.parent.name') }}. The others are:
+                {{ config('app.name') }} is the parent company of the {{ config('group.parent.name') }}. Its sister
+                companies are:
             </p>
             <ul>
                 @foreach (config('group.companies') as $company)

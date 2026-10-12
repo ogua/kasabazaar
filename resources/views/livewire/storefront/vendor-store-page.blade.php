@@ -43,7 +43,7 @@
                 <x-storefront.ui.alert variant="error" class="mb-8">{{ $error }}</x-storefront.ui.alert>
             @endif
 
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-5" wire:loading.class="opacity-50" wire:target="gotoPage,previousPage,nextPage">
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3" wire:loading.class="opacity-50" wire:target="gotoPage,previousPage,nextPage">
                 @forelse ($products as $product)
                     <x-storefront.product-card :product="$product" />
                 @empty

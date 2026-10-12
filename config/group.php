@@ -2,25 +2,24 @@
 
 /*
 |--------------------------------------------------------------------------
-| KasaBazaar Group of Companies
+| KASAROSE Group of Companies
 |--------------------------------------------------------------------------
 |
-| Single source of truth for KASAROSE's own identity and for the sister
-| companies it links out to. The same roster is mirrored in the other three
-| repositories — see the "Group of Companies" section of CLAUDE.md before
-| editing anything here:
+| Single source of truth for KASAROSE's own identity — KASAROSE is both the
+| marketplace and the parent of the group — and for the sister companies it
+| links out to. The roster is mirrored in the sister repositories; see the
+| "Group of Companies" section of CLAUDE.md before editing anything here:
 |
-|   kasabazar-website  includes/config.php        ($group_companies)
 |   kasabazaar         config/group.php           (RDD Shipping)
 |   neoride            parts/group_companies.php  (Neoride Africa)
 |
 | Any change to a company name, tagline, URL or legal-entity description must
-| be applied to all four, otherwise the cross-links and the legal pages that
-| name the group's companies fall out of sync.
+| be applied to every repository, otherwise the cross-links and the legal
+| pages that name the group's companies fall out of sync.
 |
 */
 
-$supportEmail = env('SUPPORT_EMAIL') ?: 'support@kasabazaar.com';
+$supportEmail = env('SUPPORT_EMAIL') ?: 'support@kasarose.com';
 
 return [
 
@@ -42,8 +41,8 @@ return [
         'legal_entity' => env('GROUP_LEGAL_NAME') ?: null,
         'legal_name' => env('GROUP_LEGAL_NAME') ?: 'KASAROSE',
         'tagline' => "Ghana's multi-vendor marketplace, delivered.",
-        'meta_description' => "KASAROSE is a multi-vendor marketplace connecting shoppers across Ghana with vetted local vendors, backed by the KasaBazaar Group of Companies' shipping and logistics network.",
-        'role' => 'The group\'s ecommerce marketplace',
+        'meta_description' => "KASAROSE is a multi-vendor marketplace connecting shoppers across Ghana with vetted local vendors, backed by the KASAROSE Group of Companies' shipping and logistics network.",
+        'role' => 'Parent company and ecommerce marketplace',
         'url' => env('APP_URL'),
         'founded' => '2025',
     ],
@@ -54,10 +53,12 @@ return [
     |--------------------------------------------------------------------------
     */
 
+    // KASAROSE is the parent company, so the group has no separate site: both
+    // URLs resolve to this storefront and its Our Group page.
     'parent' => [
-        'name' => 'KasaBazaar Group of Companies',
-        'url' => env('GROUP_SITE_URL') ?: 'https://kasabazaar.com',
-        'companies_url' => (env('GROUP_SITE_URL') ?: 'https://kasabazaar.com').'/our-companies.php',
+        'name' => 'KASAROSE Group of Companies',
+        'url' => env('APP_URL'),
+        'companies_url' => rtrim((string) env('APP_URL'), '/').'/our-group',
     ],
 
     /*
@@ -71,15 +72,6 @@ return [
     */
 
     'companies' => [
-        [
-            'key' => 'kasabazaar',
-            'name' => 'KasaBazaar',
-            'role' => 'Import & export, real estate and property management',
-            'tagline' => 'The founding company of the group.',
-            'description' => "The group's founding company, offering door-to-door import & export shipping alongside real estate sales and property management services.",
-            'url' => env('GROUP_SITE_URL') ?: 'https://kasabazaar.com',
-            'url_label' => 'kasabazaar.com',
-        ],
         [
             'key' => 'rdd-shipping',
             'name' => 'RDD Shipping',
@@ -105,17 +97,13 @@ return [
     | Contact
     |--------------------------------------------------------------------------
     |
-    | Shared with the group site's includes/config.php. Phone numbers are the
-    | group's published lines; keep the two in step.
+    | Phone numbers are the group's published lines.
     |
     */
 
     'contact' => [
-        // Defaults are the group's *published* support address and phone lines
-        // (mirrored from the group site's includes/config.php). They are used
-        // rather than KASAROSE-specific aliases because those mailboxes are not
-        // confirmed to exist yet — point SUPPORT_EMAIL et al. at them once they
-        // do. The legal and privacy roles fall back to the support address so a
+        // Defaults are the group's published support address and phone lines.
+        // The legal and privacy roles fall back to the support address so a
         // half-configured environment never publishes a dead contact.
         // `?:` rather than an env() default throughout: a key present but empty
         // in .env resolves to '', which would skip an env() default and publish
@@ -145,7 +133,7 @@ return [
     */
 
     'legal' => [
-        'effective_date' => '20 August 2026',
+        'effective_date' => '12 October 2026',
         'governing_law' => 'the laws of the Republic of Ghana',
         'jurisdiction' => 'the courts of Ghana',
     ],
@@ -156,8 +144,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | Published on the delivery policy and the FAQ, and required for payment
-    | processor (Paystack/Stripe) compliance. Mirrors the group site's
-    | $delivery_timeframes array — keep both in step.
+    | processor (Paystack/Stripe) compliance.
     |
     */
 

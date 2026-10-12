@@ -1,7 +1,7 @@
 @extends('storefront.layouts.app')
 
 @section('title', 'Delivery Policy')
-@section('meta_description', 'Delivery timeframes, charges, coverage and tracking for ' . config('app.name') . ' orders across Ghana, carried by our vendors and the KasaBazaar Group logistics network.')
+@section('meta_description', 'Delivery timeframes, charges, coverage and tracking for ' . config('app.name') . ' orders across Ghana, carried by our vendors and the ' . config('group.parent.name') . ' logistics network.')
 
 @section('content')
     @php
@@ -90,7 +90,7 @@
         <section id="who-carries-your-order">
             <h2>4. Who carries your order</h2>
             <p>
-                {{ config('app.name') }} is part of the {{ config('group.parent.name') }}, and most of our deliveries
+                {{ config('app.name') }} leads the {{ config('group.parent.name') }}, and most of our deliveries
                 stay inside the group's own logistics network. Depending on the route, your order may be carried by:
             </p>
             <ul>

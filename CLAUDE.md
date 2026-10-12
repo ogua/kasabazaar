@@ -4,38 +4,42 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project context
 
-**KASAROSE** (this repo, directory name `kmarket`) is the customer-facing multi-vendor ecommerce marketplace of
-the **KasaBazaar Group of Companies**. It is a Laravel 12 + Livewire + Filament storefront that talks to the
-`kasabazaar` shipping platform **strictly over its REST API** (`App\Services\Kasabazaar\*`, base URL in
-`KASABAZAAR_API_URL`) — never over a shared database connection. Vendors self-serve through the `vendor` Filament
-panel at `/vendor-portal`; there is no local product/order schema to query.
+**KASAROSE** (this repo, directory name `kmarket`) is the customer-facing multi-vendor ecommerce marketplace and the
+**parent company of the KASAROSE Group of Companies**. It is a Laravel 12 + Livewire + Filament storefront that gets
+its products, carts, orders and vendors from a backend commerce API **strictly over REST**
+(`App\Services\Kasabazaar\*`, base URL in `KASABAZAAR_API_URL`) — never over a shared database connection. Vendors
+self-serve through the `vendor` Filament panel at `/vendor-portal`; there is no local product/order schema to query.
 
-**The storefront was renamed** from *KasaBazaar Market* to **KASAROSE** (August 2026). Two things follow from that:
+**Branding history.** The storefront launched as *KasaBazaar Market*, was renamed **KASAROSE** in August 2026, and in
+October 2026 KASAROSE became the parent of the group (formerly the *KasaBazaar Group of Companies*). KasaBazaar is no
+longer part of the group and must not be named or linked anywhere on the site. Two things follow:
 
-- The `App\Services\Kasabazaar\*` namespace, the `KASABAZAAR_API_URL` env var and `config('services.kasabazaar')`
-  refer to the **upstream shipping API**, not to this site's branding. Do not rename them when tidying brand
-  strings.
+- The `App\Services\Kasabazaar\*` namespace, the `KASABAZAAR_API_URL` env var, `config('services.kasabazaar')` and
+  the `kasabazaar_user_id` / `kasabazaar_token` user columns are **internal integration names for the backend API**,
+  not branding. They never reach a shopper. Do not rename them when tidying brand strings.
 - Brand assets in `public/images/brand/` and `public/images/` are **generated, not hand-edited**. The designer's
   source art lives in [resources/brand/](resources/brand/) — deliberately outside the web root so the working
   files (including the `.psd`) are never served. `php artisan brand:build` regenerates the whole set from
   `kasa.png` (the K mark), `kasarose-2.png` (horizontal lockup) and `kasarose.png` (stacked lockup):
   marks, lockups, on-dark variants, `og-image.png`, every favicon size and `favicon.ico`. Always run the command
-  rather than editing one size in isolation — they all derive from the same two files and drift apart otherwise.
+  rather than editing one size in isolation — they all derive from the same source files and drift apart otherwise.
   Palette is sampled from the mark: blue `#055F9C`, red `#EF4136`. See [DESIGN.md](DESIGN.md) for the full token
   table; the Tailwind token names still read `navy-*` for the blue scale, which is deliberate (renaming them would
   churn every blade).
 
 ## Group of Companies — cross-site sync (IMPORTANT)
 
-KASAROSE is **one of four sibling websites**, each in its own repository, that reference each other in navigation,
-footers and legal pages:
+KASAROSE heads the **KASAROSE Group of Companies**. The group has no separate group website: `config('group.parent')`
+points at this storefront and its Our Group page (`/our-group`). The sister companies each live in their own
+repository and reference KASAROSE in their navigation, footers and legal pages:
 
 | Company | What it is | Repo | Stack |
 |---|---|---|---|
-| KasaBazaar Group | Group site, "Our Companies" page | `C:\xampp\htdocs\Projects\website\kasabazar-website` | Plain PHP + Bootstrap, Gulp/SCSS |
+| **KASAROSE** (parent) | Ecommerce marketplace | this repo | Laravel 12 + Livewire + Filament 4 |
 | RDD Shipping | Freight logistics & package forwarding | `C:\xampp\htdocs\Projects\kasabazaar` | Laravel 11 + Filament 3 |
 | Neoride Africa | Tricycle mobility, last-mile transport | `C:\xampp\htdocs\Projects\neoride` | Plain PHP template |
-| **KASAROSE** | Ecommerce marketplace | this repo | Laravel 12 + Livewire + Filament 4 |
+
+(The RDD Shipping repo's directory is still named `kasabazaar`; that is a folder name, not a company.)
 
 **Every company roster lives in exactly one file per repo. Never hardcode a sister company's name or URL in a
 template — read it from the roster.**
@@ -43,14 +47,18 @@ template — read it from the roster.**
 | Repo | Roster file |
 |---|---|
 | kmarket (here) | [config/group.php](config/group.php) |
-| kasabazaar | `config/group.php` |
-| kasabazar-website | `includes/config.php` (`$group_companies`, `SITE_URL_*`) |
+| kasabazaar (RDD Shipping) | `config/group.php` |
 | neoride | `parts/group_companies.php` |
+
+> **Pending sweep (October 2026).** The parent rename and KasaBazaar's removal were applied to this repo only. The
+> RDD Shipping and Neoride repos — and the old group site `kasabazar-website` — may still name the *KasaBazaar Group
+> of Companies* and link to kasabazaar.com. Bring them in line before relying on the cross-links being consistent.
 
 ### The rule
 
 **Before you finish any change that touches company identity, cross-links or legal/policy copy, check whether the
-same change is needed in the other three repositories — and make it there too, in the same session.**
+same change is needed in the sister repositories — and make it there too, in the same session** (unless the user
+scopes the change to this repo).
 
 Changes that always require the cross-repo sweep:
 
@@ -67,20 +75,17 @@ panel work, anything under `app/Services/Kasabazaar/`.
 
 ### Where the cross-links surface here
 
-- [config/group.php](config/group.php) — the roster, contact block, legal effective date, delivery timeframes and
-  return windows. Everything else reads from it.
+- [config/group.php](config/group.php) — this company, the parent block, the sister roster, contact block, legal
+  effective date, delivery timeframes and return windows. Everything else reads from it.
 - [resources/views/storefront/partials/footer.blade.php](resources/views/storefront/partials/footer.blade.php) —
   the "Part of the…" strip and the Legal column.
 - [resources/views/storefront/pages/group.blade.php](resources/views/storefront/pages/group.blade.php) — the Our
   Group page (`/our-group`).
 - [resources/views/storefront/pages/about.blade.php](resources/views/storefront/pages/about.blade.php) — the group
   card row.
-- `resources/views/storefront/pages/legal/*.blade.php` — all five policies loop over `config('group.companies')`.
+- `resources/views/storefront/pages/legal/*.blade.php` — the policies loop over `config('group.companies')`.
 - [resources/views/storefront/layouts/app.blade.php](resources/views/storefront/layouts/app.blade.php) — the
   `schema.org` `OnlineStore` JSON-LD, whose `parentOrganization` and `sameAs` come from the same config.
-
-The group site's `partials/head.php` carries the mirror of that structured data (`subOrganization`); if a company
-is added or removed here, its JSON-LD must change too.
 
 ## Legal pages
 
@@ -102,7 +107,7 @@ a payment method to the copy without the code to back it.
 
 **Never publish an unverified identity detail.** The registered entity name, registered office and contact
 addresses appear verbatim on these pages, so `config/group.php` defaults to values that are *known true*: the
-group's published support address and phone lines, and the trading name `KASAROSE` in place of an unconfirmed
+group's support address (`support@kasarose.com`), its published phone lines, and the trading name `KASAROSE` in place of an unconfirmed
 legal entity. `contact.address` defaults to `null` and every template that renders it is guarded — an unset
 address omits the sentence rather than printing a placeholder. See the "CONFIRM BEFORE LAUNCH" block in
 [.env.example](.env.example). Note also that these use `env(...) ?: 'default'`, not `env(..., 'default')`: a key
@@ -122,7 +127,7 @@ php artisan test --compact
 vendor/bin/pint --dirty --format agent
 ```
 
-The storefront needs the `kasabazaar` API reachable at `KASABAZAAR_API_URL`; static pages (about, group, legal,
+The storefront needs the backend commerce API reachable at `KASABAZAAR_API_URL`; static pages (about, group, legal,
 FAQ, contact) render fine without it, product and cart pages do not.
 
 

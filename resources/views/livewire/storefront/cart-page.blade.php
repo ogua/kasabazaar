@@ -63,7 +63,7 @@
             </div>
 
             <div>
-                <x-storefront.ui.card class="sticky top-16">
+                <x-storefront.ui.card class="lg:sticky lg:top-32">
                     <h2 class="font-display font-semibold text-lg text-navy-900 mb-4">Order Summary</h2>
 
                     <div class="space-y-2 text-sm mb-4">

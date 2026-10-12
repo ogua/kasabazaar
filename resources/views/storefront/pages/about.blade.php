@@ -1,7 +1,7 @@
 @extends('storefront.layouts.app')
 
 @section('title', 'About Us')
-@section('meta_description', 'Who ' . config('app.name') . ' is, how the marketplace works for shoppers and vendors, and how the KasaBazaar Group logistics network gets your order to your door.')
+@section('meta_description', 'Who ' . config('app.name') . ' is, how the marketplace works for shoppers and vendors, and how the ' . config('group.parent.name') . ' logistics network gets your order to your door.')
 
 @section('content')
     {{-- Hero --}}
@@ -13,7 +13,7 @@
                     A marketplace built by people who already move things for a living.
                 </h1>
                 <p class="text-white/70 leading-relaxed">
-                    {{ config('app.name') }} is Ghana's multi-vendor marketplace and the retail arm of the
+                    {{ config('app.name') }} is Ghana's multi-vendor marketplace and the parent of the
                     {{ config('group.parent.name') }}. Independent vendors bring the products. We bring the storefront,
                     the payment protection and — the part most marketplaces struggle with — the delivery network that
                     actually gets the parcel to your door.
@@ -34,7 +34,7 @@
                 <h2 class="font-display font-semibold text-2xl text-navy-900 wake-underline mb-7">Why we exist</h2>
                 <div class="space-y-4 text-muted leading-relaxed max-w-[68ch]">
                     <p>
-                        The {{ config('group.parent.name') }} has spent years moving goods between the United States
+                        The logistics companies in our group have spent years moving goods between the United States
                         and Ghana, and across Ghana itself. Along the way the same request kept arriving from
                         customers: <em class="text-fg not-italic font-medium">I do not want to import this myself —
                         can I just buy it from you?</em>
@@ -147,10 +147,10 @@
         <section class="mb-16">
             <h2 class="font-display font-semibold text-2xl text-navy-900 wake-underline mb-3">Part of something larger</h2>
             <p class="text-muted text-sm mb-8 max-w-[68ch] leading-relaxed">
-                {{ config('app.name') }} is one of four businesses in the {{ config('group.parent.name') }}. The others
-                are what make our delivery promise possible.
+                {{ config('app.name') }} leads the {{ config('group.parent.name') }}. Our sister companies are what make
+                our delivery promise possible.
             </p>
-            <div class="grid sm:grid-cols-3 gap-5">
+            <div class="grid sm:grid-cols-2 gap-5">
                 @foreach (config('group.companies') as $company)
                     <a
                         href="{{ $company['url'] }}"

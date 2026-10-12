@@ -2,7 +2,7 @@
 
 /*
  * Smoke coverage for the static storefront pages — the ones that render without
- * the kasabazaar API being reachable. Product, cart and checkout pages are not
+ * the backend commerce API being reachable. Product, cart and checkout pages are not
  * covered here because they require a live upstream.
  */
 
@@ -39,8 +39,26 @@ it('links every sister company from the footer', function () {
         $response->assertSee($company['url'], escape: false);
     }
 
-    $response->assertSee(config('group.parent.companies_url'), escape: false);
+    $response->assertSee(route('storefront.group'), escape: false);
 });
+
+it('presents KASAROSE as the parent company and no longer references KasaBazaar', function (string $route) {
+    expect(config('group.parent.name'))->toBe('KASAROSE Group of Companies')
+        ->and(array_column(config('group.companies'), 'name'))->not->toContain('KasaBazaar');
+
+    $this->get(route($route))
+        ->assertOk()
+        ->assertSee('KASAROSE Group of Companies', escape: false)
+        ->assertDontSee('kasabazaar', escape: false)
+        ->assertDontSee('KasaBazaar', escape: false);
+})->with([
+    'storefront.about',
+    'storefront.group',
+    'storefront.privacy',
+    'storefront.terms',
+    'storefront.delivery-policy',
+    'storefront.cookies',
+]);
 
 it('exposes the current brand name rather than the pre-rebrand one', function () {
     expect(config('app.name'))->toBe('KASAROSE');

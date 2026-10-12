@@ -1,10 +1,14 @@
 <div class="relative" x-data="{ open: false }" @click.outside="open = false" wire:key="cart-icon">
-    <button @click="open = !open" class="flex items-center gap-2 p-2 text-navy-900 hover:text-accent relative" aria-label="Cart">
+    <button @click="open = !open" :aria-expanded="open" class="flex items-center gap-2 p-2 rounded-sm text-navy-900 hover:bg-surface-muted relative" aria-label="Cart, {{ $count }} {{ Str::plural('item', $count) }}">
         <span class="relative">
             <x-storefront.icon name="cart" class="w-6 h-6" />
             @if ($count > 0)
-                <span class="absolute -top-2 -right-2 flex items-center justify-center min-w-4.5 h-4.5 px-1 rounded-full bg-accent text-white text-[10px] font-bold">{{ $count }}</span>
+                <span class="absolute -top-2 -right-2 flex items-center justify-center min-w-4.5 h-4.5 px-1 rounded-full bg-accent text-white text-[10px] font-bold tabular-nums">{{ $count }}</span>
             @endif
+        </span>
+        <span class="hidden xl:flex flex-col items-start leading-tight text-left">
+            <span class="text-[11px] text-muted tabular-nums">GHS {{ number_format($subtotalGhs, 2) }}</span>
+            <span class="text-sm font-semibold">Cart</span>
         </span>
     </button>
 

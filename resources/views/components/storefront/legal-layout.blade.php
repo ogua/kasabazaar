@@ -29,7 +29,7 @@
     <div class="grid lg:grid-cols-4 gap-10">
         @if (filled($sections))
             <nav aria-label="On this page" class="lg:col-span-1 order-2 lg:order-1">
-                <div class="lg:sticky lg:top-20">
+                <div class="lg:sticky lg:top-32">
                     <h2 class="font-display font-semibold text-xs uppercase tracking-wide text-navy-900 mb-3">On this page</h2>
                     <ol class="space-y-2 text-sm text-muted">
                         @foreach ($sections as $index => $section)
@@ -53,7 +53,7 @@
         <h2 class="font-display font-semibold text-lg text-navy-900 mb-2">Questions about this policy?</h2>
         <p class="text-sm text-muted leading-relaxed mb-4 max-w-2xl">
             Write to us and we will respond within five business days. This policy applies to
-            {{ config('app.name') }} only — the other {{ config('group.parent.name') }} businesses publish their own
+            {{ config('app.name') }} only — our sister companies in the {{ config('group.parent.name') }} publish their own
             policies on their own sites.
         </p>
         <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">

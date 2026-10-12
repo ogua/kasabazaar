@@ -1,7 +1,7 @@
 {
     "name": "KASAROSE",
     "short_name": "KASAROSE",
-    "description": "Ghana's multi-vendor marketplace — part of the KasaBazaar Group of Companies.",
+    "description": "Ghana's multi-vendor marketplace from the KASAROSE Group of Companies.",
     "icons": [
         { "src": "/images/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },
         { "src": "/images/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png" }

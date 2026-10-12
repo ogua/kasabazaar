@@ -90,7 +90,7 @@
         <section id="cookies-and-the-wider-group">
             <h2>4. Cookies and the wider group</h2>
             <p>
-                {{ config('app.name') }} is part of the {{ config('group.parent.name') }}, alongside
+                {{ config('app.name') }} leads the {{ config('group.parent.name') }}, alongside
                 @foreach (config('group.companies') as $company)
                     <a href="{{ $company['url'] }}" target="_blank" rel="noopener">{{ $company['name'] }}</a>@if (! $loop->last){{ $loop->remaining === 1 ? ' and ' : ', ' }}@else.@endif
                 @endforeach

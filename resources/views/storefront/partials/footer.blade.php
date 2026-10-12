@@ -1,91 +1,99 @@
-{{-- Storefront footer: brand block, link columns, legal column, group strip.
+{{-- Storefront footer: service strip, brand block, link columns, group strip, payments + copyright.
      The group companies row and the legal links are driven by config/group.php
-     — the roster is mirrored in the group site, RDD Shipping and Neoride
-     repositories, so change it there too (see CLAUDE.md). --}}
-<footer class="bg-surface-muted border-t border-border mt-16">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-14">
-        <div class="grid grid-cols-2 md:grid-cols-6 gap-x-8 gap-y-10">
-            <div class="col-span-2">
-                <a href="{{ route('storefront.home') }}" class="inline-block mb-4">
-                    <img src="{{ asset('images/brand/logo-lockup.png') }}" alt="{{ config('app.name') }}" class="h-12 w-auto">
-                </a>
-                <p class="text-sm text-muted leading-relaxed max-w-sm mb-5">
-                    A multi-vendor marketplace connecting local sellers with shoppers across Ghana, backed by the
-                    {{ config('group.parent.name') }}' shipping and logistics network.
-                </p>
-
-                <ul class="space-y-2 text-sm">
-                    <li>
-                        <a href="mailto:{{ config('group.contact.email') }}" class="inline-flex items-center gap-2 font-medium text-navy-900 hover:text-accent">
-                            <x-storefront.icon name="mail" class="w-4 h-4 shrink-0" />
-                            {{ config('group.contact.email') }}
-                        </a>
-                    </li>
-                    <li>
-                        <a href="tel:{{ config('group.contact.phone_gh_tel') }}" class="inline-flex items-center gap-2 font-medium text-navy-900 hover:text-accent">
-                            <x-storefront.icon name="phone" class="w-4 h-4 shrink-0" />
-                            {{ config('group.contact.phone_gh') }}
-                        </a>
-                    </li>
-                </ul>
-
-                <div class="flex items-center gap-3 mt-5">
-                    <a href="#" class="flex items-center justify-center w-9 h-9 rounded-full bg-navy-900 text-white hover:bg-accent" aria-label="Facebook"><x-storefront.icon name="facebook" class="w-4 h-4" /></a>
-                    <a href="#" class="flex items-center justify-center w-9 h-9 rounded-full bg-navy-900 text-white hover:bg-accent" aria-label="Instagram"><x-storefront.icon name="instagram" class="w-4 h-4" /></a>
-                    <a href="#" class="flex items-center justify-center w-9 h-9 rounded-full bg-navy-900 text-white hover:bg-accent" aria-label="Twitter"><x-storefront.icon name="twitter" class="w-4 h-4" /></a>
-                </div>
-            </div>
-
-            <div>
-                <h3 class="font-display font-semibold text-sm text-navy-900 uppercase tracking-wide mb-4">Company</h3>
-                <ul class="space-y-3 text-sm text-muted">
-                    <li><a href="{{ route('storefront.about') }}" class="hover:text-accent">About Us</a></li>
-                    <li><a href="{{ route('storefront.group') }}" class="hover:text-accent">Our Group</a></li>
-                    <li><a href="{{ route('storefront.contact') }}" class="hover:text-accent">Contact Us</a></li>
-                    <li><a href="{{ route('storefront.become-vendor') }}" class="hover:text-accent">Sell on {{ config('app.name') }}</a></li>
-                    <li><a href="{{ route('storefront.faq') }}" class="hover:text-accent">FAQs</a></li>
-                </ul>
-            </div>
-
-            <div>
-                <h3 class="font-display font-semibold text-sm text-navy-900 uppercase tracking-wide mb-4">My Account</h3>
-                <ul class="space-y-3 text-sm text-muted">
-                    <li><a href="{{ route('storefront.track-order') }}" class="hover:text-accent">Track My Order</a></li>
-                    <li><a href="{{ route('storefront.cart') }}" class="hover:text-accent">View Cart</a></li>
-                    <li><a href="{{ route('storefront.login') }}" class="hover:text-accent">Sign In</a></li>
-                    <li><a href="{{ route('storefront.wishlist') }}" class="hover:text-accent">My Wishlist</a></li>
-                </ul>
-            </div>
-
-            <div>
-                <h3 class="font-display font-semibold text-sm text-navy-900 uppercase tracking-wide mb-4">Vendors</h3>
-                <ul class="space-y-3 text-sm text-muted">
-                    <li><a href="{{ route('storefront.vendors') }}" class="hover:text-accent">All Vendors</a></li>
-                    <li><a href="{{ route('storefront.become-vendor') }}" class="hover:text-accent">Become a Vendor</a></li>
-                    <li><a href="{{ route('filament.vendor.auth.login') }}" class="hover:text-accent">Vendor Sign In</a></li>
-                </ul>
-            </div>
-
-            <div>
-                <h3 class="font-display font-semibold text-sm text-navy-900 uppercase tracking-wide mb-4">Legal</h3>
-                <ul class="space-y-3 text-sm text-muted">
-                    <li><a href="{{ route('storefront.privacy') }}" class="hover:text-accent">Privacy Policy</a></li>
-                    <li><a href="{{ route('storefront.terms') }}" class="hover:text-accent">Terms of Use</a></li>
-                    <li><a href="{{ route('storefront.delivery-policy') }}" class="hover:text-accent">Delivery Policy</a></li>
-                    <li><a href="{{ route('storefront.returns') }}" class="hover:text-accent">Returns &amp; Refunds</a></li>
-                    <li><a href="{{ route('storefront.cookies') }}" class="hover:text-accent">Cookie Policy</a></li>
-                </ul>
-            </div>
+     — the roster is mirrored in the RDD Shipping and Neoride repositories, so
+     change it there too (see CLAUDE.md). --}}
+<footer class="mt-auto">
+    {{-- Service strip --}}
+    <div class="bg-surface border-t border-border">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <a href="{{ route('storefront.faq') }}" class="group flex items-center gap-3">
+                <x-storefront.icon name="question" class="w-8 h-8 text-navy-500 shrink-0" />
+                <span class="leading-tight">
+                    <span class="block text-sm font-semibold text-fg group-hover:text-accent">Help Centre</span>
+                    <span class="block text-xs text-muted">Answers on orders, delivery &amp; returns</span>
+                </span>
+            </a>
+            <a href="tel:{{ config('group.contact.phone_gh_tel') }}" class="group flex items-center gap-3">
+                <x-storefront.icon name="phone" class="w-8 h-8 text-navy-500 shrink-0" />
+                <span class="leading-tight">
+                    <span class="block text-sm font-semibold text-fg group-hover:text-accent tabular-nums">{{ config('group.contact.phone_gh') }}</span>
+                    <span class="block text-xs text-muted">Call customer support</span>
+                </span>
+            </a>
+            <a href="mailto:{{ config('group.contact.email') }}" class="group flex items-center gap-3">
+                <x-storefront.icon name="mail" class="w-8 h-8 text-navy-500 shrink-0" />
+                <span class="leading-tight min-w-0">
+                    <span class="block text-sm font-semibold text-fg group-hover:text-accent truncate">{{ config('group.contact.email') }}</span>
+                    <span class="block text-xs text-muted">Email customer support</span>
+                </span>
+            </a>
         </div>
     </div>
 
-    {{-- Group of Companies strip --}}
-    <div class="border-t border-border bg-surface">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-7">
-            <div class="flex flex-col lg:flex-row lg:items-center gap-4">
-                <p class="text-xs font-semibold uppercase tracking-wide text-navy-900 shrink-0">
+    <div class="bg-navy-950 text-white/70">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-8 gap-y-10">
+                <div class="col-span-2">
+                    <a href="{{ route('storefront.home') }}" class="inline-block mb-4">
+                        <img src="{{ asset('images/brand/logo-lockup-on-dark.png') }}" alt="{{ config('app.name') }}" class="h-10 w-auto">
+                    </a>
+                    <p class="text-sm leading-relaxed max-w-sm mb-5">
+                        A multi-vendor marketplace connecting local sellers with shoppers across Ghana, backed by the
+                        {{ config('group.parent.name') }}' shipping and logistics network.
+                    </p>
+
+                    <div class="flex items-center gap-2">
+                        <a href="#" class="flex items-center justify-center w-9 h-9 rounded-full bg-white/10 text-white hover:bg-accent" aria-label="Facebook"><x-storefront.icon name="facebook" class="w-4 h-4" /></a>
+                        <a href="#" class="flex items-center justify-center w-9 h-9 rounded-full bg-white/10 text-white hover:bg-accent" aria-label="Instagram"><x-storefront.icon name="instagram" class="w-4 h-4" /></a>
+                        <a href="#" class="flex items-center justify-center w-9 h-9 rounded-full bg-white/10 text-white hover:bg-accent" aria-label="Twitter"><x-storefront.icon name="twitter" class="w-4 h-4" /></a>
+                    </div>
+                </div>
+
+                @foreach ([
+                    'Shop' => [
+                        ['label' => 'All Products', 'route' => 'storefront.shop'],
+                        ['label' => 'Vendors', 'route' => 'storefront.vendors'],
+                        ['label' => 'My Wishlist', 'route' => 'storefront.wishlist'],
+                        ['label' => 'View Cart', 'route' => 'storefront.cart'],
+                    ],
+                    'Customer Service' => [
+                        ['label' => 'Track My Order', 'route' => 'storefront.track-order'],
+                        ['label' => 'Help & FAQs', 'route' => 'storefront.faq'],
+                        ['label' => 'Contact Us', 'route' => 'storefront.contact'],
+                        ['label' => 'My Account', 'route' => 'storefront.account.dashboard'],
+                    ],
+                    'Company' => [
+                        ['label' => 'About Us', 'route' => 'storefront.about'],
+                        ['label' => 'Our Group', 'route' => 'storefront.group'],
+                        ['label' => 'Become a Vendor', 'route' => 'storefront.become-vendor'],
+                        ['label' => 'Vendor Sign In', 'route' => 'filament.vendor.auth.login'],
+                    ],
+                    'Legal' => [
+                        ['label' => 'Privacy Policy', 'route' => 'storefront.privacy'],
+                        ['label' => 'Terms of Use', 'route' => 'storefront.terms'],
+                        ['label' => 'Delivery Policy', 'route' => 'storefront.delivery-policy'],
+                        ['label' => 'Returns & Refunds', 'route' => 'storefront.returns'],
+                        ['label' => 'Cookie Policy', 'route' => 'storefront.cookies'],
+                    ],
+                ] as $heading => $links)
+                    <div>
+                        <h3 class="font-display font-semibold text-sm text-white uppercase tracking-wide mb-4">{{ $heading }}</h3>
+                        <ul class="space-y-2.5 text-sm">
+                            @foreach ($links as $link)
+                                <li><a href="{{ route($link['route']) }}" class="hover:text-white">{{ $link['label'] }}</a></li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
+        {{-- Group of Companies strip --}}
+        <div class="border-t border-white/10">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 py-5 flex flex-col lg:flex-row lg:items-center gap-3">
+                <p class="text-xs font-semibold uppercase tracking-wide text-white shrink-0">
                     Part of the
-                    <a href="{{ config('group.parent.companies_url') }}" target="_blank" rel="noopener" class="underline decoration-accent decoration-2 underline-offset-4 hover:text-accent">
+                    <a href="{{ route('storefront.group') }}" class="underline decoration-accent decoration-2 underline-offset-4 hover:text-accent">
                         {{ config('group.parent.name') }}
                     </a>
                 </p>
@@ -96,10 +104,10 @@
                                 href="{{ $company['url'] }}"
                                 target="_blank"
                                 rel="noopener"
-                                class="group inline-flex items-baseline gap-1.5 text-muted hover:text-accent"
+                                class="group inline-flex items-baseline gap-1.5 hover:text-white"
                                 title="{{ $company['role'] }}"
                             >
-                                <span class="font-medium text-navy-900 group-hover:text-accent">{{ $company['name'] }}</span>
+                                <span class="font-medium text-white group-hover:text-accent">{{ $company['name'] }}</span>
                                 <span class="text-xs">{{ $company['url_label'] }}</span>
                             </a>
                         </li>
@@ -107,17 +115,17 @@
                 </ul>
             </div>
         </div>
-    </div>
 
-    <div class="border-t border-border">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted">
-            <p>&copy; {{ now()->year }} {{ config('group.company.legal_name') }}. All rights reserved.</p>
-            <div class="flex items-center gap-4">
-                <span>Secure payments</span>
-                <div class="flex items-center gap-2">
-                    <x-storefront.icon name="shield-check" class="w-4 h-4 text-navy-900" />
-                    <x-storefront.icon name="truck" class="w-4 h-4 text-navy-900" />
-                </div>
+        <div class="border-t border-white/10">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-3 text-xs">
+                <p>&copy; {{ now()->year }} {{ config('group.company.legal_name') }}. All rights reserved.</p>
+                {{-- Only methods the checkout actually supports — see the FAQ's payment answer. --}}
+                <ul class="flex flex-wrap items-center justify-center gap-2" aria-label="Accepted payment methods">
+                    <li class="flex items-center gap-1.5 text-white/60 mr-1"><x-storefront.icon name="lock" class="w-3.5 h-3.5" /> Secure payments</li>
+                    @foreach (['Mobile Money', 'Cards', 'Paystack', 'Stripe'] as $method)
+                        <li class="rounded-sm bg-white/10 px-2 py-1 font-semibold text-white">{{ $method }}</li>
+                    @endforeach
+                </ul>
             </div>
         </div>
     </div>

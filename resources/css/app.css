@@ -114,7 +114,7 @@
    prose-weight surfaces on the site, so the rules live here rather than as
    utility soup in each template. */
 .legal-prose section {
-    scroll-margin-top: 5rem;
+    scroll-margin-top: 8.5rem;
 }
 
 .legal-prose section + section {

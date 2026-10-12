@@ -1,59 +1,45 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# KASAROSE storefront (`kmarket`)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+KASAROSE is Ghana's multi-vendor ecommerce marketplace and the parent company of the **KASAROSE Group of
+Companies** (sister companies: RDD Shipping and Neoride Africa).
 
-## About Laravel
+This repository is the customer-facing storefront and the vendor self-service portal:
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- **Storefront** — Laravel 12 + Livewire + Tailwind CSS v4 (`resources/views/storefront`, `resources/views/livewire/storefront`).
+- **Vendor portal** — Filament 4 panel at `/vendor-portal`.
+- **Data** — products, carts, orders and vendors come from a backend commerce API over REST
+  (`App\Services\Kasabazaar\*`, base URL `KASABAZAAR_API_URL`). There is no local product or order schema.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Getting started
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+```bash
+composer install && npm install
+cp .env.example .env && php artisan key:generate
+php artisan migrate
+composer run dev          # server + queue + logs + Vite
+```
 
-## Learning Laravel
+Product, cart and checkout pages need the backend API reachable at `KASABAZAAR_API_URL`. Static pages (About,
+Our Group, FAQ, Contact, legal) render without it.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## Everyday commands
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```bash
+npm run build             # production assets (required after CSS/token changes)
+php artisan brand:build   # regenerate logos, favicons and the OG card from resources/brand/
+php artisan test --compact
+vendor/bin/pint --dirty
+```
 
-## Laravel Sponsors
+## Where things live
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+| What | Where |
+|---|---|
+| Company identity, group roster, contacts, delivery timeframes, return windows | `config/group.php` |
+| Design system (tokens, layout rules, changelog) | `DESIGN.md` |
+| Agent / contributor guidance, cross-repo rules | `CLAUDE.md` |
+| Legal pages | `resources/views/storefront/pages/legal/` |
+| Brand source art (not web-served) | `resources/brand/` |
 
-### Premium Partners
-
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Before launch, confirm the values in the **CONFIRM BEFORE LAUNCH** block of `.env.example` — they are published
+verbatim on the legal pages.

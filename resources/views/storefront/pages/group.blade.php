@@ -1,19 +1,19 @@
 @extends('storefront.layouts.app')
 
 @section('title', 'Our Group')
-@section('meta_description', config('app.name') . ' is the ecommerce marketplace of the KasaBazaar Group of Companies, alongside KasaBazaar, RDD Shipping and Neoride Africa.')
+@section('meta_description', config('app.name') . ' is the parent company and ecommerce marketplace of the ' . config('group.parent.name') . ', alongside RDD Shipping and Neoride Africa.')
 
 @section('content')
     <div class="bg-navy-900 text-white">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 py-14 md:py-20">
             <p class="text-accent font-semibold text-xs uppercase tracking-wide mb-3">{{ config('group.parent.name') }}</p>
             <h1 class="font-display font-bold text-3xl md:text-4xl mb-4 text-balance max-w-2xl">
-                One group. Four businesses. One promise about getting things where they need to be.
+                One group. Three businesses. One promise about getting things where they need to be.
             </h1>
             <p class="text-white/70 leading-relaxed max-w-2xl">
-                The group did not start as a marketplace. It started as a shipping company that kept being asked the
-                same question by its customers: <em>can you get this for me too?</em> Today it moves freight,
-                property and people as well as products — and {{ config('app.name') }} is the shop front of it.
+                {{ config('app.name') }} leads a group built around one idea: buying something is only as good as
+                getting it delivered. Alongside the marketplace, the group moves freight between the United States
+                and Ghana and runs last-mile transport on the ground — so the products we sell have a way to reach you.
             </p>
         </div>
     </div>
@@ -27,7 +27,8 @@
             <div class="grid md:grid-cols-3 gap-6 items-start">
                 <div class="md:col-span-2 space-y-4 text-muted leading-relaxed">
                     <p>
-                        {{ config('app.name') }} is the group's <strong class="text-fg">ecommerce marketplace</strong>.
+                        {{ config('app.name') }} is the group's <strong class="text-fg">parent company and ecommerce
+                        marketplace</strong>.
                         Independent Ghanaian vendors list their products here; we handle the storefront, take payment,
                         hold it until the order is delivered, and put the group's logistics network behind the parcel.
                     </p>
@@ -38,8 +39,8 @@
                         abroad every day — {{ config('app.name') }} simply points that capacity at retail.
                     </p>
                     <p>
-                        Each company below is a separate business with its own contracts and its own terms. We share
-                        infrastructure and standards, not liabilities.
+                        Each sister company below is a separate business with its own contracts and its own terms. We
+                        share infrastructure and standards, not liabilities.
                     </p>
                 </div>
                 <x-storefront.ui.card class="bg-surface-muted">
@@ -64,7 +65,7 @@
 
         {{-- Sister companies --}}
         <section class="mb-14">
-            <h2 class="font-display font-semibold text-2xl text-navy-900 wake-underline mb-8">The other companies</h2>
+            <h2 class="font-display font-semibold text-2xl text-navy-900 wake-underline mb-8">Our sister companies</h2>
             <div class="space-y-5">
                 @foreach (config('group.companies') as $company)
                     <x-storefront.ui.card padding="p-6 sm:p-8">
@@ -97,7 +98,7 @@
             <h2 class="font-display font-semibold text-2xl text-navy-900 wake-underline mb-8">What that means when you order</h2>
             <div class="grid sm:grid-cols-3 gap-5">
                 @foreach ([
-                    ['icon' => 'truck', 'title' => 'One network, not four handoffs', 'desc' => 'A parcel moving from a vendor in Accra to a doorstep in Ejisu stays inside the group the whole way. Fewer handoffs is fewer places to lose it.'],
+                    ['icon' => 'truck', 'title' => 'One network, not several handoffs', 'desc' => 'A parcel moving from a vendor in Accra to a doorstep in Ejisu stays inside the group the whole way. Fewer handoffs is fewer places to lose it.'],
                     ['icon' => 'shield-check', 'title' => 'One point of contact', 'desc' => 'Whoever is physically carrying your order, you raise it with us. We do not send you to chase a courier.'],
                     ['icon' => 'box', 'title' => 'Reach beyond the vendor', 'desc' => 'A small vendor with no delivery fleet can still sell nationwide, because ours is the fleet behind the listing.'],
                 ] as $point)
@@ -114,21 +115,19 @@
 
         <div class="rounded-lg bg-navy-900 text-white p-8 sm:p-10 flex flex-col sm:flex-row sm:items-center gap-6">
             <div class="sm:flex-1">
-                <h2 class="font-display font-semibold text-xl mb-2">See the whole group</h2>
+                <h2 class="font-display font-semibold text-xl mb-2">Questions about the group?</h2>
                 <p class="text-white/70 text-sm leading-relaxed max-w-lg">
-                    The {{ config('group.parent.name') }} site covers the founding company's shipping, real estate and
-                    property management work, and profiles every business in the group.
+                    Whether it is an order, a delivery or a partnership enquiry, start with us — we will route it to
+                    the right company in the group.
                 </p>
             </div>
             <x-storefront.ui.button
-                href="{{ config('group.parent.companies_url') }}"
+                href="{{ route('storefront.contact') }}"
                 variant="accent"
                 size="lg"
-                target="_blank"
-                rel="noopener"
                 class="shrink-0"
             >
-                Visit the group site
+                Contact us
                 <x-storefront.icon name="arrow-right" class="w-4 h-4" />
             </x-storefront.ui.button>
         </div>
