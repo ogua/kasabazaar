@@ -45,6 +45,13 @@ class Checkout extends Component
             $this->error = 'We\'re having trouble loading your checkout right now. Please refresh or try again shortly.';
         }
 
+        // Nothing to buy: send the shopper back to the cart, which explains why.
+        if (! $this->error && empty($this->cart['items'] ?? [])) {
+            $this->redirect(route('storefront.cart'), navigate: false);
+
+            return;
+        }
+
         $default = collect($this->addresses)->firstWhere('is_default', true) ?? ($this->addresses[0] ?? null);
         $this->selectedAddressId = $default['id'] ?? '';
         $this->showNewAddressForm = empty($this->addresses);
@@ -82,6 +89,12 @@ class Checkout extends Component
 
     public function placeOrder(CheckoutApi $checkoutApi): void
     {
+        if (empty($this->cart['items'] ?? [])) {
+            $this->error = 'Your cart is empty. Add something before checking out.';
+
+            return;
+        }
+
         if (! $this->selectedAddressId) {
             $this->error = 'Please select or add a delivery address.';
 
