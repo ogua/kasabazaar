@@ -6,6 +6,7 @@ use App\Livewire\Storefront\Concerns\HasCartActions;
 use App\Services\Kasabazaar\KasabazaarApiException;
 use App\Services\Kasabazaar\ProductsApi;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Livewire\Component;
 
@@ -18,6 +19,9 @@ class ProductDetail extends Component
     public array $productData = [];
 
     public array $reviews = [];
+
+    /** @var array{similar: array<int, array>, from_vendor: array<int, array>} */
+    public array $related = ['similar' => [], 'from_vendor' => []];
 
     public int $quantity = 1;
 
@@ -33,6 +37,15 @@ class ProductDetail extends Component
         } catch (KasabazaarApiException $e) {
             Log::warning('storefront.product: failed to load product', ['product' => $product, 'message' => $e->getMessage()]);
             $this->notFound = true;
+
+            return;
+        }
+
+        // Related items are a bonus: if the call fails the page still renders.
+        try {
+            $this->related = Cache::remember("storefront.product.{$product}.related", 300, fn () => $productsApi->related($product)) + $this->related;
+        } catch (KasabazaarApiException $e) {
+            Log::info('storefront.product: related products unavailable', ['product' => $product, 'message' => $e->getMessage()]);
         }
     }
 

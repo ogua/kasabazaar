@@ -46,6 +46,18 @@
             <template x-if="togglingWishlist"><x-storefront.ui.spinner class="w-4 h-4" /></template>
             <template x-if="!togglingWishlist"><x-storefront.icon name="heart" class="w-4 h-4" /></template>
         </button>
+
+        <button
+            type="button"
+            title="Compare"
+            aria-label="Compare {{ $product['name'] }}"
+            x-on:click.prevent.stop="Livewire.dispatch('toggle-compare', { productId: @js($product['id']), name: @js($product['name']), image: @js($image) })"
+            :aria-pressed="$store.compare.has(@js($product['id']))"
+            class="absolute top-12 right-2 flex items-center justify-center w-8 h-8 rounded-full shadow-sm transition-colors"
+            :class="$store.compare.has(@js($product['id'])) ? 'bg-navy-900 text-white' : 'bg-white/95 text-navy-900 hover:text-accent'"
+        >
+            <x-storefront.icon name="arrows-right-left" class="w-4 h-4" />
+        </button>
     </a>
 
     <div class="flex flex-col flex-1 p-3">

@@ -1,11 +1,13 @@
 <?php
 
+use App\Http\Controllers\SearchSuggestController;
 use App\Http\Controllers\SitemapController;
 use App\Livewire\Storefront;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/sitemap.xml', SitemapController::class)->name('sitemap');
+Route::get('/search/suggest', SearchSuggestController::class)->name('search.suggest')->middleware('throttle:60,1');
 
 // Served from a route rather than a static public/robots.txt so the Sitemap
 // directive always carries the real APP_URL instead of a hardcoded domain.
@@ -45,6 +47,7 @@ Route::name('storefront.')->group(function () {
     Route::get('/checkout', Storefront\Checkout::class)->name('checkout')->middleware('auth');
     Route::get('/checkout/callback', Storefront\CheckoutCallback::class)->name('checkout.callback')->middleware('auth');
     Route::get('/wishlist', Storefront\WishlistPage::class)->name('wishlist');
+    Route::get('/compare', Storefront\ComparePage::class)->name('compare');
     Route::get('/track-order', Storefront\TrackOrder::class)->name('track-order');
 
     Route::get('/login', Storefront\Auth\Login::class)->name('login')->middleware('guest');

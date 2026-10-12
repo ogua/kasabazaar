@@ -146,6 +146,53 @@
                             >
                                 <x-storefront.icon name="heart" class="w-5 h-5" />
                             </button>
+
+                            <button
+                                type="button"
+                                title="Compare"
+                                aria-label="Compare this product"
+                                x-on:click="Livewire.dispatch('toggle-compare', { productId: @js($product['id']), name: @js($product['name']), image: @js($images[0]['url'] ?? null) })"
+                                :aria-pressed="$store.compare.has(@js($product['id']))"
+                                class="flex items-center justify-center w-12 h-12 rounded-sm border shrink-0 transition-colors"
+                                :class="$store.compare.has(@js($product['id'])) ? 'border-navy-900 bg-navy-900 text-white' : 'border-border text-navy-900 hover:text-accent hover:border-accent'"
+                            >
+                                <x-storefront.icon name="arrows-right-left" class="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        @php
+                            $shareUrl = route('storefront.product', $product['id']);
+                            $shareText = $product['name'].' — GHS '.number_format($price, 2).' on '.config('app.name');
+                        @endphp
+                        <div
+                            class="mt-4 flex flex-wrap items-center gap-2 text-sm"
+                            x-data="{
+                                copied: false,
+                                async share() {
+                                    if (navigator.share) {
+                                        try { await navigator.share({ title: @js($product['name']), text: @js($shareText), url: @js($shareUrl) }); } catch (e) {}
+                                        return;
+                                    }
+                                    await navigator.clipboard?.writeText(@js($shareUrl));
+                                    this.copied = true;
+                                    setTimeout(() => this.copied = false, 2000);
+                                },
+                            }"
+                        >
+                            <span class="text-muted mr-1">Share:</span>
+                            <a href="https://wa.me/?text={{ urlencode($shareText.' '.$shareUrl) }}" target="_blank" rel="noopener" class="flex items-center justify-center w-9 h-9 rounded-full bg-[#25D366] text-white hover:opacity-90" aria-label="Share on WhatsApp">
+                                <x-storefront.icon name="whatsapp" class="w-4 h-4" />
+                            </a>
+                            <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode($shareUrl) }}" target="_blank" rel="noopener" class="flex items-center justify-center w-9 h-9 rounded-full bg-[#1877F2] text-white hover:opacity-90" aria-label="Share on Facebook">
+                                <x-storefront.icon name="facebook" class="w-4 h-4" />
+                            </a>
+                            <a href="https://twitter.com/intent/tweet?text={{ urlencode($shareText) }}&url={{ urlencode($shareUrl) }}" target="_blank" rel="noopener" class="flex items-center justify-center w-9 h-9 rounded-full bg-fg text-white hover:opacity-90" aria-label="Share on X">
+                                <x-storefront.icon name="twitter" class="w-4 h-4" />
+                            </a>
+                            <button type="button" @click="share()" class="inline-flex items-center gap-1.5 h-9 px-3 rounded-full border border-border text-navy-900 hover:border-navy-900">
+                                <x-storefront.icon name="link" class="w-4 h-4" />
+                                <span x-text="copied ? 'Link copied' : 'Copy link'">Copy link</span>
+                            </button>
                         </div>
 
                         <ul class="mt-5 grid grid-cols-3 gap-2 text-center text-[11px] leading-tight text-muted">
@@ -303,6 +350,22 @@
                 </div>
             </section>
 
+            {{-- Related products --}}
+            @foreach ([
+                ['title' => 'Similar items', 'icon' => 'tag', 'products' => $related['similar'] ?? [], 'href' => ! empty($product['category']['id']) ? route('storefront.category', $product['category']['id']) : route('storefront.shop')],
+                ['title' => 'More from '.($vendor['business_name'] ?? 'this seller'), 'icon' => 'store', 'products' => $related['from_vendor'] ?? [], 'href' => ! empty($vendor['slug']) ? route('storefront.vendor', $vendor['slug']) : null],
+            ] as $row)
+                @if (count($row['products']))
+                    <x-storefront.home-section :title="$row['title']" :icon="$row['icon']" :href="$row['href']" class="mt-4">
+                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                            @foreach (array_slice($row['products'], 0, 5) as $relatedProduct)
+                                <x-storefront.product-card :product="$relatedProduct" />
+                            @endforeach
+                        </div>
+                    </x-storefront.home-section>
+                @endif
+            @endforeach
+
             {{-- Recently viewed --}}
             <section
                 wire:ignore
@@ -334,4 +397,31 @@
             </section>
         </div>
     </div>
+
+    @php
+        $productSchema = array_filter([
+            '@context' => 'https://schema.org',
+            '@type' => 'Product',
+            'name' => $product['name'],
+            'description' => \Illuminate\Support\Str::limit(strip_tags($product['description'] ?? ''), 300),
+            'sku' => $product['sku'] ?? null,
+            'image' => array_column($images, 'url') ?: null,
+            'category' => $product['category']['name'] ?? null,
+            'brand' => ! empty($product['specifications']['brand']) ? ['@type' => 'Brand', 'name' => $product['specifications']['brand']] : null,
+            'offers' => [
+                '@type' => 'Offer',
+                'url' => route('storefront.product', $product['id']),
+                'priceCurrency' => 'GHS',
+                'price' => number_format($price, 2, '.', ''),
+                'availability' => $inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+                'seller' => ['@type' => 'Organization', 'name' => $vendor['business_name'] ?? config('app.name')],
+            ],
+            'aggregateRating' => $reviewsCount > 0 ? [
+                '@type' => 'AggregateRating',
+                'ratingValue' => round((float) $product['average_rating'], 1),
+                'reviewCount' => $reviewsCount,
+            ] : null,
+        ]);
+    @endphp
+    <script type="application/ld+json">{!! json_encode($productSchema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}</script>
 @endif

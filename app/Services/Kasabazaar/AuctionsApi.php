@@ -29,6 +29,14 @@ class AuctionsApi
         return $this->client->post("marketplace/auctions/{$slug}/bids", ['amount_ghs' => $amountGhs])->data;
     }
 
+    /**
+     * Turn down a second-chance offer; the lot moves on to the next bidder.
+     */
+    public function decline(string $slug): void
+    {
+        $this->client->post("marketplace/auctions/{$slug}/decline");
+    }
+
     public function mine(int $page = 1): KasabazaarResponse
     {
         return $this->client->get('marketplace/my-auctions', ['page' => $page]);

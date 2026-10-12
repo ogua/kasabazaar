@@ -76,6 +76,12 @@
     </div>
 
     @livewire('storefront.shared.toast')
+    @livewire('storefront.shared.compare-tray')
+
+    {{-- Compare list ids for every compare button; kept in step by the tray's compare-updated event. --}}
+    <script>
+        window.__compareIds = @json(app(\App\Support\CompareList::class)->ids());
+    </script>
 
     @if ($whatsapp = config('services.whatsapp.number'))
         <a

@@ -104,6 +104,26 @@ Both are **owned by the kasabazaar backend** — this repo stores neither.
   side calm (1440 × 800). The launch set and its seeder live in kasabazaar's `database/seeders/assets/banners/`.
 - The shared `countdown` Alpine component (auction cards and the bid panel) is registered in
   [resources/js/app.js](resources/js/app.js).
+- **Second chances and vendor lots.** When a winner does not pay, kasabazaar offers the lot to the next bidder
+  (`viewer.is_second_chance`); the auction page shows Buy now / No thanks. Vendors draft lots in the vendor portal
+  (Catalog → Auctions) and submit them; staff approve or send them back in kasabazaar. Vendors never publish.
+
+## Discovery: search suggestions, compare, related products
+
+- **Search suggestions** — the header search is an Alpine `searchSuggest` component (resources/js/app.js) calling
+  [SearchSuggestController](app/Http/Controllers/SearchSuggestController.php) (`/search/suggest`), which proxies
+  `GET marketplace/search/suggest` with a 60-second cache and returns storefront URLs. Backend search matches every
+  word across name, SKU, description, category, vendor and specifications.
+- **Compare** — [CompareList](app/Support/CompareList.php) keeps up to 4 product snapshots in the session.
+  [CompareTray](app/Livewire/Storefront/Shared/CompareTray.php) (mounted in the layout) listens for the Livewire
+  event `toggle-compare` — fire it with `Livewire.dispatch(...)`, not Alpine's `$dispatch`, which only raises a DOM
+  event — and broadcasts `compare-updated`, which keeps the Alpine `$store.compare` (seeded from the session in the
+  layout) in step for every compare button. `/compare` renders the union of all specification keys.
+- **Related products** come from `GET marketplace/products/{id}/related` (`similar` + `from_vendor`).
+- **Product structured data** — the product page emits `schema.org/Product` JSON-LD (price, availability, rating);
+  keep it in step if product fields change.
+- Blade gotcha: never write an Alpine `@error` handler in a Blade view — Blade parses it as its `@error` directive.
+  Use `x-on:error`.
 
 ## Legal pages
 

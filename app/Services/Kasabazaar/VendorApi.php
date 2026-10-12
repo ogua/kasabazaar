@@ -125,4 +125,44 @@ class VendorApi
     {
         $this->client->post("marketplace/vendor/reviews/{$id}/reply", ['reply' => $reply]);
     }
+
+    public function auctions(array $query = []): KasabazaarResponse
+    {
+        return $this->client->get('marketplace/vendor/auctions', $query);
+    }
+
+    public function auction(string $id): array
+    {
+        return $this->client->get("marketplace/vendor/auctions/{$id}")->data;
+    }
+
+    public function createAuction(array $data): array
+    {
+        return $this->client->post('marketplace/vendor/auctions', $data)->data;
+    }
+
+    public function updateAuction(string $id, array $data): array
+    {
+        return $this->client->put("marketplace/vendor/auctions/{$id}", $data)->data;
+    }
+
+    public function deleteAuction(string $id): void
+    {
+        $this->client->delete("marketplace/vendor/auctions/{$id}");
+    }
+
+    public function deleteAuctionImage(string $id, int $index): array
+    {
+        return $this->client->delete("marketplace/vendor/auctions/{$id}/images/{$index}")->data;
+    }
+
+    public function submitAuction(string $id): array
+    {
+        return $this->client->post("marketplace/vendor/auctions/{$id}/submit")->data;
+    }
+
+    public function auctionBids(string $id): array
+    {
+        return $this->client->get("marketplace/vendor/auctions/{$id}/bids")->data;
+    }
 }

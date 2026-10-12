@@ -6,6 +6,7 @@
         ['label' => 'Addresses', 'route' => 'storefront.account.addresses', 'active' => 'storefront.account.addresses', 'icon' => 'map-pin'],
         ['label' => 'Account Details', 'route' => 'storefront.account.profile', 'active' => 'storefront.account.profile', 'icon' => 'user'],
         ['label' => 'Wishlist', 'route' => 'storefront.wishlist', 'active' => 'storefront.wishlist', 'icon' => 'heart'],
+        ['label' => 'Compare', 'route' => 'storefront.compare', 'active' => 'storefront.compare', 'icon' => 'arrows-right-left'],
     ];
 @endphp
 
@@ -13,7 +14,7 @@
     @foreach ($links as $link)
         <a
             href="{{ route($link['route']) }}"
-            class="flex items-center gap-3 px-4 py-3 text-sm border-b border-border last:border-b-0 {{ request()->routeIs($link['active']) ? 'bg-navy-900 text-white font-semibold' : 'text-fg hover:bg-surface-muted' }}"
+            class="flex items-center gap-3 px-4 py-2.5 text-sm border-b border-border last:border-b-0 {{ request()->routeIs($link['active']) ? 'bg-navy-900 text-white font-semibold' : 'text-fg hover:bg-surface-muted' }}"
         >
             <x-storefront.icon :name="$link['icon']" class="w-4 h-4 shrink-0" />
             {{ $link['label'] }}
@@ -21,7 +22,7 @@
     @endforeach
     <form method="POST" action="{{ route('storefront.logout') }}">
         @csrf
-        <button type="submit" class="flex items-center gap-3 px-4 py-3 text-sm text-error hover:bg-error/5 w-full text-left">
+        <button type="submit" class="flex items-center gap-3 px-4 py-2.5 text-sm text-error hover:bg-error/5 w-full text-left">
             <x-storefront.icon name="x-mark" class="w-4 h-4 shrink-0" />
             Sign Out
         </button>

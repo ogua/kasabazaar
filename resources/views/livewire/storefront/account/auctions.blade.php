@@ -16,6 +16,7 @@
                     $viewer = $auction['viewer'] ?? [];
                     [$label, $classes] = match (true) {
                         ($viewer['is_winner'] ?? false) && ($viewer['is_paid'] ?? false) => ['Won · paid', 'bg-success/10 text-success'],
+                        ($viewer['is_second_chance'] ?? false) => ['Second-chance offer', 'bg-navy-900/10 text-navy-900'],
                         $viewer['is_winner'] ?? false => ['Won · payment due', 'bg-accent-soft text-accent-hover'],
                         $auction['state'] === 'live' && ($viewer['is_leading'] ?? false) => ['Leading', 'bg-success/10 text-success'],
                         $auction['state'] === 'live' => ['Outbid', 'bg-warning/10 text-warning'],

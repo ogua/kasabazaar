@@ -103,6 +103,18 @@ class AuctionDetail extends Component
         }
     }
 
+    public function declineOffer(AuctionsApi $auctionsApi): void
+    {
+        try {
+            $auctionsApi->decline($this->slug);
+            $this->dispatch('toast', type: 'success', message: 'Offer declined. Thanks for letting us know.');
+        } catch (KasabazaarApiException $e) {
+            $this->dispatch('toast', type: 'error', message: $e->getMessage());
+        }
+
+        $this->refresh($auctionsApi);
+    }
+
     private function formatAmount(mixed $amount): ?string
     {
         return $amount === null ? null : number_format((float) $amount, 2, '.', '');

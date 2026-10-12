@@ -31,6 +31,22 @@ class ProductsApi
         return $this->client->get("marketplace/products/{$productId}")->data;
     }
 
+    /**
+     * @return array{similar: array<int, array>, from_vendor: array<int, array>}
+     */
+    public function related(string $productId): array
+    {
+        return $this->client->get("marketplace/products/{$productId}/related")->data;
+    }
+
+    /**
+     * @return array{products: array<int, array>, categories: array<int, array>, auctions: array<int, array>}
+     */
+    public function suggest(string $term): array
+    {
+        return $this->client->get('marketplace/search/suggest', ['q' => $term])->data;
+    }
+
     public function reviews(string $productId, int $page = 1): KasabazaarResponse
     {
         return $this->client->get("marketplace/products/{$productId}/reviews", ['page' => $page]);

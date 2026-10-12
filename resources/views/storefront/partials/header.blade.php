@@ -52,7 +52,16 @@
                 <img src="{{ asset('images/brand/logo-lockup.png') }}" alt="{{ config('app.name') }}" class="hidden sm:block h-9 lg:h-10 w-auto" width="1200" height="375">
             </a>
 
-            <form method="get" action="{{ route('storefront.shop') }}" role="search" class="order-last lg:order-none basis-full lg:basis-auto flex-1 lg:max-w-3xl">
+            <form
+                method="get"
+                action="{{ route('storefront.shop') }}"
+                role="search"
+                class="relative order-last lg:order-none basis-full lg:basis-auto flex-1 lg:max-w-3xl"
+                x-data="searchSuggest(@js(route('search.suggest')))"
+                x-init="term = $refs.search.value"
+                @click.outside="close()"
+                @keydown.escape="close()"
+            >
                 <div class="flex w-full h-11 rounded-sm border-2 border-navy-900 overflow-hidden focus-within:border-accent transition-colors">
                     <label for="header-search-category" class="sr-only">Category</label>
                     <select
@@ -68,15 +77,110 @@
                     <label for="header-search" class="sr-only">Search</label>
                     <input
                         id="header-search"
+                        x-ref="search"
                         type="search"
                         name="search"
                         value="{{ request('search') }}"
                         placeholder="Search products, brands and vendors"
+                        autocomplete="off"
+                        role="combobox"
+                        aria-autocomplete="list"
+                        aria-controls="header-search-results"
+                        :aria-expanded="open && hasResults"
+                        x-model="term"
+                        @input="query()"
+                        @focus="hasResults && (open = true)"
+                        @keydown.arrow-down.prevent="move(1)"
+                        @keydown.arrow-up.prevent="move(-1)"
+                        @keydown.enter="choose($event)"
                         class="flex-1 min-w-0 px-4 text-sm bg-surface placeholder:text-muted focus:outline-none"
                     >
+                    <span x-show="loading" x-cloak class="flex items-center pr-3 text-muted"><x-storefront.ui.spinner class="w-4 h-4" /></span>
                     <button type="submit" class="flex items-center gap-2 px-4 sm:px-6 bg-navy-900 text-white text-sm font-semibold hover:bg-accent transition-colors" aria-label="Search">
                         <x-storefront.icon name="search" class="w-5 h-5" />
                         <span class="hidden sm:inline">Search</span>
+                    </button>
+                </div>
+
+                {{-- Type-ahead results --}}
+                <div
+                    id="header-search-results"
+                    x-show="open"
+                    x-cloak
+                    x-transition:enter="transition ease-out duration-150"
+                    x-transition:enter-start="opacity-0 -translate-y-1"
+                    x-transition:enter-end="opacity-100 translate-y-0"
+                    role="listbox"
+                    class="absolute left-0 right-0 top-full mt-1 z-40 bg-surface border border-border rounded-lg shadow-float overflow-hidden"
+                >
+                    <template x-if="! hasResults && ! loading">
+                        <p class="px-4 py-3 text-sm text-muted">No quick matches — press Enter to search everything for “<span x-text="term"></span>”.</p>
+                    </template>
+
+                    <template x-if="results.products.length">
+                        <div>
+                            <p class="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted">Products</p>
+                            <template x-for="item in results.products" :key="item.id">
+                                <a
+                                    :href="item.url"
+                                    role="option"
+                                    :aria-selected="indexOf(item) === active"
+                                    @mouseenter="active = indexOf(item)"
+                                    class="flex items-center gap-3 px-4 py-2"
+                                    :class="indexOf(item) === active ? 'bg-surface-muted' : ''"
+                                >
+                                    <img :src="item.image_url || @js(asset('images/product-placeholder.png'))" x-on:error="$el.src = @js(asset('images/product-placeholder.png'))" alt="" class="w-10 h-10 rounded-sm object-cover border border-border shrink-0">
+                                    <span class="flex-1 min-w-0">
+                                        <span class="block text-sm text-fg truncate" x-text="item.name"></span>
+                                        <span class="block text-xs text-muted truncate" x-text="item.vendor"></span>
+                                    </span>
+                                    <span class="text-sm font-semibold text-navy-900 tabular-nums" x-text="'GHS ' + Number(item.price_ghs).toFixed(2)"></span>
+                                </a>
+                            </template>
+                        </div>
+                    </template>
+
+                    <template x-if="results.categories.length">
+                        <div class="border-t border-border">
+                            <p class="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted">Categories</p>
+                            <template x-for="item in results.categories" :key="item.url">
+                                <a
+                                    :href="item.url"
+                                    role="option"
+                                    :aria-selected="indexOf(item) === active"
+                                    @mouseenter="active = indexOf(item)"
+                                    class="flex items-center gap-3 px-4 py-2 text-sm text-fg"
+                                    :class="indexOf(item) === active ? 'bg-surface-muted' : ''"
+                                >
+                                    <x-storefront.icon name="grid" class="w-4 h-4 text-muted" />
+                                    <span x-text="item.name"></span>
+                                </a>
+                            </template>
+                        </div>
+                    </template>
+
+                    <template x-if="results.auctions.length">
+                        <div class="border-t border-border">
+                            <p class="px-4 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted">Live auctions</p>
+                            <template x-for="item in results.auctions" :key="item.url">
+                                <a
+                                    :href="item.url"
+                                    role="option"
+                                    :aria-selected="indexOf(item) === active"
+                                    @mouseenter="active = indexOf(item)"
+                                    class="flex items-center gap-3 px-4 py-2"
+                                    :class="indexOf(item) === active ? 'bg-surface-muted' : ''"
+                                >
+                                    <x-storefront.icon name="gavel" class="w-4 h-4 text-accent" />
+                                    <span class="flex-1 min-w-0 text-sm text-fg truncate" x-text="item.title"></span>
+                                    <span class="text-xs text-muted tabular-nums" x-text="'Bid GHS ' + Number(item.current_price_ghs).toFixed(2)"></span>
+                                </a>
+                            </template>
+                        </div>
+                    </template>
+
+                    <button type="submit" class="w-full border-t border-border px-4 py-2.5 text-left text-sm font-semibold text-navy-500 hover:bg-surface-muted">
+                        See all results for “<span x-text="term"></span>”
                     </button>
                 </div>
             </form>

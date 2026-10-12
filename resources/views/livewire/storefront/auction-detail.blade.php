@@ -192,6 +192,18 @@
                                     @if ($viewer['is_paid'] ?? false)
                                         <p class="font-semibold text-success">You won — payment received. Thank you!</p>
                                         <a href="{{ route('storefront.account.orders') }}" class="mt-1 inline-block font-semibold text-navy-500 hover:text-accent">Track it in My Orders</a>
+                                    @elseif ($viewer['is_second_chance'] ?? false)
+                                        <p class="font-semibold text-navy-900">Second-chance offer</p>
+                                        <p class="text-muted mt-0.5">The winning bidder did not pay, so you can buy this item at your highest bid of GHS {{ number_format($auction['current_price_ghs'] ?? 0, 2) }}. It's optional.</p>
+                                        @if (! empty($viewer['payment_due_at']))
+                                            <p class="text-muted mt-0.5">Offer open until {{ \Illuminate\Support\Carbon::parse($viewer['payment_due_at'])->timezone(config('app.timezone'))->format('D j M, g:i a') }}.</p>
+                                        @endif
+                                        <div class="mt-3 grid grid-cols-2 gap-2">
+                                            <x-storefront.ui.button wire:click="declineOffer" wire:confirm="Decline this offer? It will go to the next bidder." variant="secondary" class="w-full">No thanks</x-storefront.ui.button>
+                                            <x-storefront.ui.button href="{{ route('storefront.auction.pay', $auction['slug']) }}" variant="accent" class="w-full">
+                                                <x-storefront.icon name="lock" class="w-4 h-4" /> Buy now
+                                            </x-storefront.ui.button>
+                                        </div>
                                     @else
                                         <p class="font-semibold text-success">Congratulations — you won this auction.</p>
                                         @if (! empty($viewer['payment_due_at']))
@@ -218,6 +230,7 @@
                                         'sold' => 'This lot has been sold.',
                                         'reserve_not_met' => 'Bidding closed below the reserve, so this lot did not sell.',
                                         'no_bids' => 'This auction closed without bids.',
+                                        'unpaid' => 'This auction closed without a completed sale.',
                                         default => 'Bidding has closed.',
                                     } }}
                                 </p>

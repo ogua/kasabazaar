@@ -66,7 +66,7 @@
         <div class="mt-2 flex items-end justify-between gap-2">
             <div class="leading-tight">
                 <p class="text-[11px] uppercase tracking-wide text-muted">
-                    {{ $state === 'ended' ? ($auction['outcome'] === 'sold' ? 'Sold for' : 'Final bid') : ($hasBids ? 'Current bid' : 'Starting bid') }}
+                    {{ $state === 'ended' ? (($auction['outcome'] ?? null) === 'sold' ? 'Sold for' : 'Final bid') : ($hasBids ? 'Current bid' : 'Starting bid') }}
                 </p>
                 <p class="font-display font-bold text-base text-navy-900 tabular-nums">GHS {{ number_format($price, 2) }}</p>
             </div>
