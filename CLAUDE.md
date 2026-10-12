@@ -37,18 +37,25 @@ php artisan sitemap:generate
 
 ## Group of Companies — cross-site sync (IMPORTANT)
 
-**RDD Shipping** (this repo, directory name `kasabazaar`) is the freight logistics arm of the **KasaBazaar Group
-of Companies**. It is **one of four sibling websites**, each in its own repository, that reference each other in
-navigation, footers and legal pages:
+**KASAROSE LOGISTICS** (this repo, directory name `kasabazaar`; formerly *RDD Shipping*) is the freight logistics
+arm of the **KASAROSE Group of Companies**. The group's parent company is **KASAROSE**, the ecommerce marketplace;
+there is no separate group website, so `config('group.parent')` points at the marketplace and its `/our-group`
+page. The group's three sibling websites, each in its own repository, reference each other in navigation, footers
+and legal pages:
 
 | Company | What it is | Repo | Stack |
 |---|---|---|---|
-| **RDD Shipping** | This repo — freight logistics & package forwarding | this repo | Laravel 11 + Filament 3 |
-| KasaBazaar Group | Group site, "Our Companies" page | `Projects/website/kasabazar-website` | Plain PHP + Bootstrap |
+| KASAROSE (parent) | Ecommerce marketplace | `Projects/website/kmarket` | Laravel 12 + Livewire + Filament 4 |
+| **KASAROSE LOGISTICS** | This repo — freight logistics & package forwarding | this repo | Laravel 11 + Filament 3 |
 | Neoride Africa | Tricycle mobility, last-mile transport | `Projects/neoride` | Plain PHP template |
-| KASAROSE | Ecommerce marketplace | `Projects/website/kmarket` | Laravel 12 + Livewire + Filament 4 |
 
-(All four live under `C:/xampp/htdocs/`.)
+(All live under `C:/xampp/htdocs/`.)
+
+**KasaBazaar is no longer part of the group** (October 2026). Its site, `Projects/website/kasabazar-website`, is a
+standalone company site and must not be listed or linked as a group company. Facts that still legitimately name
+KasaBazaar are left alone: the registered legal entity (`GROUP_LEGAL_NAME`, "KasaBazaar Limited"), the SMS sender
+name and the carrier-registered SMS terms URL (`config('group.sms_terms_url')`), receipt account names and
+operational mailboxes.
 
 ### KASAROSE is an API consumer of this app
 
@@ -59,7 +66,7 @@ connection, and it has no local product or order schema of its own. Two conseque
 - **Never break `/api/v1` response shapes without checking `kmarket`.** Renaming a field, changing a status
   string or altering pagination metadata will break the storefront silently. The consuming clients are in
   `kmarket`'s `app/Services/Kasabazaar/*`.
-- Operationally, RDD Shipping **carries a share of KASAROSE deliveries** — nationwide road freight and anything
+- Operationally, KASAROSE LOGISTICS **carries a share of KASAROSE deliveries** — nationwide road freight and anything
   arriving from the US warehouse — and returns tracking events for them. That relationship is described in both
   privacy policies and both delivery policies, so a change to it is a cross-repo change.
 
@@ -72,13 +79,12 @@ blade — read it from the roster.**
 |---|---|
 | kasabazaar (here) | `config/group.php` |
 | kmarket (KASAROSE) | `config/group.php` |
-| kasabazar-website | `includes/config.php` (`$group_companies`, `SITE_URL_*`) |
 | neoride | `parts/group_companies.php` |
 
 ### The rule
 
 **Before you finish any change that touches company identity, cross-links or legal/policy copy, check whether the
-same change is needed in the other three repositories — and make it there too, in the same session.**
+same change is needed in the other two repositories — and make it there too, in the same session.**
 
 Changes that always require the cross-repo sweep:
 
@@ -100,11 +106,11 @@ generation, tenant/branch scoping, shipment workflow.
 - `config/group.php` — the roster, the parent-group URLs and this company's own identity strings.
 - `resources/views/web/footer.blade.php` — the "Our Group" link column and the parent-group line in the copyright
   bar. Both loop over `config('group.companies')`.
-- `resources/views/web/privacy-policy.blade.php` — section 3a, "Sharing Within the KasaBazaar Group of Companies",
+- `resources/views/web/privacy-policy.blade.php` — section 3a, "Sharing Within the KASAROSE Group of Companies",
   loops the same roster.
 
-This repo's public website has a privacy policy but **no terms of use page**; the other three repos do. If terms
-are added here, mirror the "Our Sister Companies" clause the group site and KASAROSE both carry.
+This repo's public website has a privacy policy and terms (`resources/views/web/terms.blade.php`, section 12 "Our
+Sister Companies"); both loop the roster.
 
 ## Architecture Overview
 

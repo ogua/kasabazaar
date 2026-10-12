@@ -69,7 +69,7 @@
                     <li><strong>Providers:</strong> Messages are delivered through our messaging providers, Twilio and Arkesel, acting as data processors on our behalf.</li>
                     <li><strong>No sharing:</strong> Mobile numbers collected for SMS notifications, and your opt-in consent, are never sold, rented, or shared with third parties or other group companies for their own marketing or promotional purposes.</li>
                 </ul>
-                <p>This programme is also documented at <a href="{{ config('group.parent.url') }}/sms-terms.php" target="_blank" rel="noopener">{{ parse_url(config('group.parent.url'), PHP_URL_HOST) }}/sms-terms.php</a>.</p>
+                <p>This programme is also documented at <a href="{{ config('group.sms_terms_url') }}" target="_blank" rel="noopener">{{ parse_url(config('group.sms_terms_url'), PHP_URL_HOST) }}{{ parse_url(config('group.sms_terms_url'), PHP_URL_PATH) }}</a>.</p>
 
                 <hr class="my-4">
 
@@ -83,7 +83,7 @@
                 </ul>
 
                 <h6 class="mt-4" id="group-sharing">a) Sharing Within the {{ config('group.parent.name') }}</h6>
-                <p>KASAROSE LOGISTICS is one of four companies in the group. The others are:</p>
+                <p>KASAROSE LOGISTICS is one of the companies in the group. The others are:</p>
                 <ul>
                     @foreach (config('group.companies') as $company)
                         <li>
@@ -96,7 +96,6 @@
                 <ul>
                     <li><strong>KASAROSE</strong> passes us recipient names, delivery addresses, phone numbers and parcel details for the marketplace orders we carry, and we return tracking events so shoppers can follow a shipment. Data about a KASAROSE order that we did not carry stays with KASAROSE.</li>
                     <li><strong>Neoride Africa</strong> receives recipient name, address and phone number where its riders complete a last-mile delivery on our behalf in Kumasi and Ejisu.</li>
-                    <li><strong>KasaBazaar</strong> provides shared corporate functions — finance, accounting and group-level customer support — and its staff may access shipment and payment records for those purposes.</li>
                 </ul>
                 <p>Each company is responsible for its own use of the data it receives. <strong>Marketing lists are not shared between group companies</strong>, and we do not track you across the group's websites.</p>
 

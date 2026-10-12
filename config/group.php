@@ -2,20 +2,20 @@
 
 /*
 |--------------------------------------------------------------------------
-| KasaBazaar Group of Companies
+| KASAROSE Group of Companies
 |--------------------------------------------------------------------------
 |
 | Single source of truth for KASAROSE LOGISTICS' place in the group and for the
-| sister companies its public website links out to. The same roster is
-| mirrored in the other three repositories — see the "Group of Companies"
-| section of CLAUDE.md before editing anything here:
+| sister companies its public website links out to. KASAROSE (the marketplace)
+| is the parent company. The same roster is mirrored in the sibling
+| repositories — see the "Group of Companies" section of CLAUDE.md before
+| editing anything here:
 |
-|   kasabazar-website  includes/config.php        ($group_companies)
-|   kmarket            config/group.php           (KASAROSE)
+|   kmarket            config/group.php           (KASAROSE, parent)
 |   neoride            parts/group_companies.php  (Neoride Africa)
 |
 | Any change to a company name, tagline, URL or legal-entity description must
-| be applied to all four, otherwise the cross-links and the legal pages that
+| be applied to all three, otherwise the cross-links and the legal pages that
 | name the group's companies fall out of sync.
 |
 */
@@ -43,11 +43,28 @@ return [
     |--------------------------------------------------------------------------
     */
 
+    // KASAROSE is the parent company; the group has no separate website, so the
+    // parent links resolve to the marketplace and its Our Group page.
     'parent' => [
-        'name' => 'KasaBazaar Group of Companies',
-        'url' => env('GROUP_SITE_URL') ?: 'https://kasabazaar.com',
-        'companies_url' => (env('GROUP_SITE_URL') ?: 'https://kasabazaar.com').'/our-companies.php',
+        'name' => 'KASAROSE Group of Companies',
+        'url' => env('KASAROSE_SITE_URL') ?: 'https://kasarose.com',
+        'companies_url' => rtrim(env('KASAROSE_SITE_URL') ?: 'https://kasarose.com', '/').'/our-group',
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | SMS programme terms
+    |--------------------------------------------------------------------------
+    |
+    | Public page documenting the SMS notification programme, referenced by the
+    | privacy policy. It is the URL registered with the messaging carriers, so
+    | it is kept as its own setting rather than derived from the parent group —
+    | point SMS_TERMS_URL at a new page only after the carrier registration has
+    | been updated to match.
+    |
+    */
+
+    'sms_terms_url' => env('SMS_TERMS_URL') ?: 'https://kasabazaar.com/sms-terms.php',
 
     /*
     |--------------------------------------------------------------------------
@@ -61,14 +78,6 @@ return [
 
     'companies' => [
         [
-            'key' => 'kasabazaar',
-            'name' => 'KasaBazaar',
-            'role' => 'Import & export, real estate and property management',
-            'description' => "The group's founding company, offering door-to-door import & export shipping alongside real estate sales and property management services.",
-            'url' => env('GROUP_SITE_URL') ?: 'https://kasabazaar.com',
-            'url_label' => 'kasabazaar.com',
-        ],
-        [
             'key' => 'neoride-africa',
             'name' => 'Neoride Africa',
             'role' => 'Mobility and last-mile transport',
@@ -79,8 +88,8 @@ return [
         [
             'key' => 'kasarose',
             'name' => 'KASAROSE',
-            'role' => 'Ecommerce marketplace',
-            'description' => "The group's multi-vendor marketplace, where vetted Ghanaian vendors sell direct to shoppers nationwide. KASAROSE LOGISTICS carries a share of KASAROSE deliveries — nationwide road freight and anything arriving from the US warehouse.",
+            'role' => 'Parent company and ecommerce marketplace',
+            'description' => "The group's parent company and multi-vendor marketplace, where vetted Ghanaian vendors sell direct to shoppers nationwide. KASAROSE LOGISTICS carries a share of KASAROSE deliveries — nationwide road freight and anything arriving from the US warehouse.",
             // CONFIRM BEFORE LAUNCH: kasarose.com is the intended marketplace
             // domain but is not yet verified as live. Override with
             // KASAROSE_SITE_URL rather than editing the fallback.

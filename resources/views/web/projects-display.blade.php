@@ -18,7 +18,7 @@
             <div class="portfolio-content h-100">
               <img src="assets/shipping-images/shipping (1).jpg" class="img-fluid" alt="">
               <div class="portfolio-info">
-                <h4>KasaBaZaar Shipping & Logistics</h4>
+                <h4>KASAROSE LOGISTICS</h4>
               </div>
             </div>
           </div><!-- End Portfolio Item -->
@@ -27,7 +27,7 @@
             <div class="portfolio-content h-100">
               <img src="assets/shipping-images/shipping (2).jpg" class="img-fluid" alt="">
               <div class="portfolio-info">
-                <h4>KasaBaZaar Shipping & Logistics</h4>
+                <h4>KASAROSE LOGISTICS</h4>
               </div>
             </div>
           </div><!-- End Portfolio Item -->
@@ -36,7 +36,7 @@
             <div class="portfolio-content h-100">
               <img src="assets/shipping-images/shipping (3).jpg" class="img-fluid" alt="">
               <div class="portfolio-info">
-                <h4>KasaBaZaar Shipping & Logistics</h4>
+                <h4>KASAROSE LOGISTICS</h4>
               </div>
             </div>
           </div><!-- End Portfolio Item -->
@@ -45,7 +45,7 @@
             <div class="portfolio-content h-100">
               <img src="assets/shipping-images/shipping (4).jpg" class="img-fluid" alt="">
               <div class="portfolio-info">
-                <h4>KasaBaZaar Shipping & Logistics</h4>
+                <h4>KASAROSE LOGISTICS</h4>
               </div>
             </div>
           </div><!-- End Portfolio Item -->
@@ -54,7 +54,7 @@
             <div class="portfolio-content h-100">
               <img src="assets/shipping-images/shipping (5).jpg" class="img-fluid" alt="">
               <div class="portfolio-info">
-                <h4>KasaBaZaar Shipping & Logistics</h4>
+                <h4>KASAROSE LOGISTICS</h4>
               </div>
             </div>
           </div><!-- End Portfolio Item -->
@@ -63,7 +63,7 @@
             <div class="portfolio-content h-100">
               <img src="assets/shipping-images/shipping (6).jpg" class="img-fluid" alt="">
               <div class="portfolio-info">
-                <h4>KasaBaZaar Shipping & Logistics</h4>
+                <h4>KASAROSE LOGISTICS</h4>
               </div>
             </div>
           </div><!-- End Portfolio Item -->
@@ -72,7 +72,7 @@
             <div class="portfolio-content h-100">
               <img src="assets/shipping-images/shipping (7).jpg" class="img-fluid" alt="">
               <div class="portfolio-info">
-                <h4>KasaBaZaar Shipping & Logistics</h4>
+                <h4>KASAROSE LOGISTICS</h4>
               </div>
             </div>
           </div><!-- End Portfolio Item -->
@@ -81,7 +81,7 @@
             <div class="portfolio-content h-100">
               <img src="assets/shipping-images/shipping (8).jpg" class="img-fluid" alt="">
               <div class="portfolio-info">
-                <h4>KasaBaZaar Shipping & Logistics</h4>
+                <h4>KASAROSE LOGISTICS</h4>
               </div>
             </div>
           </div><!-- End Portfolio Item -->
@@ -90,7 +90,7 @@
             <div class="portfolio-content h-100">
               <img src="assets/shipping-images/shipping (9).jpg" class="img-fluid" alt="">
               <div class="portfolio-info">
-                <h4>KasaBaZaar Shipping & Logistics</h4>
+                <h4>KASAROSE LOGISTICS</h4>
               </div>
             </div>
           </div><!-- End Portfolio Item -->
@@ -99,7 +99,7 @@
             <div class="portfolio-content h-100">
               <img src="assets/shipping-images/shipping (10).jpg" class="img-fluid" alt="">
               <div class="portfolio-info">
-                <h4>KasaBaZaar Shipping & Logistics</h4>
+                <h4>KASAROSE LOGISTICS</h4>
               </div>
             </div>
           </div><!-- End Portfolio Item -->
@@ -108,7 +108,7 @@
             <div class="portfolio-content h-100">
               <img src="assets/shipping-images/shipping (11).jpg" class="img-fluid" alt="">
               <div class="portfolio-info">
-                <h4>KasaBaZaar Shipping & Logistics</h4>
+                <h4>KASAROSE LOGISTICS</h4>
               </div>
             </div>
           </div><!-- End Portfolio Item -->
@@ -118,7 +118,7 @@
             <div class="portfolio-content h-100">
               <img src="assets/shipping-images/shipping (12).jpg" class="img-fluid" alt="">
               <div class="portfolio-info">
-                <h4>KasaBaZaar Shipping & Logistics</h4>
+                <h4>KASAROSE LOGISTICS</h4>
               </div>
             </div>
           </div><!-- End Portfolio Item -->
@@ -128,7 +128,7 @@
             <div class="portfolio-content h-100">
               <img src="assets/shipping-images/shipping (13).jpg" class="img-fluid" alt="">
               <div class="portfolio-info">
-                <h4>KasaBaZaar Shipping & Logistics</h4>
+                <h4>KASAROSE LOGISTICS</h4>
               </div>
             </div>
           </div><!-- End Portfolio Item -->
@@ -138,7 +138,7 @@
             <div class="portfolio-content h-100">
               <img src="assets/shipping-images/shipping (14).jpg" class="img-fluid" alt="">
               <div class="portfolio-info">
-                <h4>KasaBaZaar Shipping & Logistics</h4>
+                <h4>KASAROSE LOGISTICS</h4>
               </div>
             </div>
           </div><!-- End Portfolio Item -->
@@ -148,7 +148,7 @@
             <div class="portfolio-content h-100">
               <img src="assets/shipping-images/shipping (15).jpg" class="img-fluid" alt="">
               <div class="portfolio-info">
-                <h4>KasaBaZaar Shipping & Logistics</h4>
+                <h4>KASAROSE LOGISTICS</h4>
               </div>
             </div>
           </div><!-- End Portfolio Item -->
@@ -158,7 +158,7 @@
             <div class="portfolio-content h-100">
               <img src="assets/shipping-images/shipping (16).jpg" class="img-fluid" alt="">
               <div class="portfolio-info">
-                <h4>KasaBaZaar Shipping & Logistics</h4>
+                <h4>KASAROSE LOGISTICS</h4>
               </div>
             </div>
           </div><!-- End Portfolio Item -->
@@ -168,7 +168,7 @@
             <div class="portfolio-content h-100">
               <img src="assets/shipping-images/shipping (17).jpg" class="img-fluid" alt="">
               <div class="portfolio-info">
-                <h4>KasaBaZaar Shipping & Logistics</h4>
+                <h4>KASAROSE LOGISTICS</h4>
               </div>
             </div>
           </div><!-- End Portfolio Item -->
@@ -178,7 +178,7 @@
             <div class="portfolio-content h-100">
               <img src="assets/shipping-images/shipping (18).jpg" class="img-fluid" alt="">
               <div class="portfolio-info">
-                <h4>KasaBaZaar Shipping & Logistics</h4>
+                <h4>KASAROSE LOGISTICS</h4>
               </div>
             </div>
           </div><!-- End Portfolio Item -->
@@ -188,7 +188,7 @@
             <div class="portfolio-content h-100">
               <img src="assets/shipping-images/shipping (19).jpg" class="img-fluid" alt="">
               <div class="portfolio-info">
-                <h4>KasaBaZaar Shipping & Logistics</h4>
+                <h4>KASAROSE LOGISTICS</h4>
               </div>
             </div>
           </div><!-- End Portfolio Item -->
@@ -198,7 +198,7 @@
             <div class="portfolio-content h-100">
               <img src="assets/shipping-images/shipping (20).jpg" class="img-fluid" alt="">
               <div class="portfolio-info">
-                <h4>KasaBaZaar Shipping & Logistics</h4>
+                <h4>KASAROSE LOGISTICS</h4>
               </div>
             </div>
           </div><!-- End Portfolio Item -->
@@ -208,7 +208,7 @@
             <div class="portfolio-content h-100">
               <img src="assets/shipping-images/shipping (21).jpg" class="img-fluid" alt="">
               <div class="portfolio-info">
-                <h4>KasaBaZaar Shipping & Logistics</h4>
+                <h4>KASAROSE LOGISTICS</h4>
               </div>
             </div>
           </div><!-- End Portfolio Item -->
@@ -218,7 +218,7 @@
             <div class="portfolio-content h-100">
               <img src="assets/shipping-images/shipping (22).jpg" class="img-fluid" alt="">
               <div class="portfolio-info">
-                <h4>KasaBaZaar Shipping & Logistics</h4>
+                <h4>KASAROSE LOGISTICS</h4>
               </div>
             </div>
           </div><!-- End Portfolio Item -->
@@ -228,7 +228,7 @@
             <div class="portfolio-content h-100">
               <img src="assets/shipping-images/shipping (23).jpg" class="img-fluid" alt="">
               <div class="portfolio-info">
-                <h4>KasaBaZaar Shipping & Logistics</h4>
+                <h4>KASAROSE LOGISTICS</h4>
               </div>
             </div>
           </div><!-- End Portfolio Item -->

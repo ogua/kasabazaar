@@ -6,7 +6,7 @@
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
   <title>@yield('heading', 'KASAROSE LOGISTICS')</title>
   <meta name="description" content="@yield('meta_description', 'KASAROSE LOGISTICS — reliable door-to-door shipping between the USA and Ghana. Air freight, sea freight, e-commerce deliveries and more.')">
-  <meta name="keywords" content="@yield('meta_keywords', 'shipping Ghana, door to door delivery, freight forwarding, air freight, sea freight, e-commerce shipping, KasaBazaar, KASAROSE LOGISTICS')">
+  <meta name="keywords" content="@yield('meta_keywords', 'shipping Ghana, door to door delivery, freight forwarding, air freight, sea freight, e-commerce shipping, KASAROSE LOGISTICS')">
 
   <!-- Favicons -->
   <link rel="icon" href="assets/img/favicon-32x32.png" />

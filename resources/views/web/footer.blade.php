@@ -48,7 +48,7 @@
         </div>
 
         {{-- Group cross-links. Driven by config/group.php, which is mirrored in
-             the group site, KASAROSE and Neoride repos — see CLAUDE.md. --}}
+             the KASAROSE and Neoride repos — see CLAUDE.md. --}}
         <div class="col-lg-3 col-md-3 footer-links">
           <h4>Our Group</h4>
           <ul>
