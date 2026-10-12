@@ -395,6 +395,8 @@ Route::prefix('v1')->group(function () {
 
             Route::get('products', [EcommerceCustomer\EcommerceProductCatalogController::class, 'index']);
             Route::get('products/{id}', [EcommerceCustomer\EcommerceProductCatalogController::class, 'show']);
+            Route::get('products/{id}/related', [EcommerceCustomer\EcommerceProductCatalogController::class, 'related']);
+            Route::middleware('throttle:60,1')->get('search/suggest', [EcommerceCustomer\EcommerceProductCatalogController::class, 'suggest']);
             Route::get('products/{id}/reviews', [EcommerceCustomer\ProductReviewController::class, 'index']);
 
             Route::get('vendors', [EcommerceCustomer\VendorStorefrontController::class, 'index']);
@@ -453,6 +455,7 @@ Route::prefix('v1')->group(function () {
             Route::get('my-auctions', [EcommerceCustomer\AuctionController::class, 'mine']);
             Route::middleware('throttle:30,1')->post('auctions/{slug}/bids', [EcommerceCustomer\AuctionController::class, 'placeBid']);
             Route::post('auctions/{slug}/checkout', [EcommerceCustomer\AuctionController::class, 'checkout']);
+            Route::post('auctions/{slug}/decline', [EcommerceCustomer\AuctionController::class, 'decline']);
         });
 
         // Vendor self-service — vendor accounts are provisioned only via an
@@ -508,6 +511,12 @@ Route::prefix('v1')->group(function () {
 
                 Route::get('reports/sales', [Vendor\VendorReportController::class, 'sales']);
                 Route::get('reports/products', [Vendor\VendorReportController::class, 'productPerformance']);
+
+                Route::apiResource('auctions', Vendor\VendorAuctionController::class);
+                Route::post('auctions/{id}/images', [Vendor\VendorAuctionController::class, 'uploadImage']);
+                Route::delete('auctions/{id}/images/{index}', [Vendor\VendorAuctionController::class, 'deleteImage'])->whereNumber('index');
+                Route::post('auctions/{id}/submit', [Vendor\VendorAuctionController::class, 'submit']);
+                Route::get('auctions/{id}/bids', [Vendor\VendorAuctionController::class, 'bids']);
             });
         });
 

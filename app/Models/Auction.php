@@ -49,6 +49,8 @@ class Auction extends Model
             'original_ends_at' => 'datetime',
             'closed_at' => 'datetime',
             'payment_due_at' => 'datetime',
+            'submitted_at' => 'datetime',
+            'offer_round' => 'integer',
             'status' => AuctionStatus::class,
             'outcome' => AuctionOutcome::class,
         ];
@@ -94,6 +96,11 @@ class Auction extends Model
         return $this->belongsTo(EcommerceOrderGroup::class, 'order_group_id');
     }
 
+    public function paymentDefaults(): HasMany
+    {
+        return $this->hasMany(AuctionPaymentDefault::class);
+    }
+
     /**
      * Published and not cancelled — the auctions shoppers may see.
      */
@@ -123,10 +130,23 @@ class Auction extends Model
         return $query->where('status', AuctionStatus::Published)->where('ends_at', '<=', now());
     }
 
+    /**
+     * Sold lots whose current buyer let the payment window lapse — picked up
+     * by the close job to move the offer on to the next bidder.
+     */
+    public function scopeOverdueForPayment(Builder $query): Builder
+    {
+        return $query->where('status', AuctionStatus::Ended)
+            ->where('outcome', AuctionOutcome::Sold)
+            ->where('payment_due_at', '<=', now())
+            ->where(fn (Builder $q) => $q->whereNull('order_group_id')
+                ->orWhereHas('orderGroup', fn (Builder $g) => $g->where('payment_status', '!=', EcommerceOrderPaymentStatus::Paid)));
+    }
+
     public function state(): string
     {
         return match (true) {
-            $this->status === AuctionStatus::Draft => self::STATE_DRAFT,
+            in_array($this->status, [AuctionStatus::Draft, AuctionStatus::PendingReview], true) => self::STATE_DRAFT,
             $this->status === AuctionStatus::Cancelled => self::STATE_CANCELLED,
             $this->status === AuctionStatus::Ended, $this->ends_at->isPast() => self::STATE_ENDED,
             $this->starts_at->isFuture() => self::STATE_UPCOMING,

@@ -37,6 +37,18 @@ class AuctionResource extends Resource
     {
         return $form
             ->schema([
+                Forms\Components\Section::make('Vendor submission')
+                    ->schema([
+                        Forms\Components\Placeholder::make('submitted')
+                            ->label('Submitted')
+                            ->content(fn (?Auction $record) => $record?->submitted_at?->format('j M Y, H:i') ?? '—'),
+                        Forms\Components\Placeholder::make('review_notes_display')
+                            ->label('Last review notes')
+                            ->content(fn (?Auction $record) => $record?->review_notes ?: '—'),
+                    ])
+                    ->columns(2)
+                    ->visible(fn (?Auction $record) => $record?->submitted_at !== null || filled($record?->review_notes)),
+
                 Forms\Components\Section::make('Lot')
                     ->description('What is being sold. Auction lots are separate from shop products and never appear in the catalogue.')
                     ->schema([
@@ -157,14 +169,17 @@ class AuctionResource extends Resource
                     ->description(fn (Auction $record) => $record->vendor?->business_name),
                 Tables\Columns\TextColumn::make('state')
                     ->label('State')
-                    ->getStateUsing(fn (Auction $record) => ucfirst($record->state()))
+                    ->getStateUsing(fn (Auction $record) => $record->status === AuctionStatus::PendingReview
+                        ? 'Awaiting review'
+                        : ucfirst($record->state()))
                     ->badge()
-                    ->color(fn (Auction $record) => match ($record->state()) {
-                        Auction::STATE_LIVE => 'success',
-                        Auction::STATE_UPCOMING => 'info',
-                        Auction::STATE_ENDED => 'gray',
-                        Auction::STATE_CANCELLED => 'danger',
-                        default => 'warning',
+                    ->color(fn (Auction $record) => match (true) {
+                        $record->status === AuctionStatus::PendingReview => 'warning',
+                        $record->state() === Auction::STATE_LIVE => 'success',
+                        $record->state() === Auction::STATE_UPCOMING => 'info',
+                        $record->state() === Auction::STATE_ENDED => 'gray',
+                        $record->state() === Auction::STATE_CANCELLED => 'danger',
+                        default => 'gray',
                     }),
                 Tables\Columns\TextColumn::make('current_price_ghs')
                     ->label('Current bid')
@@ -187,6 +202,7 @@ class AuctionResource extends Resource
                     ->description(fn (Auction $record) => match (true) {
                         $record->outcome !== AuctionOutcome::Sold => null,
                         $record->isPaid() => 'Paid',
+                        $record->offer_round > 1 => 'Second-chance offer '.($record->offer_round - 1),
                         $record->payment_due_at?->isPast() => 'Payment overdue',
                         default => 'Awaiting payment',
                     })
@@ -202,6 +218,52 @@ class AuctionResource extends Resource
                     ->options(AuctionOutcome::class),
             ])
             ->actions([
+                Tables\Actions\Action::make('approve')
+                    ->label('Approve')
+                    ->icon('heroicon-o-check-badge')
+                    ->color('success')
+                    ->authorize('update')
+                    ->requiresConfirmation()
+                    ->modalDescription('Publishes the vendor\'s lot. It becomes visible now and opens for bidding at its scheduled time.')
+                    ->visible(fn (Auction $record) => $record->status === AuctionStatus::PendingReview)
+                    ->action(function (Auction $record, AuctionService $auctionService) {
+                        try {
+                            $auctionService->approve($record);
+                            Notification::make()->title('Auction approved and published')->success()->send();
+                        } catch (AuctionException $e) {
+                            Notification::make()->title($e->getMessage())->danger()->send();
+                        }
+                    }),
+                Tables\Actions\Action::make('reject')
+                    ->label('Send back')
+                    ->icon('heroicon-o-arrow-uturn-left')
+                    ->color('warning')
+                    ->authorize('update')
+                    ->visible(fn (Auction $record) => $record->status === AuctionStatus::PendingReview)
+                    ->form([
+                        Forms\Components\Textarea::make('reason')
+                            ->label('What should the vendor change?')
+                            ->required()
+                            ->maxLength(1000),
+                    ])
+                    ->action(function (Auction $record, array $data, AuctionService $auctionService) {
+                        $auctionService->reject($record, $data['reason']);
+                        Notification::make()->title('Sent back to the vendor')->success()->send();
+                    }),
+                Tables\Actions\Action::make('relist')
+                    ->label('Relist')
+                    ->icon('heroicon-o-arrow-path')
+                    ->authorize('create')
+                    ->requiresConfirmation()
+                    ->modalDescription('Creates a new draft copy of this lot with a fresh schedule. Review and publish it when ready.')
+                    ->visible(fn (Auction $record) => $record->status === AuctionStatus::Cancelled
+                        || in_array($record->outcome, [AuctionOutcome::NoBids, AuctionOutcome::ReserveNotMet, AuctionOutcome::Unpaid], true))
+                    ->action(function (Auction $record, AuctionService $auctionService) {
+                        $copy = $auctionService->relist($record, auth()->user());
+                        Notification::make()->title('Draft created')->success()->send();
+
+                        return redirect(static::getUrl('edit', ['record' => $copy]));
+                    }),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\Action::make('cancel')
                     ->label('Cancel')

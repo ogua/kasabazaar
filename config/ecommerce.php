@@ -39,4 +39,12 @@ return [
      */
     'auction_payment_window_hours' => (int) env('ECOMMERCE_AUCTION_PAYMENT_WINDOW_HOURS', 48),
     'auction_max_bid_ghs' => (float) env('ECOMMERCE_AUCTION_MAX_BID_GHS', 1000000),
+
+    /*
+     * When a winner does not pay, the lot is offered to the next-highest
+     * bidder up to this many times before it ends as Unpaid. Winners who
+     * default this many times can no longer bid (0 disables the ban).
+     */
+    'auction_max_second_chances' => (int) env('ECOMMERCE_AUCTION_MAX_SECOND_CHANCES', 2),
+    'auction_max_payment_defaults' => (int) env('ECOMMERCE_AUCTION_MAX_PAYMENT_DEFAULTS', 2),
 ];

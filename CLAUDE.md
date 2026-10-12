@@ -84,6 +84,17 @@ Both are owned here and consumed by kmarket over `/api/v1/marketplace/{auctions,
   deduction skips it — and reuses a still-pending group on retry.
 - **The reserve price never leaves the backend.** `AuctionResource` exposes only `has_reserve` / `reserve_met`, and
   bid histories show masked names (`AuctionBid::maskedBidderName()`).
+- **Unpaid wins.** `handleLapsedPayment()` (run by the same scheduled job) records an `auction_payment_defaults`
+  row, cancels the unpaid order, and offers the lot to the next distinct bidder at their own highest bid if it meets
+  the reserve (`offer_round` counts offers; `ecommerce.auction_max_second_chances`). Nobody left → outcome `unpaid`
+  and staff use **Relist**. Second-chance buyers may decline (`POST auctions/{slug}/decline`); original winners may
+  not. `winner`-kind defaults at or above `ecommerce.auction_max_payment_defaults` bar the user from bidding.
+- **Vendor auctions.** `/api/v1/marketplace/vendor/auctions` lets vendors draft lots, upload photos and `submit`
+  them (status `pending_review`); staff **Approve** or **Send back** (with `review_notes`) in Filament. Vendors can
+  never publish, and published lots are read-only to them.
+- **Discovery endpoints.** `products/{id}/related` (same category by nearest price, plus more from the vendor) and
+  `search/suggest` (products, categories, live auctions). Catalogue search matches every word across name, SKU,
+  description, specifications (lower-cased JSON text), category name and vendor name.
 - **Banners** (`banners` table, Filament "Storefront Banners") moved here from kmarket in October 2026. Artwork is
   text-free; kmarket renders the copy. `BannerSeeder` installs the launch slider from
   `database/seeders/assets/banners/` and is safe to re-run.

@@ -7,6 +7,7 @@ use App\Enums\AuctionStatus;
 use App\Enums\EcommerceOrderPaymentStatus;
 use App\Exceptions\AuctionException;
 use App\Models\Auction;
+use App\Models\AuctionPaymentDefault;
 use App\Models\Banner;
 use App\Models\Branch;
 use App\Models\Client;
@@ -15,6 +16,7 @@ use App\Models\User;
 use App\Models\Vendor;
 use App\Models\VendorWallet;
 use App\Notifications\Ecommerce\AuctionOutbid;
+use App\Notifications\Ecommerce\AuctionSecondChance;
 use App\Notifications\Ecommerce\AuctionWon;
 use App\Services\AuctionService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -362,5 +364,177 @@ class AuctionTest extends TestCase
 
         $this->assertSame('A***a', $bid->fresh('user')->maskedBidderName());
         $this->assertSame(Str::length('A***a'), 5);
+    }
+
+    private function closeWithBids(Auction $auction, array $bids): void
+    {
+        foreach ($bids as [$user, $amount]) {
+            $this->service()->placeBid($auction, $user, $amount);
+        }
+
+        $auction->update(['ends_at' => now()->subMinute()]);
+        $this->service()->close($auction);
+    }
+
+    private function address(User $user): DeliveryAddress
+    {
+        return DeliveryAddress::create([
+            'user_id' => $user->id,
+            'full_name' => $user->name,
+            'phone' => '0200000000',
+            'country' => 'Ghana',
+            'region' => 'Ashanti',
+            'city' => 'Kumasi',
+        ]);
+    }
+
+    public function test_an_unpaid_win_moves_to_the_next_bidder_as_a_second_chance(): void
+    {
+        $auction = $this->makeAuction(['reserve_price_ghs' => 120]);
+        $low = $this->makeCustomer('Low Bidder');
+        $second = $this->makeCustomer('Second Bidder');
+        $winner = $this->makeCustomer('Winner');
+        $this->closeWithBids($auction, [[$low, 100], [$second, 130], [$winner, 200]]);
+
+        // The winner starts paying, then lets the window lapse.
+        $this->service()->checkout($auction->fresh(), $winner, $this->address($winner)->id);
+        $pendingGroup = $auction->fresh()->orderGroup;
+        $auction->update(['payment_due_at' => now()->subMinute()]);
+
+        $this->service()->closeDue();
+
+        $auction->refresh();
+        $this->assertSame(AuctionOutcome::Sold, $auction->outcome);
+        $this->assertSame($second->id, $auction->winner_user_id);
+        $this->assertSame(130.0, (float) $auction->current_price_ghs);
+        $this->assertSame(2, $auction->offer_round);
+        $this->assertNull($auction->order_group_id);
+        $this->assertTrue($auction->payment_due_at->isFuture());
+        $this->assertSame(EcommerceOrderPaymentStatus::Failed, $pendingGroup->fresh()->payment_status);
+        $this->assertDatabaseHas('auction_payment_defaults', ['user_id' => $winner->id, 'kind' => AuctionPaymentDefault::KIND_WINNER]);
+        Notification::assertSentTo($second, AuctionSecondChance::class);
+        // The 100 bid is below the 120 reserve, so it is never offered.
+        Notification::assertNotSentTo($low, AuctionSecondChance::class);
+    }
+
+    public function test_a_second_chance_buyer_can_decline_and_the_lot_ends_unpaid_when_nobody_is_left(): void
+    {
+        $auction = $this->makeAuction();
+        $second = $this->makeCustomer('Second');
+        $winner = $this->makeCustomer('Winner');
+        $this->closeWithBids($auction, [[$second, 100], [$winner, 150]]);
+        $auction->update(['payment_due_at' => now()->subMinute()]);
+        $this->service()->closeDue();
+
+        $this->withHeaders($this->authHeaders($second))
+            ->postJson("/api/v1/marketplace/auctions/{$auction->slug}/decline")
+            ->assertOk();
+
+        $auction->refresh();
+        $this->assertSame(AuctionOutcome::Unpaid, $auction->outcome);
+        $this->assertNull($auction->winner_user_id);
+        $this->assertDatabaseHas('auction_payment_defaults', ['user_id' => $second->id, 'kind' => AuctionPaymentDefault::KIND_SECOND_CHANCE]);
+    }
+
+    public function test_the_original_winner_cannot_decline_a_binding_win(): void
+    {
+        $auction = $this->makeAuction();
+        $winner = $this->makeCustomer();
+        $this->closeWithBids($auction, [[$winner, 150]]);
+
+        $this->expectExceptionMessage('A winning bid is binding');
+        $this->service()->declineOffer($auction->fresh(), $winner);
+    }
+
+    public function test_repeat_defaulters_are_barred_from_bidding(): void
+    {
+        config(['ecommerce.auction_max_payment_defaults' => 2]);
+        $defaulter = $this->makeCustomer();
+
+        foreach (range(1, 2) as $i) {
+            AuctionPaymentDefault::create([
+                'auction_id' => $this->makeAuction()->id,
+                'user_id' => $defaulter->id,
+                'amount_ghs' => 100,
+                'kind' => AuctionPaymentDefault::KIND_WINNER,
+            ]);
+        }
+
+        $this->expectExceptionMessage('unpaid auction wins');
+        $this->service()->placeBid($this->makeAuction(), $defaulter, 100);
+    }
+
+    public function test_vendors_draft_and_submit_auctions_but_only_staff_publish_them(): void
+    {
+        $vendor = $this->makeVendor();
+        $headers = $this->authHeaders($vendor->user);
+
+        $created = $this->withHeaders($headers)->postJson('/api/v1/marketplace/vendor/auctions', [
+            'title' => 'Antique Ashanti stool',
+            'starting_price_ghs' => 300,
+            'reserve_price_ghs' => 500,
+            'bid_increment_ghs' => 20,
+            'starts_at' => now()->addHour()->toDateTimeString(),
+            'ends_at' => now()->addDays(3)->toDateTimeString(),
+            'status' => 'published',
+        ])->assertCreated();
+
+        $id = $created->json('data.id');
+        $created->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.reserve_price_ghs', 500);
+
+        // No photo yet: submission is refused.
+        $this->withHeaders($headers)->postJson("/api/v1/marketplace/vendor/auctions/{$id}/submit")->assertStatus(422);
+
+        Auction::find($id)->update(['image_paths' => ['auction-images/stool.jpg']]);
+        $this->withHeaders($headers)->postJson("/api/v1/marketplace/vendor/auctions/{$id}/submit")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'pending_review');
+
+        // Still invisible to shoppers while under review.
+        $this->getJson('/api/v1/marketplace/auctions/'.Auction::find($id)->slug)->assertNotFound();
+
+        $this->service()->approve(Auction::find($id));
+        $this->assertSame(AuctionStatus::Published, Auction::find($id)->status);
+
+        // Published lots are read-only for the vendor.
+        $this->withHeaders($headers)->putJson("/api/v1/marketplace/vendor/auctions/{$id}", ['title' => 'Changed'])
+            ->assertStatus(422);
+    }
+
+    public function test_vendors_cannot_see_or_edit_another_vendors_auction(): void
+    {
+        $theirs = $this->makeAuction(['status' => AuctionStatus::Draft]);
+        $other = $this->makeVendor();
+
+        $this->withHeaders($this->authHeaders($other->user))
+            ->getJson("/api/v1/marketplace/vendor/auctions/{$theirs->id}")
+            ->assertNotFound();
+    }
+
+    public function test_rejecting_a_submission_returns_it_to_draft_with_notes(): void
+    {
+        $auction = $this->makeAuction(['status' => AuctionStatus::PendingReview, 'submitted_at' => now()]);
+
+        $this->service()->reject($auction, 'Please add a photo of the underside.');
+
+        $auction->refresh();
+        $this->assertSame(AuctionStatus::Draft, $auction->status);
+        $this->assertSame('Please add a photo of the underside.', $auction->review_notes);
+    }
+
+    public function test_relisting_creates_a_fresh_draft_copy(): void
+    {
+        $auction = $this->makeAuction(['ends_at' => now()->subMinute(), 'image_paths' => ['auction-images/a.jpg']]);
+        $this->service()->close($auction);
+
+        $copy = $this->service()->relist($auction->fresh());
+
+        $this->assertNotSame($auction->id, $copy->id);
+        $this->assertSame(AuctionStatus::Draft, $copy->status);
+        $this->assertSame($auction->title, $copy->title);
+        $this->assertSame(['auction-images/a.jpg'], $copy->image_paths);
+        $this->assertSame(0, $copy->bids_count);
+        $this->assertTrue($copy->ends_at->isFuture());
     }
 }

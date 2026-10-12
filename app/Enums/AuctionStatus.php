@@ -13,6 +13,7 @@ use Filament\Support\Contracts\HasLabel;
 enum AuctionStatus: string implements HasColor, HasLabel
 {
     case Draft = 'draft';
+    case PendingReview = 'pending_review';
     case Published = 'published';
     case Ended = 'ended';
     case Cancelled = 'cancelled';
@@ -21,6 +22,7 @@ enum AuctionStatus: string implements HasColor, HasLabel
     {
         return match ($this) {
             self::Draft => 'Draft',
+            self::PendingReview => 'Awaiting review',
             self::Published => 'Published',
             self::Ended => 'Ended',
             self::Cancelled => 'Cancelled',
@@ -31,6 +33,7 @@ enum AuctionStatus: string implements HasColor, HasLabel
     {
         return match ($this) {
             self::Draft => 'gray',
+            self::PendingReview => 'warning',
             self::Published => 'success',
             self::Ended => 'info',
             self::Cancelled => 'danger',

@@ -55,6 +55,8 @@ class AuctionResource extends JsonResource
                     : $this->bids()->where('user_id', $viewer->id)->exists(),
                 'is_leading' => $this->winning_bid_id !== null && $this->winningBid?->user_id === $viewer->id,
                 'is_winner' => $isWinner,
+                // Offered after the original winner did not pay; optional to accept.
+                'is_second_chance' => $isWinner && $this->offer_round > 1,
                 'payment_due_at' => $isWinner ? $this->payment_due_at?->toIso8601String() : null,
                 'is_paid' => $isWinner && $this->isPaid(),
                 'order_group_id' => $isWinner ? $this->order_group_id : null,

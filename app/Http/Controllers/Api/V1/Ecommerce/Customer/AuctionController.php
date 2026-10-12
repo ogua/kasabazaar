@@ -141,6 +141,23 @@ class AuctionController extends CustomerBaseController
     }
 
     /**
+     * A second-chance buyer turns the offer down; it moves on to the next
+     * bidder straight away.
+     */
+    public function decline(Request $request, string $slug): JsonResponse
+    {
+        $auction = Auction::visible()->where('slug', $slug)->firstOrFail();
+
+        try {
+            $this->auctionService->declineOffer($auction, $request->user());
+        } catch (AuctionException $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+
+        return $this->success(null, 'Offer declined. Thanks for letting us know.');
+    }
+
+    /**
      * @param  array<int, string>  $auctionIds
      */
     private function preloadViewerBids(Request $request, array $auctionIds): void
