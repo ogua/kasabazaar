@@ -40,6 +40,6 @@ class PlatformVendorProductTest extends TestCase
         $this->assertContains($product->id, $ids);
 
         $entry = collect($response->json('data'))->firstWhere('id', $product->id);
-        $this->assertSame('KasaBazaar Market', $entry['vendor']['business_name']);
+        $this->assertSame(Vendor::platform()->business_name, $entry['vendor']['business_name']);
     }
 }

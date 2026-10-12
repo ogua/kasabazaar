@@ -9,7 +9,6 @@ use App\Http\Controllers\Api\V1\Cashbook\CashbookLoanController;
 use App\Http\Controllers\Api\V1\Cashbook\CashbookWHTController;
 use App\Http\Controllers\Api\V1\ClearingAgentController;
 use App\Http\Controllers\Api\V1\ClientController;
-use App\Http\Controllers\Api\V1\WhatsappGatewayCallbackController;
 use App\Http\Controllers\Api\V1\ContactMessageController;
 use App\Http\Controllers\Api\V1\ContainerController;
 use App\Http\Controllers\Api\V1\Customer\CustomerAuthController;
@@ -60,6 +59,7 @@ use App\Http\Controllers\Api\V1\TripController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\VehicleController;
 use App\Http\Controllers\Api\V1\Vendor;
+use App\Http\Controllers\Api\V1\WhatsappGatewayCallbackController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -412,6 +412,14 @@ Route::prefix('v1')->group(function () {
             Route::delete('cart', [EcommerceCustomer\EcommerceCartController::class, 'clear']);
             Route::post('cart/coupon', [EcommerceCustomer\EcommerceCartController::class, 'applyCoupon']);
 
+            // Storefront banners (homepage hero slider, promo slots).
+            Route::get('banners', [EcommerceCustomer\BannerController::class, 'index']);
+
+            // Auctions — browsing and bid history are public; bidding and paying need login.
+            Route::get('auctions', [EcommerceCustomer\AuctionController::class, 'index']);
+            Route::get('auctions/{slug}', [EcommerceCustomer\AuctionController::class, 'show']);
+            Route::get('auctions/{slug}/bids', [EcommerceCustomer\AuctionController::class, 'bids']);
+
             // Guest order tracking — order number + phone/email lookup, no login required.
             Route::middleware('throttle:10,1')->post('track-order', [EcommerceCustomer\PublicOrderTrackingController::class, 'track']);
         });
@@ -441,6 +449,10 @@ Route::prefix('v1')->group(function () {
             Route::delete('wishlist/{productId}', [EcommerceCustomer\WishlistController::class, 'destroy']);
 
             Route::post('products/{id}/reviews', [EcommerceCustomer\ProductReviewController::class, 'store']);
+
+            Route::get('my-auctions', [EcommerceCustomer\AuctionController::class, 'mine']);
+            Route::middleware('throttle:30,1')->post('auctions/{slug}/bids', [EcommerceCustomer\AuctionController::class, 'placeBid']);
+            Route::post('auctions/{slug}/checkout', [EcommerceCustomer\AuctionController::class, 'checkout']);
         });
 
         // Vendor self-service — vendor accounts are provisioned only via an

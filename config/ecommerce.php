@@ -31,4 +31,12 @@ return [
      * product created without a vendor_id to this vendor.
      */
     'platform_vendor_slug' => env('ECOMMERCE_PLATFORM_VENDOR_SLUG', 'kasabazaar-market'),
+
+    /*
+     * Auctions. The winner has this many hours after the auction closes to pay
+     * through the normal checkout; after that staff may offer the lot again.
+     * Bids above max_bid_ghs are rejected as almost certainly mistyped.
+     */
+    'auction_payment_window_hours' => (int) env('ECOMMERCE_AUCTION_PAYMENT_WINDOW_HOURS', 48),
+    'auction_max_bid_ghs' => (float) env('ECOMMERCE_AUCTION_MAX_BID_GHS', 1000000),
 ];

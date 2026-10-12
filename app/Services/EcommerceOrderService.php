@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\EcommerceOrderPaymentStatus;
 use App\Enums\EcommerceOrderStatus;
 use App\Exceptions\InsufficientStockException;
+use App\Models\Auction;
 use App\Models\Coupon;
 use App\Models\CouponUsage;
 use App\Models\DeliveryAddress;
@@ -100,7 +101,7 @@ class EcommerceOrderService
                 $order = $this->createVendorOrder(
                     $group,
                     $vendor,
-                    $vendorItems,
+                    $this->linesFromCartItems($vendorItems),
                     $address,
                     $notes,
                     $rate,
@@ -162,6 +163,93 @@ class EcommerceOrderService
     }
 
     /**
+     * Turn a won auction into a single-item order group at the winning price,
+     * ready for the normal payment flow. The line has no ecommerce_product_id —
+     * auction lots are not catalogue products — so inventory deduction skips it.
+     */
+    public function createFromAuction(Auction $auction, User $user, string $deliveryAddressId, string $notes = ''): EcommerceOrderGroup
+    {
+        $address = DeliveryAddress::where('user_id', $user->id)->findOrFail($deliveryAddressId);
+
+        $rateLog = ExchangeRateLog::latest('created_at')->first();
+        $rate = $rateLog?->rate ?? 1;
+
+        return DB::transaction(function () use ($auction, $user, $address, $notes, $rate) {
+            $vendor = Vendor::findOrFail($auction->vendor_id);
+            $price = (float) $auction->current_price_ghs;
+
+            $group = EcommerceOrderGroup::create([
+                'user_id' => $user->id,
+                'subtotal_ghs' => 0,
+                'total_ghs' => 0,
+                'exchange_rate' => $rate,
+                'payment_status' => EcommerceOrderPaymentStatus::Pending->value,
+                'notes' => $notes,
+            ]);
+
+            $order = $this->createVendorOrder(
+                $group,
+                $vendor,
+                [[
+                    'product_id' => null,
+                    'name' => 'Auction: '.$auction->title,
+                    'sku' => 'AUC-'.strtoupper(substr($auction->id, 0, 8)),
+                    'quantity' => 1,
+                    'unit_price' => $price,
+                ]],
+                $address,
+                $notes,
+                $rate,
+                $price,
+                0.0,
+                null
+            );
+
+            EcommerceOrderStatusHistory::create([
+                'order_id' => $order->id,
+                'status' => EcommerceOrderStatus::AwaitingPayment->value,
+                'notes' => "Won at auction ({$auction->title}), awaiting payment.",
+                'created_by' => $user->id,
+            ]);
+
+            $group->update([
+                'subtotal_ghs' => $order->subtotal_ghs,
+                'shipping_fee_ghs' => $order->shipping_fee_ghs,
+                'tax_ghs' => $order->tax_ghs,
+                'discount_ghs' => 0,
+                'total_ghs' => $order->total_ghs,
+                'total_usd' => $order->total_usd,
+            ]);
+
+            $user->notify(new EcommerceOrderPlaced($order));
+            $vendor->user?->notify(new VendorNewOrderReceived($order));
+
+            return $group->load(['orders.items', 'orders.deliveryDetail', 'orders.statusHistory', 'orders.vendor']);
+        });
+    }
+
+    /**
+     * Lock each cart item's product and price it at the current catalogue
+     * price (discount first), so a price edited after add-to-cart is honoured.
+     *
+     * @return array<int, array{product_id: ?string, name: string, sku: ?string, quantity: int, unit_price: float}>
+     */
+    private function linesFromCartItems(\Illuminate\Support\Collection $cartItems): array
+    {
+        return $cartItems->map(function ($cartItem) {
+            $product = EcommerceProduct::lockForUpdate()->findOrFail($cartItem->ecommerce_product_id);
+
+            return [
+                'product_id' => $product->id,
+                'name' => $product->name,
+                'sku' => $product->sku,
+                'quantity' => (int) $cartItem->quantity,
+                'unit_price' => (float) ($product->discount_price_ghs ?? $product->price_ghs),
+            ];
+        })->values()->all();
+    }
+
+    /**
      * @return array{0: ?Coupon, 1: float} the coupon (if still valid) and the total discount across the whole cart.
      */
     private function resolveCoupon(?string $code, User $user, float $cartSubtotal): array
@@ -181,10 +269,13 @@ class EcommerceOrderService
         }
     }
 
+    /**
+     * @param  array<int, array{product_id: ?string, name: string, sku: ?string, quantity: int, unit_price: float}>  $lines
+     */
     private function createVendorOrder(
         EcommerceOrderGroup $group,
         Vendor $vendor,
-        \Illuminate\Support\Collection $vendorItems,
+        array $lines,
         DeliveryAddress $address,
         string $notes,
         float $rate,
@@ -208,19 +299,17 @@ class EcommerceOrderService
 
         $vendorSubtotal = 0;
 
-        foreach ($vendorItems as $cartItem) {
-            $product = EcommerceProduct::lockForUpdate()->findOrFail($cartItem->ecommerce_product_id);
-            $unitPrice = $product->discount_price_ghs ?? $product->price_ghs;
-            $lineTotal = round($unitPrice * $cartItem->quantity, 2);
+        foreach ($lines as $line) {
+            $lineTotal = round($line['unit_price'] * $line['quantity'], 2);
             $vendorSubtotal += $lineTotal;
 
             EcommerceOrderItem::create([
                 'order_id' => $order->id,
-                'ecommerce_product_id' => $product->id,
-                'product_name' => $product->name,
-                'product_sku' => $product->sku,
-                'quantity' => $cartItem->quantity,
-                'unit_price_ghs' => $unitPrice,
+                'ecommerce_product_id' => $line['product_id'],
+                'product_name' => $line['name'],
+                'product_sku' => $line['sku'],
+                'quantity' => $line['quantity'],
+                'unit_price_ghs' => $line['unit_price'],
                 'total_ghs' => $lineTotal,
             ]);
         }

@@ -70,6 +70,24 @@ connection, and it has no local product or order schema of its own. Two conseque
   arriving from the US warehouse — and returns tracking events for them. That relationship is described in both
   privacy policies and both delivery policies, so a change to it is a cross-repo change.
 
+### Auctions and storefront banners (marketplace)
+
+Both are owned here and consumed by kmarket over `/api/v1/marketplace/{auctions,my-auctions,banners}`.
+
+- **Auctions are not ecommerce products.** A lot (`auctions` table) is sold once to the highest bidder and never
+  appears in the catalogue. `AuctionService` owns every state change: `placeBid()` locks the auction row and
+  re-checks the minimum (starting price, then current + increment), refuses the leader and the seller, and extends
+  `ends_at` by `extension_minutes` for late bids; `close()` (run every minute by `app:close-ended-auctions`) records
+  the outcome (`sold` / `reserve_not_met` / `no_bids`) and opens a `payment_due_at` window
+  (`ecommerce.auction_payment_window_hours`); `checkout()` turns the win into a one-item order via
+  `EcommerceOrderService::createFromAuction()` — the order item has `ecommerce_product_id = null`, so inventory
+  deduction skips it — and reuses a still-pending group on retry.
+- **The reserve price never leaves the backend.** `AuctionResource` exposes only `has_reserve` / `reserve_met`, and
+  bid histories show masked names (`AuctionBid::maskedBidderName()`).
+- **Banners** (`banners` table, Filament "Storefront Banners") moved here from kmarket in October 2026. Artwork is
+  text-free; kmarket renders the copy. `BannerSeeder` installs the launch slider from
+  `database/seeders/assets/banners/` and is safe to re-run.
+
 ### The roster
 
 **Every company roster lives in exactly one file per repo. Never hardcode a sister company's name or URL in a

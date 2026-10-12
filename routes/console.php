@@ -10,6 +10,15 @@ Artisan::command('inspire', function () {
 
 // Fetch latest USD → GHS exchange rate from open.er-api.com daily.
 // The free-tier API resets at ~00:02 UTC; run at 00:05 UTC to get fresh data.
+// Settle auctions as soon as their clock runs out, so winners are notified
+// and the payment window opens within a minute of closing.
+Schedule::command('app:close-ended-auctions')
+    ->everyMinute()
+    ->withoutOverlapping()
+    ->onFailure(function () {
+        logger()->error('Scheduled app:close-ended-auctions command failed.');
+    });
+
 Schedule::command('app:cleanup-expired-ecommerce-carts')
     ->daily()
     ->withoutOverlapping()
