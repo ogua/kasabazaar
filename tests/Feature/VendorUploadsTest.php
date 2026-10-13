@@ -82,3 +82,13 @@ it('sends a new store logo to the backend and shows the stored URL', function ()
         && str_ends_with($r->url(), '/marketplace/vendor/store/logo')
         && $r->isMultipart());
 });
+
+it('shows existing store images from the backend host, not this one', function () {
+    Http::fake(['kasabazaar.test/api/v1/marketplace/vendor/store' => Http::response(['success' => true, 'data' => [
+        'business_name' => 'Demo Crafts', 'logo_path' => 'vendor-logos/logo.png', 'banner_path' => null,
+    ]])]);
+
+    Livewire::test(StoreSettings::class)
+        ->assertSet('logoUrl', 'https://kasabazaar.test/storage/vendor-logos/logo.png')
+        ->assertSet('bannerUrl', null);
+});

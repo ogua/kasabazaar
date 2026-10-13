@@ -34,8 +34,8 @@ class StoreSettings extends Page
     {
         $vendor = $vendorApi->storeSettings();
 
-        $this->logoUrl = $vendor['logo_path'] ? asset('storage/'.$vendor['logo_path']) : null;
-        $this->bannerUrl = $vendor['banner_path'] ? asset('storage/'.$vendor['banner_path']) : null;
+        $this->logoUrl = KasabazaarClient::storageUrl($vendor['logo_path'] ?? null);
+        $this->bannerUrl = KasabazaarClient::storageUrl($vendor['banner_path'] ?? null);
 
         $this->form->fill([
             'business_name' => $vendor['business_name'],

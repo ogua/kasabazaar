@@ -7,6 +7,7 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 class KasabazaarClient
 {
@@ -47,6 +48,22 @@ class KasabazaarClient
         }
 
         return $this->parse($request->asMultipart()->post($path, $this->toMultipartFields($data)));
+    }
+
+    /**
+     * Public URL of a file the backend stored on its own public disk (vendor
+     * logos, banners...). Those live on the backend's host, not this one, so
+     * asset() would point at the wrong server.
+     */
+    public static function storageUrl(?string $path): ?string
+    {
+        if (blank($path)) {
+            return null;
+        }
+
+        $origin = Str::before(rtrim((string) config('services.kasabazaar.base_url'), '/'), '/api/');
+
+        return $origin.'/storage/'.ltrim($path, '/');
     }
 
     private function request(array $headers = []): PendingRequest
