@@ -137,7 +137,7 @@ generation, tenant/branch scoping, shipment workflow.
 - `config/group.php` — the roster, the parent-group URLs and this company's own identity strings.
 - `resources/views/web/footer.blade.php` — the "Our Group" link column and the parent-group line in the copyright
   bar. Both loop over `config('group.companies')`.
-- `resources/views/web/privacy-policy.blade.php` — section 3a, "Sharing Within the KASAROSE Group of Companies",
+- `resources/views/web/privacy-policy.blade.php` — section 3a, "Sharing Within the KASAROSE LOGISTICS group",
   loops the same roster.
 
 This repo's public website has a privacy policy and terms (`resources/views/web/terms.blade.php`, section 12 "Our
