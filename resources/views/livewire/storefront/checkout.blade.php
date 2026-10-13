@@ -64,6 +64,11 @@
                 <label class="block font-display font-semibold text-lg text-navy-900 mb-3">Order Notes (optional)</label>
                 <textarea wire:model="notes" rows="3" class="w-full border border-border rounded-sm px-3 py-2 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent" placeholder="Delivery instructions, gate code, etc."></textarea>
             </div>
+
+            <label class="flex items-start gap-3 text-sm text-navy-900">
+                <input type="checkbox" wire:model="whatsappOptIn" class="mt-0.5">
+                <span>Send my order updates on WhatsApp. You can reply STOP at any time to switch back to SMS.</span>
+            </label>
         </div>
 
         <div>

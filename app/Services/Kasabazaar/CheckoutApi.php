@@ -6,11 +6,12 @@ class CheckoutApi
 {
     public function __construct(protected KasabazaarClient $client) {}
 
-    public function checkout(string $deliveryAddressId, string $notes = ''): array
+    public function checkout(string $deliveryAddressId, string $notes = '', bool $whatsappOptIn = false): array
     {
         return $this->client->post('marketplace/checkout', [
             'delivery_address_id' => $deliveryAddressId,
             'notes' => $notes,
+            'whatsapp_opt_in' => $whatsappOptIn,
         ])->data;
     }
 

@@ -18,6 +18,8 @@ class Checkout extends Component
 
     public string $notes = '';
 
+    public bool $whatsappOptIn = false;
+
     public string $error = '';
 
     public bool $placingOrder = false;
@@ -104,7 +106,7 @@ class Checkout extends Component
         $this->placingOrder = true;
 
         try {
-            $orderGroup = $checkoutApi->checkout($this->selectedAddressId, $this->notes);
+            $orderGroup = $checkoutApi->checkout($this->selectedAddressId, $this->notes, $this->whatsappOptIn);
             $payment = $checkoutApi->initiatePayment($orderGroup['id']);
             $gateway = $payment['gateway'] ?? null;
 
