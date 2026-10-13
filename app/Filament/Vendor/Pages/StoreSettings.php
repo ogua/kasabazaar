@@ -2,6 +2,7 @@
 
 namespace App\Filament\Vendor\Pages;
 
+use App\Filament\Vendor\Concerns\ReadsTemporaryUploads;
 use App\Services\Kasabazaar\KasabazaarClient;
 use App\Services\Kasabazaar\VendorApi;
 use Filament\Forms\Components\FileUpload;
@@ -15,6 +16,8 @@ use Filament\Support\Icons\Heroicon;
 
 class StoreSettings extends Page
 {
+    use ReadsTemporaryUploads;
+
     protected static string|\BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Store';
@@ -64,9 +67,9 @@ class StoreSettings extends Page
 
     public function save(VendorApi $vendorApi, KasabazaarClient $client): void
     {
+        $newLogo = $this->pendingUploads('newLogo', 'logo')[0] ?? null;
+        $newBanner = $this->pendingUploads('newBanner', 'banner')[0] ?? null;
         $data = $this->form->getState();
-        $newLogo = $data['newLogo'] ?? null;
-        $newBanner = $data['newBanner'] ?? null;
 
         $vendorApi->updateStore([
             'business_name' => $data['business_name'],
@@ -78,17 +81,13 @@ class StoreSettings extends Page
         ]);
 
         if ($newLogo) {
-            $client->postMultipart('marketplace/vendor/store/logo', [], [
-                ['name' => 'logo', 'contents' => fopen($newLogo->getRealPath(), 'r'), 'filename' => $newLogo->getClientOriginalName()],
-            ]);
-            $this->logoUrl = $newLogo->temporaryUrl();
+            $store = $client->postMultipart('marketplace/vendor/store/logo', [], [$newLogo])->data;
+            $this->logoUrl = $store['logo_url'] ?? $this->logoUrl;
         }
 
         if ($newBanner) {
-            $client->postMultipart('marketplace/vendor/store/banner', [], [
-                ['name' => 'banner', 'contents' => fopen($newBanner->getRealPath(), 'r'), 'filename' => $newBanner->getClientOriginalName()],
-            ]);
-            $this->bannerUrl = $newBanner->temporaryUrl();
+            $store = $client->postMultipart('marketplace/vendor/store/banner', [], [$newBanner])->data;
+            $this->bannerUrl = $store['banner_url'] ?? $this->bannerUrl;
         }
 
         Notification::make()->title('Store settings updated.')->success()->send();

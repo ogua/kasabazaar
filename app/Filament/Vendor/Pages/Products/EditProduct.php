@@ -2,6 +2,7 @@
 
 namespace App\Filament\Vendor\Pages\Products;
 
+use App\Filament\Vendor\Concerns\ReadsTemporaryUploads;
 use App\Filament\Vendor\Pages\Products\Concerns\HasProductForm;
 use App\Services\Kasabazaar\KasabazaarClient;
 use App\Services\Kasabazaar\VendorApi;
@@ -12,7 +13,7 @@ use Filament\Panel;
 
 class EditProduct extends Page
 {
-    use HasProductForm;
+    use HasProductForm, ReadsTemporaryUploads;
 
     protected static bool $shouldRegisterNavigation = false;
 
@@ -61,16 +62,14 @@ class EditProduct extends Page
 
     public function save(VendorApi $vendorApi, KasabazaarClient $client): void
     {
+        $newImages = $this->pendingUploads('newImage', 'image');
         $data = $this->form->getState();
-        $newImage = $data['newImage'] ?? null;
         unset($data['newImage']);
 
         $vendorApi->updateProduct($this->productId, $this->productPayloadFromFormState($data));
 
-        if ($newImage) {
-            $client->postMultipart("marketplace/vendor/products/{$this->productId}/images", [], [
-                ['name' => 'image', 'contents' => fopen($newImage->getRealPath(), 'r'), 'filename' => $newImage->getClientOriginalName()],
-            ]);
+        if ($newImages) {
+            $client->postMultipart("marketplace/vendor/products/{$this->productId}/images", [], [$newImages[0]]);
             $this->images = $vendorApi->product($this->productId)['images'] ?? [];
         }
 

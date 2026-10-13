@@ -2,6 +2,7 @@
 
 namespace App\Filament\Vendor\Pages\Auctions;
 
+use App\Filament\Vendor\Concerns\ReadsTemporaryUploads;
 use App\Filament\Vendor\Pages\Auctions\Concerns\HasAuctionForm;
 use App\Services\Kasabazaar\KasabazaarApiException;
 use App\Services\Kasabazaar\KasabazaarClient;
@@ -15,7 +16,7 @@ use Filament\Support\Icons\Heroicon;
 
 class EditAuction extends Page
 {
-    use HasAuctionForm;
+    use HasAuctionForm, ReadsTemporaryUploads;
 
     protected static bool $shouldRegisterNavigation = false;
 
@@ -65,16 +66,14 @@ class EditAuction extends Page
 
     public function save(VendorApi $vendorApi, KasabazaarClient $client): void
     {
+        $newImages = $this->pendingUploads('newImages', 'image');
         $data = $this->form->getState();
-        $newImages = $this->data['newImages'] ?? [];
 
         try {
             $vendorApi->updateAuction($this->auctionId, $this->auctionPayloadFromFormState($data));
 
-            foreach ((array) $newImages as $image) {
-                $client->postMultipart("marketplace/vendor/auctions/{$this->auctionId}/images", [], [
-                    ['name' => 'image', 'contents' => fopen($image->getRealPath(), 'r'), 'filename' => $image->getClientOriginalName()],
-                ]);
+            foreach ($newImages as $image) {
+                $client->postMultipart("marketplace/vendor/auctions/{$this->auctionId}/images", [], [$image]);
             }
         } catch (KasabazaarApiException $e) {
             Notification::make()->title('Could not save the auction')->body($e->getMessage())->danger()->send();
