@@ -44,7 +44,7 @@
                     </p>
                 </div>
                 <x-storefront.ui.card class="bg-surface-muted">
-                    <img src="{{ asset('images/brand/logo-lockup.png') }}" alt="{{ config('app.name') }}" class="h-9 w-auto mb-4">
+                    <img src="{{ asset('images/brand/logo-lockup.png') }}" alt="{{ config('app.name') }}" class="h-6 w-auto mb-4">
                     <dl class="space-y-3 text-sm">
                         <div>
                             <dt class="text-xs uppercase tracking-wide text-muted mb-0.5">Role in the group</dt>

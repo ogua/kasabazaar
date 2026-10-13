@@ -40,7 +40,11 @@ class BuildBrandAssets extends Command
         $brandOut = public_path('images/brand');
         $imageOut = public_path('images');
 
-        foreach (['kasa.png', 'kasarose.png', 'kasarose-2.png'] as $file) {
+        // The storefront is KASAROSE MARKET: its lockups come from the
+        // kasarosemarket-* files (generated in the KasaRose Website repo by
+        // tools/make-kasarosemarket-logo.py from the KASAROSE letterforms);
+        // the K mark is shared with the parent brand.
+        foreach (['kasa.png', 'kasarosemarket.png', 'kasarosemarket-2.png'] as $file) {
             if (! is_file("{$source}/{$file}")) {
                 $this->error("Missing source art: resources/brand/{$file}");
 
@@ -50,8 +54,8 @@ class BuildBrandAssets extends Command
 
         // libpng warns about the sRGB profile the source files carry; harmless here.
         $mark = $this->trimAlpha($this->loadPng("{$source}/kasa.png"));
-        $lockup = $this->trimAlpha($this->loadPng("{$source}/kasarose-2.png"));
-        $stacked = $this->trimAlpha($this->loadPng("{$source}/kasarose.png"));
+        $lockup = $this->trimAlpha($this->loadPng("{$source}/kasarosemarket-2.png"));
+        $stacked = $this->trimAlpha($this->loadPng("{$source}/kasarosemarket.png"));
 
         $this->save($this->resizeToWidth($mark, 512), "{$brandOut}/logo-mark.png");
         $this->save($this->reverseForDark($this->resizeToWidth($mark, 512)), "{$brandOut}/logo-mark-on-dark.png");

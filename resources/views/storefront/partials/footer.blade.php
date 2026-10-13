@@ -35,7 +35,7 @@
             <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-x-8 gap-y-10">
                 <div class="col-span-2">
                     <a href="{{ route('storefront.home') }}" class="inline-block mb-4">
-                        <img src="{{ asset('images/brand/logo-lockup-on-dark.png') }}" alt="{{ config('app.name') }}" class="h-10 w-auto">
+                        <img src="{{ asset('images/brand/logo-lockup-on-dark.png') }}" alt="{{ config('app.name') }}" class="h-8 w-auto" width="1200" height="160">
                     </a>
                     <p class="text-sm leading-relaxed max-w-sm mb-5">
                         A multi-vendor marketplace connecting local sellers with shoppers across Ghana, backed by the

@@ -49,7 +49,7 @@
             <a href="{{ route('storefront.home') }}" class="flex items-center shrink-0" aria-label="{{ config('app.name') }} home">
                 {{-- Mark alone below sm:, full lockup above — the wordmark is unreadable at phone widths. --}}
                 <img src="{{ asset('images/brand/logo-mark.png') }}" alt="{{ config('app.name') }}" class="sm:hidden h-8 w-auto" width="512" height="431">
-                <img src="{{ asset('images/brand/logo-lockup.png') }}" alt="{{ config('app.name') }}" class="hidden sm:block h-9 lg:h-10 w-auto" width="1200" height="375">
+                <img src="{{ asset('images/brand/logo-lockup.png') }}" alt="{{ config('app.name') }}" class="hidden sm:block h-7 lg:h-8 w-auto" width="1200" height="160">
             </a>
 
             <form
