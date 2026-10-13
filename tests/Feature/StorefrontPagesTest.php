@@ -42,13 +42,14 @@ it('links every sister company from the footer', function () {
     $response->assertSee(route('storefront.group'), escape: false);
 });
 
-it('presents KASAROSE as the parent company and no longer references KasaBazaar', function (string $route) {
-    expect(config('group.parent.name'))->toBe('KASAROSE Group of Companies')
+it('presents KASAROSE LOGISTICS as the parent and never names KasaBazaar', function (string $route) {
+    expect(config('group.parent.name'))->toBe('KASAROSE LOGISTICS')
+        ->and(config('group.parent.url'))->toBe('https://kasarose.com')
         ->and(array_column(config('group.companies'), 'name'))->not->toContain('KasaBazaar');
 
     $this->get(route($route))
         ->assertOk()
-        ->assertSee('KASAROSE Group of Companies', escape: false)
+        ->assertSee('KASAROSE LOGISTICS group', escape: false)
         ->assertDontSee('kasabazaar', escape: false)
         ->assertDontSee('KasaBazaar', escape: false);
 })->with([
@@ -61,10 +62,11 @@ it('presents KASAROSE as the parent company and no longer references KasaBazaar'
 ]);
 
 it('exposes the current brand name rather than the pre-rebrand one', function () {
-    expect(config('app.name'))->toBe('KASAROSE');
+    expect(config('app.name'))->toBe('KASAROSE MARKET')
+        ->and(config('session.cookie'))->toBe('kasarose_session');
 
     $this->get(route('storefront.about'))
-        ->assertSee('KASAROSE', escape: false)
+        ->assertSee('KASAROSE MARKET', escape: false)
         ->assertDontSee('KasaBazaar Market', escape: false);
 });
 

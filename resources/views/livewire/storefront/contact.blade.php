@@ -50,7 +50,7 @@
                 <p class="text-sm text-muted">Looking for quick answers about orders, payments, or becoming a vendor? Visit our <a href="{{ route('storefront.faq') }}" class="text-navy-500 font-medium hover:text-accent">FAQ page</a> — most questions are answered there.</p>
                 <p class="text-sm text-muted">For order-specific issues, sign in and check <a href="{{ route('storefront.account.orders') }}" class="text-navy-500 font-medium hover:text-accent">My Orders</a> first — tracking and status details are all there.</p>
                 <p class="text-sm text-muted">Delivery timeframes are set out in our <a href="{{ route('storefront.delivery-policy') }}" class="text-navy-500 font-medium hover:text-accent">Delivery Policy</a>, and return rights in our <a href="{{ route('storefront.returns') }}" class="text-navy-500 font-medium hover:text-accent">Returns &amp; Refunds Policy</a>.</p>
-                <p class="text-sm text-muted">Looking for a different {{ config('group.parent.name') }} business — freight or mobility? See <a href="{{ route('storefront.group') }}" class="text-navy-500 font-medium hover:text-accent">Our Group</a>.</p>
+                <p class="text-sm text-muted">Looking for another business in the {{ config('group.parent.group_name') }} — freight or mobility? See <a href="{{ route('storefront.group') }}" class="text-navy-500 font-medium hover:text-accent">Our Group</a>.</p>
             </div>
         </div>
 

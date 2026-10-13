@@ -52,11 +52,11 @@
             <h2>2. Who we are and what we do</h2>
             <p>
                 @if ($entity = config('group.company.legal_entity'))
-                    {{ config('app.name') }} is operated by <strong>{{ $entity }}</strong>, the parent company of the
+                    {{ config('app.name') }} is operated by <strong>{{ $entity }}</strong>, a company of the
                 @else
-                    {{ config('app.name') }} is the marketplace and parent company of the
+                    {{ config('app.name') }} is the marketplace of the
                 @endif
-                <a href="{{ route('storefront.group') }}">{{ config('group.parent.name') }}</a>@if ($address = config('group.contact.address')), registered at {{ $address }}@endif.
+                <a href="{{ config('group.parent.url') }}" target="_blank" rel="noopener">{{ config('group.parent.group_name') }}</a>@if ($address = config('group.contact.address')), registered at {{ $address }}@endif.
             </p>
             <p>
                 We run a <strong>multi-vendor marketplace</strong>. Independent vendors list and sell their own
@@ -212,8 +212,8 @@
             <h2>11. Intellectual property</h2>
             <p>
                 The {{ config('app.name') }} name, logo, site design, code and copy belong to
-                {{ config('group.company.legal_name') }} or its licensors. The KASAROSE mark and the marks of the other
-                {{ config('group.parent.name') }} businesses may not be used without written permission. Product
+                {{ config('group.company.legal_name') }} or its licensors. The KASAROSE MARKET mark and the marks of the other
+                {{ config('group.parent.group_name') }} businesses may not be used without written permission. Product
                 images and descriptions supplied by vendors remain theirs, licensed to us for use on and in the
                 promotion of the marketplace.
             </p>
@@ -261,7 +261,7 @@
         <section id="other-group-companies">
             <h2>15. Other group companies</h2>
             <p>
-                {{ config('app.name') }} is the parent company of the {{ config('group.parent.name') }}. Its sister
+                {{ config('app.name') }} is part of the {{ config('group.parent.group_name') }}. The group's other
                 companies are:
             </p>
             <ul>

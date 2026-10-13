@@ -1,7 +1,7 @@
 @extends('storefront.layouts.app')
 
 @section('title', 'About Us')
-@section('meta_description', 'Who ' . config('app.name') . ' is, how the marketplace works for shoppers and vendors, and how the ' . config('group.parent.name') . ' logistics network gets your order to your door.')
+@section('meta_description', 'Who ' . config('app.name') . ' is, how the marketplace works for shoppers and vendors, and how the ' . config('group.parent.name') . ' network gets your order to your door.')
 
 @section('content')
     {{-- Hero --}}
@@ -13,8 +13,8 @@
                     A marketplace built by people who already move things for a living.
                 </h1>
                 <p class="text-white/70 leading-relaxed">
-                    {{ config('app.name') }} is Ghana's multi-vendor marketplace and the parent of the
-                    {{ config('group.parent.name') }}. Independent vendors bring the products. We bring the storefront,
+                    {{ config('app.name') }} is Ghana's multi-vendor marketplace and part of the
+                    {{ config('group.parent.group_name') }}. Independent vendors bring the products. We bring the storefront,
                     the payment protection and — the part most marketplaces struggle with — the delivery network that
                     actually gets the parcel to your door.
                 </p>
@@ -77,7 +77,7 @@
                             <dt class="text-xs uppercase tracking-wide text-muted mb-0.5">Part of</dt>
                             <dd class="text-fg font-medium">
                                 <a href="{{ route('storefront.group') }}" class="hover:text-accent underline underline-offset-2 decoration-border">
-                                    {{ config('group.parent.name') }}
+                                    {{ config('group.parent.group_name') }}
                                 </a>
                             </dd>
                         </div>
@@ -147,7 +147,7 @@
         <section class="mb-16">
             <h2 class="font-display font-semibold text-2xl text-navy-900 wake-underline mb-3">Part of something larger</h2>
             <p class="text-muted text-sm mb-8 max-w-[68ch] leading-relaxed">
-                {{ config('app.name') }} leads the {{ config('group.parent.name') }}. Our sister companies are what make
+                {{ config('app.name') }} is part of the {{ config('group.parent.group_name') }}. The group's companies are what make
                 our delivery promise possible.
             </p>
             <div class="grid sm:grid-cols-2 gap-5">

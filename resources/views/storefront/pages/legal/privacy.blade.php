@@ -1,7 +1,7 @@
 @extends('storefront.layouts.app')
 
 @section('title', 'Privacy Policy')
-@section('meta_description', 'How ' . config('app.name') . ' collects, uses, shares and protects your personal data, including the data shared with vendors and with the other ' . config('group.parent.name') . ' businesses.')
+@section('meta_description', 'How ' . config('app.name') . ' collects, uses, shares and protects your personal data, including the data shared with vendors and with the other ' . config('group.parent.group_name') . ' businesses.')
 
 @section('content')
     @php
@@ -27,12 +27,12 @@
             <h2>1. Who we are</h2>
             <p>
                 @if ($entity = config('group.company.legal_entity'))
-                    {{ config('app.name') }} is the online marketplace operated by <strong>{{ $entity }}</strong>, the
-                    parent company of the
+                    {{ config('app.name') }} is the online marketplace operated by <strong>{{ $entity }}</strong>, a
+                    company of the
                 @else
-                    {{ config('app.name') }} is the online marketplace and parent company of the
+                    {{ config('app.name') }} is the online marketplace of the
                 @endif
-                <a href="{{ route('storefront.group') }}">{{ config('group.parent.name') }}</a>.
+                <a href="{{ config('group.parent.url') }}" target="_blank" rel="noopener">{{ config('group.parent.group_name') }}</a>.
                 For the purposes of data protection law we are the <strong>data controller</strong> of the personal
                 data described in this policy.
             </p>
@@ -133,7 +133,7 @@
         <section id="sharing-within-our-group">
             <h2>5. Sharing within our group</h2>
             <p>
-                {{ config('app.name') }} is the parent company of the {{ config('group.parent.name') }}. Its sister
+                {{ config('app.name') }} is part of the {{ config('group.parent.group_name') }}. The group's other
                 companies are:
             </p>
             <ul>

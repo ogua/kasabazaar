@@ -1,17 +1,17 @@
 @extends('storefront.layouts.app')
 
 @section('title', 'Our Group')
-@section('meta_description', config('app.name') . ' is the parent company and ecommerce marketplace of the ' . config('group.parent.name') . ', alongside KASAROSE LOGISTICS and Neoride Africa.')
+@section('meta_description', config('app.name') . ' is the ecommerce marketplace of the ' . config('group.parent.group_name') . ', alongside KASAROSE LOGISTICS (the parent company) and Neoride Africa.')
 
 @section('content')
     <div class="bg-navy-900 text-white">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 py-14 md:py-20">
-            <p class="text-accent font-semibold text-xs uppercase tracking-wide mb-3">{{ config('group.parent.name') }}</p>
+            <p class="text-accent font-semibold text-xs uppercase tracking-wide mb-3">{{ config('group.parent.group_name') }}</p>
             <h1 class="font-display font-bold text-3xl md:text-4xl mb-4 text-balance max-w-2xl">
                 One group. Three businesses. One promise about getting things where they need to be.
             </h1>
             <p class="text-white/70 leading-relaxed max-w-2xl">
-                {{ config('app.name') }} leads a group built around one idea: buying something is only as good as
+                The {{ config('group.parent.name') }} group is built around one idea: buying something is only as good as
                 getting it delivered. Alongside the marketplace, the group moves freight between the United States
                 and Ghana and runs last-mile transport on the ground — so the products we sell have a way to reach you.
             </p>
@@ -27,8 +27,8 @@
             <div class="grid md:grid-cols-3 gap-6 items-start">
                 <div class="md:col-span-2 space-y-4 text-muted leading-relaxed">
                     <p>
-                        {{ config('app.name') }} is the group's <strong class="text-fg">parent company and ecommerce
-                        marketplace</strong>.
+                        {{ config('app.name') }} is the group's <strong class="text-fg">ecommerce marketplace</strong>,
+                        part of the group led by {{ config('group.parent.name') }}.
                         Independent Ghanaian vendors list their products here; we handle the storefront, take payment,
                         hold it until the order is delivered, and put the group's logistics network behind the parcel.
                     </p>
@@ -39,7 +39,7 @@
                         abroad every day — {{ config('app.name') }} simply points that capacity at retail.
                     </p>
                     <p>
-                        Each sister company below is a separate business with its own contracts and its own terms. We
+                        Each company below is a separate business with its own contracts and its own terms. We
                         share infrastructure and standards, not liabilities.
                     </p>
                 </div>
@@ -65,7 +65,7 @@
 
         {{-- Sister companies --}}
         <section class="mb-14">
-            <h2 class="font-display font-semibold text-2xl text-navy-900 wake-underline mb-8">Our sister companies</h2>
+            <h2 class="font-display font-semibold text-2xl text-navy-900 wake-underline mb-8">The group's companies</h2>
             <div class="space-y-5">
                 @foreach (config('group.companies') as $company)
                     <x-storefront.ui.card padding="p-6 sm:p-8">

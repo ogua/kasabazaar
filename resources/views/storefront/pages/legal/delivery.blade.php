@@ -1,7 +1,7 @@
 @extends('storefront.layouts.app')
 
 @section('title', 'Delivery Policy')
-@section('meta_description', 'Delivery timeframes, charges, coverage and tracking for ' . config('app.name') . ' orders across Ghana, carried by our vendors and the ' . config('group.parent.name') . ' logistics network.')
+@section('meta_description', 'Delivery timeframes, charges, coverage and tracking for ' . config('app.name') . ' orders across Ghana, carried by our vendors and the ' . config('group.parent.name') . ' network.')
 
 @section('content')
     @php
@@ -34,9 +34,10 @@
                 charged for a delivery we cannot make.
             </p>
             <p>
-                We do not currently deliver outside Ghana. If you need an item forwarded abroad, the group's freight
-                company <strong>KASAROSE LOGISTICS</strong>
-                (<a href="{{ collect(config('group.companies'))->firstWhere('key', 'kasarose-logistics')['url'] }}" target="_blank" rel="noopener">rddshipping.com</a>)
+                @php $logistics = collect(config('group.companies'))->firstWhere('key', 'kasarose-logistics'); @endphp
+                We do not currently deliver outside Ghana. If you need an item forwarded abroad, our parent company
+                <strong>{{ $logistics['name'] }}</strong>
+                (<a href="{{ $logistics['url'] }}" target="_blank" rel="noopener">{{ $logistics['url_label'] }}</a>)
                 handles international door-to-door shipping as a separate service.
             </p>
         </section>
@@ -90,13 +91,13 @@
         <section id="who-carries-your-order">
             <h2>4. Who carries your order</h2>
             <p>
-                {{ config('app.name') }} leads the {{ config('group.parent.name') }}, and most of our deliveries
+                {{ config('app.name') }} is part of the {{ config('group.parent.group_name') }}, and most of our deliveries
                 stay inside the group's own logistics network. Depending on the route, your order may be carried by:
             </p>
             <ul>
                 <li><strong>The vendor's own delivery team</strong>, for local drops within their city.</li>
                 <li><strong>Our own riders and courier partners</strong>, for same-city delivery in Accra and Kumasi.</li>
-                <li><strong>KASAROSE LOGISTICS</strong> — the group's freight arm — for nationwide road freight and for anything arriving from our US warehouse.</li>
+                <li><strong>KASAROSE LOGISTICS</strong> — our parent company — for nationwide road freight and for anything arriving from our US warehouse.</li>
                 <li><strong>Neoride Africa</strong> — the group's mobility company — for last-mile delivery in Kumasi and Ejisu.</li>
             </ul>
             <p>

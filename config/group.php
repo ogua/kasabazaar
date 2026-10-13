@@ -2,13 +2,14 @@
 
 /*
 |--------------------------------------------------------------------------
-| KASAROSE Group of Companies
+| KASAROSE LOGISTICS group
 |--------------------------------------------------------------------------
 |
-| Single source of truth for KASAROSE's own identity — KASAROSE is both the
-| marketplace and the parent of the group — and for the sister companies it
-| links out to. The roster is mirrored in the sister repositories; see the
-| "Group of Companies" section of CLAUDE.md before editing anything here:
+| Single source of truth for this marketplace's identity (KASAROSE MARKET),
+| for the parent company — KASAROSE LOGISTICS, at kasarose.com, formerly the
+| KasaBazaar Group — and for the group companies the storefront links to.
+| The roster is mirrored in the sibling repositories; see the "Group of
+| Companies" section of CLAUDE.md before editing anything here:
 |
 |   kasabazaar         config/group.php           (KASAROSE LOGISTICS)
 |   neoride            parts/group_companies.php  (Neoride Africa)
@@ -30,7 +31,7 @@ return [
     */
 
     'company' => [
-        'name' => 'KASAROSE',
+        'name' => 'KASAROSE MARKET',
         // `legal_entity` is null until the registered company is confirmed —
         // never publish an entity name we have not verified. The "operated by"
         // clauses in the privacy policy, terms and About page are guarded on
@@ -39,10 +40,10 @@ return [
         // stamp) and falls back to the trading name, which is always true.
         // See the "CONFIRM BEFORE LAUNCH" block in .env.example.
         'legal_entity' => env('GROUP_LEGAL_NAME') ?: null,
-        'legal_name' => env('GROUP_LEGAL_NAME') ?: 'KASAROSE',
+        'legal_name' => env('GROUP_LEGAL_NAME') ?: 'KASAROSE MARKET',
         'tagline' => "Ghana's multi-vendor marketplace, delivered.",
-        'meta_description' => "KASAROSE is a multi-vendor marketplace connecting shoppers across Ghana with vetted local vendors, backed by the KASAROSE Group of Companies' shipping and logistics network.",
-        'role' => 'Parent company and ecommerce marketplace',
+        'meta_description' => "KASAROSE MARKET is a multi-vendor marketplace connecting shoppers across Ghana with vetted local vendors, backed by KASAROSE LOGISTICS' shipping and logistics network.",
+        'role' => "The group's ecommerce marketplace",
         'url' => env('APP_URL'),
         'founded' => '2025',
     ],
@@ -53,17 +54,19 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    // KASAROSE is the parent company, so the group has no separate site: both
-    // URLs resolve to this storefront and its Our Group page.
+    // KASAROSE LOGISTICS is the parent company (formerly the KasaBazaar Group;
+    // never name KasaBazaar on this site). `name` is the company; `group_name`
+    // reads naturally in "part of the …" sentences.
     'parent' => [
-        'name' => 'KASAROSE Group of Companies',
-        'url' => env('APP_URL'),
-        'companies_url' => rtrim((string) env('APP_URL'), '/').'/our-group',
+        'name' => 'KASAROSE LOGISTICS',
+        'group_name' => 'KASAROSE LOGISTICS group',
+        'url' => env('GROUP_SITE_URL') ?: 'https://kasarose.com',
+        'companies_url' => rtrim(env('GROUP_SITE_URL') ?: 'https://kasarose.com', '/').'/our-companies.php',
     ],
 
     /*
     |--------------------------------------------------------------------------
-    | Sister companies
+    | Group companies
     |--------------------------------------------------------------------------
     |
     | Rendered by the storefront footer, the About page and the legal pages
@@ -75,18 +78,18 @@ return [
         [
             'key' => 'kasarose-logistics',
             'name' => 'KASAROSE LOGISTICS',
-            'role' => 'Freight logistics and package forwarding',
+            'role' => 'Parent company — freight, real estate and property management',
             'tagline' => 'Your Trusted Partner for Global Shipments.',
-            'description' => "KASAROSE LOGISTICS (Rose Door-to-Door Shipping & Delivery Service) is the group's logistics arm — air freight, ocean freight, ecommerce package forwarding and shipment tracking between the United States and Ghana. It carries KASAROSE deliveries that travel beyond a vendor's own delivery area.",
-            'url' => env('RDD_SITE_URL') ?: 'https://rddshipping.com',
-            'url_label' => 'rddshipping.com',
+            'description' => "The group's parent company. KASAROSE LOGISTICS runs door-to-door air and ocean freight, ecommerce package forwarding and shipment tracking between the United States and Ghana, alongside real estate and property management. It carries KASAROSE MARKET deliveries that travel beyond a vendor's own delivery area.",
+            'url' => env('GROUP_SITE_URL') ?: 'https://kasarose.com',
+            'url_label' => 'kasarose.com',
         ],
         [
             'key' => 'neoride-africa',
             'name' => 'Neoride Africa',
             'role' => 'Mobility and last-mile transport',
             'tagline' => "Driving Africa's Mobility Revolution.",
-            'description' => 'A tricycle mobility and transport company operating in Ghana since 2025, focused on affordable rides, first- and last-mile connectivity and youth employment. Neoride riders handle a share of KASAROSE last-mile deliveries in Kumasi and Ejisu.',
+            'description' => 'A tricycle mobility and transport company operating in Ghana since 2025, focused on affordable rides, first- and last-mile connectivity and youth employment. Neoride riders handle a share of KASAROSE MARKET last-mile deliveries in Kumasi and Ejisu.',
             'url' => env('NEORIDE_SITE_URL') ?: 'https://neorideafrica.com',
             'url_label' => 'neorideafrica.com',
         ],
@@ -133,7 +136,7 @@ return [
     */
 
     'legal' => [
-        'effective_date' => '12 October 2026',
+        'effective_date' => '13 October 2026',
         'governing_law' => 'the laws of the Republic of Ghana',
         'jurisdiction' => 'the courts of Ghana',
     ],

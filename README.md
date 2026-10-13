@@ -1,7 +1,7 @@
-# KASAROSE storefront (`kmarket`)
+# KASAROSE MARKET storefront (`kmarket`)
 
-KASAROSE is Ghana's multi-vendor ecommerce marketplace and the parent company of the **KASAROSE Group of
-Companies** (sister companies: KASAROSE LOGISTICS and Neoride Africa).
+KASAROSE MARKET is Ghana's multi-vendor ecommerce marketplace, part of the **KASAROSE LOGISTICS group**. The parent
+company, KASAROSE LOGISTICS, runs kasarose.com; Neoride Africa is the group's mobility company.
 
 This repository is the customer-facing storefront and the vendor self-service portal:
 

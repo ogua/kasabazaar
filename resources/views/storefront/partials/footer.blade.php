@@ -95,7 +95,7 @@
                 <p class="text-xs font-semibold uppercase tracking-wide text-white shrink-0">
                     Part of the
                     <a href="{{ route('storefront.group') }}" class="underline decoration-accent decoration-2 underline-offset-4 hover:text-accent">
-                        {{ config('group.parent.name') }}
+                        {{ config('group.parent.group_name') }}
                     </a>
                 </p>
                 <ul class="flex flex-wrap items-center gap-x-6 gap-y-2 lg:ml-auto text-sm">

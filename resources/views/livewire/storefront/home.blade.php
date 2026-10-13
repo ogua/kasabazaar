@@ -128,7 +128,7 @@
                             </h1>
                             <p class="text-white/70 text-sm sm:text-base mb-6 max-w-md">
                                 Thousands of products from vetted vendors across Ghana, delivered through the
-                                {{ config('group.parent.name') }} logistics network.
+                                {{ config('group.parent.name') }} network.
                             </p>
                             <div class="flex flex-wrap gap-3">
                                 <x-storefront.ui.button href="{{ route('storefront.shop') }}" variant="accent" size="lg">

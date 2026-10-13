@@ -53,7 +53,7 @@
         <h2 class="font-display font-semibold text-lg text-navy-900 mb-2">Questions about this policy?</h2>
         <p class="text-sm text-muted leading-relaxed mb-4 max-w-2xl">
             Write to us and we will respond within five business days. This policy applies to
-            {{ config('app.name') }} only — our sister companies in the {{ config('group.parent.name') }} publish their own
+            {{ config('app.name') }} only — the other companies in the {{ config('group.parent.group_name') }} publish their own
             policies on their own sites.
         </p>
         <div class="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">

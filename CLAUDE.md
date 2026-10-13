@@ -4,16 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project context
 
-**KASAROSE** (this repo, directory name `kmarket`) is the customer-facing multi-vendor ecommerce marketplace and the
-**parent company of the KASAROSE Group of Companies**. It is a Laravel 12 + Livewire + Filament storefront that gets
-its products, carts, orders and vendors from a backend commerce API **strictly over REST**
-(`App\Services\Kasabazaar\*`, base URL in `KASABAZAAR_API_URL`) — never over a shared database connection. Vendors
-self-serve through the `vendor` Filament panel at `/vendor-portal`; there is no local product/order schema to query.
+**KASAROSE MARKET** (this repo, directory name `kmarket`) is the customer-facing multi-vendor ecommerce marketplace of
+the **KASAROSE LOGISTICS group**. The parent company is **KASAROSE LOGISTICS**, whose website is **kasarose.com**
+(repo `Projects/website/KasaRose Website`). This is a Laravel 12 + Livewire + Filament storefront that gets its
+products, carts, orders and vendors from a backend commerce API **strictly over REST** (`App\Services\Kasabazaar\*`,
+base URL in `KASABAZAAR_API_URL`) — never over a shared database connection. Vendors self-serve through the `vendor`
+Filament panel at `/vendor-portal`; there is no local product/order schema to query.
 
-**Branding history.** The storefront launched as *KasaBazaar Market*, was renamed **KASAROSE** in August 2026, and in
-October 2026 KASAROSE became the parent of the group (formerly the *KasaBazaar Group of Companies*). KasaBazaar is no
-longer part of the group and must not be named or linked anywhere on the site. Two things follow:
+**Naming history.** The storefront launched as *KasaBazaar Market*, became *KASAROSE* in August 2026 and **KASAROSE
+MARKET** in October 2026 (`APP_NAME`). The parent was the *KasaBazaar Group of Companies*; it is now KASAROSE
+LOGISTICS. Never name KasaBazaar on this site. Consequences:
 
+- `config('app.name')` is "KASAROSE MARKET". The session cookie is pinned with `SESSION_COOKIE=kasarose_session` so
+  that a rename never silently changes the cookie the Cookie Policy lists — keep it pinned.
 - The `App\Services\Kasabazaar\*` namespace, the `KASABAZAAR_API_URL` env var, `config('services.kasabazaar')` and
   the `kasabazaar_user_id` / `kasabazaar_token` user columns are **internal integration names for the backend API**,
   not branding. They never reach a shopper. Do not rename them when tidying brand strings.
@@ -23,23 +26,27 @@ longer part of the group and must not be named or linked anywhere on the site. T
   `kasa.png` (the K mark), `kasarose-2.png` (horizontal lockup) and `kasarose.png` (stacked lockup):
   marks, lockups, on-dark variants, `og-image.png`, every favicon size and `favicon.ico`. Always run the command
   rather than editing one size in isolation — they all derive from the same source files and drift apart otherwise.
-  Palette is sampled from the mark: blue `#055F9C`, red `#EF4136`. See [DESIGN.md](DESIGN.md) for the full token
-  table; the Tailwind token names still read `navy-*` for the blue scale, which is deliberate (renaming them would
-  churn every blade).
+  The lockup artwork still reads "KASAROSE" (the group family mark); a MARKET-specific lockup needs new source art
+  from the designer. Palette: blue `#055F9C`, red `#EF4136`. See [DESIGN.md](DESIGN.md); the Tailwind token names
+  still read `navy-*` for the blue scale, which is deliberate.
 
 ## Group of Companies — cross-site sync (IMPORTANT)
 
-KASAROSE heads the **KASAROSE Group of Companies**. The group has no separate group website: `config('group.parent')`
-points at this storefront and its Our Group page (`/our-group`). The sister companies each live in their own
-repository and reference KASAROSE in their navigation, footers and legal pages:
+The group is led by **KASAROSE LOGISTICS** (kasarose.com). `config('group.parent')` holds its `name`
+("KASAROSE LOGISTICS"), a `group_name` for sentences ("part of the KASAROSE LOGISTICS group"), its `url` and its
+`companies_url`. The group's websites, each in its own repository, reference each other in navigation, footers and
+legal pages:
 
 | Company | What it is | Repo | Stack |
 |---|---|---|---|
-| **KASAROSE** (parent) | Ecommerce marketplace | this repo | Laravel 12 + Livewire + Filament 4 |
-| KASAROSE LOGISTICS | Freight logistics & package forwarding | `C:\xampp\htdocs\Projects\kasabazaar` | Laravel 11 + Filament 3 |
+| **KASAROSE LOGISTICS** (parent) | Group site — freight, real estate, property management (kasarose.com) | `C:\xampp\htdocs\Projects\website\KasaRose Website` | Plain PHP + Bootstrap |
+| (back office) | KASAROSE LOGISTICS' Laravel app: admin, portals, the commerce API this storefront uses | `C:\xampp\htdocs\Projects\kasabazaar` | Laravel 11 + Filament 3 |
+| **KASAROSE MARKET** | Ecommerce marketplace | this repo | Laravel 12 + Livewire + Filament 4 |
 | Neoride Africa | Tricycle mobility, last-mile transport | `C:\xampp\htdocs\Projects\neoride` | Plain PHP template |
 
-(The KASAROSE LOGISTICS repo's directory is still named `kasabazaar`; that is a folder name, not a company.)
+`Projects/website/kasabazar-website` is the pre-rename copy of the parent's site, being migrated into
+`KasaRose Website` piece by piece; it is not a separate company. The back-office repo's directory is still named
+`kasabazaar` — a folder name, not a company.
 
 **Every company roster lives in exactly one file per repo. Never hardcode a sister company's name or URL in a
 template — read it from the roster.**
@@ -47,17 +54,14 @@ template — read it from the roster.**
 | Repo | Roster file |
 |---|---|
 | kmarket (here) | [config/group.php](config/group.php) |
-| kasabazaar (KASAROSE LOGISTICS) | `config/group.php` |
+| KasaRose Website | `includes/config.php` (`$group_companies`, `SITE_URL_*`) |
+| kasabazaar (back office) | `config/group.php` |
 | neoride | `parts/group_companies.php` |
-
-> **Pending sweep (October 2026).** The parent rename and KasaBazaar's removal were applied to this repo only. The
-> KASAROSE LOGISTICS and Neoride repos — and the old group site `kasabazar-website` — may still name the *KasaBazaar Group
-> of Companies* and link to kasabazaar.com. Bring them in line before relying on the cross-links being consistent.
 
 ### The rule
 
 **Before you finish any change that touches company identity, cross-links or legal/policy copy, check whether the
-same change is needed in the sister repositories — and make it there too, in the same session** (unless the user
+same change is needed in the sibling repositories — and make it there too, in the same session** (unless the user
 scopes the change to this repo).
 
 Changes that always require the cross-repo sweep:
@@ -65,8 +69,9 @@ Changes that always require the cross-repo sweep:
 - Adding, renaming or removing a group company, or changing its tagline, role or one-line description.
 - Changing any company's production domain.
 - Any edit to a privacy policy, terms of use, delivery policy, returns policy or cookie policy — each of these
-  names the other companies and describes what data or work passes between them. If KASAROSE's privacy policy now
-  says KASAROSE LOGISTICS receives delivery addresses, KASAROSE LOGISTICS's privacy policy must say it receives them.
+  names the other companies and describes what data or work passes between them. If this marketplace's privacy
+  policy says KASAROSE LOGISTICS receives delivery addresses, KASAROSE LOGISTICS' privacy policy must say it
+  receives them.
 - Changing the operational relationship between companies (who carries what, who is the point of contact).
 - Changing shared contact details (support email, published phone numbers, registered address).
 
@@ -75,8 +80,8 @@ panel work, anything under `app/Services/Kasabazaar/`.
 
 ### Where the cross-links surface here
 
-- [config/group.php](config/group.php) — this company, the parent block, the sister roster, contact block, legal
-  effective date, delivery timeframes and return windows. Everything else reads from it.
+- [config/group.php](config/group.php) — this company, the parent block, the group roster, contact block, legal
+  effective date, delivery timeframes, return windows and auction settings. Everything else reads from it.
 - [resources/views/storefront/partials/footer.blade.php](resources/views/storefront/partials/footer.blade.php) —
   the "Part of the…" strip and the Legal column.
 - [resources/views/storefront/pages/group.blade.php](resources/views/storefront/pages/group.blade.php) — the Our
@@ -145,7 +150,7 @@ a payment method to the copy without the code to back it.
 
 **Never publish an unverified identity detail.** The registered entity name, registered office and contact
 addresses appear verbatim on these pages, so `config/group.php` defaults to values that are *known true*: the
-group's support address (`support@kasarose.com`), its published phone lines, and the trading name `KASAROSE` in place of an unconfirmed
+group's support address (`support@kasarose.com`), its published phone lines, and the trading name `KASAROSE MARKET` in place of an unconfirmed
 legal entity. `contact.address` defaults to `null` and every template that renders it is guarded — an unset
 address omits the sentence rather than printing a placeholder. See the "CONFIRM BEFORE LAUNCH" block in
 [.env.example](.env.example). Note also that these use `env(...) ?: 'default'`, not `env(..., 'default')`: a key
