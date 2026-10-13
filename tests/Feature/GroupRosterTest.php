@@ -8,7 +8,9 @@ class GroupRosterTest extends TestCase
 {
     public function test_the_group_is_led_by_kasarose_and_no_longer_lists_kasabazaar(): void
     {
-        $this->assertSame('KASAROSE Group of Companies', config('group.parent.name'));
+        $this->assertSame('KASAROSE LOGISTICS', config('group.parent.name'));
+        $this->assertSame('https://kasarose.com', config('group.parent.url'));
+        $this->assertContains('KASAROSE MARKET', array_column(config('group.companies'), 'name'));
         $this->assertNotContains('KasaBazaar', array_column(config('group.companies'), 'name'));
         $this->assertStringNotContainsString('kasabazaar.com', config('group.parent.url'));
     }
@@ -19,7 +21,7 @@ class GroupRosterTest extends TestCase
             $response = $this->get(route($route));
 
             $response->assertOk()
-                ->assertSee('KASAROSE Group of Companies')
+                ->assertSee('KASAROSE LOGISTICS group')
                 ->assertDontSee('KasaBazaar Group')
                 ->assertDontSee('<strong>KasaBazaar</strong> —', false);
 

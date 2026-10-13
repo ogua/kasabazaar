@@ -48,7 +48,7 @@
         </div>
 
         {{-- Group cross-links. Driven by config/group.php, which is mirrored in
-             the KASAROSE and Neoride repos — see CLAUDE.md. --}}
+             the KasaRose Website, kmarket and Neoride repos — see CLAUDE.md. --}}
         <div class="col-lg-3 col-md-3 footer-links">
           <h4>Our Group</h4>
           <ul>
@@ -61,7 +61,7 @@
             @endforeach
             <li>
               <a href="{{ config('group.parent.companies_url') }}" target="_blank" rel="noopener">
-                {{ config('group.parent.name') }}
+                All group companies
               </a>
             </li>
           </ul>
@@ -73,8 +73,8 @@
     <div class="container mt-4 text-center copyright">
       <p>© {{ date('Y') }} <strong class="px-1 sitename">{{ config('group.company.full_name') }}</strong> — All Rights Reserved</p>
       <p class="small mb-0">
-        A company of the
-        <a href="{{ config('group.parent.url') }}" target="_blank" rel="noopener">{{ config('group.parent.name') }}</a>
+        Parent company of the {{ config('group.parent.group_name') }} &middot;
+        <a href="{{ config('group.parent.url') }}" target="_blank" rel="noopener">{{ parse_url(config('group.parent.url'), PHP_URL_HOST) }}</a>
       </p>
       <div class="credits">
         <!-- All the links in the footer should remain intact. -->

@@ -16,7 +16,7 @@
 
                 <p>These Terms &amp; Conditions ("Terms") govern your use of the KASAROSE LOGISTICS website and the shipping, package-forwarding and logistics services provided by <strong>{{ config('group.company.legal_name') }}</strong> ("KASAROSE LOGISTICS", "we", "us", or "our"). By requesting a quote, booking a shipment, or using this website, you agree to these Terms and to our <a href="{{ route('privacy-policy') }}">Privacy Policy</a>.</p>
 
-                <p>KASAROSE LOGISTICS is the freight logistics arm of the <a href="{{ config('group.parent.url') }}" target="_blank" rel="noopener">{{ config('group.parent.name') }}</a>. These Terms cover KASAROSE LOGISTICS only; the group's other companies operate separately and publish their own terms — see section 12.</p>
+                <p>KASAROSE LOGISTICS is the parent company of the {{ config('group.parent.group_name') }}; its main website is <a href="{{ config('group.parent.url') }}" target="_blank" rel="noopener">{{ parse_url(config('group.parent.url'), PHP_URL_HOST) }}</a>. These Terms cover KASAROSE LOGISTICS only; the group's other companies operate separately and publish their own terms — see section 12.</p>
 
                 <hr class="my-4">
 
@@ -108,7 +108,7 @@
 
                 <!-- 12 -->
                 <h4 class="mt-4">12. Our Sister Companies</h4>
-                <p>KASAROSE LOGISTICS is one of the companies in the {{ config('group.parent.name') }}. The others are:</p>
+                <p>KASAROSE LOGISTICS is the parent company of the {{ config('group.parent.group_name') }}. The group's other companies are:</p>
                 <ul>
                     @foreach (config('group.companies') as $company)
                         <li>
@@ -117,7 +117,7 @@
                         </li>
                     @endforeach
                 </ul>
-                <p>Each is a separate business with its own terms, contracts and liabilities. These Terms govern KASAROSE LOGISTICS only. Where we carry a shipment on behalf of KASAROSE, or where Neoride Africa completes a last-mile delivery on our behalf, KASAROSE LOGISTICS remains your point of contact for that shipment. If you buy a service from one of those companies in its own right, that company's terms apply to it, not these.</p>
+                <p>Each is a separate business with its own terms, contracts and liabilities. These Terms govern KASAROSE LOGISTICS only. Where we carry a shipment on behalf of KASAROSE MARKET, or where Neoride Africa completes a last-mile delivery on our behalf, KASAROSE LOGISTICS remains your point of contact for that shipment. If you buy a service from one of those companies in its own right, that company's terms apply to it, not these.</p>
 
                 <hr class="my-4">
 

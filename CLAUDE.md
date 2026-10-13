@@ -37,29 +37,30 @@ php artisan sitemap:generate
 
 ## Group of Companies — cross-site sync (IMPORTANT)
 
-**KASAROSE LOGISTICS** (this repo, directory name `kasabazaar`; formerly *RDD Shipping*) is the freight logistics
-arm of the **KASAROSE Group of Companies**. The group's parent company is **KASAROSE**, the ecommerce marketplace;
-there is no separate group website, so `config('group.parent')` points at the marketplace and its `/our-group`
-page. The group's three sibling websites, each in its own repository, reference each other in navigation, footers
-and legal pages:
+**KASAROSE LOGISTICS** is the **parent company** of the group (formerly the *KasaBazaar Group of Companies*; it also
+absorbed RDD Shipping). Its main public website is **kasarose.com** (repo `Projects/website/KasaRose Website`); this
+repo (directory name `kasabazaar`) is its **back office** — Filament admin, client/investor portals, the mobile API
+and the marketplace API — plus the legacy public pages served on rddshipping.com. `config('group.parent')` therefore
+describes KASAROSE LOGISTICS itself: `name`, a `group_name` for sentences ("the KASAROSE LOGISTICS group") and
+`url` (kasarose.com).
 
 | Company | What it is | Repo | Stack |
 |---|---|---|---|
-| KASAROSE (parent) | Ecommerce marketplace | `Projects/website/kmarket` | Laravel 12 + Livewire + Filament 4 |
-| **KASAROSE LOGISTICS** | This repo — freight logistics & package forwarding | this repo | Laravel 11 + Filament 3 |
+| **KASAROSE LOGISTICS** (parent) | Main site kasarose.com — freight, real estate, property management | `Projects/website/KasaRose Website` | Plain PHP + Bootstrap |
+| (back office) | This repo | this repo | Laravel 11 + Filament 3 |
+| KASAROSE MARKET | Ecommerce marketplace (kasarosemarket.com — domain unconfirmed) | `Projects/website/kmarket` | Laravel 12 + Livewire + Filament 4 |
 | Neoride Africa | Tricycle mobility, last-mile transport | `Projects/neoride` | Plain PHP template |
 
-(All live under `C:/xampp/htdocs/`.)
+(All live under `C:/xampp/htdocs/`.) `Projects/website/kasabazar-website` is the pre-rename copy of the parent's
+site being migrated into KasaRose Website; it is not a separate company.
 
-**KasaBazaar is no longer part of the group** (October 2026). Its site, `Projects/website/kasabazar-website`, is a
-standalone company site and must not be listed or linked as a group company. Facts that still legitimately name
-KasaBazaar are left alone: the registered legal entity (`GROUP_LEGAL_NAME`, "KasaBazaar Limited"), the SMS sender
-name and the carrier-registered SMS terms URL (`config('group.sms_terms_url')`), receipt account names and
-operational mailboxes.
+Facts that still legitimately name KasaBazaar are left alone: the registered legal entity (`GROUP_LEGAL_NAME`,
+"KasaBazaar Limited"), the SMS sender name and the carrier-registered SMS terms URL
+(`config('group.sms_terms_url')`), receipt account names and operational mailboxes.
 
-### KASAROSE is an API consumer of this app
+### KASAROSE MARKET is an API consumer of this app
 
-KASAROSE is the group's multi-vendor marketplace, launched as *KasaBazaar Market* and renamed in August 2026. It
+KASAROSE MARKET is the group's multi-vendor marketplace, launched as *KasaBazaar Market* (then *KASAROSE*). It
 is a **separate application that talks to this one strictly over `/api/v1`** — there is no shared database
 connection, and it has no local product or order schema of its own. Two consequences:
 
@@ -107,7 +108,8 @@ blade — read it from the roster.**
 | Repo | Roster file |
 |---|---|
 | kasabazaar (here) | `config/group.php` |
-| kmarket (KASAROSE) | `config/group.php` |
+| kmarket (KASAROSE MARKET) | `config/group.php` |
+| KasaRose Website (parent) | `includes/config.php` |
 | neoride | `parts/group_companies.php` |
 
 ### The rule
