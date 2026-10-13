@@ -73,13 +73,15 @@
         @foreach($receiver['items'] ?? [] as $item)
         <div class="item-row">• {{ $item['description'] }} &times; {{ $item['quantity'] }}
             @if(!empty($item['estimated_value'])) — USD {{ number_format($item['estimated_value'], 2) }} @endif
+            @if(array_key_exists('product_id', $item) && empty($item['product_id'])) <em>(new product)</em> @endif
+            @if(!empty($item['details']))<br><span style="color:#666;">{{ $item['details'] }}</span>@endif
         </div>
         @endforeach
     </div>
     @endforeach
 
     <div style="text-align: center; margin: 24px 0;">
-        <a href="{{ config('app.url') }}/admin" class="btn">Review in Admin Panel</a>
+        <a href="{{ $reviewUrl ?? config('app.url').'/admin' }}" class="btn">Review in Admin Panel</a>
     </div>
 
     <div class="footer">

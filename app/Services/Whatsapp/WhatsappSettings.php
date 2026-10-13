@@ -26,6 +26,7 @@ class WhatsappSettings
             'msc_updated' => ['label' => 'Container tracking available', 'params' => ['Recipient name', 'Shipment ref', 'MSC tracking no.']],
             'container_update' => ['label' => 'Container cleared / updated', 'params' => ['Recipient name', 'Shipment ref', 'Update']],
             'payment_received' => ['label' => 'Shipment payment received', 'params' => ['Recipient name', 'Amount paid', 'Shipment ref']],
+            'pickup_request' => ['label' => 'Admin: new pickup request', 'params' => ['Client name', 'Client phone', 'Pickup location', 'Preferred pickup']],
         ],
         self::SENDER_MARKETPLACE => [
             'order_status' => ['label' => 'Order placed / approved / processing / packed / delivered / cancelled / refunded', 'params' => ['Customer name', 'Order no.', 'New status']],

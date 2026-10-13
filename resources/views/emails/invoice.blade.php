@@ -163,7 +163,9 @@
 
         <div class="tracking-box">
             <div class="tracking-label">Your Tracking Number</div>
-            <div class="tracking-number">{{ $shipment->tracking_number }}</div>
+            <div class="tracking-number">
+                <a href="{{ $shipment->publicTrackingUrl() }}" target="_blank" style="color: inherit;">{{ $shipment->tracking_number }}</a>
+            </div>
         </div>
 
         @if(!empty($paymentUrl))

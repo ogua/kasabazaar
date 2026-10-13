@@ -5,6 +5,7 @@ use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\InvestmentController;
 use App\Http\Controllers\InvestorReportController;
 use App\Http\Controllers\PublicShipmentController;
+use App\Http\Controllers\PublicShipmentRequestController;
 use App\Http\Controllers\ShippingController;
 use App\Http\Controllers\WebController;
 use App\Livewire\AgreementForm;
@@ -200,6 +201,19 @@ Route::get('/shipment-form-cities', [ExternalShipmentController::class, 'getCiti
 Route::get('/shipment-form-expired', function () {
     return view('external.shipment-form-expired');
 })->name('external-shipment-expired');
+
+// Public pickup-request links. Each link carries a unique, unguessable token
+// generated from the Shipment Requests page in the admin panel.
+Route::get('/pickup-request/{token}', [PublicShipmentRequestController::class, 'show'])
+    ->name('public-pickup-request');
+Route::post('/pickup-request/{token}', [PublicShipmentRequestController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('public-pickup-request.store');
+Route::get('/pickup-request/{token}/products', [PublicShipmentRequestController::class, 'products'])
+    ->middleware('throttle:120,1')
+    ->name('public-pickup-request.products');
+Route::get('/pickup-request/{token}/submitted', [PublicShipmentRequestController::class, 'submitted'])
+    ->name('public-pickup-request.submitted');
 
 // No-login shipment activity page — for clients who'd rather not create a portal
 // account. Secured by an unguessable token (same trust model as the external

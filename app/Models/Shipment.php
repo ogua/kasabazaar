@@ -242,6 +242,21 @@ class Shipment extends Model
     }
 
     /**
+     * Public tracking page on the parent site, e.g. https://kasarose.com/tracking.php?ref=KBZ2854072.
+     * Falls back to the shipping reference, which the tracking page also accepts.
+     */
+    public function publicTrackingUrl(): ?string
+    {
+        $ref = $this->tracking_number ?: $this->shipping_reference;
+
+        if (! $ref) {
+            return null;
+        }
+
+        return config('group.parent.tracking_url').'?ref='.rawurlencode($ref);
+    }
+
+    /**
      * Generate unique external token for client self-service form
      */
     public static function generateExternalToken(): string

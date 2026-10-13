@@ -38,12 +38,11 @@ class ShipmentRequestApprovalService
             $client = $request->client ?? $request->load('client')->client;
 
             // Default the cost to the sum of the requested items' estimated values
-            $itemsTotal = collect($request->receivers ?? [])
-                ->flatMap(fn ($r) => $r['items'] ?? [])
-                ->sum(fn ($i) => (float) ($i['estimated_value'] ?? 0) * (int) ($i['quantity'] ?? 1));
-
-            $shippingCost = (float) ($options['shipping_cost'] ?? $itemsTotal);
+            $shippingCost = (float) ($options['shipping_cost'] ?? $request->itemsTotal());
             $vatPercentage = (float) ($options['vat_percentage'] ?? 0);
+            $vat = round($shippingCost * $vatPercentage / 100, 2);
+            $insuranceAccepted = (bool) ($options['insurance_accepted'] ?? false);
+            $insurance = $insuranceAccepted ? (float) ($options['insurance'] ?? 0) : 0.0;
 
             // Shipment must live in the approving staff's active branch so it is
             // visible in their branch-scoped views (avoids 404 after approval)
@@ -63,7 +62,10 @@ class ShipmentRequestApprovalService
                 'destination_branch_id' => $client->branch_id ?? $branchId,
                 'shipping_cost' => $shippingCost,
                 'vat_percentage' => $vatPercentage,
-                'total' => round($shippingCost * (1 + $vatPercentage / 100), 2),
+                'vat' => $vat,
+                'insurance_accepted' => $insuranceAccepted,
+                'insurance' => $insurance,
+                'total' => round($shippingCost + $vat + $insurance, 2),
             ]);
 
             foreach ($request->receivers as $index => $receiverData) {

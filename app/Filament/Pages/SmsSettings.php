@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Service\SystemSetting;
+use App\Services\AdminAlertRecipients;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -44,6 +45,8 @@ class SmsSettings extends Page implements HasForms
             'mnotify_sender' => SystemSetting::get('mnotify_sender', config('services.mnotify.sender', 'RDDSHIP')),
             'arkesel_key' => SystemSetting::get('arkesel_key', config('services.arkesel.key')),
             'arkesel_sender' => SystemSetting::get('arkesel_sender', config('services.arkesel.sender', 'RDDSHIP')),
+            'admin_alert_emails' => SystemSetting::get('admin_alert_emails', config('app.admin_email')),
+            'admin_alert_phones' => SystemSetting::get('admin_alert_phones', config('app.admin_phone')),
         ]);
     }
 
@@ -51,6 +54,25 @@ class SmsSettings extends Page implements HasForms
     {
         return $form
             ->schema([
+                Section::make('Admin Alerts')
+                    ->description('Who is alerted when a client submits a pickup / shipment request. Separate several recipients with commas. Phone numbers get an SMS, plus a WhatsApp message when the "Admin: new pickup request" template is mapped on the WhatsApp Settings page.')
+                    ->schema([
+                        TextInput::make('admin_alert_emails')
+                            ->label('Alert emails')
+                            ->placeholder('ops@example.com, manager@example.com')
+                            ->rule(fn () => function (string $attribute, $value, \Closure $fail): void {
+                                foreach (AdminAlertRecipients::split($value) as $email) {
+                                    if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                                        $fail("\"{$email}\" is not a valid email address.");
+                                    }
+                                }
+                            }),
+                        TextInput::make('admin_alert_phones')
+                            ->label('Alert phone numbers (SMS / WhatsApp)')
+                            ->placeholder('+233201234567, +17735550100'),
+                    ])
+                    ->columns(1),
+
                 Section::make('SMS Provider')
                     ->description('Alerts route automatically by destination number: Ghana numbers (+233… or a local 0XXXXXXXXX) go through Arkesel, all other numbers go through Twilio. The provider below is only used for numbers that cannot be classified.')
                     ->schema([

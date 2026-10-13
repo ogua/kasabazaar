@@ -481,7 +481,11 @@
                 <div class="invoice-details">
                     <p><strong>Invoice No:</strong> {{ $shipping->shipping_reference }}</p>
                     <p><strong>Date:</strong> {{ $shipping->created_at->format('j M Y') }}</p>
-                    <p><strong>Tracking:</strong> {{ $shipping->tracking_number }}</p>
+                    <p><strong>Tracking:</strong>
+                        @if ($shipping->publicTrackingUrl())
+                            <a href="{{ $shipping->publicTrackingUrl() }}" target="_blank" style="color: #A0043C; text-decoration: underline;">{{ $shipping->tracking_number ?: $shipping->shipping_reference }}</a>
+                        @endif
+                    </p>
                 </div>
             </div>
         </div>

@@ -51,7 +51,7 @@
             <div class="ref-label">Shipment Reference</div>
             <div class="ref-number">{{ $shipment->shipping_reference }}</div>
             @if($shipment->tracking_number)
-            <div style="font-size: 13px; color: #666; margin-top: 6px;">Tracking: {{ $shipment->tracking_number }}</div>
+            <div style="font-size: 13px; color: #666; margin-top: 6px;">Tracking: <a href="{{ $shipment->publicTrackingUrl() }}" target="_blank" style="color: #A0043C;">{{ $shipment->tracking_number }}</a></div>
             @endif
         </div>
 

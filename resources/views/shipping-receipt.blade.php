@@ -98,6 +98,11 @@
         <div class="text-right">
             <p class="text-xl text-[#003151] font-extrabold uppercase">Receipt No</p>
             <h4 class="text-lg font-semibold">{{ $shipping->shipping_reference }}</h4>
+            @if ($shipping->publicTrackingUrl())
+                <p class="text-xl text-[#003151] font-extrabold">Tracking</p>
+                <a href="{{ $shipping->publicTrackingUrl() }}" target="_blank" rel="noopener"
+                    class="text-sm font-semibold text-[#A0043C] underline">{{ $shipping->tracking_number ?: $shipping->shipping_reference }}</a>
+            @endif
             <p class="text-xl text-[#003151] font-extrabold">Date</p>
             <p class="text-sm font-medium">
                 {{ date('j-M-y', strtotime($shipping->created_at)) }}

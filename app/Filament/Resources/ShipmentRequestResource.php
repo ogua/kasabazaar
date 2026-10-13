@@ -2,17 +2,18 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms;
-use Filament\Tables;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
-use App\Models\ShipmentRequest;
-use Filament\Resources\Resource;
-use Filament\Tables\Actions\Action;
 use App\Enums\ShipmentRequestStatus;
-use Filament\Notifications\Notification;
-use App\Services\ShipmentRequestApprovalService;
 use App\Filament\Resources\ShipmentRequestResource\Pages;
+use App\Models\Product;
+use App\Models\ShipmentRequest;
+use App\Services\ShipmentRequestApprovalService;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Notifications\Notification;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Actions\Action;
+use Filament\Tables\Table;
 
 class ShipmentRequestResource extends Resource
 {
@@ -44,28 +45,131 @@ class ShipmentRequestResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Request Details')
                     ->schema([
-                        Forms\Components\Select::make('client_id')
+                        Forms\Components\Placeholder::make('client_summary')
                             ->label('Client')
-                            ->relationship('client', 'name')
-                            ->disabled(),
+                            ->content(fn (?ShipmentRequest $record): string => trim(($record?->client?->name ?? '—')
+                                .($record?->client?->phone ? " ({$record->client->phone})" : ''))),
 
-                        Forms\Components\Select::make('status')
-                            ->options(ShipmentRequestStatus::class)
-                            ->disabled(),
+                        Forms\Components\Placeholder::make('status_summary')
+                            ->label('Status')
+                            ->content(fn (?ShipmentRequest $record): string => $record?->status?->getLabel() ?? '—'),
 
                         Forms\Components\TextInput::make('pickup_location')
-                            ->disabled(),
+                            ->required()
+                            ->maxLength(255),
 
                         Forms\Components\DateTimePicker::make('preferred_pickup_at')
-                            ->disabled(),
+                            ->label('Preferred pickup')
+                            ->seconds(false)
+                            ->required(),
 
                         Forms\Components\Textarea::make('notes')
-                            ->disabled(),
-
-                        Forms\Components\Textarea::make('rejection_reason')
-                            ->disabled(),
+                            ->rows(3)
+                            ->columnSpanFull(),
                     ])->columns(2),
+
+                Forms\Components\Section::make('Receivers & Items')
+                    ->schema([
+                        Forms\Components\Repeater::make('receivers')
+                            ->hiddenLabel()
+                            ->schema([
+                                Forms\Components\TextInput::make('name')->required()->maxLength(255),
+                                Forms\Components\TextInput::make('phone')->tel()->required()->maxLength(30),
+                                Forms\Components\TextInput::make('country')->maxLength(100),
+                                Forms\Components\TextInput::make('state_region')->label('State / Region')->maxLength(100),
+                                Forms\Components\TextInput::make('city')->maxLength(100),
+                                Forms\Components\TextInput::make('address')->maxLength(500),
+
+                                Forms\Components\Repeater::make('items')
+                                    ->schema(static::itemSchema())
+                                    ->columns(12)
+                                    ->minItems(1)
+                                    ->defaultItems(1)
+                                    ->addActionLabel('Add Item')
+                                    ->reorderable(false)
+                                    ->columnSpanFull(),
+                            ])
+                            ->columns(3)
+                            ->minItems(1)
+                            ->addActionLabel('Add Receiver')
+                            ->reorderable(false)
+                            ->itemLabel(fn (array $state): ?string => $state['name'] ?? null)
+                            ->collapsible(),
+                    ]),
             ]);
+    }
+
+    /**
+     * One requested item. The value always comes from the selected product and is
+     * re-applied on save by ShipmentRequest::normaliseReceivers().
+     *
+     * @return array<int, Forms\Components\Component>
+     */
+    private static function itemSchema(): array
+    {
+        return [
+            Forms\Components\Select::make('product_id')
+                ->label('Product')
+                ->searchable()
+                ->getSearchResultsUsing(fn (string $search): array => Product::query()
+                    ->where(fn ($q) => $q->where('name', 'like', "%{$search}%")->orWhere('sku', 'like', "%{$search}%"))
+                    ->orderBy('name')
+                    ->limit(50)
+                    ->pluck('name', 'id')
+                    ->all())
+                ->getOptionLabelUsing(fn ($value): ?string => Product::find($value)?->name)
+                ->live()
+                ->required(fn (Forms\Get $get): bool => blank($get('description')))
+                ->afterStateUpdated(function (?string $state, Forms\Set $set): void {
+                    $product = $state ? Product::find($state) : null;
+
+                    if ($product) {
+                        $set('description', $product->name);
+                        $set('estimated_value', number_format((float) $product->value, 2, '.', ''));
+                    }
+                })
+                ->createOptionForm([
+                    Forms\Components\TextInput::make('name')->required()->maxLength(255),
+                    Forms\Components\TextInput::make('category')->default('general')->required()->maxLength(255),
+                    Forms\Components\TextInput::make('value')->label('Value (USD)')->numeric()->minValue(0)->required(),
+                    Forms\Components\TextInput::make('weight')->numeric()->minValue(0),
+                ])
+                ->createOptionModalHeading('Add a new product')
+                ->createOptionUsing(fn (array $data): string => Product::create([
+                    'name' => $data['name'],
+                    'category' => $data['category'],
+                    'value' => $data['value'],
+                    'weight' => $data['weight'] ?? null,
+                    'branch_id' => null,
+                ])->getKey())
+                ->helperText(fn (Forms\Get $get): ?string => blank($get('product_id')) && filled($get('description'))
+                    ? "Client asked for a new product: \"{$get('description')}\". Pick it from the list or add it with +."
+                    : null)
+                ->columnSpan(5),
+
+            Forms\Components\Hidden::make('description'),
+
+            Forms\Components\TextInput::make('quantity')
+                ->numeric()
+                ->integer()
+                ->minValue(1)
+                ->default(1)
+                ->required()
+                ->columnSpan(2),
+
+            Forms\Components\TextInput::make('estimated_value')
+                ->label('Value (USD)')
+                ->prefix('$')
+                ->disabled()
+                ->dehydrated()
+                ->placeholder('From product')
+                ->columnSpan(3),
+
+            Forms\Components\TextInput::make('details')
+                ->label('Description')
+                ->maxLength(500)
+                ->columnSpanFull(),
+        ];
     }
 
     public static function table(Table $table): Table
@@ -85,6 +189,12 @@ class ShipmentRequestResource extends Resource
                     ->badge()
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('source')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state): string => $state === 'public_link' ? 'Pickup link' : 'App')
+                    ->color(fn (?string $state): string => $state === 'public_link' ? 'warning' : 'gray')
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('pickup_location')
                     ->limit(40)
                     ->tooltip(fn ($record) => $record->pickup_location),
@@ -102,6 +212,12 @@ class ShipmentRequestResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options(ShipmentRequestStatus::class),
+
+                Tables\Filters\SelectFilter::make('source')
+                    ->options([
+                        'app' => 'App',
+                        'public_link' => 'Pickup link',
+                    ]),
             ])
             ->actions([
                 Action::make('markUnderReview')
@@ -119,23 +235,41 @@ class ShipmentRequestResource extends Resource
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->visible(fn ($record) => in_array($record->status->value, ['submitted', 'under_review']))
-                    ->fillForm(function ($record) {
-                        return [
-                            'shipping_cost' => $record->shipping_cost,
-                            'vat_percentage' => $record->vat_percentage ?? 0,
-                            'notes' => $record->notes,
-                        ];
-                    })
+                    ->fillForm(fn (ShipmentRequest $record): array => [
+                        'shipping_cost' => $record->itemsTotal(),
+                        'vat_percentage' => 0,
+                        'insurance_accepted' => false,
+                        'insurance' => 0,
+                        'notes' => $record->notes,
+                    ])
                     ->form([
                         Forms\Components\TextInput::make('shipping_cost')
+                            ->label('Shipping cost')
+                            ->helperText('Pre-filled with the total value of the requested items.')
                             ->numeric()
+                            ->minValue(0)
                             ->prefix('USD')
                             ->nullable(),
                         Forms\Components\TextInput::make('vat_percentage')
+                            ->label('VAT / Tax')
                             ->numeric()
+                            ->minValue(0)
+                            ->maxValue(100)
                             ->suffix('%')
                             ->default(0)
                             ->nullable(),
+                        Forms\Components\Toggle::make('insurance_accepted')
+                            ->label('Client accepts insurance')
+                            ->live()
+                            ->afterStateUpdated(fn (bool $state, Forms\Set $set) => $state ?: $set('insurance', 0)),
+                        Forms\Components\TextInput::make('insurance')
+                            ->label('Insurance amount')
+                            ->numeric()
+                            ->minValue(0)
+                            ->prefix('USD')
+                            ->default(0)
+                            ->visible(fn (Forms\Get $get): bool => (bool) $get('insurance_accepted'))
+                            ->required(fn (Forms\Get $get): bool => (bool) $get('insurance_accepted')),
                         Forms\Components\Textarea::make('notes')
                             ->label('Staff Notes')
                             ->nullable(),
@@ -193,6 +327,9 @@ class ShipmentRequestResource extends Resource
                     }),
 
                 Tables\Actions\ViewAction::make(),
+
+                Tables\Actions\EditAction::make()
+                    ->visible(fn (ShipmentRequest $record): bool => $record->isEditable() && static::canEdit($record)),
             ])
             ->defaultSort('created_at', 'desc');
     }
@@ -202,6 +339,7 @@ class ShipmentRequestResource extends Resource
         return [
             'index' => Pages\ListShipmentRequests::route('/'),
             'view' => Pages\ViewShipmentRequest::route('/{record}'),
+            'edit' => Pages\EditShipmentRequest::route('/{record}/edit'),
         ];
     }
 }

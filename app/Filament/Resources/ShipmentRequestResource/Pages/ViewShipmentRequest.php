@@ -3,13 +3,22 @@
 namespace App\Filament\Resources\ShipmentRequestResource\Pages;
 
 use App\Filament\Resources\ShipmentRequestResource;
-use Filament\Resources\Pages\ViewRecord;
-use Filament\Infolists\Infolist;
+use Filament\Actions;
 use Filament\Infolists\Components;
+use Filament\Infolists\Infolist;
+use Filament\Resources\Pages\ViewRecord;
 
 class ViewShipmentRequest extends ViewRecord
 {
     protected static string $resource = ShipmentRequestResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\EditAction::make()
+                ->visible(fn (): bool => $this->getRecord()->isEditable() && ShipmentRequestResource::canEdit($this->getRecord())),
+        ];
+    }
 
     public function infolist(Infolist $infolist): Infolist
     {
@@ -22,6 +31,10 @@ class ViewShipmentRequest extends ViewRecord
                     Components\TextEntry::make('status')->badge(),
                     Components\TextEntry::make('pickup_location'),
                     Components\TextEntry::make('preferred_pickup_at')->dateTime('M d, Y H:i'),
+                    Components\TextEntry::make('source')
+                        ->formatStateUsing(fn (?string $state, $record): string => $state === 'public_link'
+                            ? 'Pickup link'.($record->link?->label ? " ({$record->link->label})" : '')
+                            : 'App'),
                     Components\TextEntry::make('notes')->columnSpanFull(),
                     Components\TextEntry::make('rejection_reason')->columnSpanFull()
                         ->visible(fn ($record) => filled($record->rejection_reason)),
@@ -36,6 +49,21 @@ class ViewShipmentRequest extends ViewRecord
                             Components\TextEntry::make('country')->label('Country'),
                             Components\TextEntry::make('city')->label('City'),
                             Components\TextEntry::make('address')->label('Address')->columnSpanFull(),
+                            Components\RepeatableEntry::make('items')
+                                ->schema([
+                                    Components\TextEntry::make('description')->label('Product'),
+                                    Components\TextEntry::make('product_id')
+                                        ->label('Catalogue')
+                                        ->badge()
+                                        ->formatStateUsing(fn (): string => 'Listed')
+                                        ->color('success')
+                                        ->placeholder('New product'),
+                                    Components\TextEntry::make('quantity')->label('Qty'),
+                                    Components\TextEntry::make('estimated_value')->label('Value')->money('USD')->placeholder('To be priced'),
+                                    Components\TextEntry::make('details')->label('Description')->placeholder('—'),
+                                ])
+                                ->columns(5)
+                                ->columnSpanFull(),
                         ])->columns(4),
                 ]),
         ]);

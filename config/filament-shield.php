@@ -75,7 +75,10 @@ return [
             'AccountWidget', 'FilamentInfoWidget',
         ],
 
-        'resources' => [],
+        'resources' => [
+            // Authorised through the Shipment Request permissions (see ShipmentRequestLinkPolicy).
+            'ShipmentRequestLinkResource',
+        ],
     ],
 
     'discovery' => [

@@ -51,7 +51,10 @@ class WhatsappChannel
             'template' => $template['template'] ?? '',
             'reference' => $message->reference,
             'status' => WhatsappMessage::STATUS_PENDING,
-            'fallback_sms_body' => method_exists($notification, 'toSms') ? $notification->toSms($notifiable) : null,
+            // A notification that already sends its SMS alongside WhatsApp opts out of the fallback.
+            'fallback_sms_body' => method_exists($notification, 'toSms') && ($notification->whatsappFallsBackToSms ?? true)
+                ? $notification->toSms($notifiable)
+                : null,
             'fallback_phone' => $phone,
         ]);
 
