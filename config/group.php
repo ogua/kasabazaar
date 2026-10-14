@@ -51,7 +51,7 @@ return [
         'url' => env('GROUP_SITE_URL') ?: 'https://kasarose.com',
         'companies_url' => rtrim(env('GROUP_SITE_URL') ?: 'https://kasarose.com', '/').'/our-companies.php',
         // Public tracking page; invoices and receipts link to it as tracking.php?ref={tracking_number}.
-        'tracking_url' => rtrim(env('GROUP_SITE_URL') ?: 'https://kasarose.com', '/').'/tracking.php',
+        'tracking_url' => rtrim('https://kasarose.com', '/').'/tracking.php',
     ],
 
     /*
