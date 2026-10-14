@@ -47,6 +47,24 @@ class ExpenseService
     }
 
     /**
+     * Create a general (overhead) expense tied to no shipment or container,
+     * e.g. office rent, utilities or internet.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function createGeneralExpense(array $data, string $branchId): Expense
+    {
+        $data = $this->withConvertedAmount($data);
+        $data['expense_for'] = ExpenseScope::General;
+        $data['shipment_id'] = null;
+        $data['container_number'] = null;
+        $data['expense_stage'] = null;
+        $data['branch_id'] = $branchId;
+
+        return Expense::create($data);
+    }
+
+    /**
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
@@ -86,7 +104,7 @@ class ExpenseService
                 'total_usd' => $items->sum('amount_usd'),
                 'total_ghs' => $items->sum('amount_ghs'),
             ]),
-            'by_stage' => $expenses->groupBy('expense_stage')->map(fn ($items) => [
+            'by_stage' => $expenses->groupBy(fn (Expense $e) => $e->expense_stage?->value ?? 'none')->map(fn ($items) => [
                 'count' => $items->count(),
                 'total_usd' => $items->sum('amount_usd'),
                 'total_ghs' => $items->sum('amount_ghs'),

@@ -55,10 +55,10 @@ class ExpenseController extends BaseApiController
             'amount_ghs' => 'required_without:amount_usd|nullable|numeric|min:0',
             'exchange_rate' => 'nullable|numeric|min:0',
             'expense_date' => 'required|date',
-            'expense_stage' => 'nullable|in:pre_shipment,during_shipment,post_shipment',
-            'expense_for' => 'nullable|in:shipment,container',
-            'shipment_id' => 'nullable|uuid|exists:shipments,id',
-            'container_number' => 'nullable|string|exists:shipments,container_number',
+            'expense_stage' => 'nullable|in:pre_shipment,during_shipment,post_shipment,delivery',
+            'expense_for' => 'nullable|in:shipment,container,general',
+            'shipment_id' => 'nullable|required_if:expense_for,shipment|uuid|exists:shipments,id',
+            'container_number' => 'nullable|required_if:expense_for,container|string|exists:shipments,container_number',
             'vendor_name' => 'nullable|string|max:255',
             'receipt' => 'nullable|file|image|max:2048',
         ]);
@@ -68,8 +68,11 @@ class ExpenseController extends BaseApiController
             'exchange_rate', 'expense_date', 'expense_stage', 'shipment_id',
             'container_number', 'expense_for', 'vendor_name',
         ]);
-        $data['expense_for'] = ($data['expense_for'] ?? null)
-            ?: (! empty($data['container_number']) && empty($data['shipment_id']) ? 'container' : 'shipment');
+        $data['expense_for'] = ($data['expense_for'] ?? null) ?: match (true) {
+            ! empty($data['shipment_id']) => 'shipment',
+            ! empty($data['container_number']) => 'container',
+            default => 'general',
+        };
         $data['branch_id'] = $branchId;
         $data['recorded_by'] = auth()->id();
 
@@ -106,8 +109,8 @@ class ExpenseController extends BaseApiController
             'amount_ghs' => 'sometimes|nullable|numeric|min:0',
             'exchange_rate' => 'nullable|numeric|min:0',
             'expense_date' => 'sometimes|date',
-            'expense_stage' => 'nullable|in:pre_shipment,during_shipment,post_shipment',
-            'expense_for' => 'sometimes|in:shipment,container',
+            'expense_stage' => 'nullable|in:pre_shipment,during_shipment,post_shipment,delivery',
+            'expense_for' => 'sometimes|in:shipment,container,general',
             'shipment_id' => 'sometimes|nullable|uuid|exists:shipments,id',
             'container_number' => 'sometimes|nullable|string|exists:shipments,container_number',
             'vendor_name' => 'nullable|string|max:255',

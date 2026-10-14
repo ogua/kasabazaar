@@ -10,6 +10,7 @@ use App\Models\Expense;
 use App\Models\Shipment;
 use App\Models\ShipmentContainer;
 use App\Service\ExchangeRateService;
+use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -43,13 +44,17 @@ class ExpenseResource extends Resource
                             ->default(ExpenseScope::Shipment->value)
                             ->required()
                             ->live()
-                            ->inline()
                             ->columnSpanFull()
                             ->afterStateUpdated(function (Set $set, $state): void {
-                                if ($state === ExpenseScope::Container->value) {
+                                if ($state !== ExpenseScope::Shipment->value) {
                                     $set('shipment_id', null);
-                                } else {
+                                }
+                                if ($state !== ExpenseScope::Container->value) {
                                     $set('container_number', null);
+                                }
+                                if ($state === ExpenseScope::General->value) {
+                                    $set('expense_stage', null);
+                                    $set('branch_id', Filament::getTenant()?->getKey());
                                 }
                             }),
                         Forms\Components\Select::make('shipment_id')
@@ -58,7 +63,7 @@ class ExpenseResource extends Resource
                             ->searchable()
                             ->preload()
                             ->required()
-                            ->visible(fn (Get $get): bool => $get('expense_for') !== ExpenseScope::Container->value)
+                            ->visible(fn (Get $get): bool => static::scopeIs($get, ExpenseScope::Shipment))
                             ->reactive()
                             ->afterStateUpdated(function (Set $set, $state) {
                                 if ($state) {
@@ -73,7 +78,7 @@ class ExpenseResource extends Resource
                             ->options(fn (): array => static::containerOptions())
                             ->searchable()
                             ->required()
-                            ->visible(fn (Get $get): bool => $get('expense_for') === ExpenseScope::Container->value)
+                            ->visible(fn (Get $get): bool => static::scopeIs($get, ExpenseScope::Container))
                             ->reactive()
                             ->afterStateUpdated(function (Set $set, $state) {
                                 if (! $state) {
@@ -93,7 +98,8 @@ class ExpenseResource extends Resource
                                 Forms\Components\TextInput::make('code')->required(),
                                 Forms\Components\Textarea::make('description'),
                             ]),
-                        Forms\Components\Hidden::make('branch_id'),
+                        Forms\Components\Hidden::make('branch_id')
+                            ->default(fn () => Filament::getTenant()?->getKey()),
                         Forms\Components\Hidden::make('recorded_by')
                             ->default(fn () => auth()->id()),
                     ])
@@ -106,7 +112,8 @@ class ExpenseResource extends Resource
                             ->maxLength(255),
                         Forms\Components\Select::make('expense_stage')
                             ->options(ExpenseStage::class)
-                            ->required(),
+                            ->required()
+                            ->visible(fn (Get $get): bool => ! static::scopeIs($get, ExpenseScope::General)),
                         Forms\Components\Textarea::make('description')
                             ->rows(3)
                             ->columnSpanFull(),
@@ -185,6 +192,20 @@ class ExpenseResource extends Resource
     }
 
     /**
+     * Whether the form's "expense_for" radio is currently set to the given scope.
+     * A blank radio counts as the default, shipment.
+     */
+    protected static function scopeIs(Get $get, ExpenseScope $scope): bool
+    {
+        $state = $get('expense_for');
+        $current = $state instanceof ExpenseScope
+            ? $state
+            : (ExpenseScope::tryFrom((string) $state) ?? ExpenseScope::Shipment);
+
+        return $current === $scope;
+    }
+
+    /**
      * Container numbers that shipments have been assigned to, plus any tracked
      * container-clearance records, keyed for a Select ("51" => "CON51").
      *
@@ -225,7 +246,7 @@ class ExpenseResource extends Resource
                             ->where('container_number', 'like', "%{$search}%")
                             ->orWhereHas('shipment', fn (Builder $q) => $q->where('shipping_reference', 'like', "%{$search}%"));
                     })
-                    ->placeholder('—'),
+                    ->placeholder('General'),
                 Tables\Columns\TextColumn::make('category.name')
                     ->label('Category')
                     ->badge(),
@@ -241,7 +262,8 @@ class ExpenseResource extends Resource
                     ->money('GHS')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('expense_stage')
-                    ->badge(),
+                    ->badge()
+                    ->placeholder('—'),
                 Tables\Columns\TextColumn::make('expense_date')
                     ->date()
                     ->sortable(),

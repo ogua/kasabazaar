@@ -75,26 +75,43 @@ class Expense extends Model
     }
 
     /**
-     * Keep the scope discriminator and its two subject columns consistent:
-     * a container expense never carries a shipment_id, a shipment expense
-     * never carries a container_number.
+     * Keep the scope discriminator and its subject columns consistent: a
+     * container expense never carries a shipment_id, a shipment expense never
+     * carries a container_number, and a general (overhead) expense carries
+     * neither — nor a shipping stage. An expense whose subject is missing is
+     * general, whatever scope it was labelled with.
      */
     protected static function normaliseScope(Expense $expense): void
     {
-        if (empty($expense->expense_for)) {
-            $expense->expense_for = $expense->container_number && ! $expense->shipment_id
-                ? ExpenseScope::Container
-                : ExpenseScope::Shipment;
-        }
-
         $scope = $expense->expense_for instanceof ExpenseScope
             ? $expense->expense_for
             : ExpenseScope::tryFrom((string) $expense->expense_for);
 
-        if ($scope === ExpenseScope::Container) {
+        $scope ??= match (true) {
+            (bool) $expense->shipment_id => ExpenseScope::Shipment,
+            (bool) $expense->container_number => ExpenseScope::Container,
+            default => ExpenseScope::General,
+        };
+
+        if (
+            ($scope === ExpenseScope::Shipment && ! $expense->shipment_id)
+            || ($scope === ExpenseScope::Container && ! $expense->container_number)
+        ) {
+            $scope = ExpenseScope::General;
+        }
+
+        $expense->expense_for = $scope;
+
+        if ($scope !== ExpenseScope::Shipment) {
             $expense->shipment_id = null;
-        } else {
+        }
+
+        if ($scope !== ExpenseScope::Container) {
             $expense->container_number = null;
+        }
+
+        if (! $scope->hasStage()) {
+            $expense->expense_stage = null;
         }
     }
 
@@ -148,14 +165,22 @@ class Expense extends Model
     }
 
     /**
+     * Overhead expenses not tied to any shipment or container.
+     */
+    public function scopeGeneral(Builder $query): Builder
+    {
+        return $query->where('expense_for', ExpenseScope::General);
+    }
+
+    /**
      * Human-readable reference for whatever the expense is booked against.
      */
     public function getSubjectReferenceAttribute(): ?string
     {
-        if ($this->expense_for === ExpenseScope::Container) {
-            return $this->container_number ? 'CON'.$this->container_number : null;
-        }
-
-        return $this->shipment?->shipping_reference;
+        return match ($this->expense_for) {
+            ExpenseScope::Container => $this->container_number ? 'CON'.$this->container_number : null,
+            ExpenseScope::General => null,
+            default => $this->shipment?->shipping_reference,
+        };
     }
 }

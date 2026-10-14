@@ -2,8 +2,9 @@
 
 namespace App\Filament\Resources\ExpenseResource\Pages;
 
-use Filament\Resources\Pages\CreateRecord;
 use App\Filament\Resources\ExpenseResource;
+use Filament\Facades\Filament;
+use Filament\Resources\Pages\CreateRecord;
 
 class CreateExpense extends CreateRecord
 {
@@ -12,6 +13,8 @@ class CreateExpense extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['recorded_by'] = auth()->id();
+        $data['branch_id'] ??= Filament::getTenant()?->getKey();
+
         return $data;
     }
 
