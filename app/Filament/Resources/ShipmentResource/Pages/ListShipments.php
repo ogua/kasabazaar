@@ -10,10 +10,13 @@ use App\Models\ContainerClearance;
 use App\Models\Shipment;
 use App\Models\ShipmentContainer;
 use App\Services\ShipmentNotifier;
+use Closure;
 use Filament\Actions;
 use Filament\Forms;
 use Filament\Notifications\Notification;
+use Filament\Resources\Components\Tab;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Database\Eloquent\Builder;
 
 class ListShipments extends ListRecords
 {
@@ -248,5 +251,72 @@ class ListShipments extends ListRecords
                         ->send();
                 }),
         ];
+    }
+
+    /**
+     * Quick tabs for the delivery stages, receipt confirmation and payment status.
+     *
+     * @return array<string, Tab>
+     */
+    public function getTabs(): array
+    {
+        $tabs = [
+            'all' => Tab::make('All')
+                ->badge(fn (): int => $this->countShipments(fn (Builder $query): Builder => $query)),
+        ];
+
+        $stageIcons = [
+            ShippingStatus::pending->value => 'heroicon-m-clock',
+            ShippingStatus::pickup->value => 'heroicon-m-hand-raised',
+            ShippingStatus::shipped->value => 'heroicon-m-truck',
+            ShippingStatus::cleared->value => 'heroicon-m-shield-check',
+            ShippingStatus::delivered->value => 'heroicon-m-home',
+            ShippingStatus::cancelled->value => 'heroicon-m-x-circle',
+        ];
+
+        foreach ($stageIcons as $value => $icon) {
+            $status = ShippingStatus::from($value);
+            $scope = fn (Builder $query): Builder => $query->where('status', $value);
+
+            $tabs[$value] = $this->makeTab(ucfirst($value), $icon, $status->getColor(), $scope);
+        }
+
+        $tabs['received'] = $this->makeTab('Received', 'heroicon-m-check-badge', 'success',
+            fn (Builder $query): Builder => $query->where('is_received', true));
+
+        $tabs['awaiting_receipt'] = $this->makeTab('Delivered, Not Received', 'heroicon-m-exclamation-triangle', 'warning',
+            fn (Builder $query): Builder => $query
+                ->where('status', ShippingStatus::delivered->value)
+                ->where('is_received', false));
+
+        $tabs['unpaid'] = $this->makeTab('Unpaid', 'heroicon-m-banknotes', 'danger',
+            fn (Builder $query): Builder => $query->where(
+                fn (Builder $q): Builder => $q->where('payment_status', 'pending')->orWhereNull('payment_status')
+            ));
+
+        $tabs['partial'] = $this->makeTab('Part Paid', 'heroicon-m-banknotes', 'warning',
+            fn (Builder $query): Builder => $query->where('payment_status', 'partial'));
+
+        $tabs['paid'] = $this->makeTab('Paid', 'heroicon-m-banknotes', 'success',
+            fn (Builder $query): Builder => $query->where('payment_status', 'paid'));
+
+        return $tabs;
+    }
+
+    protected function makeTab(string $label, string $icon, string $color, Closure $scope): Tab
+    {
+        return Tab::make($label)
+            ->icon($icon)
+            ->badgeColor($color)
+            ->modifyQueryUsing($scope)
+            ->badge(fn (): int => $this->countShipments($scope));
+    }
+
+    /**
+     * Count the current branch's shipments that match a tab's scope.
+     */
+    protected function countShipments(Closure $scope): int
+    {
+        return $scope(ShipmentResource::getEloquentQuery()->reorder())->count();
     }
 }

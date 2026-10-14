@@ -24,6 +24,19 @@ class Shipment extends Model
      */
     public bool $suppressLifecycleAlerts = false;
 
+    /**
+     * Status history ({@see ShipmentUpdate}) is written by ShipmentObserver whenever
+     * the status changes, so every path — admin, API, trips, bulk jobs — leaves a
+     * trail on the public tracking page. Set these before saving to steer that row.
+     * Not persisted.
+     *
+     * $statusHistoryNote:     ['location' => ..., 'remarks' => ...] for the automatic row.
+     * $statusHistoryRecorded: true when the caller has already written its own row.
+     */
+    public ?array $statusHistoryNote = null;
+
+    public bool $statusHistoryRecorded = false;
+
     protected $casts = [
         'status' => ShippingStatus::class,
         'insurance_accepted' => 'boolean',

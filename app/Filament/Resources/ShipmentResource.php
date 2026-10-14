@@ -745,6 +745,15 @@ class ShipmentResource extends Resource
                         : 'No agent-recorded delivery yet')
                     ->toggleable(),
 
+                // Drives the final "Received" stage on the public tracking page (kasarose.com/tracking.php).
+                Tables\Columns\IconColumn::make('is_received')
+                    ->label('Received')
+                    ->boolean()
+                    ->tooltip(fn ($record) => $record->is_received
+                        ? 'Receiver has confirmed receipt'
+                        : 'Receipt not yet confirmed')
+                    ->toggleable(),
+
                 Tables\Columns\TextColumn::make('tracking_number')
                     ->searchable()
                     ->copyable(),
@@ -858,6 +867,9 @@ class ShipmentResource extends Resource
                                 ->helperText('Upload a live signature, or a photo of the signed printed Delivery Report.')
                                 ->image()
                                 ->directory('shipment-delivery-signatures'),
+                            Forms\Components\Toggle::make('is_received')
+                                ->label('Receiver has confirmed receipt')
+                                ->helperText('Turned on automatically when a receiver signature is uploaded. Shows the shipment as "Received" on the public tracking page.'),
                         ])
                         ->action(function (Shipment $record, array $data): void {
                             ShipmentDelivery::create([
@@ -873,6 +885,14 @@ class ShipmentResource extends Resource
                             // so ShipmentObserver's status:delivered notification still fires.
                             $record->status = 'delivered';
                             $record->delivered_at = $data['delivered_at'];
+                            // A receiver signature is proof of receipt in itself.
+                            if (! empty($data['is_received']) || filled($data['receiver_signature'] ?? null)) {
+                                $record->is_received = true;
+                            }
+                            $agent = ClearingAgent::find($data['clearing_agent_id'])?->name;
+                            $record->statusHistoryNote = [
+                                'remarks' => trim(($agent ? "Delivered by {$agent}. " : 'Delivered. ').($data['delivery_notes'] ?? '')),
+                            ];
                             $record->save();
 
                             \Filament\Notifications\Notification::make()
@@ -939,6 +959,9 @@ class ShipmentResource extends Resource
                                 $record->status = $data['status'];
                                 $record->shipped_at = $data['shipped_at'];
                                 $record->estimated_delivery_date = $data['estimated_delivery_date'];
+                                // This action writes its own history row (below) with the
+                                // location and notes staff entered — don't let the observer add a second.
+                                $record->statusHistoryRecorded = true;
                                 $record->save();
 
                                 ShipmentUpdate::create([
@@ -947,6 +970,24 @@ class ShipmentResource extends Resource
                                     'status' => $data['status'],
                                     'remarks' => $data['remarks'],
                                 ]);
+                            }),
+
+                        Tables\Actions\Action::make('toggle_received')
+                            ->label(fn (Shipment $record) => $record->is_received ? 'Mark as Not Received' : 'Mark as Received')
+                            ->icon(fn (Shipment $record) => $record->is_received ? 'heroicon-m-x-circle' : 'heroicon-m-check-badge')
+                            ->color(fn (Shipment $record) => $record->is_received ? 'gray' : 'success')
+                            ->requiresConfirmation()
+                            ->modalDescription(fn (Shipment $record) => $record->is_received
+                                ? 'The public tracking page will go back to showing this shipment at the Delivery stage.'
+                                : 'Confirm the receiver has taken this shipment. The public tracking page will show it as "Received".')
+                            ->action(function (Shipment $record): void {
+                                $record->is_received = ! $record->is_received;
+                                $record->save();
+
+                                \Filament\Notifications\Notification::make()
+                                    ->title($record->is_received ? 'Marked as received' : 'Marked as not received')
+                                    ->success()
+                                    ->send();
                             }),
 
                         Tables\Actions\Action::make('receiver')

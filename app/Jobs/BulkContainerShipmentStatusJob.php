@@ -36,6 +36,9 @@ class BulkContainerShipmentStatusJob implements ShouldQueue
             // (and, on dispatch/delivery, receiver) email + SMS lifecycle alert.
             $shipment->suppressLifecycleAlerts = ! $this->notifyClients;
             $shipment->status = $statusEnum;
+            if (filled($this->note)) {
+                $shipment->statusHistoryNote = ['remarks' => $this->note];
+            }
             $shipment->save();
         }
     }

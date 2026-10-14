@@ -280,6 +280,7 @@ class ShipmentController extends BaseApiController
             'delivered_at' => 'nullable|date',
             'delivery_notes' => 'nullable|string',
             'receiver_signature' => 'nullable|file|image|max:5120',
+            'is_received' => 'nullable|boolean',
         ]);
 
         $signaturePath = null;
@@ -302,6 +303,14 @@ class ShipmentController extends BaseApiController
         // ShipmentObserver's status:delivered notification still fires.
         $shipment->status = 'delivered';
         $shipment->delivered_at = $deliveredAt;
+        // A receiver signature is proof of receipt in itself.
+        if ($request->boolean('is_received') || $signaturePath) {
+            $shipment->is_received = true;
+        }
+        $agent = $delivery->clearingAgent?->name;
+        $shipment->statusHistoryNote = [
+            'remarks' => trim(($agent ? "Delivered by {$agent}. " : 'Delivered. ').$request->input('delivery_notes', '')),
+        ];
         $shipment->save();
 
         return $this->success([

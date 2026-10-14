@@ -3,6 +3,7 @@
 namespace App\Observers;
 
 use App\Models\Shipment;
+use App\Models\ShipmentUpdate;
 use App\Models\User;
 use App\Notifications\ShipmentStatusUpdated;
 use App\Services\PushNotificationService;
@@ -33,6 +34,10 @@ class ShipmentObserver
         if ($shipment->isDirty('msc_tracking_number') && filled($shipment->msc_tracking_number)) {
             $shipment->msc_tracking_updated_at = now();
         }
+
+        if ($shipment->isDirty('status') && self::statusValue($shipment) === 'delivered' && blank($shipment->delivered_at)) {
+            $shipment->delivered_at = now();
+        }
     }
 
     public function updated(Shipment $shipment): void
@@ -43,9 +48,20 @@ class ShipmentObserver
             ShipmentNotifier::sent($shipment, 'msc_updated');
         }
 
+        if ($shipment->wasChanged('is_received') && $shipment->is_received) {
+            ShipmentUpdate::create([
+                'shipment_id' => $shipment->id,
+                'location' => self::place($shipment, true),
+                'status' => 'received',
+                'remarks' => 'Receiver confirmed receipt',
+            ]);
+        }
+
         if (! $shipment->wasChanged('status')) {
             return;
         }
+
+        $this->recordStatusHistory($shipment);
 
         $status = $shipment->status instanceof \BackedEnum
             ? $shipment->status->value
@@ -80,5 +96,57 @@ class ShipmentObserver
                 );
             }
         }
+    }
+
+    /**
+     * Write a status-history row for this status change, unless the caller already
+     * wrote one (the "Update Status" action, which collects its own location/notes).
+     * This is what the public tracking page's Status History reads, so every path that
+     * changes a status — admin edit, Record Delivery, mobile API, trips, bulk container
+     * jobs — must leave a row here.
+     */
+    private function recordStatusHistory(Shipment $shipment): void
+    {
+        if ($shipment->statusHistoryRecorded) {
+            return;
+        }
+
+        $status = self::statusValue($shipment);
+        $note = $shipment->statusHistoryNote ?? [];
+
+        // Where the goods are at each stage: still at origin until they've been
+        // dispatched, at the destination from customs clearance onwards.
+        $atDestination = in_array($status, ['cleared', 'delivered'], true);
+
+        ShipmentUpdate::create([
+            'shipment_id' => $shipment->id,
+            'location' => filled($note['location'] ?? null) ? $note['location'] : self::place($shipment, $atDestination),
+            'status' => $status,
+            'remarks' => filled($note['remarks'] ?? null) ? $note['remarks'] : (self::$statusLabels[$status] ?? 'Status updated'),
+        ]);
+    }
+
+    /**
+     * origin_branch_id / destination_branch_id hold a place name picked in the
+     * "Shipping Route" form (Michigan, Illinois, ... Ghana), not a branch id —
+     * although older rows may hold a real branch id, so resolve that first.
+     */
+    private static function place(Shipment $shipment, bool $destination): string
+    {
+        $branch = $destination ? $shipment->destinationBranch : $shipment->originBranch;
+        if ($branch) {
+            return $branch->name;
+        }
+
+        $value = (string) ($destination ? $shipment->destination_branch_id : $shipment->origin_branch_id);
+
+        return \Illuminate\Support\Str::isUuid($value) ? '' : $value;
+    }
+
+    private static function statusValue(Shipment $shipment): string
+    {
+        return $shipment->status instanceof \BackedEnum
+            ? $shipment->status->value
+            : (string) $shipment->status;
     }
 }

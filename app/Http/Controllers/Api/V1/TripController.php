@@ -207,7 +207,15 @@ class TripController extends BaseApiController
 
         // Sync shipment status if delivered
         if ($request->delivery_status === 'delivered') {
-            $tripShipment->shipment()->update(['status' => 'delivered', 'delivered_at' => $tripShipment->delivered_at]);
+            // Save through the model (not a query-builder update) so ShipmentObserver
+            // runs: it writes the status-history row and sends the delivery alerts.
+            $shipment = $tripShipment->shipment;
+            $shipment->status = 'delivered';
+            $shipment->delivered_at = $tripShipment->delivered_at;
+            $shipment->statusHistoryNote = [
+                'remarks' => trim('Delivered on trip. '.$request->input('delivery_notes', '')),
+            ];
+            $shipment->save();
         }
 
         return $this->success([
