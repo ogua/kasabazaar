@@ -7,7 +7,9 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class AuthController extends BaseApiController
 {
@@ -95,6 +97,37 @@ class AuthController extends BaseApiController
         $user->update(['password' => Hash::make($request->password)]);
 
         return $this->success(null, 'Password changed successfully.');
+    }
+
+    /**
+     * Self-service account deletion (App Store / Play requirement) for staff,
+     * drivers and investors. Their user row is referenced by operational and
+     * financial records that must be retained, so instead of a hard delete we
+     * revoke every token, strip all personal data and deactivate the login.
+     */
+    public function deleteAccount(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        DB::transaction(function () use ($user) {
+            $user->tokens()->delete();
+            $user->branches()->detach();
+            $user->syncRoles([]);
+            $user->syncPermissions([]);
+
+            $user->forceFill([
+                'name' => 'Deleted User',
+                'email' => 'deleted-'.$user->id.'@deleted.invalid',
+                'phone' => null,
+                'avatar' => null,
+                'password' => Hash::make(Str::random(64)),
+                'remember_token' => null,
+                'status' => UserStatus::Inactive,
+            ])->save();
+        });
+
+        return $this->success(null, 'Account deleted.');
     }
 
     private function formatUser(User $user, ?string $token = null): array

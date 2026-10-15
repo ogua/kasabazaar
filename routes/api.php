@@ -86,6 +86,7 @@ Route::prefix('v1')->group(function () {
         Route::get('auth/me', [AuthController::class, 'me']);
         Route::put('auth/profile', [AuthController::class, 'updateProfile']);
         Route::put('auth/password', [AuthController::class, 'changePassword']);
+        Route::delete('auth/account', [AuthController::class, 'deleteAccount']);
 
         // Dashboard
         Route::get('dashboard/summary', [DashboardController::class, 'summary']);
