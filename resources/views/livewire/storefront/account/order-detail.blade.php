@@ -12,7 +12,7 @@
     <x-storefront.account-layout :title="'Order '.$order['order_number']">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
             <div class="flex items-center gap-3">
-                <x-storefront.ui.badge>{{ ucfirst($order['status']) }}</x-storefront.ui.badge>
+                <x-storefront.ui.badge :variant="$this->awaitingPayment() ? 'warning' : 'default'">{{ Str::headline($order['status']) }}</x-storefront.ui.badge>
                 <span class="text-sm text-muted">Sold by {{ $order['vendor']['business_name'] ?? '—' }}</span>
             </div>
             @if ($cancellable)
@@ -29,6 +29,20 @@
                 </button>
             @endif
         </div>
+
+        @if ($this->awaitingPayment())
+            <div class="flex flex-col sm:flex-row sm:items-center gap-4 rounded-lg border border-warning/30 bg-warning/5 px-4 py-4 mb-6">
+                <x-storefront.icon name="exclamation-circle" class="hidden sm:block w-6 h-6 text-warning shrink-0" />
+                <div class="flex-1 text-sm">
+                    <p class="font-semibold text-fg">Payment not completed</p>
+                    <p class="text-muted">This order is reserved for you but won't be processed until it's paid. Payment covers every item you ordered in the same checkout.</p>
+                </div>
+                <x-storefront.ui.button variant="accent" wire:click="payNow" wire:loading.attr="disabled" wire:target="payNow" class="shrink-0">
+                    <span wire:loading.remove wire:target="payNow" class="inline-flex items-center gap-2"><x-storefront.icon name="lock" class="w-4 h-4" /> Complete payment</span>
+                    <span wire:loading wire:target="payNow" class="inline-flex items-center gap-2"><x-storefront.ui.spinner class="w-4 h-4" /> Opening payment...</span>
+                </x-storefront.ui.button>
+            </div>
+        @endif
 
         @include('livewire.storefront.partials.order-status-timeline', ['order' => $order])
 

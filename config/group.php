@@ -176,6 +176,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Delivery regions
+    |--------------------------------------------------------------------------
+    |
+    | Ghana's 16 administrative regions, spelled exactly as the backend's
+    | shipping zones list them (kasabazaar GhanaLocationSeeder) — zones match
+    | an address on the exact region name, so address forms offer only these.
+    |
+    */
+
+    'regions' => [
+        'Ahafo', 'Ashanti', 'Bono', 'Bono East', 'Central', 'Eastern', 'Greater Accra', 'North East',
+        'Northern', 'Oti', 'Savannah', 'Upper East', 'Upper West', 'Volta', 'Western', 'Western North',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Returns
     |--------------------------------------------------------------------------
     */

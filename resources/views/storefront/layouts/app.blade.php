@@ -7,15 +7,20 @@
 
     {{-- Blade pages set @section('title'); Livewire pages pass $title via ->title(). --}}
     <title>@hasSection('title')@yield('title') — {{ config('app.name') }}@elseif (! empty($title)){{ $title }} — {{ config('app.name') }}@else{{ config('app.name') }} — {{ config('group.company.tagline') }}@endif</title>
-    <meta name="description" content="@yield('meta_description', config('group.company.meta_description'))">
+    {{-- Blade pages set @section('meta_description') etc.; Livewire pages pass
+         $metaDescription, $ogImage and $ogType through ->layout(..., [...]). --}}
+    <meta name="description" content="@hasSection('meta_description')@yield('meta_description')@else{{ $metaDescription ?? config('group.company.meta_description') }}@endif">
     <link rel="canonical" href="{{ url()->current() }}">
+    @if (! empty($noindex))
+        <meta name="robots" content="noindex, follow">
+    @endif
 
     <meta property="og:site_name" content="{{ config('app.name') }}">
-    <meta property="og:title" content="@yield('og_title', config('app.name'))">
-    <meta property="og:description" content="@yield('og_description', config('group.company.meta_description'))">
-    <meta property="og:image" content="@yield('og_image', asset('images/brand/og-image.png'))">
+    <meta property="og:title" content="@hasSection('og_title')@yield('og_title')@elseif (! empty($title)){{ $title }}@else{{ config('app.name') }}@endif">
+    <meta property="og:description" content="@hasSection('og_description')@yield('og_description')@else{{ $metaDescription ?? config('group.company.meta_description') }}@endif">
+    <meta property="og:image" content="@hasSection('og_image')@yield('og_image')@else{{ $ogImage ?? asset('images/brand/og-image.png') }}@endif">
     <meta property="og:url" content="{{ url()->current() }}">
-    <meta property="og:type" content="website">
+    <meta property="og:type" content="{{ $ogType ?? 'website' }}">
     <meta name="twitter:card" content="summary_large_image">
 
     <link rel="icon" href="/favicon.ico" sizes="32x32">
@@ -88,7 +93,9 @@
             href="https://wa.me/{{ $whatsapp }}"
             target="_blank"
             rel="noopener"
-            class="fixed bottom-6 right-6 z-40 flex items-center justify-center w-14 h-14 rounded-full bg-[#25D366] text-white shadow-float hover:scale-105 transition-transform duration-150"
+            x-data
+            :style="$store.compare.ids.length ? 'bottom: 6rem' : ''"
+            class="fixed bottom-6 right-4 sm:right-6 z-40 flex items-center justify-center w-14 h-14 rounded-full bg-[#25D366] text-white shadow-float hover:scale-105 transition-[transform,bottom] duration-150"
             aria-label="Chat with us on WhatsApp"
         >
             <x-storefront.icon name="whatsapp" class="w-7 h-7" />
@@ -97,12 +104,13 @@
 
     <button
         x-data="{ visible: false }"
-        x-init="window.addEventListener('scroll', () => visible = window.scrollY > 480)"
+        x-init="window.addEventListener('scroll', () => visible = window.scrollY > 480, { passive: true })"
+        :style="$store.compare.ids.length ? 'bottom: 6rem' : ''"
         x-show="visible"
         x-transition.opacity
         x-cloak
         @click="window.scrollTo({ top: 0, behavior: 'smooth' })"
-        class="fixed bottom-6 left-6 z-40 flex items-center justify-center w-11 h-11 rounded-full bg-navy-900 text-white shadow-float hover:bg-navy-700"
+        class="fixed bottom-6 left-4 sm:left-6 z-40 flex items-center justify-center w-11 h-11 rounded-full bg-navy-900 text-white shadow-float hover:bg-navy-700"
         aria-label="Scroll to top"
     >
         <x-storefront.icon name="chevron-right" class="w-5 h-5 -rotate-90" />

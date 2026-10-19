@@ -1,32 +1,39 @@
-@if ($notFound)
+@if ($unavailable)
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-20">
         <x-storefront.ui.empty-state
-            icon="search"
-            title="Product not found"
-            description="This product may have been removed or is no longer available."
+            icon="exclamation-circle"
+            title="We couldn't load this product"
+            description="Our marketplace service didn't respond. Please try again in a moment."
         >
             <x-slot:action>
-                <x-storefront.ui.button href="{{ route('storefront.shop') }}" variant="primary">Continue Shopping</x-storefront.ui.button>
+                <div class="flex flex-wrap justify-center gap-3">
+                    <x-storefront.ui.button href="{{ url()->current() }}" variant="primary">Try again</x-storefront.ui.button>
+                    <x-storefront.ui.button href="{{ route('storefront.shop') }}" variant="secondary">Continue shopping</x-storefront.ui.button>
+                </div>
             </x-slot:action>
         </x-storefront.ui.empty-state>
     </div>
 @else
     @php
-        $price = $product['discount_price_ghs'] ?? $product['price_ghs'] ?? 0;
-        $wasPrice = isset($product['discount_price_ghs']) ? ($product['price_ghs'] ?? null) : null;
+        $regularPrice = (float) ($product['price_ghs'] ?? 0);
+        $hasDiscount = isset($product['discount_price_ghs']) && (float) $product['discount_price_ghs'] < $regularPrice;
+        $price = $hasDiscount ? (float) $product['discount_price_ghs'] : $regularPrice;
+        $wasPrice = $hasDiscount ? $regularPrice : null;
         $discountPct = $wasPrice && $wasPrice > 0 ? (int) round((($wasPrice - $price) / $wasPrice) * 100) : null;
         $images = $product['images'] ?? [];
         $inStock = ($product['stock'] ?? 0) > 0;
+        $specifications = collect($product['specifications'] ?? [])->filter(fn ($value) => filled($value) && is_scalar($value));
         $reviewsCount = (int) ($product['reviews_count'] ?? 0);
         $vendor = $product['vendor'] ?? [];
     @endphp
 
     <div class="bg-surface-muted pb-14">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-6">
-            <x-storefront.ui.breadcrumb :items="[
+            <x-storefront.ui.breadcrumb :items="array_values(array_filter([
                 ['label' => 'Shop', 'href' => route('storefront.shop')],
+                ! empty($product['category']['id']) ? ['label' => $product['category']['name'], 'href' => route('storefront.category', $product['category']['id'])] : null,
                 ['label' => $product['name']],
-            ]" />
+            ]))" />
 
             <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px] items-start">
                 {{-- Gallery + buy panel --}}
@@ -36,8 +43,9 @@
                             @forelse ($images as $index => $image)
                                 <img
                                     x-show="active === {{ $index }}"
+                                    @if ($index > 0) x-cloak loading="lazy" @else fetchpriority="high" @endif
                                     src="{{ $image['url'] }}"
-                                    alt="{{ $product['name'] }}"
+                                    alt="{{ $product['name'] }}{{ count($images) > 1 ? ' — image '.($index + 1).' of '.count($images) : '' }}"
                                     class="w-full h-full object-cover"
                                     onerror="this.onerror=null;this.src='{{ asset('images/product-placeholder.png') }}';"
                                 >
@@ -112,11 +120,11 @@
                         <div class="flex items-center gap-3 mb-3">
                             <span class="text-sm font-medium text-fg">Quantity</span>
                             <div class="flex items-center border border-border rounded-sm">
-                                <button type="button" wire:click="decrement" class="w-10 h-10 flex items-center justify-center text-navy-900 hover:bg-surface-muted" aria-label="Decrease quantity">
+                                <button type="button" wire:click="decrement" @disabled($quantity <= 1) class="w-10 h-10 flex items-center justify-center text-navy-900 hover:bg-surface-muted disabled:opacity-40" aria-label="Decrease quantity">
                                     <x-storefront.icon name="minus" class="w-4 h-4" />
                                 </button>
-                                <span class="w-10 text-center font-medium tabular-nums">{{ $quantity }}</span>
-                                <button type="button" wire:click="increment" class="w-10 h-10 flex items-center justify-center text-navy-900 hover:bg-surface-muted" aria-label="Increase quantity">
+                                <span class="w-10 text-center font-medium tabular-nums" aria-live="polite">{{ $quantity }}</span>
+                                <button type="button" wire:click="increment" @disabled(isset($product['stock']) && $quantity >= (int) $product['stock']) class="w-10 h-10 flex items-center justify-center text-navy-900 hover:bg-surface-muted disabled:opacity-40" aria-label="Increase quantity">
                                     <x-storefront.icon name="plus" class="w-4 h-4" />
                                 </button>
                             </div>
@@ -128,8 +136,7 @@
                                 size="lg"
                                 x-on:click="adding = true"
                                 wire:click="addThisToCart"
-                                :disabled="! $inStock"
-                                x-bind:disabled="adding"
+                                x-bind:disabled="adding || {{ $inStock ? 'false' : 'true' }}"
                                 class="flex-1 h-12"
                             >
                                 <template x-if="adding"><x-storefront.ui.spinner class="w-4 h-4" /></template>
@@ -140,7 +147,7 @@
                             <button
                                 type="button"
                                 title="Add to wishlist"
-                                aria-label="Add to wishlist"
+                                aria-label="Add {{ $product['name'] }} to wishlist"
                                 wire:click="$dispatch('toggle-wishlist', { productId: '{{ $product['id'] }}' })"
                                 class="flex items-center justify-center w-12 h-12 rounded-sm border border-border text-navy-900 hover:text-accent hover:border-accent shrink-0"
                             >
@@ -263,6 +270,21 @@
                 </aside>
             </div>
 
+            {{-- Specifications: the same key/value pairs /compare lays side by side. --}}
+            @if ($specifications->isNotEmpty())
+                <section class="mt-4 bg-surface border border-border rounded-lg">
+                    <h2 class="px-4 sm:px-6 h-12 flex items-center border-b border-border font-display font-semibold text-lg text-navy-900">Specifications</h2>
+                    <dl class="px-4 sm:px-6 py-2 grid sm:grid-cols-2 sm:gap-x-10 text-sm">
+                        @foreach ($specifications as $key => $value)
+                            <div class="flex gap-4 py-2.5 border-b border-border">
+                                <dt class="w-2/5 shrink-0 text-muted">{{ Str::headline($key) }}</dt>
+                                <dd class="text-fg break-words min-w-0">{{ is_bool($value) ? ($value ? 'Yes' : 'No') : $value }}</dd>
+                            </div>
+                        @endforeach
+                    </dl>
+                </section>
+            @endif
+
             {{-- Description --}}
             @if (! empty($product['description']))
                 <section class="mt-4 bg-surface border border-border rounded-lg">
@@ -277,9 +299,11 @@
                     init() {
                         const key = 'recently_viewed_products';
                         const item = { id: '{{ $product['id'] }}', name: @js($product['name']), price_ghs: {{ $price }}, image: @js($images[0]['url'] ?? null) };
-                        let list = JSON.parse(localStorage.getItem(key) || '[]').filter(p => p.id !== item.id);
-                        list.unshift(item);
-                        localStorage.setItem(key, JSON.stringify(list.slice(0, 8)));
+                        try {
+                            let list = JSON.parse(localStorage.getItem(key) || '[]').filter(p => p.id !== item.id);
+                            list.unshift(item);
+                            localStorage.setItem(key, JSON.stringify(list.slice(0, 8)));
+                        } catch (e) {}
                     }
                 }"
             ></div>
@@ -372,7 +396,8 @@
                 x-data="{
                     items: [],
                     init() {
-                        const all = JSON.parse(localStorage.getItem('recently_viewed_products') || '[]');
+                        let all = [];
+                        try { all = JSON.parse(localStorage.getItem('recently_viewed_products') || '[]'); } catch (e) {}
                         this.items = all.filter(p => p.id !== '{{ $product['id'] }}').slice(0, 5);
                     }
                 }"

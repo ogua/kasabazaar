@@ -36,13 +36,15 @@
 
 <header
     x-data="{ categoriesOpen: false, mobileOpen: false, accountOpen: false }"
+    {{-- Return focus to the menu button only when the drawer closes, never on page load. --}}
+    x-init="$watch('mobileOpen', open => open || $nextTick(() => $refs.mobileTrigger?.focus({ preventScroll: true })))"
     @keydown.escape.window="categoriesOpen = false; mobileOpen = false; accountOpen = false"
     class="sticky top-0 z-30 bg-surface"
 >
     {{-- Logo / search / actions --}}
     <div class="border-b border-border">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 lg:py-0 lg:h-18 flex flex-wrap lg:flex-nowrap items-center gap-x-3 gap-y-3 lg:gap-6">
-            <button @click="mobileOpen = true" class="lg:hidden -ml-2 p-2 text-navy-900" aria-label="Open menu">
+            <button @click="mobileOpen = true" x-ref="mobileTrigger" :aria-expanded="mobileOpen" aria-controls="mobile-menu" class="lg:hidden -ml-2 p-2 text-navy-900" aria-label="Open menu">
                 <x-storefront.icon name="menu" class="w-6 h-6" />
             </button>
 
@@ -191,6 +193,8 @@
                     <button
                         @click="accountOpen = !accountOpen"
                         :aria-expanded="accountOpen"
+                        aria-haspopup="true"
+                        aria-label="Account menu"
                         class="flex items-center gap-2 p-2 rounded-sm text-navy-900 hover:bg-surface-muted"
                     >
                         <x-storefront.icon name="user" class="w-6 h-6" />
@@ -228,6 +232,15 @@
                                 {{ $item['label'] }}
                             </a>
                         @endforeach
+                        @auth
+                            <form method="POST" action="{{ route('storefront.logout') }}" class="border-t border-border mt-1 pt-1">
+                                @csrf
+                                <button type="submit" class="flex w-full items-center gap-3 px-3 py-2 rounded-sm text-sm text-error hover:bg-error/5">
+                                    <x-storefront.icon name="x-mark" class="w-4 h-4" />
+                                    Sign out
+                                </button>
+                            </form>
+                        @endauth
                     </div>
                 </div>
 
@@ -248,6 +261,7 @@
                 <button
                     @click="categoriesOpen = !categoriesOpen"
                     :aria-expanded="categoriesOpen"
+                    aria-haspopup="true"
                     class="flex items-center gap-2 h-full px-4 bg-accent font-semibold text-sm hover:bg-accent-hover"
                 >
                     <x-storefront.icon name="menu" class="w-4 h-4" />
@@ -302,7 +316,15 @@
     </div>
 
     {{-- Mobile menu drawer --}}
-    <div x-show="mobileOpen" x-cloak class="fixed inset-0 z-40 lg:hidden">
+    <div
+        x-show="mobileOpen"
+        x-cloak
+        id="mobile-menu"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menu"
+        class="fixed inset-0 z-40 lg:hidden"
+    >
         <div
             x-show="mobileOpen"
             x-transition:enter="transition ease-out duration-200"
@@ -322,6 +344,7 @@
             x-transition:leave="transition ease-out duration-150"
             x-transition:leave-start="translate-x-0"
             x-transition:leave-end="-translate-x-full"
+            x-trap.inert.noscroll="mobileOpen"
             class="relative w-80 max-w-[85%] h-full bg-surface flex flex-col"
         >
             <div class="flex items-center justify-between px-4 h-14 bg-navy-900 text-white">
@@ -363,7 +386,13 @@
 
             <div class="px-4 py-4 border-t border-border">
                 @auth
-                    <a href="{{ route('storefront.account.dashboard') }}" class="block text-center rounded-sm bg-navy-900 text-white py-2.5 text-sm font-semibold">My Account</a>
+                    <div class="flex gap-2">
+                        <a href="{{ route('storefront.account.dashboard') }}" class="flex-1 text-center rounded-sm bg-navy-900 text-white py-2.5 text-sm font-semibold">My Account</a>
+                        <form method="POST" action="{{ route('storefront.logout') }}" class="flex-1">
+                            @csrf
+                            <button type="submit" class="w-full rounded-sm border border-border text-error py-2.5 text-sm font-semibold">Sign out</button>
+                        </form>
+                    </div>
                 @else
                     <div class="flex gap-2">
                         <a href="{{ route('storefront.login') }}" class="flex-1 text-center rounded-sm border border-navy-900 text-navy-900 py-2.5 text-sm font-semibold">Sign In</a>

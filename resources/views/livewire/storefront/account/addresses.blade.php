@@ -10,7 +10,7 @@
                     <x-storefront.ui.badge variant="navy" class="mb-2">Default</x-storefront.ui.badge>
                 @endif
                 <p class="text-sm font-semibold text-fg">{{ $address['full_name'] }} &middot; {{ $address['phone'] }}</p>
-                <p class="text-sm text-muted mt-1 mb-3">{{ $address['street'] }}, {{ $address['city'] }}, {{ $address['region'] }}</p>
+                <p class="text-sm text-muted mt-1 mb-3">{{ collect([$address['street'] ?? null, $address['city'] ?? null, $address['region'] ?? null])->filter()->implode(', ') }}</p>
                 <div class="flex items-center gap-4 text-sm">
                     @if (! $address['is_default'])
                         <button type="button" wire:click="setDefault('{{ $address['id'] }}')" class="text-navy-500 font-medium hover:text-accent">Set as default</button>
@@ -24,17 +24,7 @@
     @if ($showForm)
         <x-storefront.ui.card class="max-w-lg">
             <h2 class="font-display font-semibold text-sm text-navy-900 uppercase tracking-wide mb-4">New Address</h2>
-            <div class="space-y-3 mb-4">
-                <input class="w-full border border-border rounded-sm px-3 py-2.5 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent" placeholder="Full name" wire:model="full_name">
-                @error('full_name') <p class="text-error text-xs">{{ $message }}</p> @enderror
-                <input class="w-full border border-border rounded-sm px-3 py-2.5 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent" placeholder="Phone" wire:model="phone">
-                @error('phone') <p class="text-error text-xs">{{ $message }}</p> @enderror
-                <input class="w-full border border-border rounded-sm px-3 py-2.5 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent" placeholder="Region" wire:model="region">
-                @error('region') <p class="text-error text-xs">{{ $message }}</p> @enderror
-                <input class="w-full border border-border rounded-sm px-3 py-2.5 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent" placeholder="City" wire:model="city">
-                @error('city') <p class="text-error text-xs">{{ $message }}</p> @enderror
-                <input class="w-full border border-border rounded-sm px-3 py-2.5 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent" placeholder="Street / landmark" wire:model="street">
-            </div>
+            <x-storefront.address-fields prefix="account-address" class="mb-4" />
             <x-storefront.ui.button variant="primary" size="sm" wire:click="save" wire:loading.attr="disabled" wire:target="save">
                 <span wire:loading.remove wire:target="save">Save Address</span>
                 <span wire:loading wire:target="save" class="inline-flex items-center gap-2"><x-storefront.ui.spinner class="w-4 h-4" /> Saving...</span>

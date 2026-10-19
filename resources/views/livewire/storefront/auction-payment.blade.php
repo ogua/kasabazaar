@@ -44,24 +44,7 @@
                         @if ($showNewAddressForm)
                             <div class="border border-border rounded-lg p-4">
                                 <h2 class="font-semibold text-sm text-fg mb-3">New address</h2>
-                                <div class="grid sm:grid-cols-2 gap-3 mb-3">
-                                    @foreach ([
-                                        ['model' => 'full_name', 'placeholder' => 'Full name'],
-                                        ['model' => 'phone', 'placeholder' => 'Phone'],
-                                        ['model' => 'region', 'placeholder' => 'Region (e.g. Greater Accra)'],
-                                        ['model' => 'city', 'placeholder' => 'City'],
-                                    ] as $field)
-                                        <div>
-                                            <label for="pay-{{ $field['model'] }}" class="sr-only">{{ $field['placeholder'] }}</label>
-                                            <input id="pay-{{ $field['model'] }}" wire:model="{{ $field['model'] }}" placeholder="{{ $field['placeholder'] }}" class="w-full border border-border rounded-sm px-3 py-2 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent">
-                                            @error($field['model']) <p class="text-error text-xs mt-1">{{ $message }}</p> @enderror
-                                        </div>
-                                    @endforeach
-                                    <div class="sm:col-span-2">
-                                        <label for="pay-street" class="sr-only">Street or landmark</label>
-                                        <input id="pay-street" wire:model="street" placeholder="Street / landmark" class="w-full border border-border rounded-sm px-3 py-2 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent">
-                                    </div>
-                                </div>
+                                <x-storefront.address-fields prefix="pay-address" class="mb-4" />
                                 <x-storefront.ui.button variant="primary" size="sm" wire:click="saveAddress" wire:loading.attr="disabled" wire:target="saveAddress">
                                     <span wire:loading.remove wire:target="saveAddress">Save address</span>
                                     <span wire:loading wire:target="saveAddress" class="inline-flex items-center gap-2"><x-storefront.ui.spinner class="w-4 h-4" /> Saving…</span>

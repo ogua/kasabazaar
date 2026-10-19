@@ -2,8 +2,7 @@
 
 namespace App\Providers;
 
-use App\Services\Kasabazaar\ProductsApi;
-use Illuminate\Support\Facades\Cache;
+use App\Support\StorefrontCategories;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -14,7 +13,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->scoped(StorefrontCategories::class);
     }
 
     /**
@@ -22,12 +21,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        View::composer('storefront.partials.header', function ($view) {
-            $view->with('headerCategories', Cache::remember(
-                'storefront.header.categories',
-                60,
-                fn () => app(ProductsApi::class)->categories()
-            ));
+        View::composer(['storefront.partials.header', 'livewire.storefront.product-listing'], function ($view) {
+            $view->with('headerCategories', app(StorefrontCategories::class)->all());
         });
     }
 }

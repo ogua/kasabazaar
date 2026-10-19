@@ -1,13 +1,13 @@
 <x-storefront.account-layout title="My Orders">
     <div class="flex items-center justify-between gap-4 mb-4">
         <h2 class="font-display font-semibold text-lg text-navy-900">Order History</h2>
-        <select wire:model.live="status" class="border border-border rounded-sm px-3 py-2 text-sm max-w-44 focus:outline-none focus-visible:outline-2 focus-visible:outline-accent">
+        <label for="orders-status" class="sr-only">Filter by status</label>
+        <select id="orders-status" wire:model.live="status" class="border border-border rounded-sm px-3 py-2 text-sm max-w-44 focus:outline-none focus-visible:outline-2 focus-visible:outline-accent">
             <option value="">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="processing">Processing</option>
-            <option value="shipped">Shipped</option>
-            <option value="delivered">Delivered</option>
-            <option value="cancelled">Cancelled</option>
+            {{-- Values match the backend's EcommerceOrderStatus enum. --}}
+            @foreach (['awaiting_payment', 'paid', 'processing', 'packed', 'dispatched', 'in_transit', 'delivered', 'cancelled', 'refunded'] as $statusOption)
+                <option value="{{ $statusOption }}">{{ Str::headline($statusOption) }}</option>
+            @endforeach
         </select>
     </div>
 
@@ -40,10 +40,11 @@
                                     <td class="px-4 py-3 font-medium text-fg">{{ $order['order_number'] }}</td>
                                     <td class="px-4 py-3 text-muted hidden sm:table-cell">{{ $order['vendor']['business_name'] ?? '—' }}</td>
                                     <td class="px-4 py-3 text-muted hidden sm:table-cell">{{ \Illuminate\Support\Carbon::parse($order['created_at'])->format('M d, Y') }}</td>
-                                    <td class="px-4 py-3"><x-storefront.ui.badge>{{ ucfirst($order['status']) }}</x-storefront.ui.badge></td>
+                                    @php $orderAwaitingPayment = $order['status'] === 'awaiting_payment' && ($order['payment_status'] ?? null) === 'pending'; @endphp
+                                    <td class="px-4 py-3"><x-storefront.ui.badge :variant="$orderAwaitingPayment ? 'warning' : 'default'">{{ Str::headline($order['status']) }}</x-storefront.ui.badge></td>
                                     <td class="px-4 py-3 text-right font-medium tabular-nums">GHS {{ number_format($order['total_ghs'], 2) }}</td>
                                     <td class="px-4 py-3 text-right">
-                                        <a href="{{ route('storefront.account.orders.show', $order['id']) }}" class="text-navy-500 hover:text-accent font-medium">View</a>
+                                        <a href="{{ route('storefront.account.orders.show', $order['id']) }}" class="font-medium {{ $orderAwaitingPayment ? 'text-accent hover:text-accent-hover' : 'text-navy-500 hover:text-accent' }}">{{ $orderAwaitingPayment ? 'Pay now' : 'View' }}</a>
                                     </td>
                                 </tr>
                             @endforeach

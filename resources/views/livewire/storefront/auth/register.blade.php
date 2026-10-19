@@ -12,27 +12,39 @@
 
         <form wire:submit.prevent="submit" class="space-y-4">
             <div>
-                <label class="block text-sm font-medium text-fg mb-1.5">Full Name</label>
-                <input type="text" wire:model="name" required autofocus class="w-full border border-border rounded-sm px-3 py-2.5 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent">
-                @error('name') <p class="text-error text-xs mt-1">{{ $message }}</p> @enderror
+                <label for="register-name" class="block text-sm font-medium text-fg mb-1.5">Full Name</label>
+                <input id="register-name" autocomplete="name" type="text"  required autofocus class="w-full border border-border rounded-sm px-3 py-2.5 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent" wire:model="name" @error('name') aria-invalid="true" aria-describedby="register-name-error" @enderror>
+                @error('name') <p id="register-name-error" class="text-error text-xs mt-1">{{ $message }}</p> @enderror
             </div>
             <div>
-                <label class="block text-sm font-medium text-fg mb-1.5">Email</label>
-                <input type="email" wire:model="email" required class="w-full border border-border rounded-sm px-3 py-2.5 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent">
-                @error('email') <p class="text-error text-xs mt-1">{{ $message }}</p> @enderror
+                <label for="register-email" class="block text-sm font-medium text-fg mb-1.5">Email</label>
+                <input id="register-email" autocomplete="email" type="email"  required class="w-full border border-border rounded-sm px-3 py-2.5 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent" wire:model="email" @error('email') aria-invalid="true" aria-describedby="register-email-error" @enderror>
+                @error('email') <p id="register-email-error" class="text-error text-xs mt-1">{{ $message }}</p> @enderror
             </div>
             <div>
-                <label class="block text-sm font-medium text-fg mb-1.5">Phone</label>
-                <input type="text" wire:model="phone" class="w-full border border-border rounded-sm px-3 py-2.5 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent">
+                <label for="register-phone" class="block text-sm font-medium text-fg mb-1.5">Phone</label>
+                <input id="register-phone" autocomplete="tel" type="tel"  class="w-full border border-border rounded-sm px-3 py-2.5 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent" wire:model="phone" @error('phone') aria-invalid="true" aria-describedby="register-phone-error" @enderror>
             </div>
             <div>
-                <label class="block text-sm font-medium text-fg mb-1.5">Password</label>
-                <input type="password" wire:model="password" required class="w-full border border-border rounded-sm px-3 py-2.5 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent">
-                @error('password') <p class="text-error text-xs mt-1">{{ $message }}</p> @enderror
+                <label for="register-password" class="block text-sm font-medium text-fg mb-1.5">Password</label>
+                <div class="relative" x-data="{ show: false }">
+                    <input id="register-password" autocomplete="new-password" type="password" :type="show ? 'text' : 'password'"  required class="w-full border border-border rounded-sm pl-3 pr-11 py-2.5 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent" wire:model="password" @error('password') aria-invalid="true" aria-describedby="register-password-error" @enderror>
+                    <button type="button" @click="show = ! show" class="absolute inset-y-0 right-0 flex items-center justify-center w-11 text-muted hover:text-navy-900" :aria-label="show ? 'Hide password' : 'Show password'" :aria-pressed="show">
+                        <x-storefront.icon name="eye" class="w-5 h-5" x-show="! show" />
+                        <x-storefront.icon name="eye-slash" class="w-5 h-5" x-show="show" x-cloak />
+                    </button>
+                </div>
+                @error('password') <p id="register-password-error" class="text-error text-xs mt-1">{{ $message }}</p> @enderror
             </div>
             <div>
-                <label class="block text-sm font-medium text-fg mb-1.5">Confirm Password</label>
-                <input type="password" wire:model="password_confirmation" required class="w-full border border-border rounded-sm px-3 py-2.5 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent">
+                <label for="register-password-confirmation" class="block text-sm font-medium text-fg mb-1.5">Confirm Password</label>
+                <div class="relative" x-data="{ show: false }">
+                    <input id="register-password-confirmation" autocomplete="new-password" type="password" :type="show ? 'text' : 'password'"  required class="w-full border border-border rounded-sm pl-3 pr-11 py-2.5 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent" wire:model="password_confirmation" @error('password_confirmation') aria-invalid="true" aria-describedby="register-password-confirmation-error" @enderror>
+                    <button type="button" @click="show = ! show" class="absolute inset-y-0 right-0 flex items-center justify-center w-11 text-muted hover:text-navy-900" :aria-label="show ? 'Hide password' : 'Show password'" :aria-pressed="show">
+                        <x-storefront.icon name="eye" class="w-5 h-5" x-show="! show" />
+                        <x-storefront.icon name="eye-slash" class="w-5 h-5" x-show="show" x-cloak />
+                    </button>
+                </div>
             </div>
 
             <x-storefront.ui.button type="submit" variant="primary" size="lg" wire:loading.attr="disabled" wire:target="submit" class="w-full">

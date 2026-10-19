@@ -8,6 +8,7 @@ use App\Services\Kasabazaar\ProductsApi;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Livewire\Component;
 
 class ProductDetail extends Component
@@ -25,7 +26,7 @@ class ProductDetail extends Component
 
     public int $quantity = 1;
 
-    public bool $notFound = false;
+    public bool $unavailable = false;
 
     public function mount(string $product, ProductsApi $productsApi): void
     {
@@ -35,8 +36,14 @@ class ProductDetail extends Component
             $this->productData = $productsApi->show($product);
             $this->reviews = $productsApi->reviews($product)->data ?? [];
         } catch (KasabazaarApiException $e) {
+            // A missing or delisted product is a real 404, so search engines drop
+            // it; anything else is an outage, shown as a retryable error.
+            if ($e->status === 404) {
+                abort(404);
+            }
+
             Log::warning('storefront.product: failed to load product', ['product' => $product, 'message' => $e->getMessage()]);
-            $this->notFound = true;
+            $this->unavailable = true;
 
             return;
         }
@@ -51,7 +58,10 @@ class ProductDetail extends Component
 
     public function increment(): void
     {
-        $this->quantity++;
+        // Stock is only enforced when the API sends it; the backend re-checks on add.
+        $stock = isset($this->productData['stock']) ? (int) $this->productData['stock'] : null;
+
+        $this->quantity = $stock === null ? $this->quantity + 1 : min($this->quantity + 1, max(1, $stock));
     }
 
     public function decrement(): void
@@ -87,10 +97,21 @@ class ProductDetail extends Component
 
     public function render()
     {
+        $product = $this->productData;
+        $description = trim(preg_replace('/\s+/', ' ', strip_tags($product['description'] ?? '')));
+        $price = $product['discount_price_ghs'] ?? $product['price_ghs'] ?? null;
+
         return view('livewire.storefront.product-detail', [
-            'product' => $this->productData,
+            'product' => $product,
         ])->layout('storefront.layouts.app', [
-            'title' => $this->productData['name'] ?? ($this->notFound ? 'Product Not Found' : 'Product'),
+            'title' => $product['name'] ?? 'Product unavailable',
+            // Shared product links (WhatsApp especially) preview this card.
+            'metaDescription' => $product
+                ? Str::limit(($price !== null ? 'GHS '.number_format((float) $price, 2).' · ' : '').($description ?: 'Buy '.$product['name'].' on '.config('app.name').'.'), 160)
+                : null,
+            'ogImage' => $product['images'][0]['url'] ?? null,
+            'ogType' => $product ? 'product' : 'website',
+            'noindex' => $this->unavailable,
         ]);
     }
 }

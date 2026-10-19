@@ -31,6 +31,15 @@ class CheckoutCallback extends Component
             return;
         }
 
+        // Stripe appends payment_intent when a payment method had to redirect
+        // (e.g. a bank authentication page) and sends the shopper back here.
+        if ($paymentIntentId = request()->query('payment_intent')) {
+            $this->orderGroupId = request()->query('order_group_id');
+            $this->confirmStripePayment($checkoutApi, $ordersApi, $paymentIntentId);
+
+            return;
+        }
+
         if ($gateway === 'stripe') {
             $this->stripeClientSecret = request()->query('client_secret');
             $this->orderGroupId = request()->query('order_group_id');

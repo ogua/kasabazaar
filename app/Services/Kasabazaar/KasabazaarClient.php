@@ -13,27 +13,27 @@ class KasabazaarClient
 {
     public function get(string $path, array $query = [], array $headers = []): KasabazaarResponse
     {
-        return $this->parse($this->request($headers)->get($path, $query));
+        return $this->parse($this->send(fn () => $this->request($headers)->get($path, $query)));
     }
 
     public function post(string $path, array $data = [], array $headers = []): KasabazaarResponse
     {
-        return $this->parse($this->request($headers)->post($path, $data));
+        return $this->parse($this->send(fn () => $this->request($headers)->post($path, $data)));
     }
 
     public function put(string $path, array $data = [], array $headers = []): KasabazaarResponse
     {
-        return $this->parse($this->request($headers)->put($path, $data));
+        return $this->parse($this->send(fn () => $this->request($headers)->put($path, $data)));
     }
 
     public function patch(string $path, array $data = [], array $headers = []): KasabazaarResponse
     {
-        return $this->parse($this->request($headers)->patch($path, $data));
+        return $this->parse($this->send(fn () => $this->request($headers)->patch($path, $data)));
     }
 
     public function delete(string $path, array $data = [], array $headers = []): KasabazaarResponse
     {
-        return $this->parse($this->request($headers)->delete($path, $data));
+        return $this->parse($this->send(fn () => $this->request($headers)->delete($path, $data)));
     }
 
     /**
@@ -47,7 +47,7 @@ class KasabazaarClient
             $request = $request->attach($file['name'], $file['contents'], $file['filename'] ?? null);
         }
 
-        return $this->parse($request->asMultipart()->post($path, $this->toMultipartFields($data)));
+        return $this->parse($this->send(fn () => $request->asMultipart()->post($path, $this->toMultipartFields($data))));
     }
 
     /**
@@ -79,6 +79,27 @@ class KasabazaarClient
         }
 
         return $request;
+    }
+
+    /**
+     * Runs a request, turning a network failure (DNS, refused connection,
+     * timeout) into the same exception every caller already handles, so an
+     * unreachable backend degrades a page instead of returning a 500.
+     *
+     * @param  callable(): Response  $request
+     */
+    private function send(callable $request): Response
+    {
+        try {
+            return $request();
+        } catch (ConnectionException $e) {
+            report($e);
+
+            throw new KasabazaarApiException(
+                'The marketplace service is temporarily unavailable. Please try again in a moment.',
+                503,
+            );
+        }
     }
 
     private function token(): ?string

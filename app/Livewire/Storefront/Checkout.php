@@ -2,14 +2,19 @@
 
 namespace App\Livewire\Storefront;
 
+use App\Livewire\Storefront\Concerns\StartsPayment;
 use App\Services\Kasabazaar\CartApi;
 use App\Services\Kasabazaar\CheckoutApi;
 use App\Services\Kasabazaar\KasabazaarApiException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 class Checkout extends Component
 {
+    use StartsPayment;
+
     public array $cart = [];
 
     public array $addresses = [];
@@ -22,7 +27,9 @@ class Checkout extends Component
 
     public string $error = '';
 
-    public bool $placingOrder = false;
+    /** Set once checkout has created the order, so a retry only restarts payment. */
+    #[Locked]
+    public ?string $orderGroupId = null;
 
     // New address form
     public bool $showNewAddressForm = false;
@@ -64,7 +71,7 @@ class Checkout extends Component
         $this->validate([
             'full_name' => 'required|string|max:255',
             'phone' => 'required|string|max:30',
-            'region' => 'required|string|max:100',
+            'region' => ['required', 'string', Rule::in(config('group.regions'))],
             'city' => 'required|string|max:100',
             'street' => 'nullable|string|max:255',
         ]);
@@ -91,49 +98,42 @@ class Checkout extends Component
 
     public function placeOrder(CheckoutApi $checkoutApi): void
     {
-        if (empty($this->cart['items'] ?? [])) {
-            $this->error = 'Your cart is empty. Add something before checking out.';
+        // Once the backend has turned the cart into an order, a retry only
+        // restarts payment: checkout empties the cart, so a second checkout
+        // call would fail with "cart is empty".
+        if (! $this->orderGroupId) {
+            if (empty($this->cart['items'] ?? [])) {
+                $this->error = 'Your cart is empty. Add something before checking out.';
 
-            return;
+                return;
+            }
+
+            if (! $this->selectedAddressId) {
+                $this->error = 'Please select or add a delivery address.';
+
+                return;
+            }
+
+            try {
+                $orderGroup = $checkoutApi->checkout($this->selectedAddressId, $this->notes, $this->whatsappOptIn);
+            } catch (KasabazaarApiException $e) {
+                $this->error = $e->getMessage();
+
+                return;
+            }
+
+            $this->orderGroupId = $orderGroup['id'];
+            $this->dispatch('cart-updated');
         }
-
-        if (! $this->selectedAddressId) {
-            $this->error = 'Please select or add a delivery address.';
-
-            return;
-        }
-
-        $this->placingOrder = true;
 
         try {
-            $orderGroup = $checkoutApi->checkout($this->selectedAddressId, $this->notes, $this->whatsappOptIn);
-            $payment = $checkoutApi->initiatePayment($orderGroup['id']);
-            $gateway = $payment['gateway'] ?? null;
-
-            if ($gateway === 'paystack' && ! empty($payment['authorization_url'])) {
-                $this->redirect($payment['authorization_url'], navigate: false);
-
-                return;
-            }
-
-            if ($gateway === 'stripe' && ! empty($payment['client_secret'])) {
-                // Hand off to the callback page with the client secret so it can
-                // mount Stripe.js Elements and confirm the payment client-side.
-                $this->redirect(route('storefront.checkout.callback', [
-                    'gateway' => 'stripe',
-                    'client_secret' => $payment['client_secret'],
-                    'order_group_id' => $orderGroup['id'],
-                ]), navigate: false);
-
-                return;
-            }
-
-            Log::warning('storefront.checkout: unrecognized payment gateway response', ['payment' => $payment]);
-            $this->error = 'We could not start the payment process. Please try again or contact support.';
-            $this->placingOrder = false;
+            $failure = $this->startPayment($checkoutApi, $this->orderGroupId);
         } catch (KasabazaarApiException $e) {
-            $this->error = $e->getMessage();
-            $this->placingOrder = false;
+            $failure = $e->getMessage();
+        }
+
+        if ($failure) {
+            $this->error = 'Your order is saved, but we could not start payment: '.$failure.' Press "Retry payment" to try again, or pay later from My Orders.';
         }
     }
 

@@ -5,6 +5,7 @@ namespace App\Livewire\Storefront\Account;
 use App\Services\Kasabazaar\CheckoutApi;
 use App\Services\Kasabazaar\KasabazaarApiException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 class Addresses extends Component
@@ -40,7 +41,7 @@ class Addresses extends Component
         $this->validate([
             'full_name' => 'required|string|max:255',
             'phone' => 'required|string|max:30',
-            'region' => 'required|string|max:100',
+            'region' => ['required', 'string', Rule::in(config('group.regions'))],
             'city' => 'required|string|max:100',
         ]);
 

@@ -1,4 +1,5 @@
-<div class="fixed top-24 right-4 z-1200 flex flex-col gap-2 max-w-sm w-full pointer-events-none">
+{{-- Always rendered so the live region exists before a toast arrives; screen readers then announce each message. --}}
+<div class="fixed top-24 right-4 left-4 sm:left-auto z-1200 flex flex-col gap-2 sm:max-w-sm sm:w-full pointer-events-none" role="status" aria-live="polite" aria-atomic="false">
     @foreach ($messages as $toast)
         <div
             wire:key="toast-{{ $toast['id'] }}"

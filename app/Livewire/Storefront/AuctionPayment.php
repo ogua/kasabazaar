@@ -2,10 +2,12 @@
 
 namespace App\Livewire\Storefront;
 
+use App\Livewire\Storefront\Concerns\StartsPayment;
 use App\Services\Kasabazaar\AuctionsApi;
 use App\Services\Kasabazaar\CheckoutApi;
 use App\Services\Kasabazaar\KasabazaarApiException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Livewire\Component;
 
 /**
@@ -15,6 +17,8 @@ use Livewire\Component;
  */
 class AuctionPayment extends Component
 {
+    use StartsPayment;
+
     public string $slug;
 
     public array $auction = [];
@@ -85,7 +89,7 @@ class AuctionPayment extends Component
         $this->validate([
             'full_name' => 'required|string|max:255',
             'phone' => 'required|string|max:30',
-            'region' => 'required|string|max:100',
+            'region' => ['required', 'string', Rule::in(config('group.regions'))],
             'city' => 'required|string|max:100',
             'street' => 'nullable|string|max:255',
         ]);
@@ -120,27 +124,7 @@ class AuctionPayment extends Component
 
         try {
             $orderGroup = $auctionsApi->checkout($this->slug, $this->selectedAddressId, $this->notes);
-            $payment = $checkoutApi->initiatePayment($orderGroup['id']);
-            $gateway = $payment['gateway'] ?? null;
-
-            if ($gateway === 'paystack' && ! empty($payment['authorization_url'])) {
-                $this->redirect($payment['authorization_url'], navigate: false);
-
-                return;
-            }
-
-            if ($gateway === 'stripe' && ! empty($payment['client_secret'])) {
-                $this->redirect(route('storefront.checkout.callback', [
-                    'gateway' => 'stripe',
-                    'client_secret' => $payment['client_secret'],
-                    'order_group_id' => $orderGroup['id'],
-                ]), navigate: false);
-
-                return;
-            }
-
-            Log::warning('storefront.auction.pay: unrecognized payment gateway response', ['payment' => $payment]);
-            $this->error = 'We could not start the payment process. Please try again or contact support.';
+            $this->error = $this->startPayment($checkoutApi, $orderGroup['id']) ?? '';
         } catch (KasabazaarApiException $e) {
             $this->error = $e->getMessage();
         }

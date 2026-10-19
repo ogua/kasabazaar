@@ -15,9 +15,9 @@
 
             <form wire:submit.prevent="submit" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-fg mb-1.5">Email</label>
-                    <input type="email" wire:model="email" required autofocus class="w-full border border-border rounded-sm px-3 py-2.5 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent">
-                    @error('email') <p class="text-error text-xs mt-1">{{ $message }}</p> @enderror
+                    <label for="forgot-email" class="block text-sm font-medium text-fg mb-1.5">Email</label>
+                    <input id="forgot-email" autocomplete="email" type="email"  required autofocus class="w-full border border-border rounded-sm px-3 py-2.5 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent" wire:model="email" @error('email') aria-invalid="true" aria-describedby="forgot-email-error" @enderror>
+                    @error('email') <p id="forgot-email-error" class="text-error text-xs mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 <x-storefront.ui.button type="submit" variant="primary" size="lg" wire:loading.attr="disabled" wire:target="submit" class="w-full">

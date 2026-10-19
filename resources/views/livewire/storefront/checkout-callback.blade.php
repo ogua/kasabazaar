@@ -51,7 +51,7 @@
                     submitButton.disabled = true;
                     submitLabel.textContent = 'Processing...';
 
-                    stripe.confirmPayment({ elements, redirect: 'if_required' }).then(function (result) {
+                    stripe.confirmPayment({ elements, redirect: 'if_required', confirmParams: { return_url: @js(route('storefront.checkout.callback', ['order_group_id' => $orderGroupId])) } }).then(function (result) {
                         if (result.error) {
                             document.getElementById('stripe-payment-message').textContent = result.error.message;
                             submitButton.disabled = false;
@@ -68,7 +68,12 @@
             <x-storefront.icon name="exclamation-circle" class="w-8 h-8" />
         </div>
         <h1 class="font-display font-bold text-2xl text-navy-900 mb-2">Payment Failed</h1>
-        <p class="text-muted mb-6">{{ $message }}</p>
-        <x-storefront.ui.button href="{{ route('storefront.checkout') }}" variant="primary">Try Again</x-storefront.ui.button>
+        <p class="text-muted mb-2">{{ $message }}</p>
+        {{-- Checkout has already turned the cart into an order, so the retry lives on the order, not the cart. --}}
+        <p class="text-sm text-muted mb-6">Your order is saved under My Orders, where you can complete payment. If you were charged but still see this message, contact support before paying again.</p>
+        <div class="flex flex-wrap justify-center gap-3">
+            <x-storefront.ui.button href="{{ route('storefront.account.orders', ['status' => 'awaiting_payment']) }}" variant="accent">Complete payment</x-storefront.ui.button>
+            <x-storefront.ui.button href="{{ route('storefront.contact') }}" variant="secondary">Contact support</x-storefront.ui.button>
+        </div>
     @endif
 </div>
