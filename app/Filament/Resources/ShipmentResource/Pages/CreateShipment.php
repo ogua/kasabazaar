@@ -243,6 +243,9 @@ class CreateShipment extends CreateRecord
                                     'New Jersey' => 'New Jersey',
                                     'Kentucky' => 'Kentucky',
                                     'Ohio' => 'Ohio',
+                                    'Missouri' => 'Missouri',
+                                    'Texas' => 'Texas',
+                                    'Maryland' => 'Maryland',
                                     'Ghana' => 'Ghana',
                                     'Others' => 'Others',
                                 ])
@@ -260,6 +263,9 @@ class CreateShipment extends CreateRecord
                                     'New Jersey' => 'New Jersey',
                                     'Kentucky' => 'Kentucky',
                                     'Ohio' => 'Ohio',
+                                    'Missouri' => 'Missouri',
+                                    'Texas' => 'Texas',
+                                    'Maryland' => 'Maryland',
                                     'Ghana' => 'Ghana',
                                     'Others' => 'Others',
                                 ])

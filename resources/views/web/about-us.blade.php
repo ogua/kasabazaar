@@ -129,6 +129,9 @@
                                 <li>New Jersey</li>
                                 <li>Kentucky</li>
                                 <li>Ohio</li>
+                                <li>Missouri</li>
+                                <li>Texas</li>
+                                <li>Maryland</li>
                             </ul>
                         </div>
                     </div><!-- End Icon Box -->

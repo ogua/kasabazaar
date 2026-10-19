@@ -113,6 +113,9 @@ class ShipmentResource extends Resource
                                         'New Jersey' => 'New Jersey',
                                         'Kentucky' => 'Kentucky',
                                         'Ohio' => 'Ohio',
+                                        'Missouri' => 'Missouri',
+                                        'Texas' => 'Texas',
+                                        'Maryland' => 'Maryland',
                                         'Ghana' => 'Ghana',
                                         'Others' => 'Others',
                                     ])
@@ -130,6 +133,9 @@ class ShipmentResource extends Resource
                                         'New Jersey' => 'New Jersey',
                                         'Kentucky' => 'Kentucky',
                                         'Ohio' => 'Ohio',
+                                        'Missouri' => 'Missouri',
+                                        'Texas' => 'Texas',
+                                        'Maryland' => 'Maryland',
                                         'Ghana' => 'Ghana',
                                         'Others' => 'Others',
                                     ])
