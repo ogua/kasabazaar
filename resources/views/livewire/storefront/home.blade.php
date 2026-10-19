@@ -1,7 +1,7 @@
 <div class="bg-surface-muted pb-14">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-4 space-y-4">
         {{-- Above the fold: category rail, hero, quick actions --}}
-        <section class="grid gap-4 lg:grid-cols-[232px_minmax(0,1fr)] xl:grid-cols-[232px_minmax(0,1fr)_248px] lg:h-100">
+        <section class="grid gap-4 lg:grid-cols-[232px_minmax(0,1fr)] xl:grid-cols-[232px_minmax(0,1fr)_248px] lg:grid-rows-[minmax(25rem,auto)]">
             {{-- Category rail (desktop) --}}
             <nav class="hidden lg:flex flex-col bg-surface border border-border rounded-lg overflow-hidden" aria-label="Shop by category">
                 <p class="flex items-center gap-2 px-4 h-11 shrink-0 border-b border-border font-display font-semibold text-sm text-navy-900">
