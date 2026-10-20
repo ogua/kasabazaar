@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\Sanctum;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -281,6 +282,77 @@ class ShipmentMediaEvidenceTest extends TestCase
         $this->assertStringContainsString('waybill.pdf', $html);
         $this->assertStringNotContainsString('<img src="'.asset('storage/shipment-media/waybill.pdf').'"', $html);
         $this->assertStringContainsString('In Transit', $html);
+    }
+
+    public function test_api_upload_accepts_a_document(): void
+    {
+        Sanctum::actingAs($this->actingAsStaff(['update_shipment']));
+        $shipment = $this->makeShipment();
+
+        $this->post("/api/v1/shipments/{$shipment->id}/media", [
+            'file' => UploadedFile::fake()->create('customs-form.pdf', 80, 'application/pdf'),
+            'stage' => 'in-transit',
+        ], ['Accept' => 'application/json'])
+            ->assertCreated()
+            ->assertJsonPath('data.type', 'document');
+
+        Storage::disk('public')->assertExists($shipment->media()->first()->file_path);
+    }
+
+    public function test_api_staff_can_delete_media_with_its_file(): void
+    {
+        Sanctum::actingAs($this->actingAsStaff(['update_shipment']));
+        $shipment = $this->makeShipment();
+        $media = $this->storedMedia($shipment, 'wrong.jpg');
+
+        $this->deleteJson("/api/v1/shipments/{$shipment->id}/media/{$media->id}")
+            ->assertOk()
+            ->assertJsonPath('success', true);
+
+        $this->assertModelMissing($media);
+        Storage::disk('public')->assertMissing('shipment-media/wrong.jpg');
+    }
+
+    public function test_api_user_without_update_permission_can_delete_only_their_own_media(): void
+    {
+        $uploader = $this->actingAsStaff(['view_shipment']);
+        Sanctum::actingAs($uploader);
+        $shipment = $this->makeShipment();
+        $mine = $this->storedMedia($shipment, 'mine.jpg', $uploader);
+        $theirs = $this->storedMedia($shipment, 'theirs.jpg', User::factory()->create());
+
+        $this->deleteJson("/api/v1/shipments/{$shipment->id}/media/{$theirs->id}")->assertForbidden();
+        $this->deleteJson("/api/v1/shipments/{$shipment->id}/media/{$mine->id}")->assertOk();
+
+        $this->assertModelExists($theirs);
+        $this->assertModelMissing($mine);
+    }
+
+    public function test_api_cannot_delete_media_through_another_shipment(): void
+    {
+        Sanctum::actingAs($this->actingAsStaff(['update_shipment']));
+        $shipment = $this->makeShipment();
+        $foreign = $this->storedMedia($this->makeShipment(), 'foreign.jpg');
+
+        $this->deleteJson("/api/v1/shipments/{$shipment->id}/media/{$foreign->id}")->assertNotFound();
+
+        $this->assertModelExists($foreign);
+    }
+
+    public function test_api_cannot_delete_media_on_a_shipment_outside_the_users_branches(): void
+    {
+        $shipment = $this->makeShipment();
+        $media = $this->storedMedia($shipment, 'branch.jpg');
+
+        $role = Role::firstOrCreate(['name' => 'media-test-outsider', 'guard_name' => 'web']);
+        $role->givePermissionTo(Permission::firstOrCreate(['name' => 'update_shipment', 'guard_name' => 'web']));
+        $outsider = User::factory()->create(['status' => 'active']);
+        $outsider->assignRole($role);
+        Sanctum::actingAs($outsider);
+
+        $this->deleteJson("/api/v1/shipments/{$shipment->id}/media/{$media->id}")->assertNotFound();
+
+        $this->assertModelExists($media);
     }
 
     public function test_upload_evidence_page_accepts_documents(): void

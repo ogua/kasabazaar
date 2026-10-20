@@ -236,18 +236,17 @@ class ShipmentController extends BaseApiController
         logger($request->all());
 
         $request->validate([
-            'file' => 'required|file|mimes:jpg,jpeg,png,mp4,mov|max:51200',
+            'file' => 'required|file|mimes:jpg,jpeg,png,webp,heic,mp4,mov,m4v,3gp,webm,pdf,doc,docx,xls,xlsx,csv,txt|max:51200',
             'stage' => 'nullable',
             'caption' => 'nullable|string|max:255',
         ]);
 
         $file = $request->file('file');
-        $type = in_array($file->getClientOriginalExtension(), ['mp4', 'mov']) ? 'video' : 'image';
         $path = $file->store("shipment-media/{$id}", 'public');
 
         $media = ShipmentMedia::create([
             'shipment_id' => $id,
-            'type' => $type,
+            'type' => ShipmentMedia::typeForPath($file->getClientOriginalName()),
             'file_path' => $path,
             'stage' => $request->input('stage', 'pickup'),
             'caption' => $request->input('caption'),
@@ -262,6 +261,26 @@ class ShipmentController extends BaseApiController
             'stage' => $media->stage,
             'caption' => $media->caption,
         ], 'Media uploaded.', 201);
+    }
+
+    /**
+     * Remove a photo, video or document uploaded by mistake, along with its stored
+     * file. Staff who can update shipments may remove any media; others only their own.
+     */
+    public function deleteMedia(string $id, string $mediaId): JsonResponse
+    {
+        Shipment::whereIn('branch_id', $this->userBranchIds())->findOrFail($id);
+
+        $media = ShipmentMedia::where('shipment_id', $id)->findOrFail($mediaId);
+
+        abort_unless(
+            auth()->user()->can('update_shipment') || $media->uploaded_by === auth()->id(),
+            403
+        );
+
+        $media->delete();
+
+        return $this->success(null, 'Media deleted.');
     }
 
     /**

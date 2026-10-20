@@ -98,6 +98,7 @@ Route::prefix('v1')->group(function () {
         Route::post('shipments/{id}/trackings', [ShipmentController::class, 'addTracking']);
         Route::get('shipments/{id}/media', [ShipmentController::class, 'media']);
         Route::post('shipments/{id}/media', [ShipmentController::class, 'uploadMedia']);
+        Route::delete('shipments/{id}/media/{mediaId}', [ShipmentController::class, 'deleteMedia']);
         Route::get('shipments/{id}/items', [ShipmentController::class, 'items']);
         Route::post('shipments/{id}/deliveries', [ShipmentController::class, 'recordDelivery']);
 
