@@ -157,7 +157,7 @@
             </div>
             <div class="detail-row">
                 <span class="detail-label">Status:</span>
-                <span class="detail-value">{{ ucfirst($shipment->status->value) }}</span>
+                <span class="detail-value">{{ $shipment->status->getLabel() }}</span>
             </div>
         </div>
 

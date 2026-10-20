@@ -186,7 +186,7 @@ class WhatsappNotificationTest extends TestCase
                 && $request['sender'] === 'logistics'
                 && $request['to'] === '+233241234567'
                 && $request['template'] === 'shipment_status_update'
-                && $request['body_params'] === ['Ama', 'SHP-001', 'in transit', 'USD 500.00']
+                && $request['body_params'] === ['Ama', 'SHP-001', 'shipped', 'USD 500.00']
                 && $request['button_url_suffix'] === 'tok123'
                 && $request['idempotency_key'] === 'notif-1:+233241234567';
         });

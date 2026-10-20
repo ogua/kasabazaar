@@ -33,14 +33,14 @@ class DeliveredShipmentResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->where('status', 'delivered')
+            ->whereIn('status', \App\Enums\ShippingStatus::completedValues())
             ->where('client_id', auth()->user()->client_id)
             ->orderBy('created_at', 'desc');
     }
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::where('status', 'delivered')
+        return static::getModel()::whereIn('status', \App\Enums\ShippingStatus::completedValues())
             ->where('client_id', auth()->user()->client_id)
             ->count();
     }

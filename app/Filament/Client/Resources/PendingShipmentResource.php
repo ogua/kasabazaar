@@ -33,21 +33,21 @@ class PendingShipmentResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->where('status', 'pending')
+            ->whereIn('status', \App\Enums\ShippingStatus::awaitingDispatchValues())
             ->where('client_id', auth()->user()->client_id)
             ->orderBy('created_at', 'desc');
     }
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::where('status', 'pending')
+        return static::getModel()::whereIn('status', \App\Enums\ShippingStatus::awaitingDispatchValues())
             ->where('client_id', auth()->user()->client_id)
             ->count();
     }
 
     public static function getNavigationBadgeColor(): ?string
     {
-        return static::getModel()::where('status', 'pending')
+        return static::getModel()::whereIn('status', \App\Enums\ShippingStatus::awaitingDispatchValues())
             ->where('client_id', auth()->user()->client_id)
             ->count() > 0
             ? 'warning'

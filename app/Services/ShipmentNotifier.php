@@ -14,11 +14,11 @@ use Illuminate\Support\Facades\Notification;
  * {@see ShipmentAlert} out over email plus WhatsApp or SMS.
  *
  * Rule: the sender (the shipment's client) is alerted at every stage; the
- * receivers are only alerted on dispatch and delivery.
+ * receivers are only alerted on dispatch, arrival at the Ghana port and delivery.
  */
 class ShipmentNotifier
 {
-    private const RECEIVER_EVENTS = ['status:shipped', 'status:delivered'];
+    private const RECEIVER_EVENTS = ['status:shipped', 'status:port', 'status:delivered'];
 
     /**
      * @param  array<string, mixed>  $context

@@ -21,12 +21,12 @@ class ShipmentStatusUpdated extends Notification implements ShouldQueue
     public function toDatabase(object $notifiable): array
     {
         return [
-            'title'       => 'Shipment Update',
-            'body'        => "Your shipment {$this->shipment->shipping_reference} is now " . ucfirst($this->shipment->status->value ?? $this->shipment->status),
-            'type'        => 'shipment_status_updated',
+            'title' => 'Shipment Update',
+            'body' => "Your shipment {$this->shipment->shipping_reference} is now ".($this->shipment->status?->getLabel() ?? ucfirst((string) $this->shipment->status)),
+            'type' => 'shipment_status_updated',
             'shipment_id' => $this->shipment->id,
-            'reference'   => $this->shipment->shipping_reference,
-            'status'      => $this->shipment->status instanceof \BackedEnum
+            'reference' => $this->shipment->shipping_reference,
+            'status' => $this->shipment->status instanceof \BackedEnum
                 ? $this->shipment->status->value
                 : $this->shipment->status,
         ];
@@ -36,9 +36,9 @@ class ShipmentStatusUpdated extends Notification implements ShouldQueue
     {
         return [
             'title' => 'Shipment Update',
-            'body'  => "Your shipment {$this->shipment->shipping_reference} is now " . ucfirst($this->shipment->status->value ?? $this->shipment->status),
-            'data'  => [
-                'type'        => 'shipment_status_updated',
+            'body' => "Your shipment {$this->shipment->shipping_reference} is now ".($this->shipment->status?->getLabel() ?? ucfirst((string) $this->shipment->status)),
+            'data' => [
+                'type' => 'shipment_status_updated',
                 'shipment_id' => $this->shipment->id,
             ],
         ];

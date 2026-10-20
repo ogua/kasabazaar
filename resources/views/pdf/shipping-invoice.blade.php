@@ -453,7 +453,7 @@
         }
 
         .track-label {
-            font-size: 13px;
+            font-size: 15px;
             font-weight: bold;
             color: #003151;
             text-transform: uppercase;
@@ -461,10 +461,17 @@
             margin-bottom: 6px;
         }
 
-        .track-number {
-            font-size: 34px;
-            font-weight: bold;
+        .track-label .track-word {
+            font-size: 30px;
+            font-weight: 900;
             color: #A0043C;
+            letter-spacing: 3px;
+        }
+
+        .track-number {
+            font-size: 22px;
+            font-weight: bold;
+            color: #003151;
             letter-spacing: 2px;
             text-decoration: underline;
         }
@@ -549,7 +556,7 @@
                     </div>
                     <div class="info-row">
                         <span class="info-label">Status:</span>
-                        <span class="info-value">{{ ucfirst($shipping->status->value) }}</span>
+                        <span class="info-value">{{ $shipping->status->getLabel() }}</span>
                     </div>
                     @if ($shipping->estimated_delivery_date)
                         <div class="info-row">
@@ -699,7 +706,7 @@
         <!-- Tracking Number -->
         @if ($shipping->publicTrackingUrl())
             <a href="{{ $shipping->publicTrackingUrl() }}" target="_blank" class="track-box">
-                <div class="track-label">Click to Track Your Shipment</div>
+                <div class="track-label">Click to <span class="track-word">TRACK</span> Your Shipment</div>
                 <div class="track-number">{{ $shipping->tracking_number ?: $shipping->shipping_reference }}</div>
             </a>
         @endif

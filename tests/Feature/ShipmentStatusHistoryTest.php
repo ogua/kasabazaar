@@ -108,13 +108,13 @@ class ShipmentStatusHistoryTest extends TestCase
         $shipment = $this->makeShipment();
 
         $shipment->update(['status' => 'shipped']);
-        $shipment->update(['status' => 'cleared']);
+        $shipment->update(['status' => 'port']);
 
         $rows = $this->history($shipment);
-        $this->assertSame(['shipped', 'cleared'], $rows->pluck('status')->all());
+        $this->assertSame(['shipped', 'port'], $rows->pluck('status')->all());
         $this->assertSame('Michigan', $rows[0]->location);     // dispatched from origin
-        $this->assertSame('Accra', $rows[1]->location);        // cleared at destination
-        $this->assertSame('Customs Cleared', $rows[1]->remarks);
+        $this->assertSame('Accra', $rows[1]->location);        // arrived at the destination port
+        $this->assertSame('Arrived at Harbour / Port GH', $rows[1]->remarks);
     }
 
     public function test_saving_without_a_status_change_writes_nothing(): void
@@ -128,7 +128,7 @@ class ShipmentStatusHistoryTest extends TestCase
 
     public function test_delivering_without_a_date_fills_delivered_at(): void
     {
-        $shipment = $this->makeShipment(['status' => 'cleared']);
+        $shipment = $this->makeShipment(['status' => 'port']);
 
         $shipment->update(['status' => 'delivered']);
 
@@ -145,7 +145,7 @@ class ShipmentStatusHistoryTest extends TestCase
         Livewire::test(ListShipments::class)
             ->callTableAction('shipping', $shipment, data: [
                 'location' => 'Port of Tema',
-                'status' => 'cleared',
+                'status' => 'port',
                 'shipped_at' => now()->toDateTimeString(),
                 'estimated_delivery_date' => now()->addWeek()->toDateString(),
                 'remarks' => 'Cleared customs at Tema',
@@ -162,7 +162,7 @@ class ShipmentStatusHistoryTest extends TestCase
     {
         Sanctum::actingAs($this->staff(['update_shipment']));
         $agent = ClearingAgent::create(['name' => 'Kwesi Agent', 'is_active' => true]);
-        $shipment = $this->makeShipment(['status' => 'cleared']);
+        $shipment = $this->makeShipment(['status' => 'port']);
 
         $this->post("/api/v1/shipments/{$shipment->id}/deliveries", [
             'clearing_agent_id' => $agent->id,
@@ -182,7 +182,7 @@ class ShipmentStatusHistoryTest extends TestCase
     {
         $shipment = $this->makeShipment(['status' => 'shipped', 'container_number' => 987654]);
 
-        (new BulkContainerShipmentStatusJob(987654, 'cleared', 'Container 987654 cleared', false))->handle();
+        (new BulkContainerShipmentStatusJob(987654, 'port', 'Container 987654 cleared', false))->handle();
 
         $rows = $this->history($shipment);
         $this->assertCount(1, $rows);

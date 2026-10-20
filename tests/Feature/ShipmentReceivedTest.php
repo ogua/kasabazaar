@@ -7,6 +7,7 @@ use App\Models\Branch;
 use App\Models\ClearingAgent;
 use App\Models\Client;
 use App\Models\Shipment;
+use App\Models\ShipmentUpdate;
 use App\Models\User;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -71,7 +72,7 @@ class ShipmentReceivedTest extends TestCase
             'branch_id' => $this->branch->id,
             'origin_branch_id' => $this->branch->id,
             'destination_branch_id' => $this->branch->id,
-            'status' => 'cleared',
+            'status' => 'port',
             'tracking_number' => Shipment::generateTrackingNumber(),
             'total' => 500,
         ], $overrides));
@@ -111,7 +112,7 @@ class ShipmentReceivedTest extends TestCase
         ])->assertCreated();
 
         $shipment->refresh();
-        $this->assertSame('delivered', $shipment->status->value);
+        $this->assertSame('received', $shipment->status->value);
         $this->assertTrue($shipment->is_received);
     }
 
@@ -158,7 +159,7 @@ class ShipmentReceivedTest extends TestCase
             ->assertHasNoTableActionErrors();
 
         $shipment->refresh();
-        $this->assertSame('delivered', $shipment->status->value);
+        $this->assertSame('received', $shipment->status->value);
         $this->assertTrue($shipment->is_received);
     }
 
@@ -184,8 +185,53 @@ class ShipmentReceivedTest extends TestCase
 
         Livewire::test(ListShipments::class)->callTableAction('toggle_received', $shipment);
         $this->assertTrue($shipment->fresh()->is_received);
+        $this->assertSame('received', $shipment->fresh()->status->value);
 
         Livewire::test(ListShipments::class)->callTableAction('toggle_received', $shipment->fresh());
         $this->assertFalse($shipment->fresh()->is_received);
+        $this->assertSame('delivered', $shipment->fresh()->status->value);
+    }
+
+    // ── The "Received" stage and the is_received flag stay in step ──────────
+
+    public function test_setting_the_received_stage_confirms_receipt(): void
+    {
+        $shipment = $this->makeShipment(['status' => 'sorting']);
+
+        $shipment->update(['status' => 'received']);
+
+        $shipment->refresh();
+        $this->assertTrue($shipment->is_received);
+        $this->assertNotNull($shipment->delivered_at);
+        $this->assertSame(1, ShipmentUpdate::where('shipment_id', $shipment->id)->where('status', 'received')->count());
+    }
+
+    public function test_moving_back_from_received_clears_the_receipt_flag(): void
+    {
+        $shipment = $this->makeShipment(['status' => 'sorting']);
+        $shipment->update(['status' => 'received']);
+
+        $shipment->update(['status' => 'delivered']);
+
+        $this->assertFalse($shipment->fresh()->is_received);
+    }
+
+    public function test_confirming_receipt_before_delivery_keeps_the_current_stage(): void
+    {
+        $shipment = $this->makeShipment(['status' => 'sorting']);
+
+        $shipment->update(['is_received' => true]);
+
+        $this->assertSame('sorting', $shipment->fresh()->status->value);
+    }
+
+    public function test_api_rejects_an_unknown_status(): void
+    {
+        Sanctum::actingAs($this->staff(['update_shipment']));
+        $shipment = $this->makeShipment();
+
+        $this->putJson("/api/v1/shipments/{$shipment->id}", ['status' => 'cleared'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('status');
     }
 }

@@ -33,8 +33,13 @@
                 @php
                     $statusColors = [
                         'delivered' => ['bg' => 'success', 'icon' => 'bi-check-circle-fill'],
-                        'cleared'   => ['bg' => 'success', 'icon' => 'bi-check-circle-fill'],
+                        'received'  => ['bg' => 'success', 'icon' => 'bi-patch-check-fill'],
+                        'sorting'   => ['bg' => 'info',    'icon' => 'bi-diagram-3'],
+                        'port'      => ['bg' => 'info',    'icon' => 'bi-life-preserver'],
+                        'in_transit'=> ['bg' => 'info',    'icon' => 'bi-globe'],
                         'shipped'   => ['bg' => 'info',    'icon' => 'bi-truck'],
+                        'loaded'    => ['bg' => 'warning', 'icon' => 'bi-boxes'],
+                        'warehouse' => ['bg' => 'warning', 'icon' => 'bi-building'],
                         'pickup'    => ['bg' => 'warning', 'icon' => 'bi-box-seam'],
                         'pending'   => ['bg' => 'secondary','icon' => 'bi-hourglass-split'],
                         'cancelled' => ['bg' => 'danger',  'icon' => 'bi-x-circle-fill'],

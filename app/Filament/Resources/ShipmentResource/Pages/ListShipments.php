@@ -265,20 +265,14 @@ class ListShipments extends ListRecords
                 ->badge(fn (): int => $this->countShipments(fn (Builder $query): Builder => $query)),
         ];
 
-        $stageIcons = [
-            ShippingStatus::pending->value => 'heroicon-m-clock',
-            ShippingStatus::pickup->value => 'heroicon-m-hand-raised',
-            ShippingStatus::shipped->value => 'heroicon-m-truck',
-            ShippingStatus::cleared->value => 'heroicon-m-shield-check',
-            ShippingStatus::delivered->value => 'heroicon-m-home',
-            ShippingStatus::cancelled->value => 'heroicon-m-x-circle',
-        ];
+        foreach (ShippingStatus::cases() as $status) {
+            if ($status === ShippingStatus::received) {
+                continue;
+            }
 
-        foreach ($stageIcons as $value => $icon) {
-            $status = ShippingStatus::from($value);
-            $scope = fn (Builder $query): Builder => $query->where('status', $value);
+            $scope = fn (Builder $query): Builder => $query->where('status', $status->value);
 
-            $tabs[$value] = $this->makeTab(ucfirst($value), $icon, $status->getColor(), $scope);
+            $tabs[$status->value] = $this->makeTab($status->getLabel(), $status->getIcon(), $status->getColor(), $scope);
         }
 
         $tabs['received'] = $this->makeTab('Received', 'heroicon-m-check-badge', 'success',

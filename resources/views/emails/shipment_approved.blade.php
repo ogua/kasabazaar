@@ -58,7 +58,7 @@
         <div class="details-box">
             <div class="detail-row">
                 <span class="detail-label">Status:</span>
-                <span class="detail-value">{{ ucfirst($shipment->status->value ?? $shipment->status) }}</span>
+                <span class="detail-value">{{ $shipment->status?->getLabel() ?? ucfirst((string) $shipment->status) }}</span>
             </div>
             <div class="detail-row">
                 <span class="detail-label">Date Approved:</span>

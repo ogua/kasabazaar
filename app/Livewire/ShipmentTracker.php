@@ -59,7 +59,7 @@ class ShipmentTracker extends Component
             'tracking_number' => $shipment->tracking_number,
             'msc_tracking_number' => $shipment->msc_tracking_number,
             'msc_tracking_url' => $shipment->mscTrackingUrl(),
-            'status' => ucfirst($shipment->status->value ?? $shipment->status),
+            'status' => $shipment->status?->getLabel() ?? ucfirst((string) $shipment->status),
             'status_raw' => $shipment->status->value ?? $shipment->status,
             'origin' => $shipment->originBranch?->name ?? 'N/A',
             'destination' => $shipment->destinationBranch?->name ?? 'N/A',

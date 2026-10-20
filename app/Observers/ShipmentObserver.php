@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Enums\ShippingStatus;
 use App\Models\Shipment;
 use App\Models\ShipmentUpdate;
 use App\Models\User;
@@ -12,11 +13,16 @@ use App\Services\ShipmentNotifier;
 class ShipmentObserver
 {
     private static array $statusLabels = [
-        'pending' => 'Shipment Received',
+        'pending' => 'Shipment Booked',
         'pickup' => 'Out for Pickup',
-        'shipped' => 'In Transit',
-        'cleared' => 'Customs Cleared',
+        'warehouse' => 'Arrived at Warehouse',
+        'loaded' => 'Loaded for Dispatch',
+        'shipped' => 'Shipped',
+        'in_transit' => 'In Transit',
+        'port' => 'Arrived at Harbour / Port GH',
+        'sorting' => 'Sorting',
         'delivered' => 'Delivered',
+        'received' => 'Received',
         'cancelled' => 'Shipment Cancelled',
     ];
 
@@ -35,8 +41,36 @@ class ShipmentObserver
             $shipment->msc_tracking_updated_at = now();
         }
 
-        if ($shipment->isDirty('status') && self::statusValue($shipment) === 'delivered' && blank($shipment->delivered_at)) {
+        $status = self::statusValue($shipment);
+
+        if ($shipment->isDirty('status') && in_array($status, ShippingStatus::completedValues(), true) && blank($shipment->delivered_at)) {
             $shipment->delivered_at = now();
+        }
+
+        $this->syncReceivedFlag($shipment, $status);
+    }
+
+    /**
+     * Keep the "Received" stage and the is_received flag in step, whichever one staff changed.
+     * Confirming receipt on a delivered shipment is handled after save (see updated()), so the
+     * history keeps its "Delivered" row before the "Received" one.
+     */
+    private function syncReceivedFlag(Shipment $shipment, string $status): void
+    {
+        if ($shipment->isDirty('status')) {
+            if ($status === ShippingStatus::received->value) {
+                $shipment->is_received = true;
+            } elseif ($shipment->getOriginal('status') === ShippingStatus::received || $shipment->getOriginal('status') === ShippingStatus::received->value) {
+                $shipment->is_received = false;
+            }
+
+            return;
+        }
+
+        if ($shipment->isDirty('is_received') && ! $shipment->is_received && $status === ShippingStatus::received->value) {
+            $shipment->status = ShippingStatus::delivered;
+            $shipment->statusHistoryNote = ['remarks' => 'Receipt confirmation withdrawn'];
+            $shipment->suppressLifecycleAlerts = true;
         }
     }
 
@@ -48,19 +82,31 @@ class ShipmentObserver
             ShipmentNotifier::sent($shipment, 'msc_updated');
         }
 
-        if ($shipment->wasChanged('is_received') && $shipment->is_received) {
+        $becameReceivedByStatus = $shipment->wasChanged('status') && self::statusValue($shipment) === ShippingStatus::received->value;
+        $receiptConfirmed = $shipment->wasChanged('is_received') && $shipment->is_received && ! $becameReceivedByStatus;
+
+        if ($shipment->wasChanged('status')) {
+            $this->handleStatusChange($shipment, $alertsEnabled);
+        }
+
+        // Logged after the status row, so the history reads "Delivered" then "Received".
+        if ($receiptConfirmed) {
             ShipmentUpdate::create([
                 'shipment_id' => $shipment->id,
                 'location' => self::place($shipment, true),
                 'status' => 'received',
                 'remarks' => 'Receiver confirmed receipt',
             ]);
-        }
 
-        if (! $shipment->wasChanged('status')) {
-            return;
+            if (self::statusValue($shipment) === ShippingStatus::delivered->value) {
+                $shipment->status = ShippingStatus::received;
+                $shipment->saveQuietly();
+            }
         }
+    }
 
+    private function handleStatusChange(Shipment $shipment, bool $alertsEnabled): void
+    {
         $this->recordStatusHistory($shipment);
 
         $status = $shipment->status instanceof \BackedEnum
@@ -114,9 +160,8 @@ class ShipmentObserver
         $status = self::statusValue($shipment);
         $note = $shipment->statusHistoryNote ?? [];
 
-        // Where the goods are at each stage: still at origin until they've been
-        // dispatched, at the destination from customs clearance onwards.
-        $atDestination = in_array($status, ['cleared', 'delivered'], true);
+        // Where the goods are at each stage: at origin until they reach the Ghana port.
+        $atDestination = ShippingStatus::tryFrom($status)?->isAtDestination() ?? false;
 
         ShipmentUpdate::create([
             'shipment_id' => $shipment->id,

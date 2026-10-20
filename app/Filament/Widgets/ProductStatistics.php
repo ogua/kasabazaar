@@ -14,9 +14,9 @@ class ProductStatistics extends BaseWidget
     protected function getStats(): array
     {
         $shipping = Shipment::count();
-        $delivery = Shipment::where('status', ShippingStatus::delivered->value)->count();
-        $pending = Shipment::where('status', ShippingStatus::pending->value)->count();
-        $transit = Shipment::where('status', ShippingStatus::shipped->value)->count();
+        $delivery = Shipment::whereIn('status', ShippingStatus::completedValues())->count();
+        $pending = Shipment::whereIn('status', ShippingStatus::awaitingDispatchValues())->count();
+        $transit = Shipment::whereIn('status', ShippingStatus::inTransitValues())->count();
 
         return [
             Stat::make('Total Shipments', '')

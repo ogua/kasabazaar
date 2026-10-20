@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\ShippingStatus;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateShipmentRequest extends FormRequest
 {
@@ -14,7 +16,7 @@ class UpdateShipmentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'status' => 'sometimes|string',
+            'status' => ['sometimes', 'string', Rule::enum(ShippingStatus::class)],
             'payment_status' => 'sometimes|in:pending,paid,partial',
             'destination_branch_id' => 'sometimes',
             'estimated_delivery_date' => 'nullable|date',

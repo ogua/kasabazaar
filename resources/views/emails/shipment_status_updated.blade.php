@@ -42,24 +42,26 @@
 
     @php
         $bannerClass = match($status) {
-            'cleared'   => 'cleared',
-            'shipped'   => 'shipped',
-            'delivered' => 'delivered',
-            'pickup'    => 'pickup',
+            'port', 'cleared' => 'cleared',
+            'shipped', 'in_transit', 'sorting' => 'shipped',
+            'delivered', 'received' => 'delivered',
+            'pickup', 'warehouse', 'loaded' => 'pickup',
             'pending'   => 'pending',
             'cancelled' => 'cancelled',
             default     => 'default',
         };
         $icon = match($status) {
-            'cleared'   => '✅',
-            'shipped'   => '🚢',
-            'delivered' => '📦',
-            'pickup'    => '🏪',
+            'port', 'cleared' => '⚓',
+            'shipped', 'in_transit' => '🚢',
+            'sorting'   => '🗂️',
+            'delivered' => '🚚',
+            'received'  => '✅',
+            'pickup', 'warehouse', 'loaded' => '🏪',
             'pending'   => '⏳',
             'cancelled' => '❌',
             default     => '🔔',
         };
-        $statusLabel = ucfirst($status);
+        $statusLabel = \App\Enums\ShippingStatus::tryFrom($status)?->getLabel() ?? ucfirst($status);
     @endphp
 
     <div class="status-banner {{ $bannerClass }}">

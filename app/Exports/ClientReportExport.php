@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Enums\ShippingStatus;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -44,7 +45,8 @@ class ClientReportExport implements FromCollection, WithHeadings, WithMapping, W
         return match ($this->reportType) {
             'client_summary', 'top_clients' => [
                 'Client', 'Phone', 'Email', 'Shipments', 'Revenue (USD)', 'Paid (USD)', 'Balance (USD)',
-                'Pending', 'Partial', 'Paid Shipments', 'Pickup', 'Shipped', 'Delivered', 'Cancelled', 'Cleared',
+                'Pending', 'Partial', 'Paid Shipments',
+                ...array_map(fn (ShippingStatus $status): string => $status->getLabel(), ShippingStatus::cases()),
             ],
             'new_clients' => ['Client', 'Phone', 'Email', 'Registered', 'Shipments Since'],
             'status_breakdown' => ['Group', 'Status', 'Count', 'Percentage', 'Value (USD)'],
@@ -66,11 +68,10 @@ class ClientReportExport implements FromCollection, WithHeadings, WithMapping, W
                 $row['payment_status_counts']['pending'] ?? 0,
                 $row['payment_status_counts']['partial'] ?? 0,
                 $row['payment_status_counts']['paid'] ?? 0,
-                $row['shipping_status_counts']['pickup'] ?? 0,
-                $row['shipping_status_counts']['shipped'] ?? 0,
-                $row['shipping_status_counts']['delivered'] ?? 0,
-                $row['shipping_status_counts']['cancelled'] ?? 0,
-                $row['shipping_status_counts']['cleared'] ?? 0,
+                ...array_map(
+                    fn (ShippingStatus $status): int => $row['shipping_status_counts'][$status->value] ?? 0,
+                    ShippingStatus::cases()
+                ),
             ],
             'new_clients' => [
                 $row->name,

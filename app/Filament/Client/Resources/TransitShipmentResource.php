@@ -33,21 +33,21 @@ class TransitShipmentResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->where('status', 'in transit')
+            ->whereIn('status', \App\Enums\ShippingStatus::inTransitValues())
             ->where('client_id', auth()->user()->client_id)
             ->orderBy('created_at', 'desc');
     }
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::where('status', 'in transit')
+        return static::getModel()::whereIn('status', \App\Enums\ShippingStatus::inTransitValues())
             ->where('client_id', auth()->user()->client_id)
             ->count();
     }
 
     public static function getNavigationBadgeColor(): ?string
     {
-        return static::getModel()::where('status', 'in transit')
+        return static::getModel()::whereIn('status', \App\Enums\ShippingStatus::inTransitValues())
             ->where('client_id', auth()->user()->client_id)
             ->count() > 0
             ? 'info'

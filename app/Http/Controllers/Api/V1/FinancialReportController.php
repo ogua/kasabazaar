@@ -59,8 +59,8 @@ class FinancialReportController extends BaseApiController
 
         $shipments = (clone $shipmentBase)->get();
         $totalShips = $shipments->count();
-        $delivered = $shipments->filter(fn ($s) => $s->status?->value === 'delivered')->count();
-        $pending = $shipments->filter(fn ($s) => in_array($s->status?->value, ['pending', 'processing']))->count();
+        $delivered = $shipments->filter(fn ($s) => in_array($s->status?->value, \App\Enums\ShippingStatus::completedValues(), true))->count();
+        $pending = $shipments->filter(fn ($s) => in_array($s->status?->value, \App\Enums\ShippingStatus::awaitingDispatchValues(), true))->count();
         $activeConts = Shipment::whereNull('delivered_at')
             ->whereNotNull('container_number')
             ->selectRaw('COUNT(DISTINCT container_number) as cnt')

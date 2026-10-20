@@ -2,22 +2,19 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Models\Shipment;
-use App\Models\Payment;
-use App\Models\Trip;
 use App\Models\Income;
-use App\Http\Controllers\Api\V1\BaseApiController;
+use App\Models\Shipment;
+use App\Models\Trip;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class DashboardController extends BaseApiController
 {
     public function summary(Request $request): JsonResponse
     {
         $branchId = $this->resolveBranch($request);
-        $month    = now()->month;
-        $year     = now()->year;
+        $month = now()->month;
+        $year = now()->year;
 
         $shipmentsThisMonth = Shipment::where('branch_id', $branchId)
             ->whereMonth('created_at', $month)
@@ -43,26 +40,26 @@ class DashboardController extends BaseApiController
             ->count();
 
         $pendingShipments = Shipment::where('branch_id', $branchId)
-            ->where('status', 'pending')
+            ->whereIn('status', \App\Enums\ShippingStatus::awaitingDispatchValues())
             ->count();
 
         $inTransitShipments = Shipment::where('branch_id', $branchId)
-            ->where('status', 'shipped')
+            ->whereIn('status', \App\Enums\ShippingStatus::inTransitValues())
             ->count();
 
         $deliveredThisMonth = Shipment::where('branch_id', $branchId)
-            ->where('status', 'delivered')
+            ->whereIn('status', \App\Enums\ShippingStatus::completedValues())
             ->whereMonth('delivered_at', $month)
             ->whereYear('delivered_at', $year)
             ->count();
 
         return $this->success([
             'shipments_this_month' => $shipmentsThisMonth,
-            'pending_payments'     => $pendingPaymentsCount,
-            'revenue_ghs'          => round((float) $revenueThisMonthGhs, 2),
-            'revenue_usd'          => round((float) $revenueThisMonthUsd, 2),
-            'active_trips'         => $activeTrips,
-            'pending_shipments'    => $pendingShipments,
+            'pending_payments' => $pendingPaymentsCount,
+            'revenue_ghs' => round((float) $revenueThisMonthGhs, 2),
+            'revenue_usd' => round((float) $revenueThisMonthUsd, 2),
+            'active_trips' => $activeTrips,
+            'pending_shipments' => $pendingShipments,
             'in_transit_shipments' => $inTransitShipments,
             'delivered_this_month' => $deliveredThisMonth,
         ]);
@@ -72,31 +69,31 @@ class DashboardController extends BaseApiController
     {
         abort_unless(auth()->user()->can('view_any_shipment'), 403);
 
-        $branchId  = $this->resolveBranch($request);
+        $branchId = $this->resolveBranch($request);
         $shipments = Shipment::where('branch_id', $branchId)
             ->with(['client:id,name,phone', 'destinationBranch:id,name'])
             ->latest()
             ->limit(10)
             ->get()
             ->map(fn ($s) => [
-                'id'                  => $s->id,
-                'shipping_reference'  => $s->shipping_reference,
-                'tracking_number'     => $s->tracking_number,
-                'status'              => $s->status instanceof \BackedEnum ? $s->status->value : $s->status,
-                'payment_status'      => $s->payment_status,
-                'total'               => $s->total,
-                'paid'                => $s->paid,
-                'total_ghs'           => $s->total_ghs,
-                'container_number'    => $s->container_number,
-                'shipped_at'          => $s->shipped_at,
+                'id' => $s->id,
+                'shipping_reference' => $s->shipping_reference,
+                'tracking_number' => $s->tracking_number,
+                'status' => $s->status instanceof \BackedEnum ? $s->status->value : $s->status,
+                'payment_status' => $s->payment_status,
+                'total' => $s->total,
+                'paid' => $s->paid,
+                'total_ghs' => $s->total_ghs,
+                'container_number' => $s->container_number,
+                'shipped_at' => $s->shipped_at,
                 'estimated_delivery_date' => $s->estimated_delivery_date,
-                'client'              => $s->client ? [
-                    'id'    => $s->client->id,
-                    'name'  => $s->client->name,
+                'client' => $s->client ? [
+                    'id' => $s->client->id,
+                    'name' => $s->client->name,
                     'phone' => $s->client->phone,
                 ] : null,
-                'destination_branch'  => $s->destinationBranch ? [
-                    'id'   => $s->destinationBranch->id,
+                'destination_branch' => $s->destinationBranch ? [
+                    'id' => $s->destinationBranch->id,
                     'name' => $s->destinationBranch->name,
                 ] : null,
             ]);
