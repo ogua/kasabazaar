@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Enums\ShippingStatus;
 use App\Filament\Forms\WhatsappConsentToggle;
+use App\Filament\Pages\MediaEvidence;
 use App\Filament\Resources\ShipmentResource\Pages;
 use App\Models\City;
 use App\Models\ClearingAgent;
@@ -1418,6 +1419,11 @@ class ShipmentResource extends Resource
                                     ->icon('heroicon-m-trash')
                                     ->color('danger')
                                     ->visible(static::removableMedia($record)->isNotEmpty()),
+                                $action->makeModalAction('openLibrary')
+                                    ->label('Open in Media Library')
+                                    ->icon('heroicon-m-photo')
+                                    ->color('gray')
+                                    ->url(MediaEvidence::getUrl(['shipment' => $record->id])),
                             ]),
 
                         Tables\Actions\Action::make('complaint_link')
@@ -1545,7 +1551,7 @@ class ShipmentResource extends Resource
         return $shipment->media()
             ->latest()
             ->get()
-            ->filter(fn (ShipmentMedia $item) => $user?->can('update_shipment') || $item->uploaded_by === $user?->id)
+            ->filter(fn (ShipmentMedia $item) => $item->isRemovableBy($user))
             ->values();
     }
 

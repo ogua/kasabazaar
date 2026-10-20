@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Number;
+use Illuminate\Support\Str;
 
 class ShipmentMedia extends Model
 {
@@ -67,6 +69,37 @@ class ShipmentMedia extends Model
             in_array($extension, self::DOCUMENT_EXTENSIONS, true) => 'document',
             default => 'image',
         };
+    }
+
+    /**
+     * Staff who can update shipments may remove any file; everyone else only their own uploads.
+     */
+    public function isRemovableBy(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        return $user->can('update_shipment') || $this->uploaded_by === $user->id;
+    }
+
+    public function stageLabel(): string
+    {
+        return self::STAGES[$this->stage] ?? Str::headline((string) $this->stage);
+    }
+
+    /**
+     * Human-readable size of the stored file, or null when it is missing from disk.
+     */
+    public function fileSize(): ?string
+    {
+        $disk = Storage::disk('public');
+
+        if (! $this->file_path || ! $disk->exists($this->file_path)) {
+            return null;
+        }
+
+        return Number::fileSize($disk->size($this->file_path), precision: 1);
     }
 
     public function url(): string
