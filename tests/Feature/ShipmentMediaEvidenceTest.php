@@ -134,7 +134,7 @@ class ShipmentMediaEvidenceTest extends TestCase
                 ],
             ])
             ->assertHasNoTableActionErrors()
-            ->assertNotified('Media Updated');
+            ->assertNotified('Evidence Uploaded');
 
         $media = $shipment->media()->get();
         $this->assertCount(3, $media);
@@ -186,9 +186,9 @@ class ShipmentMediaEvidenceTest extends TestCase
         Livewire::test(ListShipments::class)
             ->callTableAction('media_evidence', $shipment, data: [
                 'media_to_delete' => [$wrongPhoto->id, $wrongDocument->id],
-            ])
+            ], arguments: ['remove' => true])
             ->assertHasNoTableActionErrors()
-            ->assertNotified('Media Updated');
+            ->assertNotified('Media Removed');
 
         $this->assertSame([$keeper->id], $shipment->media()->pluck('id')->all());
         Storage::disk('public')->assertMissing('shipment-media/wrong.jpg');
@@ -196,23 +196,23 @@ class ShipmentMediaEvidenceTest extends TestCase
         Storage::disk('public')->assertExists('shipment-media/right.jpg');
     }
 
-    public function test_remove_and_upload_can_happen_in_one_save(): void
+    public function test_upload_button_does_not_remove_ticked_media(): void
     {
         $this->actingAsStaff(['view_any_shipment', 'view_shipment', 'update_shipment']);
         $shipment = $this->makeShipment();
-        $wrong = $this->storedMedia($shipment, 'blurry.jpg');
+        $ticked = $this->storedMedia($shipment, 'blurry.jpg');
 
         Livewire::test(ListShipments::class)
             ->callTableAction('media_evidence', $shipment, data: [
-                'media_to_delete' => [$wrong->id],
+                'media_to_delete' => [$ticked->id],
                 'media_stage' => 'pickup',
                 'media_files' => [UploadedFile::fake()->image('sharp.jpg')],
             ])
-            ->assertHasNoTableActionErrors();
+            ->assertHasNoTableActionErrors()
+            ->assertNotified('Evidence Uploaded');
 
-        $remaining = $shipment->media()->get();
-        $this->assertCount(1, $remaining);
-        $this->assertNotSame($wrong->id, $remaining->first()->id);
+        $this->assertModelExists($ticked);
+        $this->assertSame(2, $shipment->media()->count());
     }
 
     public function test_staff_without_update_permission_can_only_remove_their_own_uploads(): void
@@ -227,7 +227,7 @@ class ShipmentMediaEvidenceTest extends TestCase
         Livewire::test(ListShipments::class)
             ->callTableAction('media_evidence', $shipment, data: [
                 'media_to_delete' => [$mine->id, $someoneElses->id],
-            ]);
+            ], arguments: ['remove' => true]);
 
         $this->assertModelMissing($mine);
         $this->assertModelExists($someoneElses);
@@ -244,13 +244,13 @@ class ShipmentMediaEvidenceTest extends TestCase
         Livewire::test(ListShipments::class)
             ->callTableAction('media_evidence', $shipment, data: [
                 'media_to_delete' => [$foreign->id],
-            ]);
+            ], arguments: ['remove' => true]);
 
         $this->assertModelExists($foreign);
         Storage::disk('public')->assertExists('shipment-media/foreign.jpg');
     }
 
-    public function test_saving_with_nothing_selected_changes_nothing(): void
+    public function test_upload_without_files_warns_and_changes_nothing(): void
     {
         $this->actingAsStaff(['view_any_shipment', 'view_shipment', 'update_shipment']);
         $shipment = $this->makeShipment();
@@ -259,9 +259,42 @@ class ShipmentMediaEvidenceTest extends TestCase
         Livewire::test(ListShipments::class)
             ->callTableAction('media_evidence', $shipment, data: [])
             ->assertHasNoTableActionErrors()
-            ->assertNotified('Nothing to save');
+            ->assertNotified('No files chosen');
 
         $this->assertModelExists($existing);
+        $this->assertSame(1, $shipment->media()->count());
+    }
+
+    public function test_remove_without_ticking_anything_warns_and_changes_nothing(): void
+    {
+        $this->actingAsStaff(['view_any_shipment', 'view_shipment', 'update_shipment']);
+        $shipment = $this->makeShipment();
+        $existing = $this->storedMedia($shipment, 'keep.jpg');
+
+        Livewire::test(ListShipments::class)
+            ->callTableAction('media_evidence', $shipment, data: [], arguments: ['remove' => true])
+            ->assertHasNoTableActionErrors()
+            ->assertNotified('Nothing selected');
+
+        $this->assertModelExists($existing);
+    }
+
+    public function test_modal_shows_upload_and_remove_buttons(): void
+    {
+        $this->actingAsStaff(['view_any_shipment', 'view_shipment', 'update_shipment']);
+        $shipment = $this->makeShipment();
+
+        Livewire::test(ListShipments::class)
+            ->mountTableAction('media_evidence', $shipment)
+            ->assertSee('Upload Evidence')
+            ->assertDontSee('Remove Selected');
+
+        $this->storedMedia($shipment, 'wrong.jpg');
+
+        Livewire::test(ListShipments::class)
+            ->mountTableAction('media_evidence', $shipment)
+            ->assertSee('Upload Evidence')
+            ->assertSee('Remove Selected');
     }
 
     public function test_the_gallery_renders_every_media_type(): void

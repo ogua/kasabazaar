@@ -16,6 +16,7 @@ use App\Models\ShipmentDelivery;
 use App\Models\ShipmentMedia;
 use App\Models\ShipmentUpdate;
 use App\Models\State;
+use Filament\Actions\StaticAction;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Components\Hidden;
@@ -1326,7 +1327,7 @@ class ShipmentResource extends Resource
                                     ->collapsible(),
 
                                 Forms\Components\Section::make('Remove Wrong Uploads')
-                                    ->description('Tick any photo, video or document uploaded by mistake. It is deleted permanently when you click Save.')
+                                    ->description('Tick any photo, video or document uploaded by mistake, then click Remove Selected. Removed files are deleted permanently.')
                                     ->schema([
                                         Forms\Components\CheckboxList::make('media_to_delete')
                                             ->label('')
@@ -1367,19 +1368,34 @@ class ShipmentResource extends Resource
                                     ])
                                     ->columns(2),
                             ])
-                            ->action(function (Shipment $record, array $data) {
-                                $removed = 0;
-                                if (! empty($data['media_to_delete'])) {
-                                    static::removableMedia($record)
-                                        ->whereIn('id', $data['media_to_delete'])
-                                        ->each(function (ShipmentMedia $item) use (&$removed) {
-                                            $item->delete();
-                                            $removed++;
-                                        });
+                            ->action(function (Shipment $record, array $data, array $arguments) {
+                                if ($arguments['remove'] ?? false) {
+                                    $removed = static::removableMedia($record)
+                                        ->whereIn('id', $data['media_to_delete'] ?? [])
+                                        ->each(fn (ShipmentMedia $item) => $item->delete())
+                                        ->count();
+
+                                    $notification = \Filament\Notifications\Notification::make();
+                                    $removed
+                                        ? $notification->title('Media Removed')->body($removed.' file(s) removed.')->success()
+                                        : $notification->title('Nothing selected')->body('Tick the uploads you want to remove.')->warning();
+                                    $notification->send();
+
+                                    return;
                                 }
 
-                                $uploaded = 0;
-                                foreach ($data['media_files'] ?? [] as $filePath) {
+                                $files = $data['media_files'] ?? [];
+                                if (empty($files)) {
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('No files chosen')
+                                        ->body('Choose at least one photo, video or document to upload.')
+                                        ->warning()
+                                        ->send();
+
+                                    return;
+                                }
+
+                                foreach ($files as $filePath) {
                                     ShipmentMedia::create([
                                         'shipment_id' => $record->id,
                                         'type' => ShipmentMedia::typeForPath($filePath),
@@ -1388,29 +1404,23 @@ class ShipmentResource extends Resource
                                         'caption' => $data['media_caption'] ?? null,
                                         'uploaded_by' => auth()->id(),
                                     ]);
-                                    $uploaded++;
-                                }
-
-                                if ($uploaded === 0 && $removed === 0) {
-                                    \Filament\Notifications\Notification::make()
-                                        ->title('Nothing to save')
-                                        ->body('Choose files to upload or tick uploads to remove.')
-                                        ->warning()
-                                        ->send();
-
-                                    return;
                                 }
 
                                 \Filament\Notifications\Notification::make()
-                                    ->title('Media Updated')
-                                    ->body(collect([
-                                        $uploaded ? $uploaded.' file(s) uploaded.' : null,
-                                        $removed ? $removed.' file(s) removed.' : null,
-                                    ])->filter()->implode(' '))
+                                    ->title('Evidence Uploaded')
+                                    ->body(count($files).' file(s) uploaded successfully.')
                                     ->success()
                                     ->send();
                             })
-                            ->modalSubmitActionLabel('Save'),
+                            ->modalSubmitActionLabel('Upload Evidence')
+                            ->modalSubmitAction(fn (StaticAction $action) => $action->icon('heroicon-m-arrow-up-tray'))
+                            ->extraModalFooterActions(fn (Tables\Actions\Action $action, Shipment $record): array => [
+                                $action->makeModalSubmitAction('removeSelected', arguments: ['remove' => true])
+                                    ->label('Remove Selected')
+                                    ->icon('heroicon-m-trash')
+                                    ->color('danger')
+                                    ->visible(static::removableMedia($record)->isNotEmpty()),
+                            ]),
 
                         Tables\Actions\Action::make('complaint_link')
                             ->label('Complaint Link')
