@@ -440,6 +440,34 @@
             color: #991b1b;
             border: 1px solid #dc2626;
         }
+
+        .track-box {
+            display: block;
+            text-align: center;
+            text-decoration: none;
+            background: #fdf2f6;
+            border: 2px dashed #A0043C;
+            border-radius: 8px;
+            padding: 14px 10px;
+            margin-bottom: 20px;
+        }
+
+        .track-label {
+            font-size: 13px;
+            font-weight: bold;
+            color: #003151;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .track-number {
+            font-size: 34px;
+            font-weight: bold;
+            color: #A0043C;
+            letter-spacing: 2px;
+            text-decoration: underline;
+        }
     </style>
 </head>
 
@@ -481,11 +509,6 @@
                 <div class="invoice-details">
                     <p><strong>Invoice No:</strong> {{ $shipping->shipping_reference }}</p>
                     <p><strong>Date:</strong> {{ $shipping->created_at->format('j M Y') }}</p>
-                    <p><strong>Tracking:</strong>
-                        @if ($shipping->publicTrackingUrl())
-                            <a href="{{ $shipping->publicTrackingUrl() }}" target="_blank" style="color: #A0043C; text-decoration: underline;">{{ $shipping->tracking_number ?: $shipping->shipping_reference }}</a>
-                        @endif
-                    </p>
                 </div>
             </div>
         </div>
@@ -672,6 +695,14 @@
                 </span>
             @endif
         </div>
+
+        <!-- Tracking Number -->
+        @if ($shipping->publicTrackingUrl())
+            <a href="{{ $shipping->publicTrackingUrl() }}" target="_blank" class="track-box">
+                <div class="track-label">Click to Track Your Shipment</div>
+                <div class="track-number">{{ $shipping->tracking_number ?: $shipping->shipping_reference }}</div>
+            </a>
+        @endif
 
         <!-- Totals & Payment Methods -->
         <div class="totals-section">
