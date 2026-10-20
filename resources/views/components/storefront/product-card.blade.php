@@ -30,7 +30,7 @@
             width="400"
             height="400"
             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 {{ $soldOut ? 'opacity-60' : '' }}"
-            onerror="this.onerror=null;this.src='{{ asset('images/product-placeholder.png') }}';"
+            onerror="if (! this.src.endsWith('/images/product-placeholder.png')) this.src='{{ asset('images/product-placeholder.png') }}';"
         >
         @if ($discountPct)
             <span class="absolute top-2 left-2 rounded-sm bg-accent px-1.5 py-0.5 text-[11px] font-bold text-white tabular-nums">-{{ $discountPct }}%</span>

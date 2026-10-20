@@ -4,6 +4,7 @@ namespace App\Livewire\Storefront\Auth;
 
 use App\Models\User;
 use App\Services\Kasabazaar\AuthApi;
+use App\Services\Kasabazaar\CartApi;
 use App\Services\Kasabazaar\KasabazaarApiException;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -38,7 +39,7 @@ class Register extends Component
                 'phone' => $this->phone,
                 'password' => $this->password,
                 'password_confirmation' => $this->password_confirmation,
-            ], session()->getId());
+            ], CartApi::guestToken());
         } catch (KasabazaarApiException $e) {
             $this->error = $e->getMessage();
 
@@ -57,6 +58,7 @@ class Register extends Component
 
         Auth::login($user, remember: true);
         session()->regenerate();
+        session()->forget(CartApi::GUEST_TOKEN_KEY);
 
         $this->redirect(route('storefront.account.dashboard'), navigate: false);
     }

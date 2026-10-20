@@ -26,7 +26,7 @@
                             alt="{{ $vendor['business_name'] }}"
                             loading="lazy"
                             class="w-full h-full object-cover"
-                            onerror="this.onerror=null;this.src='{{ asset('images/product-placeholder.png') }}';"
+                            onerror="if (! this.src.endsWith('/images/product-placeholder.png')) this.src='{{ asset('images/product-placeholder.png') }}';"
                         >
                     </span>
                     <span class="text-sm font-semibold text-fg group-hover:text-accent line-clamp-2 mb-3">{{ $vendor['business_name'] }}</span>

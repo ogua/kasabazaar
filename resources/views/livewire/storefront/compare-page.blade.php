@@ -38,7 +38,7 @@
                                             <x-storefront.icon name="x-mark" class="w-4 h-4" />
                                         </button>
                                         <a href="{{ route('storefront.product', $product['id']) }}" class="block aspect-square max-w-40 rounded-sm bg-surface-muted overflow-hidden mb-3">
-                                            <img src="{{ $image ?? asset('images/product-placeholder.png') }}" alt="" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='{{ asset('images/product-placeholder.png') }}';">
+                                            <img src="{{ $image ?? asset('images/product-placeholder.png') }}" alt="" class="w-full h-full object-cover" onerror="if (! this.src.endsWith('/images/product-placeholder.png')) this.src='{{ asset('images/product-placeholder.png') }}';">
                                         </a>
                                         <a href="{{ route('storefront.product', $product['id']) }}" class="font-medium text-fg hover:text-accent line-clamp-2 leading-snug">{{ $product['name'] }}</a>
                                     </div>

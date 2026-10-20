@@ -18,7 +18,7 @@
                 <ul x-show="open" class="hidden sm:flex items-center gap-2 flex-1 min-w-0 overflow-x-auto">
                     @foreach ($items as $item)
                         <li class="flex items-center gap-2 rounded-sm border border-border bg-surface-muted pl-1 pr-2 py-1 max-w-56 shrink-0" wire:key="compare-tray-{{ $item['id'] }}">
-                            <img src="{{ $item['image'] ?: asset('images/product-placeholder.png') }}" alt="" class="w-8 h-8 rounded-sm object-cover" onerror="this.onerror=null;this.src='{{ asset('images/product-placeholder.png') }}';">
+                            <img src="{{ $item['image'] ?: asset('images/product-placeholder.png') }}" alt="" class="w-8 h-8 rounded-sm object-cover" onerror="if (! this.src.endsWith('/images/product-placeholder.png')) this.src='{{ asset('images/product-placeholder.png') }}';">
                             <span class="text-xs text-fg truncate">{{ $item['name'] }}</span>
                             <button type="button" wire:click="remove('{{ $item['id'] }}')" class="text-muted hover:text-error shrink-0" aria-label="Remove {{ $item['name'] }} from comparison">
                                 <x-storefront.icon name="x-mark" class="w-4 h-4" />

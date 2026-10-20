@@ -20,7 +20,7 @@
             alt="{{ $auction['title'] }}"
             loading="lazy"
             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 {{ $state === 'ended' ? 'grayscale-[40%]' : '' }}"
-            onerror="this.onerror=null;this.src='{{ asset('images/product-placeholder.png') }}';"
+            onerror="if (! this.src.endsWith('/images/product-placeholder.png')) this.src='{{ asset('images/product-placeholder.png') }}';"
         >
 
         <span @class([

@@ -44,7 +44,7 @@
                                     src="{{ $url }}"
                                     alt="{{ $auction['title'] }}"
                                     class="w-full h-full object-contain"
-                                    onerror="this.onerror=null;this.src='{{ asset('images/product-placeholder.png') }}';"
+                                    onerror="if (! this.src.endsWith('/images/product-placeholder.png')) this.src='{{ asset('images/product-placeholder.png') }}';"
                                 >
                             @empty
                                 <img src="{{ asset('images/product-placeholder.png') }}" alt="{{ $auction['title'] }}" class="w-full h-full object-cover">

@@ -4,6 +4,7 @@ namespace App\Livewire\Storefront\Auth;
 
 use App\Models\User;
 use App\Services\Kasabazaar\AuthApi;
+use App\Services\Kasabazaar\CartApi;
 use App\Services\Kasabazaar\KasabazaarApiException;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -24,7 +25,7 @@ class Login extends Component
         ]);
 
         try {
-            $result = $authApi->loginCustomer($this->email, $this->password, session()->getId());
+            $result = $authApi->loginCustomer($this->email, $this->password, CartApi::guestToken());
         } catch (KasabazaarApiException $e) {
             $this->error = $e->getMessage();
 
@@ -43,6 +44,7 @@ class Login extends Component
 
         Auth::login($user, remember: true);
         session()->regenerate();
+        session()->forget(CartApi::GUEST_TOKEN_KEY);
 
         // Back to where they were (e.g. "sign in to bid"), else the dashboard.
         $this->redirectIntended(route('storefront.account.dashboard'), navigate: false);

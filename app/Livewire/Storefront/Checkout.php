@@ -54,8 +54,9 @@ class Checkout extends Component
             $this->error = 'We\'re having trouble loading your checkout right now. Please refresh or try again shortly.';
         }
 
-        // Nothing to buy: send the shopper back to the cart, which explains why.
-        if (! $this->error && empty($this->cart['items'] ?? [])) {
+        // Nothing to buy, or a line checkout would reject (sold out, delisted,
+        // over stock): send the shopper back to the cart, which explains why.
+        if (! $this->error && (empty($this->cart['items'] ?? []) || CartPage::problemsIn($this->cart))) {
             $this->redirect(route('storefront.cart'), navigate: false);
 
             return;

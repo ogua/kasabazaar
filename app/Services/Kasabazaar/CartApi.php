@@ -7,6 +7,8 @@ use Illuminate\Support\Str;
 
 class CartApi
 {
+    public const GUEST_TOKEN_KEY = 'guest_cart_token';
+
     public function __construct(protected KasabazaarClient $client) {}
 
     public function show(): array
@@ -27,9 +29,9 @@ class CartApi
         return $this->client->put("marketplace/cart/items/{$itemId}", ['quantity' => $quantity], $this->guestHeader())->data;
     }
 
-    public function removeItem(string $itemId): void
+    public function removeItem(string $itemId): array
     {
-        $this->client->delete("marketplace/cart/items/{$itemId}", [], $this->guestHeader());
+        return $this->client->delete("marketplace/cart/items/{$itemId}", [], $this->guestHeader())->data;
     }
 
     public function clear(): void
@@ -42,17 +44,34 @@ class CartApi
         return $this->client->post('marketplace/cart/coupon', ['code' => $code], $this->guestHeader())->data;
     }
 
+    public function removeCoupon(): array
+    {
+        return $this->client->delete('marketplace/cart/coupon', [], $this->guestHeader())->data;
+    }
+
     /**
-     * kmarket's own Laravel session ID doubles as the guest cart key (gap D.2)
-     * so an anonymous shopper's cart survives across requests and merges into
-     * their account cart automatically when they log in or register.
+     * The opaque key that identifies an anonymous shopper's cart on the
+     * backend. A random token kept in the session, never the session ID
+     * itself: the session ID is a credential and must not leave this app.
+     * The session survives login (it is regenerated, not cleared), so the
+     * same token is handed to the backend to merge the guest cart into the
+     * account; logout invalidates the session and starts a fresh cart.
      */
+    public static function guestToken(): string
+    {
+        if (! session()->has(self::GUEST_TOKEN_KEY)) {
+            session()->put(self::GUEST_TOKEN_KEY, (string) Str::uuid());
+        }
+
+        return session()->get(self::GUEST_TOKEN_KEY);
+    }
+
     private function guestHeader(): array
     {
         if (Auth::check()) {
             return [];
         }
 
-        return ['X-Guest-Session-Id' => session()->getId() ?: (string) Str::uuid()];
+        return ['X-Guest-Session-Id' => self::guestToken()];
     }
 }

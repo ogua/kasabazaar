@@ -30,7 +30,7 @@
                             src="{{ $vendor['logo_url'] ?? asset('images/product-placeholder.png') }}"
                             alt="{{ $vendor['business_name'] }}"
                             class="w-full h-full object-cover"
-                            onerror="this.onerror=null;this.src='{{ asset('images/product-placeholder.png') }}';"
+                            onerror="if (! this.src.endsWith('/images/product-placeholder.png')) this.src='{{ asset('images/product-placeholder.png') }}';"
                         >
                     </span>
                     <div class="flex-1 min-w-0">

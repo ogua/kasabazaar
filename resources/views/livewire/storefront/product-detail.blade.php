@@ -47,7 +47,7 @@
                                     src="{{ $image['url'] }}"
                                     alt="{{ $product['name'] }}{{ count($images) > 1 ? ' — image '.($index + 1).' of '.count($images) : '' }}"
                                     class="w-full h-full object-cover"
-                                    onerror="this.onerror=null;this.src='{{ asset('images/product-placeholder.png') }}';"
+                                    onerror="if (! this.src.endsWith('/images/product-placeholder.png')) this.src='{{ asset('images/product-placeholder.png') }}';"
                                 >
                             @empty
                                 <img src="{{ asset('images/product-placeholder.png') }}" alt="{{ $product['name'] }}" class="w-full h-full object-cover">
@@ -66,7 +66,7 @@
                                         :class="active === {{ $index }} ? 'border-accent' : 'border-border hover:border-navy-200'"
                                         aria-label="Show image {{ $index + 1 }}"
                                     >
-                                        <img src="{{ $image['url'] }}" alt="" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='{{ asset('images/product-placeholder.png') }}';">
+                                        <img src="{{ $image['url'] }}" alt="" class="w-full h-full object-cover" onerror="if (! this.src.endsWith('/images/product-placeholder.png')) this.src='{{ asset('images/product-placeholder.png') }}';">
                                     </button>
                                 @endforeach
                             </div>
@@ -410,7 +410,7 @@
                     <template x-for="item in items" :key="item.id">
                         <a :href="'/product/' + item.id" class="group block border border-border rounded-lg overflow-hidden hover:border-navy-200">
                             <div class="aspect-square bg-surface-muted overflow-hidden">
-                                <img :src="item.image || '{{ asset('images/product-placeholder.png') }}'" :alt="item.name" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" onerror="this.src='{{ asset('images/product-placeholder.png') }}'">
+                                <img :src="item.image || '{{ asset('images/product-placeholder.png') }}'" :alt="item.name" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" onerror="if (! this.src.endsWith('/images/product-placeholder.png')) this.src='{{ asset('images/product-placeholder.png') }}';">
                             </div>
                             <div class="p-3">
                                 <p x-text="item.name" class="text-sm text-fg line-clamp-2 mb-1 group-hover:text-accent"></p>
