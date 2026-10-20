@@ -483,7 +483,7 @@ Route::prefix('v1')->group(function () {
 
                 Route::get('categories', [Vendor\VendorCategoryController::class, 'index']);
 
-                Route::apiResource('products', Vendor\VendorProductController::class);
+                Route::apiResource('products', Vendor\VendorProductController::class)->names('marketplace.vendor.products');
                 Route::post('products/{id}/images', [Vendor\VendorProductController::class, 'uploadImage']);
                 Route::delete('products/{id}/images/{imageId}', [Vendor\VendorProductController::class, 'deleteImage']);
                 Route::patch('products/{id}/toggle-active', [Vendor\VendorProductController::class, 'toggleActive']);
@@ -529,7 +529,7 @@ Route::prefix('v1')->group(function () {
             Route::patch('categories/{id}/toggle-active', [Admin\EcommerceCategoryController::class, 'toggleActive']);
             Route::post('categories/{id}/image', [Admin\EcommerceCategoryController::class, 'uploadImage']);
 
-            Route::apiResource('products', Admin\AdminEcommerceProductController::class);
+            Route::apiResource('products', Admin\AdminEcommerceProductController::class)->names('marketplace.staff.products');
             Route::post('products/{id}/images', [Admin\AdminEcommerceProductController::class, 'uploadImage']);
             Route::delete('products/{id}/images/{imageId}', [Admin\AdminEcommerceProductController::class, 'deleteImage']);
             Route::patch('products/{id}/toggle-active', [Admin\AdminEcommerceProductController::class, 'toggleActive']);

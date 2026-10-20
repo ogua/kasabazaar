@@ -1333,17 +1333,15 @@ class ShipmentResource extends Resource
                                             ->label('')
                                             ->options(fn (Shipment $record) => static::removableMedia($record)
                                                 ->mapWithKeys(fn (ShipmentMedia $item) => [
-                                                    $item->id => (ShipmentMedia::STAGES[$item->stage] ?? $item->stage)
-                                                        .' · '.(ShipmentMedia::TYPES[$item->type] ?? $item->type)
-                                                        .' · '.($item->caption ?: $item->fileName())
-                                                        .' ('.$item->created_at?->format('d M Y, H:i').')',
+                                                    $item->id => view('filament.components.shipment-media-option', ['item' => $item])->render(),
                                                 ])
                                                 ->all())
-                                            ->columns(1)
+                                            ->allowHtml()
+                                            ->columns(2)
                                             ->bulkToggleable(),
                                     ])
                                     ->visible(fn (Shipment $record) => static::removableMedia($record)->isNotEmpty())
-                                    ->collapsed(),
+                                    ->collapsible(),
 
                                 Forms\Components\Section::make('Upload New Media')
                                     ->schema([

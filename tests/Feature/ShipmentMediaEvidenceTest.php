@@ -297,6 +297,22 @@ class ShipmentMediaEvidenceTest extends TestCase
             ->assertSee('Remove Selected');
     }
 
+    public function test_remove_list_is_open_and_shows_each_upload_to_tick(): void
+    {
+        $this->actingAsStaff(['view_any_shipment', 'view_shipment', 'update_shipment']);
+        $shipment = $this->makeShipment();
+        $photo = $this->storedMedia($shipment, 'wrong-photo.jpg');
+        $photo->update(['caption' => 'Blurry pallet photo']);
+        $this->storedMedia($shipment, 'wrong-form.pdf');
+
+        Livewire::test(ListShipments::class)
+            ->mountTableAction('media_evidence', $shipment)
+            ->assertSee('Blurry pallet photo')
+            ->assertSee('wrong-form.pdf')
+            ->assertSeeHtml('value="'.$photo->id.'"')
+            ->assertSeeHtml('<img src="'.asset('storage/shipment-media/wrong-photo.jpg').'" alt="" class="h-12 w-16');
+    }
+
     public function test_the_gallery_renders_every_media_type(): void
     {
         $shipment = $this->makeShipment();
