@@ -415,6 +415,7 @@ Route::prefix('v1')->group(function () {
             Route::delete('cart/items/{itemId}', [EcommerceCustomer\EcommerceCartController::class, 'removeItem']);
             Route::delete('cart', [EcommerceCustomer\EcommerceCartController::class, 'clear']);
             Route::post('cart/coupon', [EcommerceCustomer\EcommerceCartController::class, 'applyCoupon']);
+            Route::delete('cart/coupon', [EcommerceCustomer\EcommerceCartController::class, 'removeCoupon']);
 
             // Storefront banners (homepage hero slider, promo slots).
             Route::get('banners', [EcommerceCustomer\BannerController::class, 'index']);

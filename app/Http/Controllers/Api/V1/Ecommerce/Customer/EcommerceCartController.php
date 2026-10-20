@@ -52,6 +52,7 @@ class EcommerceCartController extends CustomerBaseController
         ])->save();
 
         $cart->update(['expires_at' => now()->addDays(7)]);
+        $this->refreshCoupon($cart);
 
         return $this->success(new EcommerceCartResource($cart->load(['items.product.images', 'items.vendor'])), 'Item added to cart.');
     }
@@ -65,6 +66,7 @@ class EcommerceCartController extends CustomerBaseController
 
         if ((int) $data['quantity'] === 0) {
             $item->delete();
+            $this->refreshCoupon($cart);
 
             return $this->success(new EcommerceCartResource($cart->load(['items.product.images', 'items.vendor'])), 'Item removed.');
         }
@@ -74,6 +76,7 @@ class EcommerceCartController extends CustomerBaseController
         abort_unless($product->stock >= $data['quantity'], 422, "Only {$product->stock} unit(s) available.");
 
         $item->update(['quantity' => $data['quantity']]);
+        $this->refreshCoupon($cart);
 
         return $this->success(new EcommerceCartResource($cart->load(['items.product.images', 'items.vendor'])), 'Cart updated.');
     }
@@ -83,6 +86,7 @@ class EcommerceCartController extends CustomerBaseController
         $cart = $this->resolveCart($request);
         $item = EcommerceCartItem::where('cart_id', $cart->id)->findOrFail($itemId);
         $item->delete();
+        $this->refreshCoupon($cart);
 
         return $this->success(new EcommerceCartResource($cart->load(['items.product.images', 'items.vendor'])), 'Item removed.');
     }
@@ -118,6 +122,42 @@ class EcommerceCartController extends CustomerBaseController
         ]);
 
         return $this->success(new EcommerceCartResource($cart->fresh(['items.product.images', 'items.vendor'])), 'Coupon applied.');
+    }
+
+    public function removeCoupon(Request $request): JsonResponse
+    {
+        $cart = $this->resolveCart($request);
+        $cart->update(['coupon_code' => null, 'discount_ghs' => 0]);
+
+        return $this->success(new EcommerceCartResource($cart->load(['items.product.images', 'items.vendor'])), 'Coupon removed.');
+    }
+
+    /**
+     * Re-prices an applied coupon against the cart's current subtotal, so the
+     * discount the cart shows is the one checkout will apply. A coupon the
+     * cart no longer qualifies for (e.g. below its minimum spend) is dropped.
+     */
+    private function refreshCoupon(EcommerceCart $cart): void
+    {
+        if (! $cart->coupon_code) {
+            return;
+        }
+
+        $user = auth('sanctum')->user();
+        $subtotal = (float) $cart->items()->get()->sum(fn ($item) => $item->price_ghs * $item->quantity);
+
+        if (! $user || $subtotal <= 0) {
+            $cart->update(['coupon_code' => null, 'discount_ghs' => 0]);
+
+            return;
+        }
+
+        try {
+            $result = $this->couponService->validate($cart->coupon_code, $user, $subtotal);
+            $cart->update(['discount_ghs' => $result['discount_ghs']]);
+        } catch (\RuntimeException) {
+            $cart->update(['coupon_code' => null, 'discount_ghs' => 0]);
+        }
     }
 
     /**

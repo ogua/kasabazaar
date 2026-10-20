@@ -340,6 +340,75 @@ class MultiVendorCheckoutTest extends TestCase
         $this->assertEqualsWithDelta(10.00, (float) $checkout->json('data.discount_ghs'), 0.01);
     }
 
+    /**
+     * @return array{0: User, 1: EcommerceCartItem}
+     */
+    private function cartWithCoupon(array $couponAttributes = []): array
+    {
+        $customer = $this->makeCustomer();
+        $vendor = $this->makeVendor('Coupon Vendor');
+        $product = $this->makeProduct($vendor, 100.00);
+        $code = 'CART'.strtoupper(uniqid());
+
+        Coupon::create(array_merge([
+            'code' => $code,
+            'type' => 'percentage',
+            'value' => 10,
+            'is_active' => true,
+            'created_by' => $vendor->user_id,
+        ], $couponAttributes));
+
+        $cart = EcommerceCart::create(['user_id' => $customer->id]);
+        $item = EcommerceCartItem::create([
+            'cart_id' => $cart->id,
+            'ecommerce_product_id' => $product->id,
+            'vendor_id' => $vendor->id,
+            'quantity' => 2,
+            'price_ghs' => 100.00,
+        ]);
+
+        $this->withHeaders($this->authHeaders($customer))
+            ->postJson('/api/v1/marketplace/cart/coupon', ['code' => $code])
+            ->assertOk();
+
+        return [$customer, $item];
+    }
+
+    public function test_changing_quantity_reprices_the_applied_coupon(): void
+    {
+        [$customer, $item] = $this->cartWithCoupon();
+
+        $response = $this->withHeaders($this->authHeaders($customer))
+            ->putJson("/api/v1/marketplace/cart/items/{$item->id}", ['quantity' => 3]);
+
+        $response->assertOk();
+        $this->assertEqualsWithDelta(30.00, (float) $response->json('data.discount_ghs'), 0.01);
+    }
+
+    public function test_coupon_is_dropped_when_the_cart_falls_below_its_minimum_spend(): void
+    {
+        [$customer, $item] = $this->cartWithCoupon(['min_order_amount_ghs' => 150]);
+
+        $response = $this->withHeaders($this->authHeaders($customer))
+            ->putJson("/api/v1/marketplace/cart/items/{$item->id}", ['quantity' => 1]);
+
+        $response->assertOk();
+        $this->assertNull($response->json('data.coupon_code'));
+        $this->assertEqualsWithDelta(0.00, (float) $response->json('data.discount_ghs'), 0.01);
+    }
+
+    public function test_customer_can_remove_an_applied_coupon(): void
+    {
+        [$customer] = $this->cartWithCoupon();
+
+        $response = $this->withHeaders($this->authHeaders($customer))
+            ->deleteJson('/api/v1/marketplace/cart/coupon');
+
+        $response->assertOk();
+        $this->assertNull($response->json('data.coupon_code'));
+        $this->assertEqualsWithDelta(0.00, (float) $response->json('data.discount_ghs'), 0.01);
+    }
+
     public function test_guest_cart_merges_into_account_cart_on_login(): void
     {
         $vendor = $this->makeVendor('Guest Cart Vendor');
