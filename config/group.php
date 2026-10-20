@@ -59,11 +59,12 @@ return [
         'tracking_url' => rtrim(env('GROUP_SITE_URL') ?: 'https://kasarose.com', '/').'/tracking',
     ],
 
-    // Retired domains still pointed at this app. Page visits 301 to the same path on `parent.url`
-    // (App\Http\Middleware\RedirectLegacyDomains); the API is still served on them.
+    // Retired domains still pointed at this app. Page visits 301 to the same path on
+    // `legacy_redirect_url` (App\Http\Middleware\RedirectLegacyDomains); the API is still served on them.
     'legacy_domains' => array_values(array_filter(array_map('trim', explode(',',
         env('LEGACY_DOMAINS') ?: 'rddshipping.com,www.rddshipping.com'
     )))),
+    'legacy_redirect_url' => env('LEGACY_REDIRECT_URL') ?: 'https://kasarose.com',
 
     /*
     |--------------------------------------------------------------------------

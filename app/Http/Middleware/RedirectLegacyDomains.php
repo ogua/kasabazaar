@@ -8,7 +8,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Sends page visits on a retired domain (rddshipping.com) to the same path and query string on
- * the parent's current site, so old links, printed labels and search results keep working.
+ * kasarose.com, so old links, printed labels and search results keep working.
  *
  * Only GET/HEAD page requests move: the API and webhooks are still served on the old host so
  * older mobile builds and payment callbacks registered against it are not broken by a redirect.
@@ -21,7 +21,7 @@ class RedirectLegacyDomains
             return $next($request);
         }
 
-        $target = rtrim((string) config('group.parent.url'), '/').$request->getRequestUri();
+        $target = rtrim((string) config('group.legacy_redirect_url'), '/').$request->getRequestUri();
 
         return redirect()->away($target, 301);
     }

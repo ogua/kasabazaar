@@ -11,9 +11,18 @@ class LegacyDomainRedirectTest extends TestCase
         parent::setUp();
 
         config([
-            'group.parent.url' => 'https://kasarose.com',
             'group.legacy_domains' => ['rddshipping.com', 'www.rddshipping.com'],
+            'group.legacy_redirect_url' => 'https://kasarose.com',
         ]);
+    }
+
+    public function test_redirect_ignores_group_site_url(): void
+    {
+        config(['group.parent.url' => 'https://kasabazaar.com']);
+
+        $this->get('http://rddshipping.com/tracking.php?ref=ABC123')
+            ->assertStatus(301)
+            ->assertRedirect('https://kasarose.com/tracking.php?ref=ABC123');
     }
 
     public function test_old_domain_page_redirects_to_same_path_and_query(): void
