@@ -6,7 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **KASAROSE MARKET** (this repo, directory name `kmarket`) is the customer-facing multi-vendor ecommerce marketplace of
 the **KASAROSE LOGISTICS group**. The parent company is **KASAROSE LOGISTICS**, whose website is **kasarose.com**
-(repo `Projects/website/KasaRose Website`). This is a Laravel 12 + Livewire + Filament storefront that gets its
+(served since October 2026 by the back-office Laravel app, repo `Projects/kasabazaar`, which also serves the commerce
+API this storefront uses). This is a Laravel 12 + Livewire + Filament storefront that gets its
 products, carts, orders and vendors from a backend commerce API **strictly over REST** (`App\Services\Kasabazaar\*`,
 base URL in `KASABAZAAR_API_URL`) — never over a shared database connection. Vendors self-serve through the `vendor`
 Filament panel at `/vendor-portal`; there is no local product/order schema to query.
@@ -40,14 +41,14 @@ legal pages:
 
 | Company | What it is | Repo | Stack |
 |---|---|---|---|
-| **KASAROSE LOGISTICS** (parent) | Group site — freight, real estate, property management (kasarose.com) | `C:\xampp\htdocs\Projects\website\KasaRose Website` | Plain PHP + Bootstrap |
-| (back office) | KASAROSE LOGISTICS' Laravel app: admin, portals, the commerce API this storefront uses | `C:\xampp\htdocs\Projects\kasabazaar` | Laravel 11 + Filament 3 |
+| **KASAROSE LOGISTICS** (parent) | kasarose.com — public site (freight, real estate, property management), admin, portals, and the commerce API this storefront uses | `C:\xampp\htdocs\Projects\kasabazaar` | Laravel 11 + Filament 3 |
 | **KASAROSE MARKET** | Ecommerce marketplace | this repo | Laravel 12 + Livewire + Filament 4 |
 | Neoride Africa | Tricycle mobility, last-mile transport | `C:\xampp\htdocs\Projects\neoride` | Plain PHP template |
 
-`Projects/website/kasabazar-website` is the pre-rename copy of the parent's site, being migrated into
-`KasaRose Website` piece by piece; it is not a separate company. The back-office repo's directory is still named
-`kasabazaar` — a folder name, not a company.
+The parent's public site used to be the plain-PHP `Projects/website/KasaRose Website` repo; in October 2026 it was
+ported into the Laravel app (`resources/views/site`) and that repo was retired, as was the rddshipping.com domain.
+`Projects/website/kasabazar-website` is an older pre-rename copy; neither is a separate company. The Laravel repo's
+directory is still named `kasabazaar` — a folder name, not a company.
 
 **Every company roster lives in exactly one file per repo. Never hardcode a sister company's name or URL in a
 template — read it from the roster.**
@@ -55,8 +56,7 @@ template — read it from the roster.**
 | Repo | Roster file |
 |---|---|
 | kmarket (here) | [config/group.php](config/group.php) |
-| KasaRose Website | `includes/config.php` (`$group_companies`, `SITE_URL_*`) |
-| kasabazaar (back office) | `config/group.php` |
+| kasabazaar (KASAROSE LOGISTICS — kasarose.com and back office) | `config/group.php` |
 | neoride | `parts/group_companies.php` |
 
 ### The rule
