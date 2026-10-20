@@ -64,7 +64,7 @@ return [
     'legacy_domains' => array_values(array_filter(array_map('trim', explode(',',
         env('LEGACY_DOMAINS') ?: 'rddshipping.com,www.rddshipping.com'
     )))),
-    'legacy_redirect_url' => env('LEGACY_REDIRECT_URL') ?: 'https://kasarose.com',
+    'legacy_redirect_url' => 'https://kasarose.com',
 
     /*
     |--------------------------------------------------------------------------
