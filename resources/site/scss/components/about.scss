@@ -1,0 +1,332 @@
+.about-m2 {
+   .ab-stat2 {
+      max-width: 190px;
+      text-align: center;
+      padding: 20px;
+      line-height: 1;
+      margin-left: 15px;
+   }
+
+   img {
+      border-radius: 30px;
+      clip-path: polygon(67% 0, 100% 31%, 100% 100%, 0 100%, 0 0);
+      position: absolute;
+      top: 260px;
+      right: 0;
+   }
+
+
+}
+
+.about-media {
+   margin-right: 30px;
+
+   .display-1 {
+      color: var(--white);
+      line-height: 1;
+      font-weight: 800;
+   }
+
+   span.unit {
+      font-size: 32px;
+   }
+
+   span,
+   p {
+      color: var(--white);
+   }
+}
+
+.about-m1 {
+   margin-bottom: 35px;
+
+   .ab-stat {
+      position: absolute;
+      box-shadow: 0 5px 27px 0 rgba(39, 39, 39, .12);
+      width: 260px;
+      right: 0;
+      top: 40px;
+      text-align: center;
+      padding: 25px 20px 15px;
+      @extend .moveYS;
+   }
+
+
+}
+
+.about-content {
+   padding-left: 20px;
+
+   @include media-breakpoint-down(lg) {
+      padding: 80px 0 0
+   }
+
+   .about-feat {
+      margin: 30px 0;
+      padding-bottom: 30px;
+
+      h4 {
+         font-size: 20px;
+      }
+   }
+
+   .ab-item {
+      max-width: 250px;
+
+      @include media-breakpoint-down(sm) {
+         margin-bottom: 20px;
+      }
+   }
+
+   .quick-call {
+      @include media-breakpoint-down(sm) {
+         margin-top: 20px;
+      }
+   }
+}
+
+.about-sec2 {
+   padding-top: 120px;
+   position: relative;
+
+   .about-media-box {
+      @extend .overly;
+
+      &::before {
+         height: 280px;
+         width: 10px;
+         background-color: var(--dark);
+         left: -20px;
+         @include position('vertical');
+      }
+
+      .about-sm {
+         position: absolute;
+         right: -5px;
+         top: -85px;
+
+         img {
+            @include border-radius(50%);
+            border: 10px solid var(--white);
+         }
+      }
+   }
+
+   ul.check {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      margin: 30px 0;
+
+      li {
+         flex: 0 0 45%;
+      }
+   }
+
+
+   .about-footer {
+      padding: 35px;
+
+      @include media-breakpoint-up(xl) {
+
+         margin-left: -168px;
+      }
+
+      z-index: 2;
+      position: relative;
+      border-right: 5px solid var(--primary);
+
+      h5 {
+         font-weight: 700;
+      }
+
+      p {
+         margin: 0;
+      }
+   }
+}
+
+.experien-stat {
+   background: var(--primary);
+   position: absolute;
+   padding: 14px 40px;
+   border-radius: 10px 10px 10px 0;
+   bottom: 40px;
+   left: -29px;
+   @extend .h5;
+
+   &::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 52px;
+      width: 40px;
+      height: 34px;
+      background: linear-gradient(163deg, #e4252c 0%, #5a0306 100%);
+      -webkit-clip-path: polygon(100% 0, 0 0, 100% 100%);
+      clip-path: polygon(100% 0, 0 0, 100% 100%);
+   }
+}
+
+.about-sec3 {
+   @extend .overly;
+   @include media-breakpoint-down(md) {
+      overflow: hidden;
+   }
+   &::before {
+      background: var(--light);
+      @include opacity(.85);
+   }
+
+   .about-media3 {
+      max-width: 485px;
+      @include media-breakpoint-down(lg) {
+         margin: 0 auto;
+      }
+      .ab-sm-ft {
+         margin-left: -150px;
+         margin-top: -83px;
+         @include media-breakpoint-down(sm) {
+            margin-left: 0;
+         }
+         img:first-child {
+            z-index: 1;
+         }
+
+         img:last-child {
+            margin-top: 50px;
+         }
+      }
+
+      .feat-img {
+         text-align: right;
+      }
+
+      .ab-stat2 {
+         position: absolute;
+         @include position('center');
+         top: 62%;
+         left: 58%;
+         z-index: 2;
+      }
+
+      .experien-stat {
+         bottom: auto;
+         left: 10px;
+         top: 40px;
+      }
+   }
+   .tab-img,.btn-primary{
+      @include media-breakpoint-down(sm) {
+        margin-bottom: 20px;
+      }
+   }
+}
+
+.about-content3 {
+   padding-left: 60px;
+
+   @include media-breakpoint-down(xl) {
+      padding: 50px 0 0;
+   }
+
+   .tab-content {
+      padding-top: 30px;
+   }
+}
+.recent-work.sec-padding {
+   @include media-breakpoint-down(sm) {
+     padding: 70px 15px;
+   }
+}
+.about-details {
+   .about-thumb{
+      img{
+         clip-path: polygon(83% 0, 100% 27%, 100% 100%, 0 100%, 0 0);
+      }
+      h2{
+         margin: 50px 0 30px;
+         font-size: 45px;
+      }
+   }
+   .abs-info{
+      mask-image: url('../images/ab-mask.png');
+      padding: 40px 30px;
+      border-radius: 30px;
+      background-color: var(--light);
+      mask-repeat: no-repeat;
+      max-width: 285px;
+      .d-flex{
+         margin-bottom: 20px;
+         padding-bottom: 20px;
+      }
+      h3{
+         margin-bottom: 50px;
+       
+      }
+      .display-1{
+         font-size: 64px;
+      }
+      p{
+         margin-bottom: 0;
+      }
+        @include media-breakpoint-only(lg) {
+         padding: 30px 20px;
+            h3{
+               margin-bottom: 15px;
+            }
+            .display-1 {
+               font-size: 50px;
+            }
+         }
+   }
+}
+.abs-info-wrap > div:nth-child(2) .abs-info{
+   background-color: var(--primary);
+   h3,.display-1,p{
+      color: var(--white);
+   }
+}
+.abs-info-wrap > div:nth-child(3) .abs-info{
+   background-color: var(--dark);
+    h3,.display-1{
+      color: var(--white);
+   }
+   p{
+      color: rgba(var(--white-rgb), .7);
+   }
+}
+// The three company blocks on our-companies.php. Each has a media column and a copy
+// column; before this the two photo blocks ran at their images' own aspect ratios and
+// the KROSEMARKET block was a logo in a padded white box, so all three were different
+// heights. One ratio for all three: photos crop to fill, the logo sits inside it.
+.company-media {
+   aspect-ratio: 4 / 3;
+   overflow: hidden;
+
+   img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+   }
+
+   &.company-media-logo {
+      background-color: var(--white);
+      border: 1px solid var(--theme-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 60px;
+
+      img {
+         object-fit: contain;
+         height: auto;
+         max-height: 100%;
+      }
+
+      @include media-breakpoint-down(md) {
+         padding: 40px;
+      }
+   }
+}

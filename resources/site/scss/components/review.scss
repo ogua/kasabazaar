@@ -1,0 +1,206 @@
+.review-wrapper {
+   max-width: 770px;
+
+   @include media-breakpoint-down(xxl) {
+      max-width: 685px;
+   }
+
+   margin-left: auto;
+   margin-right: 0;
+
+   h2 {
+      border-bottom: 1px solid var(--theme-border);
+      margin-bottom: 30px;
+      padding-bottom: 30px
+   }
+
+   .swiper-pagination {
+      bottom: 0;
+      max-width: 350px;
+      left: auto;
+      right: 0;
+
+   }
+
+   .review-slider {
+      padding-bottom: 100px;
+
+      .swiper-button-next,
+      .swiper-button-prev {
+         top: 83%;
+         z-index: 4;
+      }
+
+      .swiper-button-next {
+         left: 0px;
+      }
+
+      .swiper-button-prev {
+         left: 90px;
+      }
+
+      @include media-breakpoint-down(sm) {
+         padding-bottom: 140px;
+
+         .swiper-button-next,
+         .swiper-button-prev {
+            top: 73%;
+         }
+      }
+
+      .swiper-pagination {
+
+         &::after {
+            height: 1px;
+            width: 270px;
+            background: var(--primary);
+            z-index: 1;
+            content: '';
+            position: absolute;
+            @include position('vertical');
+            left: -70%;
+         }
+      }
+
+      .swiper-pagination-bullet {
+         width: 71px;
+         height: 77px;
+         background-size: contain;
+         background: transparent;
+         background-position: center;
+         background-repeat: no-repeat;
+         border-radius: 0;
+         transition: 0.3s;
+         opacity: .5;
+         margin: 0 5px !important;
+         mask-image: url('../images/rev-sh.png');
+         mask-size: contain;
+         mask-repeat: no-repeat;
+         background-color: var(--primary);
+
+         &::before {
+            display: none;
+         }
+
+      }
+
+      /* Individual images */
+      .custom-pagination .swiper-pagination-bullet:nth-child(1) {
+         background-image: url("../images/rev1.png");
+      }
+
+      .custom-pagination .swiper-pagination-bullet:nth-child(2) {
+         background-image: url("../images/rev2.png");
+      }
+
+      .custom-pagination .swiper-pagination-bullet:nth-child(3) {
+         background-image: url("../images/rev3.png");
+      }
+
+      .swiper-pagination span.swiper-pagination-bullet-active {
+         background-color: transparent;
+         opacity: 1;
+      }
+
+
+   }
+
+
+
+
+   .review-card {
+      padding-top: 40px;
+      @extend .overly;
+
+      &::before {
+         background: url('../images/icons/quote.png')no-repeat top left;
+      }
+
+      p {
+         font-size: 20px;
+         font-weight: 600;
+         font-style: italic;
+         line-height: 35px;
+      }
+   }
+}
+
+.review-sec {
+   .review-thumb {
+      max-width: 354px;
+      border-radius: 0 50px 500px 500px;
+      @extend .overly;
+
+      &::before {
+         background: transparent;
+         border: 3px solid var(--primary);
+         border-radius: 0 50px 500px 500px;
+         top: 40px;
+         left: -40px;
+         z-index: 1;
+      }
+
+      @include media-breakpoint-down(lg) {
+         margin: 0 auto 60px 50px;
+      }
+   }
+}
+
+.review-entry {
+   .rev-content {
+      padding: 40px 40px 30px 40px;
+      background: url('../images/icons/quote-bg.png')no-repeat center center;
+      @extend .overly;
+
+      &::before {
+         background: url('../images/triangle.png')no-repeat;
+         top: auto;
+         bottom: -50px;
+         width: 50px;
+         height: 50px;
+         left: 60px;
+      }
+
+      .rev-icon {
+         right: 0;
+         bottom: 0;
+         border-radius: 50px 50px 20px 50px;
+         width: 74px;
+         height: 74px;
+      }
+
+      p {
+         font-weight: 500;
+         font-style: italic;
+         color: var(--headings-color);
+      }
+   }
+
+   .rev-author {
+      margin: 35px 0 0 40px;
+   }
+
+   .author-thumb {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 1px dashed var(--primary);
+      padding: 5px;
+
+      img {
+         width: 100%;
+         height: 100%;
+         object-fit: cover;
+      }
+   }
+
+   .ratings {
+      margin-top: 25px;
+
+      a i {
+         color: var(--primary);
+         font-size: 12px;
+      }
+   }
+}

@@ -7,51 +7,82 @@ use App\Http\Controllers\InvestorReportController;
 use App\Http\Controllers\PublicShipmentController;
 use App\Http\Controllers\PublicShipmentRequestController;
 use App\Http\Controllers\ShippingController;
-use App\Http\Controllers\WebController;
+use App\Http\Controllers\WebsiteController;
+use App\Http\Controllers\WebsiteEnquiryController;
 use App\Livewire\AgreementForm;
 use App\Livewire\CustomerFeedaback;
 use App\Livewire\DisclaimerForm;
 use App\Livewire\PaymentsuccessfulPage;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    // return view('welcome');
-    return view('web.home');
-})
-    ->name('home-page');
+/*
+|--------------------------------------------------------------------------
+| Public website (kasarose.com)
+|--------------------------------------------------------------------------
+|
+| The KASAROSE LOGISTICS site, ported from the plain-PHP "KasaRose Website"
+| repo in October 2026 (views in resources/views/site). The route names
+| predate the port and are used by emails, PDFs and the shipment portal.
+|
+*/
 
-Route::get('/about-us', [WebController::class, 'aboutUs'])
-    ->name('about-us');
+Route::view('/', 'site.index')->name('home-page');
+Route::view('/about-us', 'site.about')->name('about-us');
+Route::view('/our-companies', 'site.our-companies')->name('our-companies');
+Route::view('/our-services', 'site.services')->name('our-services');
+Route::view('/quote', 'site.quote')->name('quote');
+Route::get('/tracking', [WebsiteController::class, 'tracking'])->name('our-tracking');
+Route::view('/contact-us', 'site.contact')->name('contact-us');
+Route::view('/feedback', 'site.feedback')->name('our-feeback');
+Route::get('/news', [WebsiteController::class, 'news'])->name('our-blog');
+Route::get('/news/{slug}', [WebsiteController::class, 'newsDetail'])->name('blog-details');
+Route::view('/our-projects', 'site.projects')->name('our-projects');
+Route::view('/faq', 'site.faq')->name('faq');
+Route::view('/privacy', 'site.privacy-policy')->name('privacy-policy');
+Route::view('/terms', 'site.terms')->name('terms');
+Route::view('/delivery-policy', 'site.delivery-policy')->name('delivery-policy');
+Route::view('/sms-terms', 'site.sms-terms')->name('sms-terms');
+Route::get('/sitemap.xml', [WebsiteController::class, 'sitemap'])->name('sitemap');
 
-Route::get('/our-services', [WebController::class, 'ourservices'])
-    ->name('our-services');
+Route::post('/enquiries', [WebsiteEnquiryController::class, 'store'])
+    ->middleware('throttle:5,1')
+    ->name('website.enquiries.store');
 
-Route::get('/our-projects', [WebController::class, 'ourprojects'])
-    ->name('our-projects');
+// The plain-PHP site's URLs, which printed invoices, receipts, emails, the carrier SMS
+// registration and search engines still carry. Each 301s to its route, query string kept
+// (tracking.php?ref=X -> /tracking?ref=X). /index.php itself is the front controller, so
+// /index.php and /index.php/about-us already serve the real pages (canonical tags dedupe them).
+foreach ([
+    'about.php' => 'about-us',
+    'our-companies.php' => 'our-companies',
+    'services.php' => 'our-services',
+    'quote.php' => 'quote',
+    'tracking.php' => 'our-tracking',
+    'contact.php' => 'contact-us',
+    'feedback.php' => 'our-feeback',
+    'news.php' => 'our-blog',
+    'projects.php' => 'our-projects',
+    'faq.php' => 'faq',
+    'privacy-policy.php' => 'privacy-policy',
+    'terms.php' => 'terms',
+    'delivery-policy.php' => 'delivery-policy',
+    'sms-terms.php' => 'sms-terms',
+] as $legacyPath => $routeName) {
+    Route::get($legacyPath, fn (Request $request) => redirect()->to(
+        route($routeName).($request->getQueryString() ? '?'.$request->getQueryString() : ''),
+        301
+    ));
+}
 
-Route::get('/tracking', [WebController::class, 'tracking'])
-    ->name('our-tracking');
+Route::get('news-detail.php', fn (Request $request) => filled($request->query('slug'))
+    ? redirect()->route('blog-details', ['slug' => $request->query('slug')], 301)
+    : redirect()->route('our-blog', [], 301));
 
-Route::get('/feedback', [WebController::class, 'feeback'])
-    ->name('our-feeback');
-
-Route::get('/contact-us', [WebController::class, 'contactus'])
-    ->name('contact-us');
-
-Route::get('/news', [WebController::class, 'ourblog'])
-    ->name('our-blog');
-
-Route::get('/news/{slug}', [WebController::class, 'blogDetails'])
-    ->name('blog-details');
-
-Route::get('/privacy', [WebController::class, 'privacyPolicy'])
-    ->name('privacy-policy');
-
-Route::get('/terms', [WebController::class, 'terms'])
-    ->name('terms');
-
-// Route::get('/sitemap',[WebController::class,'sitemap'])
-// ->name('sitemap');
+// The seven service pages consolidated into one in September 2026.
+foreach (array_keys(config('website.services')) as $serviceSlug) {
+    Route::get("{$serviceSlug}.php", fn () => redirect()->to(route('our-services').'#'.$serviceSlug, 301));
+}
 
 Route::get('/packing-slip/{id}', [ShippingController::class, 'packingslip'])
     ->name('packing-slip');

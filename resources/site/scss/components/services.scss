@@ -1,0 +1,321 @@
+.service-footer {
+   padding-top: 30px;
+   margin-top: 25px;
+
+   span {
+      background-color: var(--dark);
+      color: var(--white);
+   }
+}
+
+.service-card {
+   padding: 30px;
+   mask-image: url('../images/s-mask.png');
+   mask-repeat: no-repeat;
+
+   .service-thumb {
+      margin: 30px 0 25px;
+      mask-image: url('../images/serv-shape.png');
+      mask-size: contain;
+      mask-repeat: no-repeat;
+   }
+
+   .service-footer {
+      span {
+         background-color: var(--shade);
+         color: var(--dark);
+         width: 40px;
+         height: 40px;
+         @include transition(all, .4s, ease);
+
+         i {
+            @include transition(all, .4s, ease);
+         }
+      }
+   }
+
+   &:hover {
+      .service-footer span {
+         background-color: var(--primary);
+         color: var(--white);
+      }
+
+      h3 a {
+         color: var(--primary);
+      }
+   }
+}
+
+.services-carousel {
+   position: relative;
+
+   @include media-breakpoint-up(xxl) {
+      .swiper-slide {
+         width: 388px !important;
+      }
+   }
+}
+
+.services-sec {
+   z-index: 1;
+
+   .ct-pagination {
+      border: 1px solid var(--theme-border);
+      @include border-radius(20px);
+
+      @include media-breakpoint-down(sm) {
+         margin-top: 20px;
+      }
+
+      .swiper-pagination {
+         position: relative;
+         padding: 12px;
+         bottom: 0;
+      }
+   }
+
+}
+
+
+.services-sec2 .serv-header,
+.services-sec2 .container {
+   @include media-breakpoint-up(xl) {
+      max-width: calc(100% - 100px);
+   }
+
+   margin-left: auto;
+   margin-right: 0;
+
+   @include media-breakpoint-down(lg) {
+      margin-bottom: 40px;
+   }
+}
+
+.service-slider2 {
+
+   .swiper-slide {
+      @include media-breakpoint-up(sm) {
+         width: 388px !important;
+      }
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+   }
+
+}
+
+.service-card2 {
+   padding: 30px;
+
+   .serv-thumb {
+      clip-path: polygon(100% 0, 100% 67%, 91% 100%, 0 100%, 0 0);
+      @include border-radius(16px);
+      overflow: hidden;
+      @extend .overly;
+
+      &::before {
+         background-color: var(--dark);
+         @include opacity(.4);
+         @include transition(all, .4s, ease);
+
+      }
+
+      .icon {
+         width: 100px;
+         height: 100px;
+         background-color: var(--dark);
+         @include transition(all, .4s, ease);
+      }
+   }
+
+   h3 {
+      margin: 55px 0 20px;
+      font-weight: 700;
+   }
+
+   .service-footer {
+      margin-top: 35px;
+      padding-top: 35px;
+
+      span {
+         width: 40px;
+         height: 40px;
+         @include transition(all, .4s, ease);
+      }
+   }
+
+   &:hover {
+      .serv-thumb::before {
+         @include opacity(0);
+      }
+
+      h3 a {
+         color: var(--primary);
+      }
+
+      .icon {
+         background-color: var(--primary);
+      }
+
+      .service-footer span {
+         background-color: var(--primary);
+         color: var(--white);
+      }
+   }
+
+}
+
+.service-entry {
+   position: relative;
+   height: 440px;
+
+   @include media-breakpoint-down(xl) {
+      margin-bottom: 90px;
+   }
+
+   .serv-txt {
+      position: absolute;
+      bottom: 0;
+      height: 100px;
+      padding: 20px;
+      height: 115px;
+      width: calc(100% - 15px);
+      transition: height .5s ease;
+      @extend .overly;
+
+      &::before {
+         top: 50px;
+         background-color: var(--white);
+         border-radius: 20px;
+         box-shadow: 0 6px 40px 0 rgba(0, 0, 0, 0.07);
+         transition: height .5s ease;
+      }
+
+
+      .serv-heading {
+         margin: 20px 0 10px;
+         transform: translateY(-10px);
+         will-change: transform;
+         transition: transform 0.4s;
+      }
+
+      .serv-title {
+         padding-top: 15px;
+      }
+
+      p {
+         margin-bottom: 0;
+         font-weight: 400;
+         line-height: 28px;
+         transform: translateY(60%);
+         opacity: 0;
+         will-change: transform;
+         transition: transform 0.2s ease, opacity 0.1s ease;
+      }
+   }
+
+   &:hover .serv-txt {
+      height: 228px;
+
+      &::before {
+         height: 100%;
+      }
+
+      .serv-heading {
+         transform: translateY(0);
+
+         h3 a,
+         i {
+            color: var(--primary);
+         }
+      }
+
+      p {
+         opacity: 1;
+         transform: translateY(0);
+      }
+
+
+   }
+}
+
+.services-3 {
+   @include media-breakpoint-down(xl) {
+      padding-bottom: 30px;
+   }
+}
+
+.single-service {
+   .display-3 {
+      font-size: 30px;
+      margin: 35px 0 30px;
+   }
+
+   p {
+      margin-bottom: 20px;
+   }
+
+
+   .gallery-single {
+      img {
+         // The pair used to be two identically-sized stock frames, so nothing had
+         // to reconcile their proportions. Now that each service page shows two of
+         // our own photographs, pin them to one ratio and crop to fill, or the two
+         // sit at different heights beside each other.
+         aspect-ratio: 16 / 10;
+         object-fit: cover;
+
+         @include media-breakpoint-up(md) {
+            flex: 1 1 0;
+            min-width: 0;
+            max-width: 50%;
+         }
+
+         @include media-breakpoint-down(md) {
+            width: 100%;
+            margin-bottom: 20px;
+         }
+      }
+   }
+}
+
+.case-2 {
+   padding-bottom: 80px;
+
+   .service-entry {
+      margin-bottom: 80px;
+   }
+}
+
+.list-single ul {
+   @include media-breakpoint-up(sm) {
+      flex: 0 0 50%;
+   }
+}
+
+.services-sidebar {
+   @include media-breakpoint-up(lg) {
+      padding-right: 25px;
+   }
+
+   .widget {
+      background: var(--white);
+      padding: 40px 30px;
+   }
+
+   .service-nav li.active {
+      background-color: var(--primary);
+
+      a,
+      span {
+         color: var(--white);
+      }
+   }
+
+   .widget.broucher-widget {
+      a {
+         margin-bottom: 20px;
+      }
+   }
+}

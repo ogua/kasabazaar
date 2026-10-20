@@ -1,0 +1,45 @@
+/* 1. CSS Variables for colors, typography, etc. */
+:root {
+  /* Typography */
+  --font-family-base: "DM Sans", sans-serif;
+  --font-family-headings: "Rethink Sans", sans-serif;
+  --font-family-btn: "DM Sans", sans-serif;
+  --bs-border-color: #D8DDE1;
+  --font-size-base: 16px;
+  --font-weight-base: 400;
+  --line-height-base: 26px;
+  /*Color*/
+  --primary: #e4252c;
+  --primary-rgb: 228, 37, 44;
+  --white: #fff;
+  --white-rgb: 255, 255, 255;
+  --shade: #ECF0F1;
+  --success: #23e219;
+  --body-color: #535353;
+  --theme-border: #D8DDE1;
+  --black: #000;
+  --dark-rgb: 5, 34, 64;
+  --dark: #052240;
+  --headings-color: #052240;
+  --blue: #052240;
+  --light: #F7F7F7;
+  --light-alt: #FFF9F9;
+  --mute: #788094;
+  --mute-alt: #b0b2b8;
+  --danger: #dc3545;
+}
+
+$theme-colors: (
+  "primary": #E4252C,
+  "secondary": #052240,
+  "tertiary": #727275,
+  "success": #23e219,
+  "danger": #dc3545,
+  "warning": #ffc107,
+  "info": #fff,
+  "light": #F7F7F7,
+  "dark": #052240,
+  "mute": #788094,
+  "shade": #ECF0F1,
+  "body": #535353
+);

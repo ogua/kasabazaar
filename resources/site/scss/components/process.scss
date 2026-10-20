@@ -1,0 +1,188 @@
+.process-card {
+   @include media-breakpoint-up(md) {
+      max-width: 278px;
+   }
+   @include media-breakpoint-down(md) {
+      padding: 20px;
+   }
+
+   @include media-breakpoint-only(md) {
+      max-width: 210px;
+   }
+
+   @extend .overly;
+
+   &::before {
+      background: url('../images/step-sh.png') no-repeat;
+      background-position: center left;
+      left: 100%;
+   }
+
+   &::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 30px;
+      top: 14px;
+      background: url('../images/plain.png')no-repeat right center;
+      @include position('horizontal');
+      left: 78%;
+   }
+
+   .count {
+      box-shadow: 0 4px 30px 0 rgba(0, 0, 0, 0.08);
+      font-size: 20px;
+      font-weight: 500;
+      @include transition();
+
+   }
+   h3{
+      @include transition();
+   }
+
+   .process-thumb {
+      width: 170px;
+      height: 170px;
+      margin: 40px auto 25px;
+      @extend .overly;
+
+      &::before {
+         background: url('../images/process-s1.png');
+      }
+   }
+   &:hover {
+      .count{
+         background-color: var(--primary) !important;
+         color: var(--white)
+      }
+      h3{
+         color: var(--primary)
+      }
+   }
+}
+
+.process-wrapper {
+   @extend .overly;
+
+   &::before {
+      background: url('../images/process-line.png')no-repeat top;
+      top: 30px;
+         @include media-breakpoint-down(md) {
+      display: none;
+   }
+   }
+
+   >div {
+      &:nth-child(2) {
+         .process-thumb {
+            &::before {
+               background: url('../images/process-s2.png');
+            }
+         }
+      }
+
+      &:nth-child(3) {
+
+         &::before,
+         &::after {
+            display: none;
+         }
+
+         .process-thumb {
+            &::before {
+               background: url('../images/process-s3.png');
+            }
+         }
+      }
+   }
+}
+
+.process-entry {
+   max-width: 330px;
+   @extend .overly;
+
+   &::before {
+      background: url('../images/pros-sh1.png')no-repeat top right;
+      left: 48%;
+      top: 15%;
+   }
+
+   span.icon {
+      width: 130px;
+      height: 130px;
+      background-color: var(--light-alt);
+      position: relative;
+
+      &::after {
+         height: 150px;
+         width: 150px;
+         z-index: -1;
+         background: url('../images/process-mask.png')no-repeat;
+         border-radius: 50%;
+         content: "";
+         position: absolute;
+         @include position('center');
+      }
+
+      .count {
+         width: 40px;
+         height: 40px;
+         background: var(--primary);
+         display: flex;
+         justify-content: center;
+         align-items: center;
+         @include border-radius(50%);
+         color: var(--white);
+         position: absolute;
+         top: -20px;
+         @include position('horizontal');
+         border: 2px solid var(--white);
+      }
+   }
+
+   h3 {
+      margin: 35px 0 20px;
+      font-size: 30px;
+      @include media-breakpoint-only(md) {
+         font-size: 22px;
+      }
+   }
+     @include media-breakpoint-down(md) {
+      margin:0 auto 50px;
+      &::before {
+         display: none;
+      }
+   }
+}
+
+.process-sec {
+   @include media-breakpoint-down(lg) {
+      .abs-img {
+         display: none;
+      }
+   }
+}
+
+.process-sec3 .row>div:nth-child(2) .process-entry {
+   margin: 0 auto;
+     @include media-breakpoint-down(md) {
+      margin:0 auto 50px;
+      
+   }
+   &::before {
+      background: url('../images/pros-sh2.png')no-repeat top right;
+   }
+ 
+}
+
+.process-sec3 .row>div:nth-child(3) .process-entry {
+   margin-left: auto;
+   margin-right: 0;
+     @include media-breakpoint-down(md) {
+      margin:0 auto 50px;
+      
+   }
+   &::before {
+      display: none;
+   }
+}

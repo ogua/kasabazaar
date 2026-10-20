@@ -443,7 +443,7 @@ class PublicShipmentRequestLinkTest extends TestCase
     {
         $shipment = new Shipment(['tracking_number' => 'KBZ2854072']);
 
-        $this->assertSame('https://kasarose.com/tracking.php?ref=KBZ2854072', $shipment->publicTrackingUrl());
+        $this->assertSame('https://kasarose.com/tracking?ref=KBZ2854072', $shipment->publicTrackingUrl());
     }
 
     /**

@@ -1,0 +1,73 @@
+.sol-box {
+    position: relative;
+    left: -30px;
+    max-width: 475px;
+   @include media-breakpoint-down(lg) {
+      left: 0;
+      margin-bottom: 220px;
+   }
+   @extend .overly;
+
+   &::before {
+      border: 5px solid var(--primary);
+      border-radius: 30px;
+      width: 297px;
+      height: 419px;
+      background-color: transparent;
+      top: 60px;
+      left: 100px;
+      @include media-breakpoint-down(sm) {
+         left: 20px;
+      }
+   }
+
+   .sol-media {
+      img:nth-child(2) {
+         top: 196px;
+         position: relative;
+         left: -15px;
+         @include media-breakpoint-only(lg) {
+            left: -90px;
+         }
+         @include media-breakpoint-down(lg) {
+            left: -180px;
+         }
+      }
+   }
+
+   .video-play-btn {
+      width: 80px;
+      height: 80px;
+      top: 75%;
+      left: 60%;
+   }
+}
+.solution-sec{
+   @include media-breakpoint-down(lg) {
+      .anim-img {
+         display: none;
+      }
+   }
+}
+.solution-wrap {
+   flex-wrap: wrap;
+
+   .solution-card {
+      width: 50%;
+      padding: 20px 60px 8px;
+      background-repeat: no-repeat;
+      background-position: center center;
+      background-size: contain;
+      margin-bottom: 20px;
+      @include media-breakpoint-only(lg) {
+         padding: 20px 28px 8px;
+      }
+      @include media-breakpoint-down(md) {
+         width: 320px;
+      }
+      h3 {
+         margin: 7px 0 2px;
+      }
+
+   }
+}

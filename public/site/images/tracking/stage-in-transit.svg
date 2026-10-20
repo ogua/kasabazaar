@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160" role="img" aria-label="In transit"><defs><clipPath id="c"><circle cx="80" cy="80" r="80"/></clipPath></defs><g clip-path="url(#c)"><rect width="160" height="160" fill="#EEF3F8"/>
+<circle cx="80" cy="84" r="46" fill="#C9DAEA" stroke="#052240" stroke-width="4"/>
+<path d="M58 54c10 4 8 14 18 16s6 14-2 18-4 14 4 18M98 46c-6 8 2 14 10 14s12 8 8 16M104 100c6-4 14-2 18 4" fill="none" stroke="#2B4A6F" stroke-width="7" stroke-linecap="round" opacity=".55"/>
+<path d="M34 84h92M80 38v92" stroke="#052240" stroke-width="2" opacity=".2"/>
+<path d="M26 112C40 40 120 30 138 70" fill="none" stroke="#E4252C" stroke-width="4" stroke-dasharray="8 7" stroke-linecap="round"/>
+<circle cx="26" cy="112" r="6" fill="#052240"/>
+<path d="M130 58l14 6-10 12z" fill="#E4252C"/>
+<path d="M112 134h36l-6 10h-24z" fill="#052240"/>
+<rect x="120" y="126" width="16" height="8" fill="#E4252C"/>
+</g></svg>

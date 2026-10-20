@@ -1,0 +1,20 @@
+.brands-sec {
+   padding: 90px 60px;
+
+   .parallax-overly {
+      opacity: .8;
+   }
+
+   .swiper-slide {
+      text-align: center;
+   }
+}
+
+.brands-sec3 {
+   .swiper-slide {
+      text-align: center;
+      border-right: 1px solid var(--theme-border);
+      border-bottom: 1px solid var(--theme-border);
+      padding: 60px 0;
+   }
+}

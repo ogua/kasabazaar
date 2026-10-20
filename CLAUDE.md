@@ -38,21 +38,21 @@ php artisan sitemap:generate
 ## Group of Companies — cross-site sync (IMPORTANT)
 
 **KASAROSE LOGISTICS** is the **parent company** of the group (formerly the *KasaBazaar Group of Companies*; it also
-absorbed RDD Shipping). Its main public website is **kasarose.com** (repo `Projects/website/KasaRose Website`); this
-repo (directory name `kasabazaar`) is its **back office** — Filament admin, client/investor portals, the mobile API
-and the marketplace API — plus the legacy public pages served on rddshipping.com. `config('group.parent')` therefore
-describes KASAROSE LOGISTICS itself: `name`, a `group_name` for sentences ("the KASAROSE LOGISTICS group") and
-`url` (kasarose.com).
+absorbed RDD Shipping). **This repo (directory name `kasabazaar`) serves all of kasarose.com**: the public website
+(see "Public website" below) and the back office — Filament admin, client/investor portals, the mobile API and the
+marketplace API. The public site was the plain-PHP `Projects/website/KasaRose Website` repo until October 2026,
+when it was ported in here and that repo was retired; **rddshipping.com was dropped at the same time** — nothing
+should link to it. `config('group.parent')` describes KASAROSE LOGISTICS itself: `name`, a `group_name` for
+sentences ("the KASAROSE LOGISTICS group"), `url` (kasarose.com), `tracking_url`, and its own card copy.
 
 | Company | What it is | Repo | Stack |
 |---|---|---|---|
-| **KASAROSE LOGISTICS** (parent) | Main site kasarose.com — freight, real estate, property management | `Projects/website/KasaRose Website` | Plain PHP + Bootstrap |
-| (back office) | This repo | this repo | Laravel 11 + Filament 3 |
+| **KASAROSE LOGISTICS** (parent) | kasarose.com — public site and back office | this repo | Laravel 11 + Filament 3 |
 | KASAROSE MARKET | Ecommerce marketplace (kasarosemarket.com — domain unconfirmed) | `Projects/website/kmarket` | Laravel 12 + Livewire + Filament 4 |
 | Neoride Africa | Tricycle mobility, last-mile transport | `Projects/neoride` | Plain PHP template |
 
-(All live under `C:/xampp/htdocs/`.) `Projects/website/kasabazar-website` is the pre-rename copy of the parent's
-site being migrated into KasaRose Website; it is not a separate company.
+(All live under `C:/xampp/htdocs/`.) `Projects/website/KasaRose Website` (retired) and
+`Projects/website/kasabazar-website` (older pre-rename copy) are former versions of the parent's site, not companies.
 
 Facts that still legitimately name KasaBazaar are left alone: the registered legal entity (`GROUP_LEGAL_NAME`,
 "KasaBazaar Limited"), the SMS sender name and the carrier-registered SMS terms URL
@@ -109,19 +109,18 @@ blade — read it from the roster.**
 |---|---|
 | kasabazaar (here) | `config/group.php` |
 | kmarket (KASAROSE MARKET) | `config/group.php` |
-| KasaRose Website (parent) | `includes/config.php` |
 | neoride | `parts/group_companies.php` |
 
 ### The rule
 
 **Before you finish any change that touches company identity, cross-links or legal/policy copy, check whether the
-same change is needed in the other two repositories — and make it there too, in the same session.**
+same change is needed in the other repositories (kmarket, neoride) — and make it there too, in the same session.**
 
 Changes that always require the cross-repo sweep:
 
 - Adding, renaming or removing a group company, or changing its tagline, role or one-line description.
 - Changing any company's production domain (edit `config/group.php` and the `*_SITE_URL` env vars, never a blade).
-- Any edit to `resources/views/web/privacy-policy.blade.php` — it names the other companies and describes what
+- Any edit to `resources/views/site/privacy-policy.blade.php` — it names the other companies and describes what
   data passes between them. If it says KASAROSE passes us delivery addresses, the KASAROSE privacy policy must
   describe the same flow from its side.
 - Changing the operational relationship between companies (who carries what, who is the point of contact).
@@ -134,18 +133,41 @@ generation, tenant/branch scoping, shipment workflow.
 
 ### Where the cross-links surface here
 
-- `config/group.php` — the roster, the parent-group URLs and this company's own identity strings.
-- `resources/views/web/footer.blade.php` — the "Our Group" link column and the parent-group line in the copyright
-  bar. Both loop over `config('group.companies')`.
-- `resources/views/web/privacy-policy.blade.php` — section 3a, "Sharing Within the KASAROSE LOGISTICS group",
-  loops the same roster.
+- `config/group.php` — the roster, the parent-group URLs and this company's own identity strings. A company with
+  `show_on_website => false` (Neoride, since 2026-09) stays in the roster but is left off the marketing pages.
+- `App\Services\PublicWebsite::groupCompanies()` — the parent card plus the visible sister companies; drives the
+  footer's "Our Companies" column, the homepage teaser and the tracking page's marketplace banner.
+- `resources/views/site/privacy-policy.blade.php` ("Sharing Within the KASAROSE LOGISTICS group") and
+  `resources/views/site/terms.blade.php` ("12. Our Sister Companies") loop the **full** roster, hidden companies
+  included — a legal disclosure of who receives data must not follow a display decision.
 
-This repo's public website has a privacy policy and terms (`resources/views/web/terms.blade.php`, section 12 "Our
-Sister Companies"); both loop the roster.
+### Public website (kasarose.com)
+
+Ported from the plain-PHP KasaRose Website in October 2026. Blade views in `resources/views/site` (layout
+`site/layouts/app.blade.php`, partials in `site/partials`), static assets in `public/site` (compiled CSS — the SCSS
+source is kept in `resources/site/scss` but nothing here builds it; reference files with `asset('site/...')` or the
+cache-busting `@siteAsset('css/style.css')`), copy data (contact details, services, delivery time frames, form
+recipients) in `config/website.php`, shared view data from `App\Services\PublicWebsite` via a `site.*` view composer.
+
+- **Routes** keep their pre-port names (`home-page`, `our-tracking`, `privacy-policy`, `terms`, `our-feeback`, ...)
+  because emails, PDFs and the shipment portal use them. Every old `*.php` URL (`tracking.php?ref=`,
+  `news-detail.php?slug=`, `sms-terms.php` — carrier-registered —, the seven pre-merge service pages) 301s to its
+  route with the query string kept. Don't remove those redirects: printed invoices and labels carry them.
+- **Tracking** (`/tracking?ref=`, also `?query=`) is `App\Services\PublicShipmentTracking`: status, stages, dates and
+  history for anyone holding the number; items and masked receiver names only when looked up by the random tracking
+  number, never by the sequential shipping reference. No addresses, phones, VINs, values or payment state. It reads
+  the raw `status` string so legacy values still display — a `ShippingStatus` case added or renamed must be mapped in
+  `statusMeta()`.
+- **Forms** (contact, quote, feedback) post by AJAX (`public/site/js/form.js`, plain-text responses) to
+  `POST /enquiries` → `WebsiteEnquiryController`: contact/quote become `ContactMessage`, feedback becomes
+  `CustomerFeedback`, and `WebsiteEnquiryReceived` copies each to `config('website.form_recipients')`. SMS consent is
+  an optional checkbox stored as `sms_opt_in` — never make it a condition of sending the form.
+- **News** reads published `Blog` rows (`status = 1`); bodies go through `PublicWebsite::richText()`.
+- `/sitemap.xml` is generated from the routes and published posts; `public/robots.txt` points at it.
 
 ## Architecture Overview
 
-**Kasabazaar** is a multi-tenant shipping & logistics platform for Rose Door to Door / Kasabazaar Limited (Ghana). It manages shipments, fleet, payroll, financials, and a cashbook — served via a Filament admin panel and a REST API consumed by a mobile app.
+**Kasabazaar** is a multi-tenant shipping & logistics platform for KASAROSE LOGISTICS / Kasabazaar Limited (Ghana). It manages shipments, fleet, payroll, financials, and a cashbook — served via a Filament admin panel and a REST API consumed by a mobile app.
 
 ### Multi-Tenancy: Branch as Tenant
 

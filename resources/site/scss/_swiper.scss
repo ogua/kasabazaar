@@ -1,0 +1,129 @@
+/*=================================
+Swiper Slider Style
+*/
+
+.swiper-pagination {
+   display: flex;
+   align-items: center;
+   justify-content: center;
+
+   span {
+      width: 10px;
+      height: 10px;
+      background-color: rgba(83, 83, 83, 0.50);
+      margin: 0 8px !important;
+      border: 0 none;
+      @include opacity(1);
+
+      &.swiper-pagination-bullet-active {
+         background-color: var(--primary);
+
+         @extend .overly;
+
+         &::before {
+            width: 20px;
+            height: 20px;
+            background-color:var(--primary);
+            left: 50%;
+            top: 50%;
+            @include opacity(.2);
+            transform: translate(-50%, -50%);
+            @include border-radius(50%);
+         }
+      }
+   }
+}
+
+.swiper-button-next,
+.swiper-button-prev {
+   background: var(--primary);
+   display: inline-table;
+   width: 56px;
+   height: 56px;
+   text-align: center;
+   z-index: 9;
+   @include border-radius(10px);
+   color: var(--white);
+   @include transition();
+   left: 0;
+
+   &:hover {
+      background-color: var(--dark);
+   }
+}
+
+.swiper-button-next {
+   left: auto;
+   right: 0;
+}
+
+.swiper-button-next:after,
+.swiper-button-prev:after {
+   content: "\f060";
+   font-family: "fontawesome" !important;
+   font-size: 17px;
+   display: table-cell;
+   vertical-align: middle;
+}
+
+.swiper-button-prev:after {
+   content: "\f061";
+}
+
+.swiper-button-next.swiper-button-disabled,
+.swiper-button-prev.swiper-button-disabled {
+   @include opacity(1);
+}
+
+.custom-nav {
+   >div {
+      background-color: var(--primary);
+      @include border-radius(50%);
+      font-size: 22px;
+   }
+}
+
+  .custom-nav {
+      position: absolute;
+      bottom: 35px;
+      @include position('horizontal');
+      z-index: 2;
+      .swiper-button-next,
+      .swiper-button-prev {
+         left: -52px;
+         width: 46px;
+         height: 46px;
+         border-radius: 10px;
+      }
+
+      .swiper-button-prev {
+         left: 7px;
+      }
+   }
+   .ct-pagination {
+      .swiper-pagination{
+         position: relative;
+      }
+   }
+
+    .header-slider-nav {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      align-items: center;
+      @include media-breakpoint-down(sm) {
+         gap: 10px;
+         justify-content: end;
+         margin-bottom: 20px;
+      }
+      .swiper-button-next,
+      .swiper-button-prev {
+         position: relative;
+         left: auto;
+         top: auto;
+      }
+
+      .swiper-button-prev {
+         left: 0px;
+      }
+   }

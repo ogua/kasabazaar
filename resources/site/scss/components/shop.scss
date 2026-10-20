@@ -1,0 +1,164 @@
+/*=================================
+Product Style
+*/
+.shop-section {
+	padding: 120px 0 90px;
+}
+
+.product-entry {
+	margin-bottom: 30px;
+	overflow: hidden;
+
+	.product-thumb {
+		overflow: hidden;
+
+		img {
+			width: 100%;
+			transform: scale(1);
+			@include transition(all, 1s, ease);
+		}
+	}
+
+	.product-txt {
+		padding: 20px;
+
+		@include media-breakpoint-down(xxl) {
+			padding: 20px 15px;
+
+			.ratings img {
+				width: 16px;
+			}
+		}
+
+		.text-nowrap {
+			text-overflow: ellipsis;
+			overflow: hidden;
+		}
+	}
+
+	.badge {
+		position: absolute;
+		background: var(--primary);
+		font-size: 14px;
+		left: 15px;
+		top: 15px;
+		font-weight: 600;
+		z-index: 1;
+	}
+
+	.product-cta {
+		position: absolute;
+		right: -10px;
+		top: 30px;
+		visibility: hidden;
+		@include opacity(0);
+		@include transition(all, .4s, ease);
+
+		a {
+			display: table;
+			width: 48px;
+			height: 48px;
+			text-align: center;
+			background-color: var(--dark);
+			margin-bottom: 10px;
+			@include border-radius(50%);
+
+			i {
+				color: var(--white);
+				display: table-cell;
+				vertical-align: middle;
+			}
+		}
+	}
+
+	h3 {
+		font-size: 18px;
+	}
+
+	.price {
+		color: var(--headings-color);
+		font-weight: 600;
+
+		del {
+			color: var(--body-color);
+			font-size: 14px;
+		}
+	}
+
+	&:hover {
+		h3 a {
+			color: var(--black);
+		}
+
+		.product-cta {
+			@include opacity(1);
+			visibility: visible;
+			right: 20px;
+		}
+	}
+
+	&:hover .product-thumb img {
+		transform: scale(1.2);
+	}
+}
+
+.result select {
+	min-width: 60px;
+	width: auto;
+	padding: 9px 15px;
+}
+
+.filter a.bg-primary {
+	color: var(--white);
+}
+
+.product-entry2 {
+	@extend .product-entry;
+
+	.product-cta {
+		a {
+			background-color: var(--sky);
+
+			i {
+				color: var(--white);
+			}
+		}
+	}
+
+	&:hover h3 a {
+		color: var(--sky);
+	}
+}
+
+.product-entry3 {
+	@extend .product-entry;
+
+	.product-cta a {
+		i {
+			color: var(--white);
+		}
+
+		&:hover {
+			background-color: var(--tertiary);
+		}
+	}
+}
+
+.shop-wrapper {
+	.icon i {
+		font-size: 18px;
+	}
+
+	.nice-select {
+		background: var(--shade);
+		height: 46px;
+		min-width: 60px;
+		margin-left: 10px;
+		width: auto;
+		border-radius: 5px;
+		font-size: 16px;
+		border: 1px solid var(--theme-border);
+		line-height: 28px;
+	}
+
+}

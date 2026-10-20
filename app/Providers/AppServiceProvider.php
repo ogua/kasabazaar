@@ -7,10 +7,13 @@ use App\Models\Payment;
 use App\Models\Shipment;
 use App\Observers\PaymentObserver;
 use App\Observers\ShipmentObserver;
+use App\Services\PublicWebsite;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginContract;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\AliasLoader;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -37,6 +40,9 @@ class AppServiceProvider extends ServiceProvider
         Model::unguard();
         Shipment::observe(ShipmentObserver::class);
         Payment::observe(PaymentObserver::class);
+
+        View::composer(['site.*', 'errors.404'], fn ($view) => $view->with(PublicWebsite::viewData()));
+        Blade::directive('siteAsset', fn (string $path): string => "<?php echo e(\App\Services\PublicWebsite::asset({$path})); ?>");
 
         ResetPassword::createUrlUsing(function ($notifiable, string $token) {
             $frontendUrl = rtrim(config('app.frontend_url'), '/');

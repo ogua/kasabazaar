@@ -255,7 +255,7 @@ class Shipment extends Model
     }
 
     /**
-     * Public tracking page on the parent site, e.g. https://kasarose.com/tracking.php?ref=KBZ2854072.
+     * Public tracking page on kasarose.com, e.g. https://kasarose.com/tracking?ref=KBZ2854072.
      * Falls back to the shipping reference, which the tracking page also accepts.
      */
     public function publicTrackingUrl(): ?string

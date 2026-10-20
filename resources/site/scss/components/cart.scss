@@ -1,0 +1,256 @@
+/* ==================================
+ Cart Style
+*/
+
+.woocommerce {
+	background-color: var(--mute);
+	padding: 30px;
+
+	@include media-breakpoint-down(sm) {
+		padding: 10px;
+
+		.woocommerce-cart-form {
+			overflow-x: auto;
+			margin-bottom: 30px;
+			overflow-y: hidden;
+		}
+	}
+
+
+	.shop_table {
+		text-align: left;
+		width: 100%;
+		border-collapse: separate;
+		@include border-radius(10px);
+		border-spacing: 0 20px;
+
+		thead {
+			tr {
+				th {
+					padding: 15px 20px;
+					background-color: var(--white);
+					font-size: 18px;
+					font-weight: 600;
+					color: var(--headings-color);
+
+					@include media-breakpoint-down(sm) {
+						font-size: 18px;
+						padding: 20px;
+					}
+
+					&:first-child,
+					&:last-child {
+						@include border-radius(10px);
+					}
+				}
+			}
+		}
+
+		tr {
+			background-color: var(--white);
+			color: var(--secondary);
+
+			td:first-child {
+				border-left-style: solid;
+				border-top-left-radius: 10px;
+				border-bottom-left-radius: 10px;
+			}
+
+			td:last-child {
+				border-right-style: solid;
+				border-bottom-right-radius: 10px;
+				border-top-right-radius: 10px;
+			}
+		}
+
+		tbody {
+			tr.woocommerce-cart-form__cart-item.cart_item {
+				td {
+					font-weight: 600;
+					align-items: center;
+					vertical-align: middle;
+
+					@include media-breakpoint-down(sm) {
+						font-size: 14px;
+					}
+
+					&.product-thumbnail {
+						width: 15%;
+						padding: 15px 0 15px 15px;
+
+						@include media-breakpoint-down(sm) {
+							padding: 5px 0 5px 5px;
+
+							img {
+								max-width: 100%;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		td.product-quantity input {
+			padding: 0;
+			width: 40px;
+			margin: 0 5px;
+			text-align: center;
+		}
+	}
+
+	th {
+		font-weight: 700;
+		padding: 9px 12px;
+		line-height: 1.5em;
+	}
+
+	td.product-remove {
+
+		a.remove {
+			height: 25px;
+			width: 25px;
+			line-height: 25px;
+			background: var(--primary);
+			display: inline-block;
+			text-align: center;
+			@include border-radius(50px);
+
+			i {
+				color: var(--white);
+				font-weight: 600;
+				font-size: 13px;
+			}
+		}
+	}
+
+	@include media-breakpoint-down(sm) {
+
+		.table.shop_table.cart>tbody>tr>td.product-price,
+		.table.shop_table.cart>tbody>tr>th.product-price,
+		.table.shop_table.cart>tfoot>tr>td.product-price,
+		.table.shop_table.cart>tfoot>tr>th.product-price,
+		.table.shop_table.cart>thead>tr>td.product-price,
+		.table.shop_table.cart>thead>tr>th.product-price,
+		table.shop_table.cart>tbody>tr>td.product-price,
+		table.shop_table.cart>tbody>tr>th.product-price,
+		table.shop_table.cart>tfoot>tr>td.product-price,
+		table.shop_table.cart>tfoot>tr>th.product-price,
+		table.shop_table.cart>thead>tr>td.product-price,
+		table.shop_table.cart>thead>tr>th.product-price {
+			display: none;
+		}
+	}
+
+	.coupon {
+		position: relative;
+		flex: 0 0 50%;
+
+		input {
+			border: 1px solid var(--theme-border);
+			padding: 14px;
+			font-size: 15px;
+
+			&:focus {
+				outline: 0 none;
+				box-shadow: none;
+			}
+		}
+
+		.btn {
+			position: absolute;
+			right: -2px;
+			border-radius: 5px;
+			top: -1px;
+			font-size: 15px;
+			height: 101%;
+			line-height: 1;
+		}
+
+		@include media-breakpoint-down(sm) {
+			flex: 0 0 100%;
+		}
+	}
+}
+
+.woocommerce .shop_table tr:last-child {
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
+}
+
+.cart-quanty {
+	display: flex;
+	justify-content: space-between;
+	width: 100px;
+	padding: 4px 13px;
+	background-color: var(--mute);
+	@include border-radius(5px);
+	font-size: 15px;
+
+	input {
+		padding: 0;
+		background: transparent;
+		text-align: center;
+		font-weight: 600;
+	}
+
+	i {
+		cursor: pointer;
+	}
+}
+
+.cart-totals {
+	@include media-breakpoint-down(sm) {
+		margin-top: 30px;
+	}
+
+	@include media-breakpoint-only(sm) {
+		margin-top: 30px;
+	}
+
+	table {
+		width: 100%;
+		border-spacing: 0 10px;
+		border-collapse: separate;
+
+		th {
+			color: var(--headings-color);
+		}
+
+		td {
+			font-weight: 500;
+		}
+
+		tbody tr td {
+			padding: 15px 10px;
+			text-align: right;
+		}
+
+		tr:first-child {
+			font-weight: 700;
+		}
+
+		tr.product-list {
+			background: #fff;
+
+			th,
+			td {
+				padding-left: 20px;
+				padding: 10px 15px;
+				color: var(--headings-color);
+			}
+
+
+			th {
+				border-top-left-radius: 10px;
+				border-bottom-left-radius: 10px;
+			}
+
+			td {
+				border-bottom-right-radius: 10px;
+				border-top-right-radius: 10px;
+				font-size: 20px;
+			}
+		}
+
+	}
+}

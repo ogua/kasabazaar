@@ -753,7 +753,7 @@ class ShipmentResource extends Resource
                         : 'No agent-recorded delivery yet')
                     ->toggleable(),
 
-                // Drives the final "Received" stage on the public tracking page (kasarose.com/tracking.php).
+                // Drives the final "Received" stage on the public tracking page (kasarose.com/tracking).
                 Tables\Columns\IconColumn::make('is_received')
                     ->label('Received')
                     ->boolean()

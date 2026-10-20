@@ -43,6 +43,6 @@ return [
         'phone_ghana' => env('FINANCIALS_COMPANY_PHONE_GH', '+233 50 972 5081 / +233 50 972 5073'),
         'phone_usa' => env('FINANCIALS_COMPANY_PHONE_US', '+1 (773) 970-0129 / +1 (574) 440-7460'),
         'email' => env('FINANCIALS_COMPANY_EMAIL', 'kasabazaar109@gmail.com'),
-        'website' => env('FINANCIALS_COMPANY_WEBSITE', 'rddshipping.com'),
+        'website' => env('FINANCIALS_COMPANY_WEBSITE', 'kasarose.com'),
     ],
 ];

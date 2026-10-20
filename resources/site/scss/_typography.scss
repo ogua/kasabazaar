@@ -1,0 +1,127 @@
+/*=================================
+Typography
+*/
+
+body {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-base);
+  line-height: var(--line-height-base);
+  color: var(--body-color);
+  position: relative;
+  height: 100%;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.container {
+  @include media-breakpoint-up(xxl) {
+    max-width: 1220px;
+  }
+}
+
+.ct-container {
+  @include media-breakpoint-up(xl) {
+    max-width: 1320px;
+  }
+
+  @include media-breakpoint-up(xxl) {
+    max-width: 1645px;
+  }
+
+}
+
+a {
+  color: var(--headings-color);
+  @include transition(all, .4s, ease);
+  text-decoration: none;
+
+  &:focus,
+  &:hover {
+    text-decoration: none;
+    @include transition(all, .4s, ease);
+    color: var(--headings-color);
+  }
+}
+
+.form-check-input:checked {
+  background-color: var(--primary);
+  border-color: var(--primary)
+}
+
+.form-check-input:focus {
+  border-color: #fdb09a;
+  box-shadow: 0 0 0 .25rem rgb(255 211 197);
+}
+
+.lead-sm {
+  @extend .lead;
+  font-size: 20px;
+}
+
+
+input,
+textarea,
+select,
+.form-control {
+  font-family: var(--font-family-base);
+  width: 100%;
+  color: var(--body-color);
+  padding: 14px 20px;
+  border: 1px solid var(--theme-border);
+  @include border-radius(8px);
+
+  &:focus {
+    outline: 0 none;
+    box-shadow: 0 0 0 0.05rem rgba(var(--primary), .2);
+  }
+
+  &::placeholder {
+    opacity: 1;
+    color: var(--body-color);
+  }
+
+  &:-ms-input-placeholder {
+    /* Internet Explorer 10-11 */
+    color: var(--body-color);
+  }
+
+  &::-ms-input-placeholder {
+    /* Microsoft Edge */
+    color: var(--body-color);
+  }
+
+}
+
+input[type="checkbox"] {
+  padding: 0px;
+}
+
+.btn:focus-visible {
+  color: var(--headings-color);
+  background-color: var(--primary);
+  border-color: var(--primary);
+  outline: 0;
+  box-shadow: none;
+}
+
+.datepicker {
+  text-align: center;
+
+  td {
+    width: 32px;
+    height: 32px;
+    font-weight: 500;
+
+    &.active,
+    &:hover {
+      background: var(--primary);
+      color: var(--white);
+    }
+
+    &.day {
+      text-align: center;
+    }
+  }
+}

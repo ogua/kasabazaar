@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160" role="img" aria-label="Shipped"><defs><clipPath id="c"><circle cx="80" cy="80" r="80"/></clipPath></defs><g clip-path="url(#c)"><rect width="160" height="160" fill="#EEF3F8"/>
+<rect x="0" y="112" width="160" height="48" fill="#C9DAEA"/>
+<rect x="56" y="58" width="22" height="18" fill="#2B4A6F"/><rect x="80" y="58" width="22" height="18" fill="#E4252C"/>
+<rect x="34" y="78" width="22" height="18" fill="#E4252C"/><rect x="58" y="78" width="22" height="18" fill="#052240"/><rect x="82" y="78" width="22" height="18" fill="#2B4A6F"/>
+<path d="M60 58v18M64 58v18M72 58v18M84 58v18M88 58v18M96 58v18M38 78v18M44 78v18M50 78v18M62 78v18M68 78v18M74 78v18M86 78v18M92 78v18M98 78v18" stroke="#fff" stroke-width="1.5" opacity=".35"/>
+<rect x="106" y="56" width="18" height="40" rx="2" fill="#052240"/>
+<rect x="110" y="62" width="10" height="7" rx="1" fill="#fff"/>
+<rect x="112" y="44" width="5" height="12" fill="#E4252C"/>
+<path d="M22 96h120l-14 26H36z" fill="#052240"/>
+<path d="M34 104h96" stroke="#E4252C" stroke-width="4"/>
+<path d="M14 130q8-6 16 0t16 0 16 0 16 0 16 0 16 0 16 0 16 0 16 0" fill="none" stroke="#7FA3C7" stroke-width="4" stroke-linecap="round"/>
+<path d="M30 142q8-6 16 0t16 0 16 0 16 0 16 0 16 0 16 0" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".8"/>
+</g></svg>

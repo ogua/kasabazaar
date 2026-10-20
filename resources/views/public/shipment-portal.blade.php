@@ -1,19 +1,35 @@
-@extends('web.sub-template')
+@extends('site.layouts.app')
 
-@section('heading', 'Shipment Activity - ' . $shipment->shipping_reference)
+@section('title', 'Shipment Activity - '.$shipment->shipping_reference)
+{{-- A private, token-addressed page: keep it out of search engines. --}}
+@section('meta_robots', 'noindex, nofollow')
 
-@section('sub-heading', 'Your Shipment')
+@section('content')
 
-@section('main-content')
+<section class="promo-sec bg-cover jarallax" data-jarallax data-speed=".4">
+    <img src="{{ asset('site/images/promo.jpg') }}" alt="" class="jarallax-img">
+    <div class="parallax-overly"></div>
+    <div class="container">
+        <div class="promo-wrap">
+            <h1 class="display-2 text-info">Your Shipment</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ route('home-page') }}">Home</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Your Shipment</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</section>
 
-<section id="shipment-portal" class="services section light-background">
+<section id="shipment-portal" class="sec-padding">
 
-    <div class="container section-title" data-aos="fade-up">
-        <h2>Shipment {{ $shipment->shipping_reference }}</h2>
+    <div class="container mb-4">
+        <h2 class="sec-title">Shipment {{ $shipment->shipping_reference }}</h2>
         <p>Tracking Number: <strong>{{ $shipment->tracking_number }}</strong></p>
     </div>
 
-    <div class="container" data-aos="fade-up" data-aos-delay="100">
+    <div class="container">
 
         @if (session('portal_status'))
             <div class="alert alert-info">{{ session('portal_status') }}</div>
@@ -32,14 +48,14 @@
         {{-- Track your shipment --}}
         <div class="row mb-4">
             <div class="col-12">
-                <div class="service-item p-4">
+                <div class="bg-shade round p-4">
                     <h4 class="mb-3">Track Your Shipment</h4>
                     <div class="row">
                         <div class="col-md-6 mb-2">
                             <div class="text-muted small">Tracking Number</div>
                             <div class="fw-bold">{{ $shipment->tracking_number ?? 'N/A' }}</div>
                             @if ($shipment->tracking_number)
-                                <a href="{{ route('our-tracking') }}?query={{ urlencode($shipment->tracking_number) }}"
+                                <a href="{{ route('our-tracking', ['ref' => $shipment->tracking_number]) }}"
                                    target="_blank" class="btn btn-outline-primary btn-sm mt-2">Track shipment</a>
                             @endif
                         </div>
@@ -61,12 +77,12 @@
         {{-- Status & Route --}}
         <div class="row mb-4">
             <div class="col-12">
-                <div class="service-item p-4">
+                <div class="bg-shade round p-4">
                     <div class="row">
                         <div class="col-md-3 mb-2">
                             <div class="text-muted small">Status</div>
                             <span class="badge" style="background:#{{ $shipment->status?->getColor() === 'success' ? '198754' : ($shipment->status?->getColor() === 'danger' ? 'dc3545' : ($shipment->status?->getColor() === 'info' ? '0dcaf0' : 'ffc107')) }}; color:#fff;">
-                                {{ ucfirst($shipment->status?->value ?? 'N/A') }}
+                                {{ $shipment->status?->getLabel() ?? 'N/A' }}
                             </span>
                         </div>
                         <div class="col-md-3 mb-2">
@@ -92,7 +108,7 @@
         @endphp
         <div class="row mb-4">
             <div class="col-12">
-                <div class="service-item p-4">
+                <div class="bg-shade round p-4">
                     <h4 class="mb-3">Payment Summary</h4>
                     <div class="row">
                         <div class="col-md-3 mb-2">
@@ -183,7 +199,7 @@
         {{-- Receivers & Items --}}
         <div class="row mb-4">
             <div class="col-12">
-                <div class="service-item p-4">
+                <div class="bg-shade round p-4">
                     <h4 class="mb-3">Receivers & Items</h4>
                     @forelse ($shipment->receivers as $receiver)
                         <div class="mb-3">
@@ -214,7 +230,7 @@
         {{-- Status Timeline --}}
         <div class="row mb-4">
             <div class="col-12">
-                <div class="service-item p-4">
+                <div class="bg-shade round p-4">
                     <h4 class="mb-3">Status Timeline</h4>
                     @forelse ($shipment->statusupdate as $update)
                         <div class="d-flex justify-content-between border-bottom py-2">
@@ -241,7 +257,7 @@
         {{-- Photos & Updates --}}
         <div class="row mb-4">
             <div class="col-12">
-                <div class="service-item p-4">
+                <div class="bg-shade round p-4">
                     <h4 class="mb-3">Photos & Updates</h4>
                     @php $mediaByStage = $shipment->media->groupBy('stage'); @endphp
                     @forelse (\App\Models\ShipmentMedia::STAGES as $stage => $label)
@@ -257,7 +273,7 @@
                                                 <video src="{{ asset('storage/' . $item->file_path) }}" controls class="img-fluid rounded" style="height:150px;width:100%;"></video>
                                             @else
                                                 <a href="{{ asset('storage/' . $item->file_path) }}" target="_blank" rel="noopener" class="d-flex flex-column align-items-center justify-content-center rounded bg-light text-dark text-decoration-none" style="height:150px;width:100%;">
-                                                    <i class="bi bi-file-earmark-text fs-1"></i>
+                                                    <i class="fa-solid fa-file-lines fa-2x"></i>
                                                     <span class="small text-break px-2 text-center">{{ $item->fileName() }}</span>
                                                 </a>
                                             @endif

@@ -6,12 +6,12 @@
 |--------------------------------------------------------------------------
 |
 | KASAROSE LOGISTICS (formerly the KasaBazaar Group) is the group's parent
-| company; its main website is kasarose.com (repo Projects/website/KasaRose
-| Website) and this app is its back office. The group companies its pages
-| link to are mirrored in the sibling repositories — see the "Group of
-| Companies" section of CLAUDE.md before editing anything here:
+| company. This app serves its whole web presence on kasarose.com: the
+| public website (resources/views/site, ported from the retired plain-PHP
+| "KasaRose Website" repo in October 2026) and the back office. The group
+| companies its pages link to are mirrored in the sibling repositories — see
+| the "Group of Companies" section of CLAUDE.md before editing anything here:
 |
-|   KasaRose Website   includes/config.php        (KASAROSE LOGISTICS, parent)
 |   kmarket            config/group.php           (KASAROSE MARKET)
 |   neoride            parts/group_companies.php  (Neoride Africa)
 |
@@ -35,7 +35,7 @@ return [
         'legal_name' => env('GROUP_LEGAL_NAME') ?: 'KasaBazaar Limited',
         'tagline' => 'Your Trusted Partner for Global Shipments.',
         'role' => 'Parent company of the group',
-        'url' => env('APP_URL') ?: 'https://rddshipping.com',
+        'url' => env('APP_URL') ?: 'https://kasarose.com',
     ],
 
     /*
@@ -48,10 +48,15 @@ return [
     'parent' => [
         'name' => 'KASAROSE LOGISTICS',
         'group_name' => 'KASAROSE LOGISTICS group',
+        // The parent's own card on the public site's "Our Companies" page and homepage teaser.
+        'tagline' => 'Door-to-door freight, real estate and property management.',
+        'description' => 'The group\'s founding company — known as KasaBazaar until 2026, and incorporating the door-to-door freight business formerly run as RDD Shipping. Air and sea freight, ecommerce package forwarding and shipment tracking between the United States and Ghana, alongside real estate sales and property management.',
+        'logo' => 'images/kasarose-logistics-logo.png',
         'url' => env('GROUP_SITE_URL') ?: 'https://kasarose.com',
         'companies_url' => rtrim(env('GROUP_SITE_URL') ?: 'https://kasarose.com', '/').'/our-companies.php',
-        // Public tracking page; invoices and receipts link to it as tracking.php?ref={tracking_number}.
-        'tracking_url' => rtrim('https://kasarose.com', '/').'/tracking.php',
+        // Public tracking page; invoices and receipts link to it as tracking?ref={tracking_number}.
+        // Documents printed before October 2026 carry tracking.php, which 301-redirects here.
+        'tracking_url' => rtrim(env('GROUP_SITE_URL') ?: 'https://kasarose.com', '/').'/tracking',
     ],
 
     /*
@@ -74,8 +79,9 @@ return [
     | Group companies
     |--------------------------------------------------------------------------
     |
-    | Rendered by resources/views/web/footer.blade.php and named in the
-    | privacy policy.
+    | Rendered by the public site (resources/views/site) and named in its
+    | privacy policy and terms. `show_on_website` => false keeps a real sister
+    | company off the public pages without removing it from the roster.
     |
     */
 
@@ -87,6 +93,8 @@ return [
             'description' => 'A tricycle mobility and transport company operating in Ghana since 2025, focused on affordable rides, first- and last-mile connectivity and youth employment.',
             'url' => env('NEORIDE_SITE_URL') ?: 'https://neorideafrica.com',
             'url_label' => 'neorideafrica.com',
+            // Deliberately not shown on kasarose.com since 2026-09.
+            'show_on_website' => false,
         ],
         [
             'key' => 'kasarose-market',
@@ -98,6 +106,9 @@ return [
             // MARKET_SITE_URL rather than editing the fallback.
             'url' => env('MARKET_SITE_URL') ?: 'https://kasarosemarket.com',
             'url_label' => 'kasarosemarket.com',
+            'show_on_website' => true,
+            'tagline' => "Ghana's multi-vendor marketplace, delivered.",
+            'logo' => 'images/kasarosemarket-logo.png',
         ],
     ],
 

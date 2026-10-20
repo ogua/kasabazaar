@@ -1,0 +1,267 @@
+.anim-img {
+    position: absolute;
+    backface-visibility: hidden;
+    animation: jumping 5s ease-in-out 2s infinite alternate;
+    animation-timing-function: cubic-bezier(0.65, 0.05, 0.36, 1); 
+    user-select: none;
+    will-change: transform;
+    &.left-top {
+        left: 0px;
+        top: auto;
+    }
+    &.left-bottom {
+        right: auto;
+        left: 0px;
+        top: auto;
+        bottom: 0px;
+    }
+
+    &.right-bottom {
+        right: 0px;
+        bottom: 0px;
+    }
+
+
+    &.right-top {
+        right: 0px;
+        top: 0px;
+    }
+    &.center-bottom {
+        left: 20%;
+        bottom: 0px;
+    }
+    &.spin {
+        animation: spin 8s ease-in-out 2s infinite alternate;
+    }
+
+    &.zoom {
+        animation: zoom 8s ease-in-out 2s infinite alternate;
+    }
+
+    &.anim-2 {
+        animation: jumping2 8s ease-in-out 2s infinite alternate;
+    }
+
+    @include media-breakpoint-down(sm) {
+        display: none;
+    }
+}
+
+
+@keyframes jumping {
+    0% {
+        transform: translateY(0px) translateX(0) rotate(0) scale(.5);
+        opacity: .2;
+    }
+
+    50% {
+        transform: translateY(-50px) translateX(-50px) rotate(15deg) scale(.7);
+        opacity: .7;
+    }
+
+    100% {
+        transform: translateY(-75px) translateX(-75px) rotate(0) scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes jumping2 {
+    0% {
+        transform: translateY(-150px) translateX(-10px) rotate(0) scale(1);
+        opacity: .2;
+    }
+
+    50% {
+        transform: translateY(-50px) translateX(-10px) rotate(5deg) scale(0.8);
+        opacity: .5;
+    }
+
+    100% {
+        transform: translateY(0px) translateX(0) rotate(0) scale(.7);
+    }
+}
+
+@keyframes animate_pulse {
+    0% {
+        box-shadow:
+            0 0 0 0 rgba(255, 255, 255, 0.2),
+            0 0 0 0 rgba(255, 255, 255, 0.4);
+    }
+
+    40% {
+        box-shadow:
+            0 0 0 50px rgba(255, 255, 255, 0.0),
+            0 0 0 0 rgba(255, 255, 255, 0.4);
+    }
+
+    80% {
+        box-shadow:
+            0 0 0 50px rgba(255, 255, 255, 0.0),
+            0 0 0 30px rgba(255, 255, 255, 0);
+    }
+
+    100% {
+        box-shadow:
+            0 0 0 0 rgba(255, 255, 255, 0.0),
+            0 0 0 30px rgba(255, 255, 255, 0);
+    }
+}
+
+.spin {
+    animation: spin 10s linear infinite;
+}
+
+@keyframes spin {
+
+    0% {
+        transform: rotate(0);
+        left: 50%;
+    }
+
+    40% {
+        transform: rotate(90deg);
+        left: 55%;
+    }
+
+    80% {
+        transform: rotate(180deg);
+        left: 60%;
+    }
+
+    100% {
+        transform: rotate(360deg);
+        left: 50%;
+    }
+
+}
+
+.moveX {
+    animation: moveX 12s linear infinite; 
+}
+
+.moveXS {
+    animation: moveXS 8s linear infinite;
+}
+
+@keyframes moveX {
+    0% {
+        transform: translateX(0);
+    }
+    25% {
+        transform: translateX(150px);
+    }
+    50% {
+        transform: translateX(120px);
+    }
+    75% {
+        transform: translateX(140px);
+    }
+    100% {
+        transform: translateX(0);
+    }
+}
+
+
+@keyframes moveXS {
+    0% {
+        transform: translateX(0);
+    }
+
+    30% {
+        transform: translateX(20px);
+    }
+
+    70% {
+        transform: translateX(50px);
+    }
+
+    100% {
+        transform: translateX(0);
+    }
+}
+
+.moveY {
+    animation: moveY 7s ease-in-out infinite;
+}
+.moveYS {
+    animation: moveYS 9s ease-in-out infinite;
+}
+
+@keyframes moveY {
+    0% {
+        transform: translateY(-80px);
+    }
+
+    50% {
+        transform: translateY(60px);
+    }
+
+    100% {
+        transform: translateY(-80px);
+    }
+}
+
+
+@keyframes moveYS {
+    0% { transform: translateY(-15px); }
+    50% { transform: translateY(15px); }
+    100% { transform: translateY(-15px); }
+}
+
+
+
+.rotate {
+    animation: rotate 7s linear infinite;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+@keyframes zoom {
+    0% {
+        @include transform(scale(.3));
+    }
+
+    20% {
+        @include transform(scale(.8));
+    }
+
+    50% {
+        @include transform(scale(1));
+    }
+
+    100% {
+        @include transform(scale(.4));
+    }
+}
+
+
+
+@keyframes fadeInLeft {
+    0% {
+        opacity: 0;
+        -webkit-transform: translateX(-20px);
+        -ms-transform: translateX(-20px);
+        transform: translateX(-20px)
+    }
+
+    100% {
+        opacity: 1;
+        -webkit-transform: translateX(0);
+        -ms-transform: translateX(0);
+        transform: translateX(0)
+    }
+}
+
+.fadeInLeft {
+    -webkit-animation-name: fadeInLeft;
+    animation-name: fadeInLeft;
+}

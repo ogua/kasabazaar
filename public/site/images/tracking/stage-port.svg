@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160" role="img" aria-label="At the harbour"><defs><clipPath id="c"><circle cx="80" cy="80" r="80"/></clipPath></defs><g clip-path="url(#c)"><rect width="160" height="160" fill="#EEF3F8"/>
+<rect x="0" y="120" width="160" height="40" fill="#DCE5EE"/>
+<rect x="104" y="120" width="56" height="40" fill="#C9DAEA"/>
+<rect x="30" y="34" width="104" height="9" rx="2" fill="#052240"/>
+<rect x="36" y="43" width="7" height="77" fill="#052240"/><rect x="80" y="43" width="7" height="77" fill="#052240"/>
+<path d="M43 48l37 20M80 48L43 68" stroke="#052240" stroke-width="3"/>
+<rect x="104" y="43" width="12" height="7" fill="#2B4A6F"/>
+<path d="M110 50v24" stroke="#052240" stroke-width="2.5"/>
+<rect x="96" y="74" width="30" height="16" fill="#E4252C"/>
+<rect x="46" y="104" width="30" height="16" fill="#2B4A6F"/><rect x="46" y="88" width="30" height="16" fill="#E4252C"/>
+<rect x="8" y="104" width="26" height="16" fill="#E4252C"/>
+<path d="M52 88v32M58 88v32M64 88v32M70 88v32M101 74v16M107 74v16M113 74v16M119 74v16M14 104v16M20 104v16M26 104v16" stroke="#fff" stroke-width="1.5" opacity=".35"/>
+<path d="M100 134q8-6 16 0t16 0 16 0 16 0" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".8"/>
+<circle cx="132" cy="20" r="0" fill="none"/>
+</g></svg>

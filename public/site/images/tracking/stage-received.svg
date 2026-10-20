@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160" role="img" aria-label="Received"><defs><clipPath id="c"><circle cx="80" cy="80" r="80"/></clipPath></defs><g clip-path="url(#c)"><rect width="160" height="160" fill="#EEF3F8"/>
+<rect x="0" y="120" width="160" height="40" fill="#DCE5EE"/>
+<path d="M36 78L78 44l42 34" fill="#052240"/>
+<rect x="44" y="76" width="68" height="44" fill="#fff" stroke="#052240" stroke-width="4"/>
+<rect x="70" y="92" width="16" height="28" fill="#052240"/>
+<rect x="52" y="86" width="12" height="11" fill="#2B4A6F"/>
+<rect x="94" y="102" width="24" height="20" rx="2" fill="#fff" stroke="#052240" stroke-width="3"/>
+<rect x="103" y="102" width="6" height="20" fill="#E4252C"/>
+<circle cx="120" cy="46" r="16" fill="#E4252C"/>
+<path d="M112 46l6 6 10-11" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</g></svg>

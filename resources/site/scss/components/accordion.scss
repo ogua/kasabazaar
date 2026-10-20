@@ -1,0 +1,119 @@
+.faq-accordion {
+   padding: 40px;
+   border: 1px solid #ebebeb;
+   @include media-breakpoint-down(md) {
+      padding: 20px;
+   }
+   .accordion-item {
+      margin-bottom: 25px;
+      background-color: var(--light);
+      padding: 22px 30px;
+      @include border-radius(10px);
+
+      .accordion-body {
+         p:last-child {
+            margin: 0;
+         }
+      }
+
+      .accordion-header {
+         padding: 0px;
+         @include border-radius(10px);
+      }
+
+      .accordion-button {
+         border: 0 none;
+         box-shadow: none !important;
+         border-radius: 10px !important;
+         font-size: 20px;
+         font-weight: 500;
+
+         &:after {
+            background-image: none;
+            position: absolute;
+            content: "\2b";
+            font-family: fontawesome;
+            background: transparent;
+            right: 0;
+            color: var(--primary);
+            @include position('vertical');
+         }
+
+         &:focus {
+            box-shadow: none;
+         }
+      }
+
+      .accordion-body {
+         padding: 25px 40px 0 0;
+      }
+
+      &:last-child {
+         margin-bottom: 0;
+      }
+
+      &.active {
+         background-color: var(--white);
+         box-shadow: 0 0 11px 0 rgba(97, 97, 97, 0.10);
+      }
+   }
+
+   .accordion-button:not(.collapsed) {
+      border: 0 none;
+      box-shadow: none;
+      background-color: transparent;
+      outline: 0 none;
+
+      &:after {
+
+         content: "\f068";
+      }
+   }
+
+}
+
+.faq-sec {
+   .sec-intro {
+      max-width: 600px;
+   }
+
+   .contact-form {
+      border: 1px solid #ebebeb;
+      padding: 30px;
+      @include media-breakpoint-up(xl) {
+         margin-left: 50px;
+      padding: 40px;
+      }
+        @include media-breakpoint-down(md) {
+      padding: 20px;
+   }
+
+      h3 {
+         font-size: 30px;
+         margin-bottom: 30px;
+      }
+
+      .form-group {
+         position: relative;
+         margin-bottom: 27px;
+
+         input,
+         select {
+            background-color: var(--light);
+            @include border-radius(30px);
+         }
+
+         i {
+            position: absolute;
+            right: 20px;
+            @include position('vertical');
+         }
+      }
+
+   }
+}
+.faq-sec4{
+   .sec-intro{
+      max-width: fit-content;
+   }
+}

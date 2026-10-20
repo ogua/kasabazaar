@@ -1,0 +1,118 @@
+/*!
+STYLESHEET INDEX
+------------------------------------------------------
+1. Base (core files)
+	- variables
+	- mixins
+	- typography
+	- animation
+	- theme
+	- header
+	- footer
+	- widget
+	- swiper
+
+2. Components (./components/)
+	- Hero-slider
+	- About
+	- Services
+	- Process
+	- Stat
+	- Choose
+	- Portfolio (Case Studies)
+	- Tracking
+	- Blog
+	- Video
+	- Team
+	- Accordion
+	- Tabs
+	- Solution
+	- Why-us
+	- Contact
+	- Single-post
+
+Removed with their pages: brands, review, pricing, shop,
+single-product, cart, checkout.
+
+Notes:
+- Keep component filenames consistent with imports.
+- Add new sections as separate component files.
+*/
+
+/*! variables */
+@import 'variables';
+
+/*! mixins */
+@import 'mixins';
+
+/*! typography */
+@import 'typography';
+
+/*! animation */
+@import 'animation';
+
+/*! theme */
+@import 'theme';
+
+/*! header */
+@import 'header';
+
+/*! footer */
+@import 'footer';
+
+/*! widget */
+@import 'widget';
+
+/*! swiper */
+@import 'swiper';
+
+/*! hero-slider */
+@import './components/hero-slider';
+
+/*! about */
+@import './components/about';
+
+/*! Services */
+@import './components/services';
+
+/*! Process */
+@import './components/process';
+
+/*! Stat */
+@import './components/stat';
+
+/*! Choose */
+@import './components/choose';
+
+/*! Case Studies */
+@import './components/portfolio';
+
+/*! Tracking */
+@import './components/tracking';
+
+/*! Blog */
+@import './components/blog';
+
+/*! Video */
+@import './components/video';
+
+/*! Team */
+@import './components/team';
+
+/*! Accordion */
+@import './components/accordion';
+
+/*! Tab */
+@import './components/tabs';
+
+/*! Solution */
+@import './components/solution';
+
+/*! Why Us */
+@import './components/why-us';
+
+/*! Contact */
+@import './components/contact';
+
+/*! Single Post */
+@import './components/single-post';

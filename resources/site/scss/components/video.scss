@@ -1,0 +1,83 @@
+.video-sec2 {
+   overflow: hidden;
+   padding-bottom: 90px;
+   .parallax-overly {
+      @include opacity(.99);
+   }
+   .video-box {
+      margin: 60px 0;
+      height: 650px;
+      justify-content: center;
+      align-items: center;
+      display: flex;
+      @include border-radius(16px);
+      overflow: hidden;
+      @include media-breakpoint-down(lg) {
+         height: 400px;
+      }
+      .icon {
+         width: 100px;
+         height: 100px;
+         font-size: 25px;
+         animation: animate_pulse 3s linear infinite;
+
+         i {
+
+            color: var(--primary);
+         }
+      }
+   }
+
+   .brands-wrap2 {
+      padding-top: 25px;
+      @include media-breakpoint-up(lg) {
+         margin-left: 40px;
+      }
+
+      h3 {
+         margin-bottom: 40px;
+         padding-bottom: 40px;
+         font-size: 30px;
+         border-bottom: 1px solid rgba(var(--white-rgb), .1);
+      }
+   }
+}
+
+.video-sec3 {
+   padding-top: 150px;
+   @extend .overly;
+
+   &::before {
+      background-color: var(--dark);
+      @include opacity(.4);
+   }
+
+   .parallax-overly {
+      background-color: var(--dark);
+      mix-blend-mode: soft-light;
+      @include opacity(1);
+   }
+
+   .video-content {
+      h2 {
+         color: var(--white);
+         font-size: 72px;
+         line-height: 1.1;
+         margin-top: 40px;
+         max-width: 780px;
+         @include media-breakpoint-down(lg) {
+            font-size: 60px;
+         }
+         @include media-breakpoint-down(md) {
+            font-size: 45px;
+         }
+         @include media-breakpoint-down(sm) {
+            font-size: 32px;
+         }
+      }
+
+      .play-btn {
+         animation: animate_pulse 3s linear infinite;
+      }
+   }
+}

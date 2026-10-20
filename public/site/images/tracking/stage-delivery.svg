@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160" role="img" aria-label="Out for delivery"><defs><clipPath id="c"><circle cx="80" cy="80" r="80"/></clipPath></defs><g clip-path="url(#c)"><rect width="160" height="160" fill="#EEF3F8"/>
+<rect x="0" y="118" width="160" height="42" fill="#DCE5EE"/>
+<path d="M0 132h160" stroke="#fff" stroke-width="3" stroke-dasharray="12 10"/>
+<rect x="30" y="58" width="72" height="50" rx="4" fill="#fff" stroke="#052240" stroke-width="4"/>
+<rect x="30" y="86" width="72" height="7" fill="#E4252C"/>
+<path d="M102 70h18l16 22v16h-34z" fill="#052240"/>
+<path d="M107 76h11l10 14h-21z" fill="#fff"/>
+<rect x="126" y="98" width="10" height="4" fill="#E4252C"/>
+<circle cx="52" cy="110" r="11" fill="#052240"/><circle cx="52" cy="110" r="4.5" fill="#fff"/>
+<circle cx="116" cy="110" r="11" fill="#052240"/><circle cx="116" cy="110" r="4.5" fill="#fff"/>
+<path d="M8 66h14M4 78h18M10 90h12" stroke="#E4252C" stroke-width="4" stroke-linecap="round"/>
+</g></svg>

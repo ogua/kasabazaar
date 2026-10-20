@@ -399,7 +399,7 @@
 
             <!-- Footer -->
             <div class="label-footer">
-                {{ now()->format('M d, Y H:i') }} | rddshipping.com
+                {{ now()->format('M d, Y H:i') }} | {{ parse_url(config('group.parent.url'), PHP_URL_HOST) }}
             </div>
         </div>
         @endforeach

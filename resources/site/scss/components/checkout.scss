@@ -1,0 +1,87 @@
+/* ==================================
+Checkout Style
+*/
+.order-summery {
+	@include media-breakpoint-down(sm) {
+		margin-top: 30px;
+	}
+
+	@include media-breakpoint-only(sm) {
+		margin-top: 30px;
+	}
+}
+
+.coupon-wrap {
+	input {
+		flex: 0 0 65%;
+	}
+
+	@include media-breakpoint-down(lg) {
+		margin-bottom: 20px;
+
+		input {
+			flex: 0 0 55%;
+		}
+	}
+}
+
+.checkout-coupon {
+	h6 {
+		margin-bottom: 0;
+
+		button {
+			border: 0;
+			color: var(--tertiary);
+			background: transparent;
+		}
+
+	}
+
+	form {
+		max-width: 600px;
+
+		.btn {
+			border-radius: 5px;
+		}
+	}
+}
+
+form.form.checkout-form {
+	label {
+		margin-bottom: 5px;
+		font-weight: 500;
+		color: var(--headings-color);
+		font-size: 17px;
+	}
+
+	select {
+		display: block !important;
+		width: 100%;
+		border: 1px solid var(--theme-border);
+		color: var(--headigns-color);
+		background-color: var(--white);
+	}
+
+	input,
+	select {
+		font-size: 16px;
+		margin-bottom: 30px;
+	}
+
+	input[type="checkbox"] {
+		width: auto;
+	}
+}
+
+
+.payment-option {
+	margin-bottom: 30px;
+
+	button {
+		@extend .h6;
+	}
+
+	.accordion-collapse {
+		padding-top: 10px;
+	}
+}

@@ -1,3 +1,12 @@
 User-agent: *
-Disallow:
-Sitemap: https://rddshipping.com/sitemap.xml
+Allow: /
+Disallow: /admin
+Disallow: /client
+Disallow: /investor
+Disallow: /my-shipment/
+Disallow: /complaint/
+Disallow: /shipment-form/
+Disallow: /pickup-request/
+Disallow: /make-payment
+
+Sitemap: https://kasarose.com/sitemap.xml

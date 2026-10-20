@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" width="160" height="160" role="img" aria-label="Sorting"><defs><clipPath id="c"><circle cx="80" cy="80" r="80"/></clipPath></defs><g clip-path="url(#c)"><rect width="160" height="160" fill="#EEF3F8"/>
+<rect x="0" y="124" width="160" height="36" fill="#DCE5EE"/>
+<rect x="14" y="96" width="96" height="10" rx="5" fill="#052240"/>
+<circle cx="24" cy="101" r="3" fill="#fff"/><circle cx="44" cy="101" r="3" fill="#fff"/><circle cx="64" cy="101" r="3" fill="#fff"/><circle cx="84" cy="101" r="3" fill="#fff"/><circle cx="100" cy="101" r="3" fill="#fff"/>
+<path d="M28 106v18M96 106v18" stroke="#052240" stroke-width="4"/>
+<rect x="24" y="76" width="20" height="20" fill="#E4252C"/><rect x="50" y="80" width="16" height="16" fill="#2B4A6F"/><rect x="72" y="74" width="22" height="22" fill="#fff" stroke="#052240" stroke-width="3"/>
+<path d="M34 76v20M58 80v16M83 74v22" stroke="#fff" stroke-width="2" opacity=".5"/>
+<path d="M112 100c10 0 14-30 26-30M112 100c10 0 14 26 26 26" fill="none" stroke="#E4252C" stroke-width="4" stroke-linecap="round"/>
+<path d="M130 64l9 6-9 6M130 120l9 6-9 6" fill="none" stroke="#E4252C" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="124" y="40" width="22" height="18" rx="2" fill="#052240"/><path d="M128 49h14" stroke="#fff" stroke-width="3"/>
+</g></svg>

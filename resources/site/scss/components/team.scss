@@ -1,0 +1,157 @@
+.team-card {
+   text-align: center;
+   max-width: 285px;
+
+   @include media-breakpoint-down(lg) {
+      margin: 0 auto;
+   }
+
+   .team-thumb {
+      mask-image: url('../images/team-frame.png');
+      margin-bottom: 20px;
+      mask-repeat: no-repeat;
+      @extend .overly;
+
+      &::before {
+         background: var(--dark);
+         @include opacity(0);
+         z-index: 1;
+         @include transition(all, .4s, ease);
+      }
+
+      &:hover::before {
+         @include opacity(.5);
+      }
+   }
+
+   .team-share {
+      position: absolute;
+      right: 20px;
+      bottom: 20px;
+      z-index: 2;
+
+      .icon {
+         background-color: var(--primary);
+         width: 42px;
+         height: 42px;
+         color: var(--white);
+
+         &.icon-active {
+            background-color: var(--dark);
+            z-index: 1;
+         }
+      }
+
+   }
+
+   .social-share {
+      position: relative;
+      left: -25px;
+      @include opacity(0);
+      transition: all .3s ease;
+
+      a {
+         position: absolute;
+         left: -60px;
+         bottom: -10px;
+
+         &:nth-child(2) {
+            bottom: 35px;
+            left: -40px;
+         }
+
+         &:nth-child(3) {
+            bottom: 70px;
+            left: 0px;
+         }
+
+         &:nth-child(4) {
+            bottom: 90px;
+            left: 45px;
+         }
+      }
+
+      &.active {
+         @include opacity(1);
+      }
+   }
+
+}
+
+.team-details-page {
+   h3.display-3 {
+      margin-bottom: 20px;
+      font-size: 30px;
+   }
+
+   p {
+      margin: 0 0 20px;
+   }
+
+   .team-sidebar {
+      background-color: var(--light);
+
+      .team-info-wrap {
+         padding: 30px;
+
+         .team-head {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+         }
+      }
+   }
+
+   .contact-form {
+      h3 {
+         margin-bottom: 30px;
+      }
+
+      .form-group.half-group {
+         flex: 0 0 48%;
+      }
+
+      .form-group {
+
+         input,
+         textarea {
+            @include border-radius(30px);
+            padding-left: 30px;
+         }
+      }
+   }
+
+   .skill {
+      padding: 50px 0 0;
+      overflow: hidden;
+
+      .progress {
+         margin-bottom: 55px;
+      }
+   }
+
+
+
+   .ts-single {
+      margin-bottom: 25px;
+
+      span {
+         color: #797E88;
+         font-size: 14px;
+      }
+
+      h5 {
+         font-size: 18px;
+         font-weight: 500;
+      }
+
+      .social-share a {
+         background-color: var(--theme-border);
+         color: var(--headings-color);
+
+         &:hover {
+            background-color: var(--primary);
+            color: var(--white);
+         }
+      }
+   }
+}

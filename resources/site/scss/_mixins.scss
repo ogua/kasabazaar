@@ -1,0 +1,262 @@
+/*=================================
+Mixes
+*/
+$breakpoints: (
+  xs: 0,
+  sm: 576px,
+  md: 768px,
+  lg: 992px,
+  xl: 1200px,
+  xxl: 1400px,
+  xxxl: 1600px,
+  over: 1800px
+);
+
+// Mixins for better functionality
+@mixin media-breakpoint-up($name) {
+  $min: map-get($breakpoints, $name);
+  @media (min-width: $min) {
+    @content;
+  }
+}
+
+@mixin media-breakpoint-down($name) {
+  $max: map-get($breakpoints, $name) - 0.02px;
+  @media (max-width: $max) {
+    @content;
+  }
+}
+@mixin media-breakpoint-only($name) {
+  $min: map-get($breakpoints, $name);
+
+  // Get the next breakpoint
+  $keys: map-keys($breakpoints);
+  $index: index($keys, $name);
+  $next: if($index < length($keys), nth($keys, $index + 1), null);
+  $max: if($next, map-get($breakpoints, $next) - 0.02px, null);
+
+  @if $min != null and $max != null {
+    @media (min-width: $min) and (max-width: $max) {
+      @content;
+    }
+  } @else if $min != null {
+    // for the last breakpoint (no upper bound)
+    @media (min-width: $min) {
+      @content;
+    }
+  }
+}
+
+/**============================
+Text Color 
+**/
+@mixin text-color($color-name) {
+  color: map-get($theme-colors, $color-name) !important;
+}
+
+// ===== GENERATE TEXT CLASSES =====
+@each $color, $value in $theme-colors {
+  .text-#{$color} {
+    @include text-color($color);
+  }
+}
+// ===== DISPLAY SIZES =====
+$display-sizes: (
+  1: 74px,
+  2: 48px,
+  3: 36px,
+  4: 24px,
+  5: 20px,
+  6: 18px
+);
+
+// ===== FONT SIZE MIXIN =====
+@mixin typography-style($level) {
+   font-family: var(--font-family-headings, "Onest", sans-serif);
+  font-size: map-get($display-sizes, $level);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--headings-color);
+}
+
+// ===== HEADINGS =====
+h1, .h1 { @include typography-style(1); }
+h2, .h2 { @include typography-style(2); }
+h3, .h3 { @include typography-style(3); }
+h4, .h4 { @include typography-style(4); }
+h5, .h5 { @include typography-style(5); }
+h6, .h6 { @include typography-style(6); }
+
+// ===== DISPLAY CLASSES =====
+@for $i from 1 through 6 {
+  .display-#{$i} { @include typography-style($i); }
+}
+// button mixin
+@mixin btn-variant($color-name, $text-color: #fff, $hover-darken: 10%) {
+  $color: map-get($theme-colors, $color-name);
+  
+  @if $color {
+    background-color: $color;
+    border-color: $color;
+    color: $text-color;
+    
+    &:hover,
+    &:focus {
+      background-color: darken($color, $hover-darken);
+      border-color: darken($color, $hover-darken);
+      color: $text-color;
+    }
+  }
+}
+
+@mixin transition($what: all, $time: 0.4s, $how: ease-in-out) {
+    -webkit-transition: $what $time $how;
+    -moz-transition: $what $time $how;
+    -ms-transition: $what $time $how;
+    -o-transition: $what $time $how;
+    transition: $what $time $how;
+}
+
+@mixin border-radius($radius) {
+    -webkit-border-radius: $radius;
+    -moz-border-radius: $radius;
+    -ms-border-radius: $radius;
+    border-radius: $radius;
+}
+
+// Single side border-radius
+@mixin border-top-radius($radius) {
+    -webkit-border-top-right-radius: $radius;
+    border-top-right-radius: $radius;
+    -webkit-border-top-left-radius: $radius;
+    border-top-left-radius: $radius;
+}
+
+@mixin border-right-radius($radius) {
+    -webkit-border-bottom-right-radius: $radius;
+    border-bottom-right-radius: $radius;
+    -webkit-border-top-right-radius: $radius;
+    border-top-right-radius: $radius;
+}
+
+@mixin border-bottom-radius($radius) {
+    -webkit-border-bottom-right-radius: $radius;
+    border-bottom-right-radius: $radius;
+    -webkit-border-bottom-left-radius: $radius;
+    border-bottom-left-radius: $radius;
+}
+
+@mixin border-left-radius($radius) {
+    -webkit-border-bottom-left-radius: $radius;
+    border-bottom-left-radius: $radius;
+    -webkit-border-top-left-radius: $radius;
+    border-top-left-radius: $radius;
+}
+
+@mixin box-shadow($shadow...) {
+    -webkit-box-shadow: $shadow;
+    -moz-box-shadow: $shadow;
+    box-shadow: $shadow;
+}
+
+/*
+  $shadow-color: red;  // could also be a #F9F8F6 type color
+  @include box-shadow(0 0px 12px rgba($shadow-color, .9));
+*/
+
+// For Opacity
+@mixin opacity($value) {
+    $IEValue: $value*100;
+    opacity: $value;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=" +$IEValue+")";
+    filter: alpha(opacity=$IEValue);
+}
+
+// generic transform
+@mixin transform($transforms) {
+    -moz-transform: $transforms;
+    -o-transform: $transforms;
+    -ms-transform: $transforms;
+    -webkit-transform: $transforms;
+    transform: $transforms;
+}
+
+// rotate
+@mixin rotate ($deg) {
+    @include transform(rotate(#{$deg}deg));
+}
+
+// scale
+@mixin scale($scale) {
+    @include transform(scale($scale));
+}
+
+// translate
+@mixin translate ($x, $y) {
+    @include transform(translate($x, $y));
+}
+
+// skew
+@mixin skew ($x, $y) {
+    @include transform(skew(#{$x}deg, #{$y}deg));
+}
+
+//transform origin
+@mixin transform-origin ($origin) {
+    moz-transform-origin: $origin;
+    -o-transform-origin: $origin;
+    -ms-transform-origin: $origin;
+    -webkit-transform-origin: $origin;
+    transform-origin: $origin;
+}
+
+//Clear
+@mixin clear {
+    &:after {
+        content: "";
+        display: table;
+        clear: both;
+    }
+}
+
+@mixin list-clear {
+    margin: 0px;
+    padding: 0px;
+    list-style: none;
+}
+
+
+
+// Background
+
+@mixin position ($position) {
+    position: absolute;
+
+    @if $position =='vertical' {
+        top: 50%;
+        -webkit-transform: translateY(-50%);
+        -ms-transform: translateY(-50%);
+        transform: translateY(-50%);
+    }
+
+    @else if $position =='horizontal' {
+        left: 50%;
+        -webkit-transform: translateX(-50%);
+        -ms-transform: translateX(-50%);
+        transform: translate(-50%);
+    }
+
+    @else if $position =='center' {
+        top: 50%;
+        left: 50%;
+        -webkit-transform: translate(-50%, -50%);
+        -ms-transform: translate(-50%, -50%);
+        transform: translate(-50%, -50%);
+    }
+}
+
+// GRADIENT MIXIN 
+@mixin gradient {
+    background: linear-gradient(to right, rgba(var(--primary), 0.95), rgba(var(--secondary), 0.95));
+}
+
