@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Storage;
 
 class ShipmentMedia extends Model
 {
@@ -17,6 +18,7 @@ class ShipmentMedia extends Model
     public const TYPES = [
         'image' => 'Image',
         'video' => 'Video',
+        'document' => 'Document',
     ];
 
     public const STAGES = [
@@ -25,6 +27,57 @@ class ShipmentMedia extends Model
         'delivery' => 'At Delivery',
         'post-delivery' => 'Post Delivery',
     ];
+
+    public const VIDEO_EXTENSIONS = ['mp4', 'mov', 'qt', 'avi', 'webm', 'mkv', 'm4v', '3gp', 'mpeg', 'mpg'];
+
+    public const DOCUMENT_EXTENSIONS = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'txt'];
+
+    /**
+     * MIME types the staff upload forms accept: photos, videos and paperwork.
+     *
+     * @var array<int, string>
+     */
+    public const ACCEPTED_UPLOAD_TYPES = [
+        'image/*',
+        'video/*',
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'text/csv',
+        'text/plain',
+    ];
+
+    protected static function booted(): void
+    {
+        static::deleted(function (ShipmentMedia $media): void {
+            if ($media->file_path && Storage::disk('public')->exists($media->file_path)) {
+                Storage::disk('public')->delete($media->file_path);
+            }
+        });
+    }
+
+    public static function typeForPath(string $path): string
+    {
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        return match (true) {
+            in_array($extension, self::VIDEO_EXTENSIONS, true) => 'video',
+            in_array($extension, self::DOCUMENT_EXTENSIONS, true) => 'document',
+            default => 'image',
+        };
+    }
+
+    public function url(): string
+    {
+        return asset('storage/'.$this->file_path);
+    }
+
+    public function fileName(): string
+    {
+        return basename($this->file_path);
+    }
 
     public function shipment(): BelongsTo
     {

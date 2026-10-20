@@ -253,8 +253,13 @@
                                         <div class="col-md-3 col-6 mb-3">
                                             @if ($item->type === 'image')
                                                 <img src="{{ asset('storage/' . $item->file_path) }}" class="img-fluid rounded" style="height:150px;width:100%;object-fit:cover;">
-                                            @else
+                                            @elseif ($item->type === 'video')
                                                 <video src="{{ asset('storage/' . $item->file_path) }}" controls class="img-fluid rounded" style="height:150px;width:100%;"></video>
+                                            @else
+                                                <a href="{{ asset('storage/' . $item->file_path) }}" target="_blank" rel="noopener" class="d-flex flex-column align-items-center justify-content-center rounded bg-light text-dark text-decoration-none" style="height:150px;width:100%;">
+                                                    <i class="bi bi-file-earmark-text fs-1"></i>
+                                                    <span class="small text-break px-2 text-center">{{ $item->fileName() }}</span>
+                                                </a>
                                             @endif
                                             @if ($item->caption)
                                                 <div class="text-muted small mt-1">{{ $item->caption }}</div>

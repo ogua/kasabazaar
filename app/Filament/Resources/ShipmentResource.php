@@ -1315,79 +1315,102 @@ class ShipmentResource extends Resource
                                     ->schema([
                                         Forms\Components\Placeholder::make('media_gallery')
                                             ->label('')
-                                            ->content(function ($record) {
-                                                $media = $record->media()->latest()->get();
-                                                if ($media->isEmpty()) {
-                                                    return 'No media uploaded yet.';
-                                                }
-                                                $html = '<div class="grid grid-cols-3 gap-4">';
-                                                foreach ($media as $item) {
-                                                    $stageLabel = ShipmentMedia::STAGES[$item->stage] ?? $item->stage;
-                                                    $html .= '<div class="border rounded-lg p-2 dark:border-gray-700">';
-                                                    if ($item->type === 'image') {
-                                                        $html .= '<img src="'.asset('storage/'.$item->file_path).'" class="w-full h-32 object-cover rounded mb-2" />';
-                                                    } else {
-                                                        $html .= '<div class="w-full h-32 bg-gray-100 dark:bg-gray-800 rounded mb-2 flex items-center justify-center"><span class="text-2xl">🎥</span></div>';
-                                                    }
-                                                    $html .= '<span class="text-xs font-medium">'.$stageLabel.'</span>';
-                                                    if ($item->caption) {
-                                                        $html .= '<p class="text-xs text-gray-500 mt-1">'.e($item->caption).'</p>';
-                                                    }
-                                                    $html .= '</div>';
-                                                }
-                                                $html .= '</div>';
-
-                                                return new \Illuminate\Support\HtmlString($html);
-                                            }),
+                                            ->content(fn (Shipment $record) => new \Illuminate\Support\HtmlString(
+                                                view('filament.components.shipment-media-gallery', [
+                                                    'media' => $record->media()->with('uploader')->latest()->get(),
+                                                    'emptyMessage' => 'No media uploaded yet.',
+                                                    'showMeta' => true,
+                                                ])->render()
+                                            )),
                                     ])
                                     ->collapsible(),
+
+                                Forms\Components\Section::make('Remove Wrong Uploads')
+                                    ->description('Tick any photo, video or document uploaded by mistake. It is deleted permanently when you click Save.')
+                                    ->schema([
+                                        Forms\Components\CheckboxList::make('media_to_delete')
+                                            ->label('')
+                                            ->options(fn (Shipment $record) => static::removableMedia($record)
+                                                ->mapWithKeys(fn (ShipmentMedia $item) => [
+                                                    $item->id => (ShipmentMedia::STAGES[$item->stage] ?? $item->stage)
+                                                        .' · '.(ShipmentMedia::TYPES[$item->type] ?? $item->type)
+                                                        .' · '.($item->caption ?: $item->fileName())
+                                                        .' ('.$item->created_at?->format('d M Y, H:i').')',
+                                                ])
+                                                ->all())
+                                            ->columns(1)
+                                            ->bulkToggleable(),
+                                    ])
+                                    ->visible(fn (Shipment $record) => static::removableMedia($record)->isNotEmpty())
+                                    ->collapsed(),
 
                                 Forms\Components\Section::make('Upload New Media')
                                     ->schema([
                                         Forms\Components\Select::make('media_stage')
                                             ->label('Stage')
                                             ->options(ShipmentMedia::STAGES)
-                                            ->required()
+                                            ->required(fn (Forms\Get $get) => filled($get('media_files')))
                                             ->native(false),
-
-                                        Forms\Components\FileUpload::make('media_files')
-                                            ->label('Upload Images / Videos')
-                                            ->multiple()
-                                            ->directory('shipment-media')
-                                            ->acceptedFileTypes(['image/*', 'video/*'])
-                                            ->maxSize(51200) // 50MB
-                                            ->columnSpanFull(),
 
                                         Forms\Components\TextInput::make('media_caption')
                                             ->label('Caption (optional)')
                                             ->placeholder('Describe these files...'),
+
+                                        Forms\Components\FileUpload::make('media_files')
+                                            ->label('Upload Photos / Videos / Documents')
+                                            ->multiple()
+                                            ->disk('public')
+                                            ->directory('shipment-media')
+                                            ->acceptedFileTypes(ShipmentMedia::ACCEPTED_UPLOAD_TYPES)
+                                            ->maxSize(51200) // 50MB
+                                            ->columnSpanFull(),
                                     ])
                                     ->columns(2),
                             ])
-                            ->action(function ($record, array $data) {
-                                if (! empty($data['media_files'])) {
-                                    foreach ($data['media_files'] as $filePath) {
-                                        $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-                                        $type = in_array($extension, ['mp4', 'mov', 'avi', 'webm', 'mkv']) ? 'video' : 'image';
-
-                                        ShipmentMedia::create([
-                                            'shipment_id' => $record->id,
-                                            'type' => $type,
-                                            'file_path' => $filePath,
-                                            'stage' => $data['media_stage'],
-                                            'caption' => $data['media_caption'] ?? null,
-                                            'uploaded_by' => auth()->id(),
-                                        ]);
-                                    }
-
-                                    \Filament\Notifications\Notification::make()
-                                        ->title('Media Uploaded')
-                                        ->body(count($data['media_files']).' file(s) uploaded successfully.')
-                                        ->success()
-                                        ->send();
+                            ->action(function (Shipment $record, array $data) {
+                                $removed = 0;
+                                if (! empty($data['media_to_delete'])) {
+                                    static::removableMedia($record)
+                                        ->whereIn('id', $data['media_to_delete'])
+                                        ->each(function (ShipmentMedia $item) use (&$removed) {
+                                            $item->delete();
+                                            $removed++;
+                                        });
                                 }
+
+                                $uploaded = 0;
+                                foreach ($data['media_files'] ?? [] as $filePath) {
+                                    ShipmentMedia::create([
+                                        'shipment_id' => $record->id,
+                                        'type' => ShipmentMedia::typeForPath($filePath),
+                                        'file_path' => $filePath,
+                                        'stage' => $data['media_stage'],
+                                        'caption' => $data['media_caption'] ?? null,
+                                        'uploaded_by' => auth()->id(),
+                                    ]);
+                                    $uploaded++;
+                                }
+
+                                if ($uploaded === 0 && $removed === 0) {
+                                    \Filament\Notifications\Notification::make()
+                                        ->title('Nothing to save')
+                                        ->body('Choose files to upload or tick uploads to remove.')
+                                        ->warning()
+                                        ->send();
+
+                                    return;
+                                }
+
+                                \Filament\Notifications\Notification::make()
+                                    ->title('Media Updated')
+                                    ->body(collect([
+                                        $uploaded ? $uploaded.' file(s) uploaded.' : null,
+                                        $removed ? $removed.' file(s) removed.' : null,
+                                    ])->filter()->implode(' '))
+                                    ->success()
+                                    ->send();
                             })
-                            ->modalSubmitActionLabel('Upload'),
+                            ->modalSubmitActionLabel('Save'),
 
                         Tables\Actions\Action::make('complaint_link')
                             ->label('Complaint Link')
@@ -1499,6 +1522,23 @@ class ShipmentResource extends Resource
     public static function getRelations(): array
     {
         return [];
+    }
+
+    /**
+     * Media the current user may remove: everything for staff who can update
+     * shipments, otherwise only the files they uploaded themselves.
+     *
+     * @return \Illuminate\Support\Collection<int, ShipmentMedia>
+     */
+    public static function removableMedia(Shipment $shipment): \Illuminate\Support\Collection
+    {
+        $user = auth()->user();
+
+        return $shipment->media()
+            ->latest()
+            ->get()
+            ->filter(fn (ShipmentMedia $item) => $user?->can('update_shipment') || $item->uploaded_by === $user?->id)
+            ->values();
     }
 
     public static function getPages(): array

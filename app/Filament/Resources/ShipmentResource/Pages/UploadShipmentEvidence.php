@@ -44,10 +44,11 @@ class UploadShipmentEvidence extends Page implements HasForms
                     ->native(false),
 
                 Forms\Components\FileUpload::make('media_files')
-                    ->label('Upload Images / Videos')
+                    ->label('Upload Photos / Videos / Documents')
                     ->multiple()
+                    ->disk('public')
                     ->directory('shipment-media')
-                    ->acceptedFileTypes(['image/*', 'video/*'])
+                    ->acceptedFileTypes(ShipmentMedia::ACCEPTED_UPLOAD_TYPES)
                     ->maxSize(51200)
                     ->columnSpanFull(),
 
@@ -64,12 +65,9 @@ class UploadShipmentEvidence extends Page implements HasForms
 
         if (! empty($data['media_files'])) {
             foreach ($data['media_files'] as $filePath) {
-                $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-                $type = in_array($extension, ['mp4', 'mov', 'avi', 'webm', 'mkv']) ? 'video' : 'image';
-
                 ShipmentMedia::create([
                     'shipment_id' => $this->record->id,
-                    'type' => $type,
+                    'type' => ShipmentMedia::typeForPath($filePath),
                     'file_path' => $filePath,
                     'stage' => $data['media_stage'],
                     'caption' => $data['media_caption'] ?? null,
