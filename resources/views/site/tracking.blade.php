@@ -208,67 +208,32 @@
          </div>
 
          @if ($market)
-            <!-- KASAROSE MARKET banner: copy is text, artwork is an inline SVG -->
+            <!-- KASAROSE MARKET banner: copy is text, product photos are artwork (public/site/images/market) -->
             <div class="row">
                <div class="col-lg-10 mx-auto">
                   <aside class="market-banner" aria-labelledby="market-banner-title">
-                     <div>
-                        <span class="market-banner-eyebrow">From our group &middot; {{ $market['name'] }}</span>
-                        <h2 class="market-banner-title" id="market-banner-title">Shop Ghana&rsquo;s marketplace, <span>delivered by us.</span></h2>
-                        <p class="market-banner-text">Products from trusted Ghanaian vendors &mdash; electronics, fashion,
-                           home essentials and more &mdash; brought to your door by the same logistics team moving your
-                           shipment.</p>
+                     <div class="market-banner-body">
+                        <img class="market-banner-logo" src="{{ asset('site/images/market/kasarosemarket-poster-logo.png') }}"
+                             alt="{{ $market['name'] }}" width="891" height="187" loading="lazy">
+                        <h2 class="market-banner-title" id="market-banner-title">Shop Ghana. <span>We&rsquo;ll deliver it to you.</span></h2>
+                        <p class="market-banner-text">Find rice, cooking oil, kitchen fixtures, car parts and more.</p>
+                        <a href="{{ $market['url'] }}" target="_blank" rel="noopener" class="market-banner-btn">
+                           Start Shopping <i class="fa fa-arrow-right" aria-hidden="true"></i>
+                        </a>
                         <ul class="market-banner-perks">
-                           <li><i class="fa-solid fa-shield-halved"></i>Vetted vendors</li>
-                           <li><i class="fa-solid fa-truck-fast"></i>Nationwide delivery</li>
-                           <li><i class="fa-solid fa-gavel"></i>Live auctions</li>
+                           <li><i class="fa-solid fa-shield-halved" aria-hidden="true"></i>Vetted vendors</li>
+                           <li><i class="fa-solid fa-truck-fast" aria-hidden="true"></i>Nationwide delivery</li>
+                           <li><i class="fa-solid fa-gavel" aria-hidden="true"></i>Live auctions</li>
                         </ul>
-                        <div class="market-banner-cta">
-                           <a href="{{ $market['url'] }}" target="_blank" rel="noopener" class="btn btn-primary">
-                              Start Shopping <i class="fa fa-arrow-right"></i><span></span>
-                           </a>
-                           <span class="market-banner-url">{{ preg_replace('#^https?://#', '', $market['url']) }}</span>
-                        </div>
                      </div>
-                     <svg class="market-banner-art" viewBox="0 0 420 320" role="img" aria-label="A phone showing the marketplace, with shopping bags and a delivery box">
-                        <ellipse cx="220" cy="296" rx="180" ry="16" fill="#000" opacity=".18"/>
-                        <circle cx="236" cy="150" r="128" fill="#fff" opacity=".06"/>
-                        <circle cx="236" cy="150" r="92" fill="#fff" opacity=".06"/>
-                        <rect x="150" y="26" width="150" height="268" rx="24" fill="#021528"/>
-                        <rect x="160" y="40" width="130" height="240" rx="14" fill="#fff"/>
-                        <rect x="205" y="31" width="40" height="5" rx="2.5" fill="#2B4A6F"/>
-                        <rect x="160" y="40" width="130" height="38" rx="14" fill="#E4252C"/>
-                        <rect x="160" y="62" width="130" height="16" fill="#E4252C"/>
-                        <rect x="172" y="52" width="58" height="8" rx="4" fill="#fff"/>
-                        <circle cx="274" cy="56" r="7" fill="#fff" opacity=".9"/>
-                        <rect x="170" y="88" width="110" height="10" rx="5" fill="#EEF3F8"/>
-                        <rect x="170" y="108" width="52" height="58" rx="8" fill="#EEF3F8"/>
-                        <rect x="228" y="108" width="52" height="58" rx="8" fill="#EEF3F8"/>
-                        <path d="M182 150l10-22 10 14 6-8 8 16z" fill="#2B4A6F"/>
-                        <circle cx="254" cy="130" r="13" fill="#E4252C" opacity=".85"/>
-                        <rect x="170" y="174" width="52" height="58" rx="8" fill="#EEF3F8"/>
-                        <rect x="228" y="174" width="52" height="58" rx="8" fill="#EEF3F8"/>
-                        <rect x="181" y="186" width="30" height="30" rx="4" fill="#052240"/>
-                        <path d="M240 214h28l-4-24h-20z" fill="#E4252C"/>
-                        <rect x="170" y="244" width="110" height="24" rx="12" fill="#052240"/>
-                        <rect x="198" y="253" width="54" height="6" rx="3" fill="#fff"/>
-                        <path d="M70 168h66l8 110H62z" fill="#E4252C"/>
-                        <path d="M86 168v-14a17 17 0 0 1 34 0v14" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
-                        <path d="M62 278h82l-2-14H64z" fill="#000" opacity=".15"/>
-                        <rect x="88" y="206" width="30" height="6" rx="3" fill="#fff" opacity=".9"/>
-                        <path d="M40 222h44l6 72H34z" fill="#fff"/>
-                        <path d="M50 222v-10a12 12 0 0 1 24 0v10" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
-                        <circle cx="62" cy="256" r="9" fill="#E4252C"/>
-                        <rect x="318" y="190" width="86" height="76" rx="6" fill="#C98B4A"/>
-                        <rect x="318" y="190" width="86" height="20" fill="#B47838"/>
-                        <rect x="352" y="190" width="18" height="76" fill="#E4252C"/>
-                        <rect x="330" y="236" width="18" height="4" rx="2" fill="#fff" opacity=".7"/>
-                        <rect x="330" y="244" width="12" height="4" rx="2" fill="#fff" opacity=".7"/>
-                        <circle cx="352" cy="132" r="26" fill="#E4252C"/>
-                        <path d="M340 132l9 9 15-17" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M30 96l4 10 10 4-10 4-4 10-4-10-10-4 10-4z" fill="#fff" opacity=".7"/>
-                        <path d="M390 60l3 7 7 3-7 3-3 7-3-7-7-3 7-3z" fill="#fff" opacity=".6"/>
-                     </svg>
+                     <picture class="market-banner-art">
+                        <source srcset="{{ asset('site/images/market/market-products.webp') }}" type="image/webp">
+                        <img src="{{ asset('site/images/market/market-products.jpg') }}" width="990" height="710" loading="lazy"
+                             alt="Rice, vegetable oil, a kitchen sink, headlamps, a drive shaft and suspension struts">
+                     </picture>
+                     <a href="{{ $market['url'] }}" target="_blank" rel="noopener" class="market-banner-footer">
+                        <i class="fa-solid fa-globe" aria-hidden="true"></i>{{ preg_replace('#^https?://#', '', $market['url']) }}
+                     </a>
                   </aside>
                </div>
             </div>
