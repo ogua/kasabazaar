@@ -173,6 +173,8 @@
                               <a class="nav-link{{ request()->routeIs('contact-us') ? ' active' : '' }}" href="{{ route('contact-us') }}">Contact Us</a>
                            </li>
                         </ul>
+                        <a href="{!! url('/admin') !!}" class="btn btn-primary d-md-none mt-4" target="_blank" rel="noopener"> Login <i class="fa fa-arrow-right"></i><span></span>
+                        </a>
                      </div>
                   </div>
                </div>

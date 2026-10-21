@@ -52,7 +52,7 @@ return [
         'tagline' => 'Door-to-door freight, real estate and property management.',
         'description' => 'The group\'s founding company — known as KasaBazaar until 2026, and incorporating the door-to-door freight business formerly run as RDD Shipping. Air and sea freight, ecommerce package forwarding and shipment tracking between the United States and Ghana, alongside real estate sales and property management.',
         'logo' => 'images/kasarose-logistics-logo.png',
-        'url' => env('GROUP_SITE_URL') ?: 'https://kasarose.com',
+        'url' => 'https://kasarose.com',
         'companies_url' => rtrim(env('GROUP_SITE_URL') ?: 'https://kasarose.com', '/').'/our-companies.php',
         // Public tracking page; invoices and receipts link to it as tracking?ref={tracking_number}.
         // Documents printed before October 2026 carry tracking.php, which 301-redirects here.
