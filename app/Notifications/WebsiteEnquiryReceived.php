@@ -6,12 +6,15 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Symfony\Component\Mime\Address;
+use Symfony\Component\Mime\Email;
 
 /**
  * Copies a public-website form submission (contact, quote or feedback) to the team's
  * inboxes in config('website.form_recipients'). The submission itself is already
  * stored as a Contact Message or Customer Feedback; this is the heads-up, with
- * reply-to set to the visitor so staff can answer straight from their inbox.
+ * reply-to set to the visitor so staff can answer straight from their inbox. It
+ * replaces (not adds to) the global config('mail.reply_to') address.
  */
 class WebsiteEnquiryReceived extends Notification implements ShouldQueue
 {
@@ -39,7 +42,7 @@ class WebsiteEnquiryReceived extends Notification implements ShouldQueue
     {
         $mail = (new MailMessage)
             ->subject("{$this->formLabel} from {$this->sender['name']}")
-            ->replyTo($this->sender['email'], $this->sender['name'])
+            ->withSymfonyMessage(fn (Email $message): Email => $message->replyTo(new Address($this->sender['email'], $this->sender['name'])))
             ->greeting($this->formLabel)
             ->line("Name: {$this->sender['name']}")
             ->line("Email: {$this->sender['email']}")
