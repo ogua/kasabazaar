@@ -24,8 +24,9 @@
             'icon' => 'heroicon-o-eye',
             'title' => 'Viewing a file',
             'body' => [
-                'Hover a tile to see the client, tracking number, container, upload date and time, uploader and caption.',
-                'Click a tile to open the viewer. Use <kbd>←</kbd> / <kbd>→</kbd> to move between files on the page and <kbd>Esc</kbd> to close.',
+                'Uploads are grouped into one card per client per container, showing the client name, container, file count and latest upload.',
+                'Click a card to open the album with all of that client’s uploads in that container. Hover a file there to see its stage, date, time, uploader and caption.',
+                'Click a file in the album to open the viewer. Use <kbd>←</kbd> / <kbd>→</kbd> to move between the album’s files and <kbd>Esc</kbd> to close.',
                 'The side panel shows full client details (tap to call or email), receiver, shipment status, stage, file size and who uploaded it.',
                 'Photos and videos play inline, PDFs preview in the viewer; Word, Excel and other documents can be downloaded.',
                 'Shortcut buttons show all media for the same client, container or shipment.',
@@ -45,7 +46,7 @@
             'title' => 'Removing files',
             'body' => [
                 'Staff with the <em>Update Shipment</em> permission may remove any file. Everyone else may remove only files they uploaded themselves.',
-                'Remove one file from the viewer, or tick several tiles (checkbox in the corner) and use <strong>Remove selected</strong>.',
+                'Remove one file from the viewer, or tick several files in an album (checkbox in the corner) and use <strong>Remove selected</strong>.',
                 'Removal deletes the record and the stored file permanently — it cannot be undone. Download a copy first if in doubt.',
             ],
         ],

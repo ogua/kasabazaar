@@ -31,11 +31,10 @@
       <div class="container">
          <div class="row justify-content-center">
             <div class="col-lg-9">
-               <p class="text-mute">Last updated: October 20, 2026</p>
+               <p class="text-mute">Last updated: October 21, 2026</p>
 
                <p>This Privacy Policy explains what information KASAROSE LOGISTICS, operated by
-                  <strong>{{ config('group.company.legal_name') }}</strong> (known as KasaBazaar until 2026
-                  &mdash; "we", "us"), collects through this website and when you use our shipping and logistics
+                  <strong>{{ config('group.company.legal_name') }}</strong> ("we", "us"), collects through this website and when you use our shipping and logistics
                   services, how we use it, and the choices you have.</p>
 
                <p><strong>It covers KASAROSE LOGISTICS only.</strong> KASAROSE LOGISTICS is the parent company of the
@@ -51,14 +50,14 @@
                      (such as service type, weight, dimensions, origin and destination).</li>
                   <li>Feedback form: your name, contact details, rating and comments, and the tracking number or
                      reference of the shipment you are telling us about.</li>
-                  <li>Whether you agreed to receive SMS updates, where you gave us a phone number.</li>
+                  <li>Whether you agreed to receive SMS or WhatsApp updates, where you gave us a phone number.</li>
                </ul>
                <p><strong>When you ship with us</strong>, we also collect:</p>
                <ul class="ct-list">
                   <li>Sender and recipient names, phone numbers, email addresses and addresses (in the USA and
                      Ghana).</li>
-                  <li>Your mobile number and consent to receive SMS notifications, captured when you book a
-                     shipment.</li>
+                  <li>Your mobile number and consent to receive SMS or WhatsApp notifications, captured when you
+                     book a shipment.</li>
                   <li>Shipment details: item description, weight, dimensions and declared value.</li>
                   <li>Payment information, processed through our payment partner (Paystack).</li>
                </ul>
@@ -91,8 +90,8 @@
                   <li>To process, manage and track your shipments between the USA and Ghana, and to generate
                      shipping labels, packing slips and delivery documents.</li>
                   <li>To communicate with you about your shipment status, invoices and receipts.</li>
-                  <li>To send SMS/text message notifications about your shipment and payments, where you have opted
-                     in.</li>
+                  <li>To send SMS/text message or WhatsApp notifications about your shipment and payments, where you
+                     have opted in.</li>
                   <li>To process payments securely through our payment processor.</li>
                   <li>To comply with legal obligations applicable in Ghana and the United States.</li>
                </ul>
@@ -101,9 +100,10 @@
                <h3 class="display-5 mt-5" id="sms-notifications">SMS / Text Message Notifications</h3>
                <p>When you book a shipment, you may provide a mobile number and opt in to receive SMS (text message)
                   updates about that shipment. If you opt in, we send automated transactional messages triggered by
-                  activity on your order &mdash; such as booking confirmation, pickup, departure, port arrival,
-                  out-for-delivery and delivery confirmation, payment receipts, and tracking-number updates. These
-                  messages are sent under the <strong>KasaBazaar</strong> name.</p>
+                  activity on your order &mdash; such as booking confirmation, pickup, departure, arrival at the port
+                  in Ghana, out-for-delivery and delivery confirmation, payment receipts, and tracking-number
+                  updates. These messages are sent by KASAROSE LOGISTICS under the sender ID
+                  <strong>KASAROSE</strong>.</p>
                <ul class="ct-list">
                   <li><strong>Consent:</strong> SMS updates are sent only to numbers that opted in. Opting in is not a
                      condition of using our services.</li>
@@ -120,12 +120,17 @@
                      own marketing or promotional purposes.</li>
                </ul>
                <p>This programme is also documented on our <a href="{{ route('sms-terms') }}">SMS Terms</a> page.</p>
+               <p id="whatsapp-notifications"><strong>WhatsApp:</strong> if you separately agree to receive updates
+                  on WhatsApp, the same shipment and payment updates are sent to your WhatsApp number instead of by
+                  SMS, through WhatsApp (operated by Meta) and our WhatsApp messaging provider. WhatsApp's own privacy
+                  policy applies to its handling of those messages. You can ask us to stop WhatsApp updates at any
+                  time using the contact details below; we will then use SMS only if you have opted in to it.</p>
 
                <h3 class="display-5 mt-5">Sharing of Your Information</h3>
                <p>We share your information only in the following circumstances:</p>
                <ul class="ct-list">
                   <li><strong>Service providers:</strong> payment processors (Paystack), SMS/messaging providers
-                     (Twilio, Arkesel), logistics partners and warehouse operators, strictly to fulfil your
+                     (Twilio, Arkesel, and WhatsApp for customers who opted in to it), logistics partners and warehouse operators, strictly to fulfil your
                      shipment.</li>
                   <li><strong>Legal requirements:</strong> when required by law, regulation or government authority
                      in Ghana or the United States.</li>

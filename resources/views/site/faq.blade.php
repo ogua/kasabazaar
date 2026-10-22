@@ -48,7 +48,7 @@
                      <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne"
                         data-bs-parent="#tv-accordion">
                         <div class="accordion-body">
-                           <p>KASAROSE LOGISTICS &mdash; known as KasaBazaar until 2026 &mdash; is the parent
+                           <p>KASAROSE LOGISTICS is the parent
                               group behind our own door-to-door freight, import &amp; export shipping, real estate
                               and property management business, plus KASAROSE MARKET (our ecommerce marketplace). See our
                               <a href="{{ route('our-companies') }}">Our Companies</a> page for details on each.</p>
@@ -183,7 +183,7 @@ $delivery_answer = 'Estimated delivery time frames, measured from the date a shi
 $faq_items = [
     [
         'What is KASAROSE LOGISTICS?',
-        'KASAROSE LOGISTICS — known as KasaBazaar until 2026 — is the parent group behind our own '
+        'KASAROSE LOGISTICS is the parent group behind our own '
             . 'door-to-door freight, import & export shipping, real estate and property management business, '
             . 'plus KASAROSE MARKET (our ecommerce marketplace). See our Our Companies '
             . 'page for details on each.',

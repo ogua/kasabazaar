@@ -86,6 +86,7 @@
                      <li><a href="{{ route('privacy-policy') }}">Privacy Policy</a></li>
                      <li><a href="{{ route('terms') }}">Terms &amp; Conditions</a></li>
                      <li><a href="{{ route('delivery-policy') }}">Delivery Policy</a></li>
+                     <li><a href="{{ route('sms-terms') }}">SMS Terms</a></li>
                      <li><a href="{!! url('/admin') !!}" target="_blank" rel="noopener">Staff Login</a></li>
                      <li><a href="{!! config('website.staff_mail_url') !!}" target="_blank" rel="noopener">Staff Mail</a></li>
                   </ul>

@@ -28,7 +28,6 @@
         '@context' => 'https://schema.org',
         '@type' => 'Organization',
         'name' => $siteName,
-        'alternateName' => 'KasaBazaar',
         'url' => route('home-page'),
         'logo' => $orgLogo,
         'address' => [

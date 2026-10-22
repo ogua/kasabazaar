@@ -126,7 +126,9 @@ class MediaEvidencePageTest extends TestCase
      */
     private function visibleIds(\Livewire\Features\SupportTesting\Testable $page): array
     {
-        return $page->instance()->getMedia()->getCollection()->pluck('id')->sort()->values()->all();
+        return $page->instance()->getAlbums()->getCollection()
+            ->flatMap(fn (array $album) => $album['media'])
+            ->pluck('id')->sort()->values()->all();
     }
 
     /**
@@ -159,6 +161,42 @@ class MediaEvidencePageTest extends TestCase
             ->assertDontSee('Elsewhere Client');
 
         $this->assertSame([$ours->id], $this->visibleIds($page));
+    }
+
+    public function test_gallery_shows_one_album_per_client_per_container(): void
+    {
+        $this->actingAsStaff(['view_any_shipment']);
+        $kofiFirst = $this->makeShipment(clientName: 'Kofi Boateng', container: '49');
+        $kofiSecond = $this->makeShipment(clientName: 'Kofi Boateng', container: '49');
+        $kofiSecond->forceFill(['client_id' => $kofiFirst->client_id])->saveQuietly();
+        $esi = $this->makeShipment(clientName: 'Esi Owusu', container: '49');
+        $kofiLoose = $this->makeShipment(clientName: 'Kofi Boateng');
+        $kofiLoose->forceFill(['client_id' => $kofiFirst->client_id])->saveQuietly();
+
+        $kofiPhotos = [
+            $this->storedMedia($kofiFirst, 'one.jpg'),
+            $this->storedMedia($kofiFirst, 'two.jpg'),
+            $this->storedMedia($kofiSecond, 'waybill.pdf'),
+        ];
+        $esiPhoto = $this->storedMedia($esi, 'esi.jpg');
+        $loosePhoto = $this->storedMedia($kofiLoose, 'loose.jpg');
+
+        $page = Livewire::test(MediaEvidence::class)->assertOk();
+        $albums = $page->instance()->getAlbums()->getCollection()
+            ->mapWithKeys(fn (array $album) => [$album['key'] => $album['media']->pluck('id')->sort()->values()->all()]);
+
+        $this->assertCount(3, $albums);
+        $this->assertSame($this->ids($kofiPhotos), $albums[$kofiFirst->client_id.'|49']);
+        $this->assertSame([$esiPhoto->id], $albums[$esi->client_id.'|49']);
+        $this->assertSame([$loosePhoto->id], $albums[$kofiFirst->client_id.'|']);
+
+        $card = $page->instance()->describeAlbum($page->instance()->getAlbums()->getCollection()->firstWhere('key', $kofiFirst->client_id.'|49'));
+        $this->assertSame('Kofi Boateng', $card['clientName']);
+        $this->assertSame('CON49', $card['container']);
+        $this->assertSame(3, $card['fileCount']);
+        $this->assertSame(2, $card['shipmentCount']);
+        $this->assertSame(['image' => 2, 'video' => 0, 'document' => 1], $card['typeCounts']);
+        $this->assertSame('image', $card['cover']['type']);
     }
 
     public function test_filters_narrow_the_gallery(): void

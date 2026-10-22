@@ -16,13 +16,15 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 
 /**
  * Media & Evidence library: every photo, video and document uploaded against the
- * current branch's shipments, shown as a filterable gallery with a detail lightbox.
+ * current branch's shipments, shown as one album per client per container. Opening
+ * an album lists all of its uploads, each viewable in a detail lightbox.
  */
 class MediaEvidence extends Page implements HasForms
 {
@@ -189,13 +191,14 @@ class MediaEvidence extends Page implements HasForms
     }
 
     /**
-     * Tick every file on the current page that the user may remove.
+     * Tick every file in the current page's albums that the user may remove.
      */
     public function selectPage(): void
     {
         $user = auth()->user();
 
-        $this->selected = $this->getMedia()->getCollection()
+        $this->selected = $this->getAlbums()->getCollection()
+            ->flatMap(fn (array $album) => $album['media'])
             ->filter(fn (ShipmentMedia $item) => $item->isRemovableBy($user))
             ->pluck('id')
             ->all();
@@ -246,8 +249,8 @@ class MediaEvidence extends Page implements HasForms
 
         return $this->tenantMediaQuery()
             ->when($search !== '', fn (Builder $query) => $query->where(fn (Builder $query) => $query
-                ->where('caption', 'like', "%{$search}%")
-                ->orWhere('file_path', 'like', "%{$search}%")
+                ->where('shipment_media.caption', 'like', "%{$search}%")
+                ->orWhere('shipment_media.file_path', 'like', "%{$search}%")
                 ->orWhereHas('shipment', fn (Builder $query) => $query
                     ->where('tracking_number', 'like', "%{$search}%")
                     ->orWhere('shipping_reference', 'like', "%{$search}%")
@@ -256,19 +259,97 @@ class MediaEvidence extends Page implements HasForms
                         ->orWhere('phone', 'like', "%{$search}%")))))
             ->when(filled($this->container), fn (Builder $query) => $query->whereHas('shipment', fn (Builder $query) => $query->where('container_number', $this->container)))
             ->when(filled($this->client), fn (Builder $query) => $query->whereHas('shipment', fn (Builder $query) => $query->where('client_id', $this->client)))
-            ->when(filled($this->shipment), fn (Builder $query) => $query->where('shipment_id', $this->shipment))
-            ->when(filled($this->stage), fn (Builder $query) => $query->where('stage', $this->stage))
-            ->when($applyType && filled($this->type), fn (Builder $query) => $query->where('type', $this->type))
-            ->when(filled($this->from), fn (Builder $query) => $query->whereDate('created_at', '>=', $this->from))
-            ->when(filled($this->until), fn (Builder $query) => $query->whereDate('created_at', '<=', $this->until));
+            ->when(filled($this->shipment), fn (Builder $query) => $query->where('shipment_media.shipment_id', $this->shipment))
+            ->when(filled($this->stage), fn (Builder $query) => $query->where('shipment_media.stage', $this->stage))
+            ->when($applyType && filled($this->type), fn (Builder $query) => $query->where('shipment_media.type', $this->type))
+            ->when(filled($this->from), fn (Builder $query) => $query->whereDate('shipment_media.created_at', '>=', $this->from))
+            ->when(filled($this->until), fn (Builder $query) => $query->whereDate('shipment_media.created_at', '<=', $this->until));
     }
 
-    public function getMedia(): LengthAwarePaginator
+    /**
+     * One album per client per container (a client's shipments without a container
+     * share one "no container" album), each carrying every matching file.
+     *
+     * @return LengthAwarePaginator<array{key: string, media: Collection<int, ShipmentMedia>}>
+     */
+    public function getAlbums(): LengthAwarePaginator
     {
-        return $this->filteredQuery()
-            ->with(['shipment.client', 'shipment.receivers', 'uploader'])
-            ->orderBy('created_at', $this->sort === 'oldest' ? 'asc' : 'desc')
+        $oldestFirst = $this->sort === 'oldest';
+
+        $albums = $this->filteredQuery()
+            ->toBase()
+            ->join('shipments', 'shipments.id', '=', 'shipment_media.shipment_id')
+            ->selectRaw("shipments.client_id as album_client, NULLIF(shipments.container_number, '') as album_container")
+            ->selectRaw('max(shipment_media.created_at) as latest_at, min(shipment_media.created_at) as first_at')
+            ->groupBy('album_client', 'album_container')
+            ->orderBy($oldestFirst ? 'first_at' : 'latest_at', $oldestFirst ? 'asc' : 'desc')
             ->paginate(self::PER_PAGE);
+
+        if ($albums->isEmpty()) {
+            return $albums;
+        }
+
+        $media = $this->filteredQuery()
+            ->whereHas('shipment', fn (Builder $query) => $query->where(function (Builder $query) use ($albums): void {
+                foreach ($albums->getCollection() as $album) {
+                    $query->orWhere(fn (Builder $query) => $query
+                        ->when(
+                            filled($album->album_client),
+                            fn (Builder $query) => $query->where('client_id', $album->album_client),
+                            fn (Builder $query) => $query->whereNull('client_id'),
+                        )
+                        ->when(
+                            filled($album->album_container),
+                            fn (Builder $query) => $query->where('container_number', $album->album_container),
+                            fn (Builder $query) => $query->where(fn (Builder $query) => $query->whereNull('container_number')->orWhere('container_number', '')),
+                        ));
+                }
+            }))
+            ->with(['shipment.client', 'shipment.receivers', 'uploader'])
+            ->orderBy('shipment_media.created_at', $oldestFirst ? 'asc' : 'desc')
+            ->get()
+            ->groupBy(fn (ShipmentMedia $item): string => $this->albumKey($item->shipment?->client_id, $item->shipment?->container_number));
+
+        return $albums->setCollection($albums->getCollection()->map(function (object $album) use ($media): array {
+            $key = $this->albumKey($album->album_client, $album->album_container);
+
+            return ['key' => $key, 'media' => $media->get($key, collect())];
+        }));
+    }
+
+    protected function albumKey(mixed $clientId, mixed $containerNumber): string
+    {
+        return ($clientId ?? '').'|'.(filled($containerNumber) ? $containerNumber : '');
+    }
+
+    /**
+     * What an album card and its file grid show.
+     *
+     * @param  array{key: string, media: Collection<int, ShipmentMedia>}  $album
+     * @return array<string, mixed>
+     */
+    public function describeAlbum(array $album): array
+    {
+        $items = $album['media']->map(fn (ShipmentMedia $item) => $this->describe($item))->values();
+        $first = $items->first();
+
+        return [
+            'key' => $album['key'],
+            'clientId' => $first['clientId'] ?? null,
+            'clientName' => $first['clientName'] ?? 'Unknown client',
+            'clientPhone' => $first['clientPhone'] ?? null,
+            'containerNumber' => $first['containerNumber'] ?? null,
+            'container' => $first['container'] ?? null,
+            'fileCount' => $items->count(),
+            'shipmentCount' => $items->pluck('shipmentId')->filter()->unique()->count(),
+            'typeCounts' => collect(ShipmentMedia::TYPES)
+                ->mapWithKeys(fn (string $label, string $type) => [$type => $items->where('type', $type)->count()])
+                ->all(),
+            'latestDate' => $first['date'] ?? null,
+            'latestAgo' => $first['ago'] ?? null,
+            'cover' => $items->firstWhere('type', 'image') ?? $items->firstWhere('type', 'video') ?? $first,
+            'items' => $items->all(),
+        ];
     }
 
     /**
@@ -280,8 +361,8 @@ class MediaEvidence extends Page implements HasForms
     {
         $counts = $this->filteredQuery(applyType: false)
             ->toBase()
-            ->selectRaw('type, count(*) as total')
-            ->groupBy('type')
+            ->selectRaw('shipment_media.type as type, count(*) as total')
+            ->groupBy('shipment_media.type')
             ->pluck('total', 'type');
 
         return ['' => (int) $counts->sum()] + collect(ShipmentMedia::TYPES)

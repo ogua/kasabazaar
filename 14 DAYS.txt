@@ -10,3 +10,6 @@ View / Edit
 
 VAT / TAX
 Insurance
+
+
+On the shipmentresouce page. add a lab to sort tru the various devivery and received stages and payment status.

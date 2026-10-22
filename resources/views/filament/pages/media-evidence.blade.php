@@ -1,7 +1,7 @@
 @php
-    $media = $this->getMedia();
+    $albums = $this->getAlbums();
     $typeCounts = $this->getTypeCounts();
-    $items = $media->getCollection()->map(fn ($item) => $this->describe($item))->values();
+    $albumCards = $albums->getCollection()->map(fn (array $album) => $this->describeAlbum($album))->values();
     $focusedShipment = $this->getFilteredShipment();
     $typeTabs = [
         '' => ['label' => 'All media', 'icon' => 'heroicon-m-squares-2x2'],
@@ -9,6 +9,7 @@
         'video' => ['label' => 'Videos', 'icon' => 'heroicon-m-film'],
         'document' => ['label' => 'Documents', 'icon' => 'heroicon-m-document-text'],
     ];
+    $typeIcons = ['image' => 'heroicon-m-photo', 'video' => 'heroicon-m-film', 'document' => 'heroicon-m-document-text'];
 @endphp
 
 <x-filament-panels::page>
@@ -54,7 +55,8 @@
                     @endif
 
                     <span class="text-sm text-gray-500 dark:text-gray-400">
-                        {{ number_format($media->total()) }} {{ \Illuminate\Support\Str::plural('file', $media->total()) }} match
+                        {{ number_format($typeCounts[$this->type] ?? 0) }} {{ \Illuminate\Support\Str::plural('file', $typeCounts[$this->type] ?? 0) }}
+                        in {{ number_format($albums->total()) }} {{ \Illuminate\Support\Str::plural('album', $albums->total()) }} match
                     </span>
 
                     <x-filament::link tag="button" size="sm" color="danger" wire:click="clearFilters" icon="heroicon-m-arrow-path" class="ms-auto">
@@ -77,7 +79,7 @@
     @endif
 
     {{-- Gallery --}}
-    @if ($items->isEmpty())
+    @if ($albumCards->isEmpty())
         <div class="flex flex-col items-center justify-center gap-3 rounded-xl bg-white px-6 py-16 text-center shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10">
             <span class="flex h-14 w-14 items-center justify-center rounded-full bg-gray-100 dark:bg-white/5">
                 <x-filament::icon icon="heroicon-o-photo" class="h-7 w-7 text-gray-400" />
@@ -99,18 +101,30 @@
         </div>
     @else
         <div
-            wire:key="gallery-{{ md5($items->pluck('id')->join(',')) }}"
+            wire:key="gallery-{{ md5($albumCards->flatMap(fn ($album) => array_column($album['items'], 'id'))->join(',')) }}"
             x-data="{
-                items: @js($items),
+                albums: @js($albumCards),
+                albumIndex: null,
                 open: false,
                 index: 0,
+                get album() { return this.albums[this.albumIndex] ?? null },
+                get items() { return this.album?.items ?? [] },
                 get current() { return this.items[this.index] ?? null },
+                openAlbum(a) { this.albumIndex = a; this.index = 0 },
+                closeAlbum() { this.close(); this.albumIndex = null },
                 show(i) { this.index = i; this.open = true },
                 close() { this.open = false; this.$refs.player?.pause?.() },
                 next() { this.$refs.player?.pause?.(); this.index = (this.index + 1) % this.items.length },
                 prev() { this.$refs.player?.pause?.(); this.index = (this.index - 1 + this.items.length) % this.items.length },
-                remove() { const id = this.current.id; this.close(); this.$wire.mountAction('deleteMedia', { id }) },
-                focusOn(filter, value) { this.close(); this.$wire.focusOn(filter, value) },
+                remove() { const id = this.current.id; this.closeAlbum(); this.$wire.mountAction('deleteMedia', { id }) },
+                removeSelected() { this.closeAlbum(); this.$wire.mountAction('deleteSelected') },
+                focusOn(filter, value) { this.closeAlbum(); this.$wire.focusOn(filter, value) },
+                isSelected(id) { return this.$wire.selected.includes(id) },
+                toggleSelected(id) {
+                    const selected = this.$wire.selected.filter((value) => value !== id)
+                    if (selected.length === this.$wire.selected.length) selected.push(id)
+                    this.$wire.set('selected', selected)
+                },
                 stageClass(stage) {
                     return {
                         'pickup': 'bg-amber-500/90',
@@ -120,78 +134,180 @@
                     }[stage] ?? 'bg-gray-600/90'
                 },
             }"
-            x-on:keydown.window="if (! open) return; if ($event.key === 'Escape') close(); if ($event.key === 'ArrowRight') next(); if ($event.key === 'ArrowLeft') prev();"
+            x-on:keydown.window="
+                if (albumIndex === null) return;
+                if ($event.key === 'Escape') { open ? close() : closeAlbum(); return }
+                if (! open) return;
+                if ($event.key === 'ArrowRight') next();
+                if ($event.key === 'ArrowLeft') prev();
+            "
         >
+            {{-- Album cards: one per client per container --}}
             <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6">
-                @foreach ($items as $i => $item)
-                    <div wire:key="media-{{ $item['id'] }}"
-                        @class([
-                            'group relative aspect-[4/3] overflow-hidden rounded-xl bg-gray-100 shadow-sm ring-1 transition hover:shadow-lg dark:bg-gray-800',
-                            'ring-2 ring-primary-600 dark:ring-primary-500' => in_array($item['id'], $this->selected, true),
-                            'ring-gray-950/5 dark:ring-white/10' => ! in_array($item['id'], $this->selected, true),
-                        ])>
-                        <button type="button" x-on:click="show({{ $i }})" class="absolute inset-0 h-full w-full focus:outline-none" aria-label="View {{ $item['fileName'] }}">
-                            @if ($item['type'] === 'image')
-                                <img src="{{ $item['url'] }}" alt="{{ $item['caption'] ?? $item['stageLabel'] }}" loading="lazy"
-                                    class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
-                            @elseif ($item['type'] === 'video')
-                                <video src="{{ $item['url'] }}#t=0.5" preload="metadata" muted playsinline class="h-full w-full bg-black object-cover"></video>
-                                <span class="absolute inset-0 flex items-center justify-center">
-                                    <span class="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition group-hover:scale-110">
-                                        <x-filament::icon icon="heroicon-s-play" class="ms-0.5 h-6 w-6" />
-                                    </span>
-                                </span>
-                            @else
-                                <span class="flex h-full w-full flex-col items-center gap-1.5 bg-gradient-to-br from-gray-50 to-gray-200 px-3 pt-6 sm:gap-2 sm:pt-9 dark:from-gray-800 dark:to-gray-900">
-                                    <span class="relative">
-                                        <x-filament::icon icon="heroicon-o-document-text" class="h-9 w-9 text-gray-400 sm:h-12 sm:w-12 dark:text-gray-500" />
-                                        <span class="absolute -bottom-1 -end-3 rounded bg-primary-600 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow">{{ $item['extension'] ?: 'FILE' }}</span>
-                                    </span>
-                                    <span class="w-full truncate text-center text-xs font-medium text-gray-600 dark:text-gray-300" title="{{ $item['fileName'] }}">{{ $item['fileName'] }}</span>
-                                </span>
-                            @endif
-
-                            {{-- Overlay --}}
-                            <span class="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-0.5 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-3 pb-2.5 pt-8 text-start sm:pb-3 text-white">
-                                <span class="truncate text-sm font-semibold">{{ $item['clientName'] }}</span>
-                                <span class="truncate text-[11px] text-white/75">
-                                    {{ $item['trackingNumber'] ?? $item['reference'] }}@if ($item['container']) · {{ $item['container'] }}@endif
-                                </span>
-                                <span class="grid grid-rows-[0fr] transition-all duration-300 group-hover:grid-rows-[1fr]">
-                                    <span class="overflow-hidden">
-                                        <span class="mt-1 flex flex-col gap-0.5 border-t border-white/20 pt-1.5 text-[11px] text-white/85">
-                                            <span class="flex items-center gap-1"><x-filament::icon icon="heroicon-m-calendar" class="h-3.5 w-3.5" /> {{ $item['date'] }}</span>
-                                            <span class="flex items-center gap-1"><x-filament::icon icon="heroicon-m-clock" class="h-3.5 w-3.5" /> {{ $item['time'] }}</span>
-                                            <span class="flex items-center gap-1 truncate"><x-filament::icon icon="heroicon-m-user" class="h-3.5 w-3.5" /> {{ $item['uploader'] }}</span>
-                                            @if ($item['caption'])
-                                                <span class="line-clamp-2 italic text-white/70">“{{ $item['caption'] }}”</span>
-                                            @endif
-                                        </span>
-                                    </span>
-                                </span>
+                @foreach ($albumCards as $a => $album)
+                    @php($cover = $album['cover'])
+                    <button type="button" wire:key="album-{{ $album['key'] }}" x-on:click="openAlbum({{ $a }})"
+                        class="group relative aspect-[4/3] overflow-hidden rounded-xl bg-gray-100 text-start shadow-sm ring-1 ring-gray-950/5 transition hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 dark:bg-gray-800 dark:ring-white/10"
+                        aria-label="Open {{ $album['fileCount'] }} uploads for {{ $album['clientName'] }}{{ $album['container'] ? ' in '.$album['container'] : '' }}">
+                        @if ($cover['type'] === 'image')
+                            <img src="{{ $cover['url'] }}" alt="" loading="lazy"
+                                class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                        @elseif ($cover['type'] === 'video')
+                            <video src="{{ $cover['url'] }}#t=0.5" preload="metadata" muted playsinline class="h-full w-full bg-black object-cover"></video>
+                        @else
+                            <span class="flex h-full w-full items-start justify-center bg-gradient-to-br from-gray-50 to-gray-200 pt-6 sm:pt-9 dark:from-gray-800 dark:to-gray-900">
+                                <x-filament::icon icon="heroicon-o-document-text" class="h-10 w-10 text-gray-400 sm:h-12 sm:w-12 dark:text-gray-500" />
                             </span>
-                        </button>
+                        @endif
 
-                        {{-- Stage + type --}}
-                        <span class="pointer-events-none absolute start-2 top-2 flex items-center gap-1">
-                            <span class="rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow backdrop-blur-sm"
-                                x-bind:class="stageClass(@js($item['stage']))">{{ $item['stageLabel'] }}</span>
+                        {{-- File count --}}
+                        <span class="pointer-events-none absolute end-2 top-2 flex items-center gap-1 rounded-md bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-white shadow backdrop-blur-sm">
+                            <x-filament::icon icon="heroicon-m-rectangle-stack" class="h-3.5 w-3.5" />
+                            {{ $album['fileCount'] }} {{ \Illuminate\Support\Str::plural('file', $album['fileCount']) }}
                         </span>
 
-                        @if ($item['removable'])
-                            <label class="absolute end-2 top-2 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md bg-white/90 shadow transition dark:bg-gray-900/90 {{ in_array($item['id'], $this->selected, true) ? '' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100' }}"
-                                title="Select for removal">
-                                <x-filament::input.checkbox wire:model.live="selected" value="{{ $item['id'] }}" />
-                            </label>
-                        @endif
-                    </div>
+                        {{-- Overlay --}}
+                        <span class="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-0.5 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-3 pb-2.5 pt-8 text-white sm:pb-3">
+                            <span class="truncate text-sm font-semibold">{{ $album['clientName'] }}</span>
+                            <span class="truncate text-[11px] text-white/75">
+                                {{ $album['container'] ?? 'No container' }}
+                                @if ($album['shipmentCount'] > 1) · {{ $album['shipmentCount'] }} shipments @endif
+                            </span>
+                            <span class="mt-1 flex items-center gap-2.5 text-[11px] text-white/85">
+                                @foreach ($album['typeCounts'] as $type => $count)
+                                    @if ($count > 0)
+                                        <span class="flex items-center gap-0.5"><x-filament::icon :icon="$typeIcons[$type]" class="h-3.5 w-3.5" /> {{ $count }}</span>
+                                    @endif
+                                @endforeach
+                                <span class="ms-auto truncate text-white/60" title="{{ $album['latestDate'] }}">{{ $album['latestAgo'] }}</span>
+                            </span>
+                        </span>
+                    </button>
                 @endforeach
             </div>
+
+            {{-- Album: every upload for the client in this container --}}
+            <template x-teleport="body">
+                <div x-show="albumIndex !== null" x-cloak x-transition.opacity
+                    class="fixed inset-0 z-40 flex items-stretch justify-center bg-gray-950/80 backdrop-blur-sm sm:p-6"
+                    role="dialog" aria-modal="true" x-trap.noscroll="albumIndex !== null && ! open"
+                    x-on:click.self="closeAlbum()">
+                    <template x-if="album">
+                        <div class="flex w-full max-w-7xl flex-col overflow-hidden bg-white shadow-2xl sm:rounded-2xl dark:bg-gray-900">
+                            <div class="flex flex-wrap items-start gap-3 border-b border-gray-100 px-5 py-4 dark:border-white/10">
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-xs font-medium uppercase tracking-wider text-gray-400">Media &amp; Evidence</p>
+                                    <h2 class="truncate text-lg font-semibold text-gray-950 dark:text-white" x-text="album.clientName"></h2>
+                                    <p class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
+                                        <span class="flex items-center gap-1">
+                                            <x-filament::icon icon="heroicon-m-cube" class="h-4 w-4" />
+                                            <span x-text="album.container || 'No container'"></span>
+                                        </span>
+                                        <span class="flex items-center gap-1">
+                                            <x-filament::icon icon="heroicon-m-rectangle-stack" class="h-4 w-4" />
+                                            <span x-text="album.fileCount + (album.fileCount === 1 ? ' file' : ' files')"></span>
+                                        </span>
+                                        <span x-show="album.shipmentCount > 1" class="flex items-center gap-1">
+                                            <x-filament::icon icon="heroicon-m-truck" class="h-4 w-4" />
+                                            <span x-text="album.shipmentCount + ' shipments'"></span>
+                                        </span>
+                                        <a x-show="album.clientPhone" x-bind:href="'tel:' + album.clientPhone" class="flex items-center gap-1 text-primary-600 hover:underline dark:text-primary-400">
+                                            <x-filament::icon icon="heroicon-m-phone" class="h-4 w-4" />
+                                            <span x-text="album.clientPhone"></span>
+                                        </a>
+                                    </p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button type="button" x-show="album.clientId" x-on:click="focusOn('client', album.clientId)"
+                                        class="hidden rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200 sm:block dark:bg-white/5 dark:text-gray-200 dark:hover:bg-white/10">
+                                        All media for this client
+                                    </button>
+                                    <button type="button" x-on:click="closeAlbum()" class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-white/5" aria-label="Close">
+                                        <x-filament::icon icon="heroicon-m-x-mark" class="h-6 w-6" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="min-h-0 flex-1 overflow-y-auto p-4 sm:p-5">
+                                <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                                    <template x-for="(item, i) in items" x-bind:key="item.id">
+                                        <div class="group relative aspect-[4/3] overflow-hidden rounded-xl bg-gray-100 shadow-sm ring-1 transition hover:shadow-lg dark:bg-gray-800"
+                                            x-bind:class="isSelected(item.id) ? 'ring-2 ring-primary-600 dark:ring-primary-500' : 'ring-gray-950/5 dark:ring-white/10'">
+                                            <button type="button" x-on:click="show(i)" class="absolute inset-0 h-full w-full focus:outline-none" x-bind:aria-label="'View ' + item.fileName">
+                                                <template x-if="item.type === 'image'">
+                                                    <img x-bind:src="item.url" x-bind:alt="item.caption || item.stageLabel" loading="lazy"
+                                                        class="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+                                                </template>
+                                                <template x-if="item.type === 'video'">
+                                                    <span class="block h-full w-full">
+                                                        <video x-bind:src="item.url + '#t=0.5'" preload="metadata" muted playsinline class="h-full w-full bg-black object-cover"></video>
+                                                        <span class="absolute inset-0 flex items-center justify-center">
+                                                            <span class="flex h-12 w-12 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition group-hover:scale-110">
+                                                                <x-filament::icon icon="heroicon-s-play" class="ms-0.5 h-6 w-6" />
+                                                            </span>
+                                                        </span>
+                                                    </span>
+                                                </template>
+                                                <template x-if="item.type === 'document'">
+                                                    <span class="flex h-full w-full flex-col items-center gap-1.5 bg-gradient-to-br from-gray-50 to-gray-200 px-3 pt-6 sm:gap-2 sm:pt-9 dark:from-gray-800 dark:to-gray-900">
+                                                        <span class="relative">
+                                                            <x-filament::icon icon="heroicon-o-document-text" class="h-9 w-9 text-gray-400 sm:h-12 sm:w-12 dark:text-gray-500" />
+                                                            <span class="absolute -bottom-1 -end-3 rounded bg-primary-600 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow" x-text="item.extension || 'FILE'"></span>
+                                                        </span>
+                                                        <span class="w-full truncate text-center text-xs font-medium text-gray-600 dark:text-gray-300" x-bind:title="item.fileName" x-text="item.fileName"></span>
+                                                    </span>
+                                                </template>
+
+                                                {{-- Overlay --}}
+                                                <span class="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col gap-0.5 bg-gradient-to-t from-black/90 via-black/60 to-transparent px-3 pb-2.5 pt-8 text-start text-white sm:pb-3">
+                                                    <span class="flex items-center gap-1 text-xs font-semibold"><x-filament::icon icon="heroicon-m-calendar" class="h-3.5 w-3.5" /> <span x-text="item.date"></span></span>
+                                                    <span class="truncate text-[11px] text-white/75" x-text="item.trackingNumber || item.reference"></span>
+                                                    <span class="grid grid-rows-[0fr] transition-all duration-300 group-hover:grid-rows-[1fr]">
+                                                        <span class="overflow-hidden">
+                                                            <span class="mt-1 flex flex-col gap-0.5 border-t border-white/20 pt-1.5 text-[11px] text-white/85">
+                                                                <span class="flex items-center gap-1"><x-filament::icon icon="heroicon-m-clock" class="h-3.5 w-3.5" /> <span x-text="item.time"></span></span>
+                                                                <span class="flex items-center gap-1 truncate"><x-filament::icon icon="heroicon-m-user" class="h-3.5 w-3.5" /> <span x-text="item.uploader"></span></span>
+                                                                <span x-show="item.caption" class="line-clamp-2 italic text-white/70" x-text="'“' + item.caption + '”'"></span>
+                                                            </span>
+                                                        </span>
+                                                    </span>
+                                                </span>
+                                            </button>
+
+                                            <span class="pointer-events-none absolute start-2 top-2 rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white shadow backdrop-blur-sm"
+                                                x-bind:class="stageClass(item.stage)" x-text="item.stageLabel"></span>
+
+                                            <template x-if="item.removable">
+                                                <label class="absolute end-2 top-2 flex h-7 w-7 cursor-pointer items-center justify-center rounded-md bg-white/90 shadow transition dark:bg-gray-900/90"
+                                                    x-bind:class="isSelected(item.id) ? '' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'"
+                                                    title="Select for removal">
+                                                    <input type="checkbox" x-bind:checked="isSelected(item.id)" x-on:change="toggleSelected(item.id)"
+                                                        class="fi-checkbox-input rounded border-none bg-white shadow-sm ring-1 ring-gray-950/10 checked:ring-0 focus:ring-2 focus:ring-primary-600 checked:focus:ring-primary-500/50 dark:bg-white/5 dark:ring-white/20 dark:checked:bg-primary-500 text-primary-600 dark:text-primary-500" />
+                                                </label>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <div x-show="$wire.selected.length" class="flex flex-wrap items-center gap-3 border-t border-gray-100 bg-primary-50 px-5 py-3 dark:border-white/10 dark:bg-primary-500/10">
+                                <x-filament::icon icon="heroicon-m-check-circle" class="h-5 w-5 text-primary-600 dark:text-primary-400" />
+                                <span class="text-sm font-medium text-primary-700 dark:text-primary-300" x-text="$wire.selected.length + ' selected'"></span>
+                                <button type="button" x-on:click="$wire.set('selected', [])" class="text-sm font-medium text-gray-600 hover:underline dark:text-gray-300">Clear</button>
+                                <button type="button" x-on:click="removeSelected()"
+                                    class="ms-auto inline-flex items-center gap-1.5 rounded-lg bg-danger-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-danger-500">
+                                    <x-filament::icon icon="heroicon-m-trash" class="h-4 w-4" /> Remove selected
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </template>
 
             {{-- Lightbox --}}
             <template x-teleport="body">
                 <div x-show="open" x-cloak x-transition.opacity
-                    class="fixed inset-0 z-40 flex bg-gray-950/95 backdrop-blur-sm"
+                    class="fixed inset-0 z-50 flex bg-gray-950/95 backdrop-blur-sm"
                     role="dialog" aria-modal="true" x-trap.noscroll="open">
                     <template x-if="current">
                         <div class="flex h-full w-full flex-col lg:flex-row">
@@ -366,6 +482,6 @@
             </template>
         </div>
 
-        <x-filament::pagination :paginator="$media" />
+        <x-filament::pagination :paginator="$albums" />
     @endif
 </x-filament-panels::page>

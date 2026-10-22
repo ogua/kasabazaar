@@ -52,7 +52,7 @@
                   <span class="sub-title2 fadeInUp single">The Founding Company</span>
                   <h2 class="sec-title">KASAROSE LOGISTICS</h2>
                   <p class="text-primary fw-bold">Your Trusted Partner for Global Shipments.</p>
-                  <p class="lead">Our founding company, incorporated in 2020 and known as KasaBazaar until 2026. We
+                  <p class="lead">Our founding company, incorporated in 2020. We
                      move freight door to door between the United States and Ghana &mdash; the business we ran for
                      years as Rose Door-to-Door Shipping &amp; Delivery &mdash; alongside real estate sales and
                      property management.</p>

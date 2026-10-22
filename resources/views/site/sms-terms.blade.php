@@ -1,7 +1,8 @@
 {{--
    The SMS programme page registered with the messaging carriers (config('group.sms_terms_url')).
    Ported from the pre-rename kasabazar-website in October 2026; /sms-terms.php redirects here.
-   Messages still go out under the carrier-registered "KasaBazaar" sender name, so the page keeps it.
+   Messages go out under the sender ID KASAROSE and every alert begins "KASAROSE LOGISTICS:"
+   (App\Notifications\ShipmentAlert::toSms). Keep the message list in step with ShipmentAlert's events.
 --}}
 @extends('site.layouts.app')
 
@@ -36,17 +37,18 @@
       <div class="container">
          <div class="row justify-content-center">
             <div class="col-lg-9">
-               <p class="text-mute">Last updated: October 20, 2026</p>
+               <p class="text-mute">Last updated: October 21, 2026</p>
 
-               <p>This page explains the SMS (text message) programme that KASAROSE LOGISTICS sends under the
-                  <strong>KasaBazaar</strong> name. It covers who can receive these messages, how you opt in, what
-                  you'll be sent, and how to opt out.</p>
+               <p>This page explains the SMS (text message) programme run by <strong>KASAROSE LOGISTICS</strong>.
+                  It covers who can receive these messages, how you opt in, what you'll be sent, and how to opt
+                  out.</p>
 
                <h3 class="display-5 mt-5">Who Sends These Messages</h3>
-               <p>Shipment and delivery text messages are sent by KASAROSE LOGISTICS, operated by
-                  {{ config('group.company.legal_name') }}, under the <strong>KasaBazaar</strong> name, for shipments
-                  booked with us &mdash; whether you requested a quote or contacted us through this website, spoke with
-                  our staff by phone, or visited one of our offices in person.</p>
+               <p>Shipment and delivery text messages are sent by <strong>KASAROSE LOGISTICS</strong>, operated by
+                  {{ config('group.company.legal_name') }}, for shipments booked with us &mdash; whether you
+                  requested a quote or contacted us through this website, spoke with our staff by phone, or visited
+                  one of our offices in person. Messages are sent under the sender ID <strong>KASAROSE</strong> and
+                  begin with "KASAROSE LOGISTICS" so you can recognise them.</p>
 
                <h3 class="display-5 mt-5">How You Opt In</h3>
                <p>You opt in by providing your mobile number and agreeing to receive SMS updates:</p>
@@ -64,9 +66,9 @@
                <p>When a shipment is booked by phone or in person, our staff read the following to the customer
                   before recording their number for SMS updates:</p>
                <blockquote class="border-start border-3 ps-3 py-2 my-3">
-                  <p class="mb-0">"Before I finish booking your shipment with <strong>KasaBazaar</strong> &mdash;
-                     can I get a mobile number to send you free text updates about this shipment? That's things
-                     like pickup, arrival at the port, out-for-delivery and delivery confirmation, and payment
+                  <p class="mb-0">"Before I finish booking your shipment with <strong>KASAROSE LOGISTICS</strong>
+                     &mdash; can I get a mobile number to send you free text updates about this shipment? That's
+                     things like pickup, departure, arrival at the port in Ghana, delivery, and payment
                      receipts. You'll typically get 3 to 10 texts depending on your shipment's activity. Message
                      and data rates may apply. You can reply <strong>STOP</strong> at any time to stop these
                      messages."</p>
@@ -74,7 +76,8 @@
                <p>This script, and the customer's agreement to it, is what our staff use to record consent in our
                   booking system before any SMS updates are sent. It confirms, in one place:</p>
                <ul class="ct-list">
-                  <li>The business sending the messages &mdash; <strong>KasaBazaar</strong></li>
+                  <li>The business sending the messages &mdash; <strong>KASAROSE LOGISTICS</strong> (sender ID
+                     <strong>KASAROSE</strong>)</li>
                   <li>That the customer will receive text messages</li>
                   <li>The type of messages &mdash; shipment status and delivery updates, and payment receipts</li>
                   <li>Message frequency &mdash; typically 3&ndash;10 messages per shipment</li>
@@ -87,14 +90,16 @@
                   &mdash; for example:</p>
                <ul class="ct-list">
                   <li>Shipment booking confirmation</li>
-                  <li>Pickup and departure updates</li>
-                  <li>Arrival at the port and customs clearance status</li>
-                  <li>Out-for-delivery and delivery confirmation</li>
+                  <li>Pickup, arrival at our warehouse, loading and departure updates</li>
+                  <li>In-transit updates and arrival at the port in Ghana</li>
+                  <li>Sorting, out-for-delivery and delivery confirmation</li>
                   <li>Payment and balance receipts</li>
-                  <li>Tracking-number updates</li>
+                  <li>Tracking-number and container-tracking updates</li>
                </ul>
                <p>These are transactional messages about your own shipment. <strong>We do not send marketing or
                   promotional SMS on this programme.</strong></p>
+               <p>If you have separately agreed to receive updates on WhatsApp, the same updates may reach you as
+                  WhatsApp messages instead of SMS. You will not get the same update by both.</p>
 
                <h3 class="display-5 mt-5">Message Frequency &amp; Rates</h3>
                <p>Message frequency varies with shipment activity &mdash; typically 3&ndash;10 messages over the
@@ -118,7 +123,9 @@
 
                <h3 class="display-5 mt-5">Contact Us</h3>
                <p>Questions about SMS notifications can be sent to
-                  <a href="mailto:{{ config('website.contact.email_support') }}">{{ config('website.contact.email_support') }}</a>
+                  <a href="mailto:{{ config('website.contact.email_support') }}">{{ config('website.contact.email_support') }}</a>,
+                  by phone on <a href="tel:{{ config('website.contact.phone_us_1_tel') }}">{{ config('website.contact.phone_us_1') }}</a> (US) or
+                  <a href="tel:{{ config('website.contact.phone_gh_1_tel') }}">{{ config('website.contact.phone_gh_1') }}</a> (Ghana),
                   or via our <a href="{{ route('contact-us') }}">Contact page</a>.</p>
             </div>
          </div>

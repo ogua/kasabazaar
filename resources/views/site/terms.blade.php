@@ -31,12 +31,12 @@
       <div class="container">
          <div class="row justify-content-center">
             <div class="col-lg-9">
-               <p class="text-mute">Last updated: October 20, 2026</p>
+               <p class="text-mute">Last updated: October 21, 2026</p>
 
                <p>These Terms &amp; Conditions ("Terms") govern your use of this website and the shipping,
                   package-forwarding and logistics services provided by
-                  <strong>{{ config('group.company.legal_name') }}</strong>, trading as KASAROSE LOGISTICS (known as
-                  KasaBazaar until 2026 &mdash; "we", "us"). By requesting a quote, booking a shipment, or
+                  <strong>{{ config('group.company.legal_name') }}</strong>, trading as KASAROSE LOGISTICS ("we",
+                  "us"). By requesting a quote, booking a shipment, or
                   using this website, you agree to these Terms and to our
                   <a href="{{ route('privacy-policy') }}">Privacy Policy</a>.</p>
 
@@ -114,14 +114,17 @@
                   following:</p>
                <ul class="ct-list">
                   <li><strong>Program description:</strong> KASAROSE LOGISTICS sends automated transactional messages
-                     about your shipment &mdash; booking confirmation, pickup, departure, port arrival, out-for-delivery
-                     and delivery confirmation, payment receipts, and tracking-number updates.</li>
+                     about your shipment &mdash; booking confirmation, pickup, departure, arrival at the port in Ghana,
+                     out-for-delivery and delivery confirmation, payment receipts, and tracking-number updates. Messages
+                     are sent under the sender ID <strong>KASAROSE</strong>.</li>
                   <li><strong>Consent:</strong> Messages are sent only to numbers that opted in. Consent to receive SMS
                      is not a condition of purchasing any goods or services.</li>
                   <li><strong>Message frequency:</strong> Varies with shipment activity &mdash; typically 3&ndash;10
                      messages over the life of a shipment.</li>
                   <li><strong>Cost:</strong> Message and data rates may apply, depending on your mobile carrier and
                      plan.</li>
+                  <li><strong>WhatsApp:</strong> If you separately opt in to WhatsApp updates, the same messages may
+                     be sent by WhatsApp instead of SMS.</li>
                   <li><strong>Opt out:</strong> Reply <strong>STOP</strong> to any message to cancel. You will receive
                      one confirmation message and no further messages. Reply <strong>HELP</strong> for assistance, or
                      contact us using the details below.</li>
