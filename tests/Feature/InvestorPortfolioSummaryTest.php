@@ -129,4 +129,53 @@ class InvestorPortfolioSummaryTest extends TestCase
             ->assertSee('$17,150.00')
             ->assertSee('$2,450.00');
     }
+
+    public function test_investor_dashboard_separates_own_investment_from_company_figures(): void
+    {
+        $investor = $this->seedMixedPortfolio();
+
+        $user = User::create([
+            'name' => 'Dashboard Zones User',
+            'email' => 'dashboard-zones-'.uniqid().'@example.com',
+            'password' => bcrypt('password'),
+            'investor_id' => $investor->id,
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($user)
+            ->get('/investor')
+            ->assertOk()
+            ->assertSeeInOrder(['My Investment', 'Company Performance'])
+            ->assertSee('not</strong> your balance', false);
+    }
+
+    public function test_investor_card_lists_only_the_investors_own_holdings(): void
+    {
+        $investor = $this->seedMixedPortfolio();
+        $other = Investor::create(['name' => 'Someone Else', 'status' => 'active']);
+        $otherInvestment = Investment::create([
+            'investor_id' => $other->id,
+            'principal_amount' => 99000,
+            'start_date' => '2024-01-01',
+            'status' => 'active',
+        ]);
+
+        $user = User::create([
+            'name' => 'Holdings User',
+            'email' => 'holdings-'.uniqid().'@example.com',
+            'password' => bcrypt('password'),
+            'investor_id' => $investor->id,
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($user);
+        Filament::setCurrentPanel(Filament::getPanel('investor'));
+
+        $ownReferences = Investment::where('investor_id', $investor->id)->pluck('reference')->all();
+
+        Livewire::test(InvestorPortfolioSummaryWidget::class)
+            ->assertSee($ownReferences)
+            ->assertDontSee($otherInvestment->reference)
+            ->assertSee('Active investments');
+    }
 }
