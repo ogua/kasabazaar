@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Models\Payment;
 use App\Models\Shipment;
+use App\Models\ShipmentPaymentAttempt;
 use App\Notifications\ShipmentAlert;
 use App\Services\Whatsapp\WhatsappSettings;
 use Illuminate\Support\Facades\Notification;
@@ -15,10 +17,17 @@ use Illuminate\Support\Facades\Notification;
  *
  * Rule: the sender (the shipment's client) is alerted at every stage; the
  * receivers are only alerted on dispatch, arrival at the Ghana port and delivery.
+ * A payment receipt also goes to whoever paid online, and always by SMS: it is a
+ * receipt the payer may need to show, not a marketing message.
  */
 class ShipmentNotifier
 {
     private const RECEIVER_EVENTS = ['status:shipped', 'status:port', 'status:delivered'];
+
+    /**
+     * Events whose text message always goes by SMS, never WhatsApp.
+     */
+    private const SMS_ONLY_EVENTS = ['payment_received'];
 
     /**
      * @param  array<string, mixed>  $context
@@ -32,14 +41,14 @@ class ShipmentNotifier
         try {
             self::ensurePortalToken($shipment);
 
-            $recipients = self::recipients($shipment, $event);
+            $recipients = self::recipients($shipment, $event, $context);
 
             $whatsappEvent = ShipmentAlert::whatsappEventFor($event);
 
             foreach ($recipients as $recipient) {
                 // Email always goes when there is an address; the phone gets WhatsApp
                 // (opted in, template mapped) or SMS — never both.
-                $textRoute = $recipient['phone'] && WhatsappSettings::shouldSend(
+                $textRoute = $recipient['phone'] && ! in_array($event, self::SMS_ONLY_EVENTS, true) && WhatsappSettings::shouldSend(
                     $recipient['phone'],
                     $recipient['whatsapp_consent'],
                     WhatsappSettings::SENDER_LOGISTICS,
@@ -65,9 +74,10 @@ class ShipmentNotifier
     }
 
     /**
+     * @param  array<string, mixed>  $context
      * @return array<int, array{name: string, email: ?string, phone: ?string, whatsapp_consent: bool}>
      */
-    private static function recipients(Shipment $shipment, string $event): array
+    private static function recipients(Shipment $shipment, string $event, array $context = []): array
     {
         $recipients = [];
 
@@ -75,7 +85,7 @@ class ShipmentNotifier
         if ($client) {
             $recipients[] = [
                 'name' => $client->name ?: 'there',
-                'email' => self::clean($client->email),
+                'email' => self::deliverableEmail($client->email),
                 'phone' => self::clean($client->phone),
                 'whatsapp_consent' => $client->hasWhatsappConsent(),
             ];
@@ -85,9 +95,23 @@ class ShipmentNotifier
             foreach ($shipment->receivers()->get() as $receiver) {
                 $recipients[] = [
                     'name' => $receiver->receiver_name ?: 'there',
-                    'email' => self::clean($receiver->receiver_email),
+                    'email' => self::deliverableEmail($receiver->receiver_email),
                     'phone' => self::clean($receiver->receiver_phone),
                     'whatsapp_consent' => $receiver->hasWhatsappConsent(),
+                ];
+            }
+        }
+
+        $payment = $context['payment'] ?? null;
+        if ($event === 'payment_received' && $payment instanceof Payment && filled($payment->payment_ref)) {
+            $attempt = ShipmentPaymentAttempt::where('reference', $payment->payment_ref)->first();
+
+            if ($attempt && ($attempt->payer_email || $attempt->payer_phone)) {
+                $recipients[] = [
+                    'name' => 'there',
+                    'email' => self::deliverableEmail($attempt->payer_email),
+                    'phone' => self::clean($attempt->payer_phone),
+                    'whatsapp_consent' => false,
                 ];
             }
         }
@@ -96,26 +120,57 @@ class ShipmentNotifier
     }
 
     /**
+     * Drop any email address or phone number already being messaged, so nobody gets
+     * the same alert twice when two parties share an address or number.
+     *
      * @param  array<int, array{name: string, email: ?string, phone: ?string, whatsapp_consent: bool}>  $recipients
      * @return array<int, array{name: string, email: ?string, phone: ?string, whatsapp_consent: bool}>
      */
     private static function dedupe(array $recipients): array
     {
-        $seen = [];
+        $seenEmails = [];
+        $seenPhones = [];
         $out = [];
 
         foreach ($recipients as $recipient) {
-            $key = strtolower((string) $recipient['email']).'|'.preg_replace('/\D+/', '', (string) $recipient['phone']);
+            $email = strtolower((string) $recipient['email']);
+            $phone = substr(preg_replace('/\D+/', '', (string) $recipient['phone']), -9);
 
-            if ($key === '|' || isset($seen[$key])) {
+            if ($email === '' || isset($seenEmails[$email])) {
+                $recipient['email'] = null;
+            }
+
+            if ($phone === '' || isset($seenPhones[$phone])) {
+                $recipient['phone'] = null;
+            }
+
+            if ($recipient['email'] === null && $recipient['phone'] === null) {
                 continue;
             }
 
-            $seen[$key] = true;
+            $seenEmails[$email] = true;
+            $seenPhones[$phone] = true;
             $out[] = $recipient;
         }
 
         return $out;
+    }
+
+    /**
+     * The address, unless it can never receive mail: the RFC 2606 / 6761 reserved
+     * test domains (example.com, *.test, ...) that placeholder and demo records use.
+     * Queuing mail to them only produces failed jobs.
+     */
+    private static function deliverableEmail(?string $email): ?string
+    {
+        $email = self::clean($email);
+        $domain = strtolower((string) substr(strrchr((string) $email, '@') ?: '', 1));
+
+        if ($email === null || $domain === '') {
+            return null;
+        }
+
+        return preg_match('/(^|\.)(example\.(com|net|org)|test|example|invalid|localhost)$/', $domain) ? null : $email;
     }
 
     private static function clean(?string $value): ?string

@@ -49,6 +49,11 @@ class PublicShipmentPaymentTest extends TestCase
 
     public function test_a_partial_amount_redirects_to_paystack(): void
     {
+        // A Paystack account without USD enabled charges the cedi equivalent.
+        config(['services.paystack.shipment_currency' => 'GHS', 'services.paystack.transaction_fee_percent' => 0]);
+        // No recorded rate: the shipment's own rate (12) applies.
+        \App\Models\ExchangeRateLog::query()->delete();
+
         Http::fake([
             '*/transaction/initialize' => Http::response([
                 'status' => true,
@@ -79,6 +84,7 @@ class PublicShipmentPaymentTest extends TestCase
                 'data' => [
                     'status' => 'success',
                     'amount' => 120000,
+                    'currency' => 'GHS',
                     'reference' => 'ref_abc123',
                     'channel' => 'card',
                     'paid_at' => now()->toIso8601String(),

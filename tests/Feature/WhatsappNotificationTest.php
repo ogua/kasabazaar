@@ -61,7 +61,7 @@ class WhatsappNotificationTest extends TestCase
         $client = Client::create(array_merge([
             'branch_id' => (string) Str::uuid(),
             'name' => 'Ama Mensah',
-            'email' => 'ama@example.com',
+            'email' => 'ama@kasarose-mail.com',
             'phone' => '0241234567',
         ], $clientOverrides));
 
@@ -106,7 +106,7 @@ class WhatsappNotificationTest extends TestCase
         Notification::assertSentOnDemand(ShipmentAlert::class, function (ShipmentAlert $notification, array $channels, AnonymousNotifiable $notifiable) {
             return $channels === ['mail', WhatsappChannel::class]
                 && $notifiable->routes['whatsapp'] === '0241234567'
-                && $notifiable->routes['mail'] === 'ama@example.com'
+                && $notifiable->routes['mail'] === 'ama@kasarose-mail.com'
                 && ! isset($notifiable->routes['sms']);
         });
     }
@@ -269,7 +269,7 @@ class WhatsappNotificationTest extends TestCase
             'receiver_phone' => '+233241234567',
             'whatsapp_opt_in_at' => now(),
         ]);
-        $other = Client::create(['branch_id' => $shipment->branch_id, 'name' => 'Other', 'email' => 'other@example.com', 'phone' => '0200000000', 'whatsapp_opt_in_at' => now()]);
+        $other = Client::create(['branch_id' => $shipment->branch_id, 'name' => 'Other', 'email' => 'other@kasarose-mail.com', 'phone' => '0200000000', 'whatsapp_opt_in_at' => now()]);
 
         $this->signedCallback(['event' => 'contact.opted_out', 'data' => ['phone' => '233241234567']])->assertOk();
 

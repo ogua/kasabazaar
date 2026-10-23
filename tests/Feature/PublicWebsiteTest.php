@@ -127,7 +127,10 @@ class PublicWebsiteTest extends TestCase
             ->assertSee('Barrel (Large)')
             ->assertSee('Kwame M.')
             ->assertDontSee('Kwame Asante Mensah')
-            ->assertDontSee('+233201234567');
+            ->assertDontSee('+233201234567')
+            ->assertSee('id="track-results"', false)
+            ->assertSee('Current status')
+            ->assertDontSee(' autofocus>', false);
     }
 
     public function test_tracking_by_shipping_reference_shows_the_status_but_not_the_items(): void
@@ -156,7 +159,8 @@ class PublicWebsiteTest extends TestCase
     {
         $this->get('/tracking?ref=KBZ-NOPE-'.Str::random(6))
             ->assertOk()
-            ->assertSee('No shipment found');
+            ->assertSee('No shipment found')
+            ->assertSee('id="track-results"', false);
     }
 
     public function test_a_delivered_shipment_with_receipt_confirmed_shows_as_received(): void

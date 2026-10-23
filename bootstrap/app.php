@@ -22,5 +22,6 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // A webhook with a missing or forged signature is the sender's fault, not ours.
+        $exceptions->render(fn (\Spatie\WebhookClient\Exceptions\InvalidWebhookSignature $e) => response()->json(['message' => $e->getMessage()], 401));
     })->create();

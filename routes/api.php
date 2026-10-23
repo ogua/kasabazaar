@@ -78,6 +78,11 @@ Route::prefix('v1')->group(function () {
     Route::post('webhooks/whatsapp-gateway', [WhatsappGatewayCallbackController::class, 'handle'])
         ->name('webhooks.whatsapp-gateway');
 
+    // The one Paystack webhook URL for the whole account (spatie/laravel-webhook-client):
+    // signature-checked, stored in webhook_calls, then routed by ProcessPaystackWebhookJob
+    // to shipment payments, investment deposits/transfers and marketplace orders.
+    Route::webhooks('webhooks/paystack', 'paystack');
+
     // ── Authenticated ────────────────────────────────────────────────────────
     Route::middleware(['auth:sanctum', 'active'])->group(function () {
 

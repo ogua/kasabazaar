@@ -8,7 +8,6 @@ use App\Models\InvestmentWebhookEvent;
 use App\Service\InvestmentPaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 
 class InvestmentPaystackWebhookController extends Controller
 {
@@ -49,29 +48,7 @@ class InvestmentPaystackWebhookController extends Controller
             return response('ok');
         }
 
-        try {
-            $investment = $this->paymentService->verifyAndRecordPaystack($data['reference']);
-
-            InvestmentWebhookEvent::create([
-                'gateway' => 'paystack',
-                'event_type' => $event['event'],
-                'reference' => $data['reference'],
-                'investment_id' => $investment->id,
-                'status' => InvestmentWebhookEventStatus::processed,
-                'payload' => $event,
-            ]);
-        } catch (\Throwable $e) {
-            Log::error('Investment Paystack webhook error: '.$e->getMessage(), ['reference' => $data['reference']]);
-
-            InvestmentWebhookEvent::create([
-                'gateway' => 'paystack',
-                'event_type' => $event['event'],
-                'reference' => $data['reference'],
-                'status' => InvestmentWebhookEventStatus::failed,
-                'error_message' => $e->getMessage(),
-                'payload' => $event,
-            ]);
-        }
+        $this->paymentService->handlePaystackDepositEvent($event);
 
         return response('ok');
     }

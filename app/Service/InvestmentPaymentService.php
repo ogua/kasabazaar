@@ -4,10 +4,13 @@ namespace App\Service;
 
 use App\Enums\InvestmentStatus;
 use App\Enums\InvestmentTransactionType;
+use App\Enums\InvestmentWebhookEventStatus;
 use App\Models\Investment;
 use App\Models\InvestmentTransaction;
+use App\Models\InvestmentWebhookEvent;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Stripe\StripeClient;
 
 class InvestmentPaymentService
@@ -218,5 +221,41 @@ class InvestmentPaymentService
             'posted_at' => now(),
             'description' => "Initial contribution recorded via {$investment->deposit_gateway}.",
         ]);
+    }
+
+    /**
+     * Record an investment deposit from a Paystack `charge.success` webhook event
+     * and log the outcome. Shared by the investment webhook endpoint and the
+     * group-wide Paystack webhook job.
+     *
+     * @param  array<string, mixed>  $event
+     */
+    public function handlePaystackDepositEvent(array $event): void
+    {
+        $reference = $event['data']['reference'] ?? null;
+
+        try {
+            $investment = $this->verifyAndRecordPaystack((string) $reference);
+
+            InvestmentWebhookEvent::create([
+                'gateway' => 'paystack',
+                'event_type' => $event['event'],
+                'reference' => $reference,
+                'investment_id' => $investment->id,
+                'status' => InvestmentWebhookEventStatus::processed,
+                'payload' => $event,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Investment Paystack webhook error: '.$e->getMessage(), ['reference' => $reference]);
+
+            InvestmentWebhookEvent::create([
+                'gateway' => 'paystack',
+                'event_type' => $event['event'],
+                'reference' => $reference,
+                'status' => InvestmentWebhookEventStatus::failed,
+                'error_message' => $e->getMessage(),
+                'payload' => $event,
+            ]);
+        }
     }
 }

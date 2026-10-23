@@ -7,6 +7,7 @@ use App\Http\Controllers\InvestorReportController;
 use App\Http\Controllers\PublicShipmentController;
 use App\Http\Controllers\PublicShipmentRequestController;
 use App\Http\Controllers\ShippingController;
+use App\Http\Controllers\TrackingPaymentController;
 use App\Http\Controllers\WebsiteController;
 use App\Http\Controllers\WebsiteEnquiryController;
 use App\Livewire\AgreementForm;
@@ -33,6 +34,18 @@ Route::view('/our-companies', 'site.our-companies')->name('our-companies');
 Route::view('/our-services', 'site.services')->name('our-services');
 Route::view('/quote', 'site.quote')->name('quote');
 Route::get('/tracking', [WebsiteController::class, 'tracking'])->name('our-tracking');
+
+// Paying a shipment balance from the tracking page (USD, Paystack). The balance is
+// only shown after a phone check; receipts are public to whoever holds the reference.
+Route::prefix('tracking')->name('tracking-payment.')->controller(TrackingPaymentController::class)->group(function () {
+    Route::get('payment/callback', 'callback')->name('callback');
+    Route::get('payment/verify', 'verify')->middleware('throttle:30,1')->name('verify');
+    Route::get('payment/{reference}', 'show')->middleware('throttle:30,1')->name('show');
+    Route::get('payment/{reference}/pdf', 'pdf')->middleware('throttle:10,1')->name('pdf');
+    Route::get('{trackingNumber}/pay', 'create')->middleware('throttle:30,1')->name('create');
+    Route::post('{trackingNumber}/pay/confirm-phone', 'confirmPhone')->middleware('throttle:10,1')->name('confirm-phone');
+    Route::post('{trackingNumber}/pay', 'store')->middleware('throttle:10,1')->name('store');
+});
 Route::view('/contact-us', 'site.contact')->name('contact-us');
 Route::view('/feedback', 'site.feedback')->name('our-feeback');
 Route::get('/news', [WebsiteController::class, 'news'])->name('our-blog');

@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Shipment;
+use App\Models\ShipmentPaymentAttempt;
 use App\Notifications\Channels\SmsChannel;
 use App\Notifications\Channels\WhatsappChannel;
 use App\Notifications\Messages\WhatsappTemplateMessage;
@@ -24,6 +25,8 @@ use Illuminate\Notifications\Notification;
 class ShipmentAlert extends Notification implements ShouldQueue
 {
     use Queueable;
+
+    private ?ShipmentPaymentAttempt $paymentAttempt = null;
 
     /**
      * @param  array<string, mixed>  $context
@@ -121,7 +124,17 @@ class ShipmentAlert extends Notification implements ShouldQueue
             .'  |  Paid: USD '.number_format((float) $shipment->amount_paid, 2)
             .'  |  Balance: USD '.number_format($balance, 2));
 
-        if ($this->portalUrl()) {
+        if ($this->receiptUrl()) {
+            $attempt = $this->paymentAttempt();
+            if ((float) $attempt->fee_usd > 0) {
+                $mail->line('Credited to your shipment: USD '.number_format((float) $attempt->amount_usd, 2)
+                    .'  |  Transaction charge: USD '.number_format((float) $attempt->fee_usd, 2)
+                    .'  |  Total charged: USD '.number_format($attempt->totalUsd(), 2));
+            }
+
+            $mail->line('Payment reference: **'.$this->context['payment']->payment_ref.'**')
+                ->action('View & verify your receipt', $this->receiptUrl());
+        } elseif ($this->portalUrl()) {
             $mail->action($balance > 0 ? 'View shipment & pay balance' : 'View shipment activity', $this->portalUrl());
         }
 
@@ -144,7 +157,9 @@ class ShipmentAlert extends Notification implements ShouldQueue
             $parts[] = 'Balance USD '.number_format($balance, 2).'.';
         }
 
-        if ($this->portalUrl()) {
+        if ($this->receiptUrl()) {
+            $parts[] = 'Ref '.$this->context['payment']->payment_ref.'. Verify receipt: '.$this->receiptUrl();
+        } elseif ($this->portalUrl()) {
             $parts[] = 'Details & pay: '.$this->portalUrl();
         }
 
@@ -170,6 +185,18 @@ class ShipmentAlert extends Notification implements ShouldQueue
         return $this->shipment->public_view_token
             ? route('public-shipment-view', $this->shipment->public_view_token)
             : null;
+    }
+
+    /**
+     * The public receipt page for an online payment. A receipt may also reach
+     * whoever paid (possibly a receiver), so it links there rather than to the
+     * sender's shipment portal.
+     */
+    private function receiptUrl(): ?string
+    {
+        $attempt = $this->paymentAttempt();
+
+        return $attempt ? route('tracking-payment.show', $attempt->reference) : null;
     }
 
     private function headline(): string
@@ -229,9 +256,29 @@ class ShipmentAlert extends Notification implements ShouldQueue
     {
         $amount = $this->paymentAmount();
 
-        return $amount
-            ? "We have received your payment of {$amount}. Thank you."
-            : 'We have received a payment on your shipment. Thank you.';
+        if (! $amount) {
+            return 'We have received a payment on your shipment. Thank you.';
+        }
+
+        $fee = (float) ($this->paymentAttempt()?->fee_usd ?? 0);
+
+        return $fee > 0
+            ? "We have received your payment of {$amount} (plus a USD ".number_format($fee, 2).' transaction charge). Thank you.'
+            : "We have received your payment of {$amount}. Thank you.";
+    }
+
+    /**
+     * The online checkout behind this payment, when it was paid through Paystack.
+     */
+    private function paymentAttempt(): ?ShipmentPaymentAttempt
+    {
+        $payment = $this->context['payment'] ?? null;
+
+        if ($this->event !== 'payment_received' || ! $payment || blank($payment->payment_ref)) {
+            return null;
+        }
+
+        return $this->paymentAttempt ??= ShipmentPaymentAttempt::where('reference', $payment->payment_ref)->first();
     }
 
     private function paymentAmount(): ?string

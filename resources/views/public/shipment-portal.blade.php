@@ -152,7 +152,11 @@
                                 <button type="submit" class="btn btn-primary">Pay with Paystack</button>
                             </div>
                             <div class="col-12">
-                                <div class="form-text">You can pay any amount towards your balance, bit by bit, until it is cleared.</div>
+                                <div class="form-text">You can pay any amount towards your balance, bit by bit, until it is cleared.
+                                    @if (config('services.paystack.transaction_fee_percent') > 0)
+                                        A {{ rtrim(rtrim(number_format((float) config('services.paystack.transaction_fee_percent'), 2), '0'), '.') }}% transaction charge is added at checkout, so the full amount goes to your balance.
+                                    @endif
+                                </div>
                             </div>
                         </form>
                     @endif

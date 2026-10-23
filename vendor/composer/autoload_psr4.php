@@ -52,6 +52,7 @@ return array(
     'Swis\\Filament\\Backgrounds\\' => array($vendorDir . '/swisnl/filament-backgrounds/src'),
     'Svg\\' => array($vendorDir . '/dompdf/php-svg-lib/src/Svg'),
     'Stripe\\' => array($vendorDir . '/stripe/stripe-php/lib'),
+    'Spatie\\WebhookClient\\' => array($vendorDir . '/spatie/laravel-webhook-client/src'),
     'Spatie\\TemporaryDirectory\\' => array($vendorDir . '/spatie/temporary-directory/src'),
     'Spatie\\Sitemap\\' => array($vendorDir . '/spatie/laravel-sitemap/src'),
     'Spatie\\Robots\\' => array($vendorDir . '/spatie/robots-txt/src'),

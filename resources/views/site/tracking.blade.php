@@ -37,21 +37,22 @@
                   <div class="sec-intro text-center mb-0">
                      <span class="sub-title2 fadeInUp">Where Is My Shipment?</span>
                      <h2 class="sec-title">Enter Your Tracking Number</h2>
-                     <p>Use the tracking number or the shipment reference on your invoice or receipt.</p>
+                     <p>Use the tracking number or the shipment reference on your invoice or receipt.
+                        Already paid? <a href="{{ route('tracking-payment.verify') }}">Verify a payment</a>.</p>
                   </div>
-                  <form method="get" action="{{ route('our-tracking') }}" class="tracking-form d-sm-flex">
+                  <form method="get" action="{{ route('our-tracking') }}#track-results" class="tracking-form d-sm-flex" id="tracking-form">
                      <label for="ref" class="visually-hidden">Tracking number or shipment reference</label>
                      <input type="text" id="ref" name="ref" class="form-control"
                         value="{{ $ref }}"
-                        placeholder="Tracking number or reference" required autofocus>
+                        placeholder="Tracking number or reference" required {{ $searched ? '' : 'autofocus' }}>
                      <button type="submit" class="btn btn-primary">
                         Track <i class="fa fa-arrow-right"></i><span></span>
                      </button>
                   </form>
                </div>
 
-                              @if ($searched && $shipment === null)
-                  <div class="alert alert-danger mt-5" role="alert">
+               @if ($searched && $shipment === null)
+                  <div class="alert alert-danger mt-5 track-results" id="track-results" tabindex="-1" role="alert">
                      <h3 class="display-6 mb-2">No shipment found</h3>
                      <p>We couldn't find a shipment matching
                         <strong>{{ $ref }}</strong>. Please check the number and try
@@ -63,7 +64,7 @@
                   </div>
 
                @elseif ($shipment !== null)
-                  <div class="mt-5">
+                  <div class="mt-5 track-results" id="track-results" tabindex="-1">
                      <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <div>
                            <p class="mb-1">Shipment</p>
@@ -104,6 +105,9 @@
                                     @if (!empty($stageDates[$n]) && $n <= $step)
                                        <span class="track-stage-date">{{ $stageDates[$n] }}</span>
                                     @endif
+                                    @if ($n === $step)
+                                       <span class="track-stage-now" aria-hidden="true">Current status</span>
+                                    @endif
                                  </span>
                                  <span class="visually-hidden">
                                     {!! $n < $step ? '(completed)' : ($n === $step ? '(current stage)' : '(upcoming)') !!}
@@ -123,6 +127,18 @@
                            </div>
                         @endforeach
                      </div>
+
+                     @if ($canPay)
+                        <div class="track-pay-cta mb-5">
+                           <div class="track-pay-cta-text">
+                              <h3 class="h5 mb-1"><i class="fa-solid fa-credit-card"></i> Paying for this shipment?</h3>
+                              <p class="mb-0">Settle your balance online in US dollars. We&rsquo;ll ask for your phone number first, so only you see the amount.</p>
+                           </div>
+                           <a href="{{ route('tracking-payment.create', $shipment->tracking_number) }}" class="btn btn-primary">
+                              Pay Now <i class="fa fa-arrow-right"></i><span></span>
+                           </a>
+                        </div>
+                     @endif
 
                      @if ($items)
                         <h3 class="display-5 mb-4">Items in This Shipment</h3>
@@ -231,9 +247,10 @@
                         <img src="{{ asset('site/images/market/market-products.jpg') }}" width="990" height="710" loading="lazy"
                              alt="Rice, vegetable oil, a kitchen sink, headlamps, a drive shaft and suspension struts">
                      </picture>
-                     <a href="{{ $market['url'] }}" target="_blank" rel="noopener" class="market-banner-footer">
+                     <a href="#" target="_blank" rel="noopener" class="market-banner-footer">
                         <i class="fa-solid fa-globe" aria-hidden="true"></i>{{ preg_replace('#^https?://#', '', $market['url']) }}
                      </a>
+                     {{-- <a>{{ $market['url'] }}</a> --}}
                   </aside>
                </div>
             </div>
@@ -241,6 +258,48 @@
       </div>
    </section>
    <!-- Tracking Section End -->
+
+@push('scripts')
+<script>
+   // A search reloads the page; take the visitor straight to the result instead of
+   // leaving them on the form wondering whether anything happened.
+   (function () {
+      var form = document.getElementById('tracking-form');
+      var button = form ? form.querySelector('button[type="submit"]') : null;
+      if (button) {
+         var buttonHtml = button.innerHTML;
+         form.addEventListener('submit', function () {
+            button.disabled = true;
+            button.innerHTML = 'Tracking&hellip; <i class="fa fa-spinner fa-spin"></i>';
+         });
+         // Coming back with the browser's Back button restores the page as it was left.
+         window.addEventListener('pageshow', function () {
+            button.disabled = false;
+            button.innerHTML = buttonHtml;
+         });
+      }
+
+      var results = document.getElementById('track-results');
+      if (!results) {
+         return;
+      }
+
+      function scrollToResults() {
+         var header = document.querySelector('.header-nav-wrapper');
+         var offset = (header ? header.offsetHeight : 0) + 20;
+         var top = results.getBoundingClientRect().top + window.pageYOffset - offset;
+         window.scrollTo({ top: Math.max(top, 0), behavior: 'smooth' });
+         results.focus({ preventScroll: true });
+      }
+
+      if (document.readyState === 'complete') {
+         setTimeout(scrollToResults, 100);
+      } else {
+         window.addEventListener('load', function () { setTimeout(scrollToResults, 100); });
+      }
+   })();
+</script>
+@endpush
 
 @include('site.partials.cta', [
     'eyebrow' => 'Not Shipped Yet?',

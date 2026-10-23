@@ -32,6 +32,7 @@ class WebsiteController extends Controller
             'status' => null,
             'stages' => PublicShipmentTracking::STAGES,
             'byTrackingNumber' => false,
+            'canPay' => false,
             'items' => [],
             'timeline' => [],
             'facts' => [],
@@ -55,6 +56,8 @@ class WebsiteController extends Controller
             ...$data,
             'status' => $status,
             'byTrackingNumber' => $byTrackingNumber,
+            // Paying goes through a phone check, and only by the random tracking number.
+            'canPay' => $byTrackingNumber && $tracking->rawStatus($shipment) !== 'cancelled',
             'items' => $byTrackingNumber ? $tracking->items($shipment) : [],
             'timeline' => $tracking->timeline($shipment),
             'stageDates' => [

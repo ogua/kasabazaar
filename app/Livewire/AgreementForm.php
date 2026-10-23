@@ -53,6 +53,7 @@ class AgreementForm extends Component implements HasForms
             $shipment,
             (float) $amount,
             route('paid-successfully'),
+            'agreement',
         );
 
         return redirect()->to($url);

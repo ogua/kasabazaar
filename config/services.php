@@ -40,6 +40,12 @@ return [
         'secret_key' => env('PAYSTACK_SECRET_KEY'),
         'webhook_secret' => env('PAYSTACK_WEBHOOK_SECRET'),
         'payment_url' => env('PAYSTACK_PAYMENT_URL', 'https://api.paystack.co'),
+        // Currency shipment balances are charged in. USD needs USD enabled on the
+        // Paystack account; GHS charges the converted amount at the shipment's rate.
+        'shipment_currency' => strtoupper(env('PAYSTACK_SHIPMENT_CURRENCY', 'USD')),
+        // Paystack's transaction fee (%), passed on to whoever pays a shipment balance
+        // online so the full balance reaches us. 0 turns the charge off.
+        'transaction_fee_percent' => (float) env('PAYSTACK_TRANSACTION_FEE_PERCENT', 1.99),
     ],
 
     'fcm' => [

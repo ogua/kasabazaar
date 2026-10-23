@@ -3,13 +3,16 @@
 namespace App\Service;
 
 use App\Enums\InvestmentInterestPayoutStatus;
+use App\Enums\InvestmentWebhookEventStatus;
 use App\Enums\InvestmentWithdrawalStatus;
 use App\Models\InvestmentInterestPayout;
+use App\Models\InvestmentWebhookEvent;
 use App\Models\InvestmentWithdrawalRequest;
 use App\Models\Investor;
 use App\Models\User;
 use App\Services\InvestmentWithdrawalApprovalService;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class InvestmentTransferService
 {
@@ -208,5 +211,85 @@ class InvestmentTransferService
         return $payout->investment->recordedBy
             ?? User::role('super_admin')->first()
             ?? User::firstOrFail();
+    }
+
+    /**
+     * Apply a Paystack transfer webhook event (`transfer.success` / `.failed` /
+     * `.reversed`) to the withdrawal request or interest payout it belongs to, and
+     * log the outcome. Shared by the transfer webhook endpoint and the group-wide
+     * Paystack webhook job.
+     *
+     * @param  array<string, mixed>  $event
+     */
+    public function handlePaystackTransferEvent(array $event): void
+    {
+        if (! isset($event['event'], $event['data']['transfer_code'])) {
+            InvestmentWebhookEvent::create([
+                'gateway' => 'paystack_transfer',
+                'event_type' => $event['event'] ?? 'unknown',
+                'status' => InvestmentWebhookEventStatus::ignored,
+                'payload' => $event,
+            ]);
+
+            return;
+        }
+
+        $transferCode = $event['data']['transfer_code'];
+        $withdrawalRequestId = InvestmentWithdrawalRequest::where('paystack_transfer_code', $transferCode)
+            ->value('id');
+        $interestPayoutId = $withdrawalRequestId
+            ? null
+            : InvestmentInterestPayout::where('paystack_transfer_code', $transferCode)->value('id');
+
+        if (! in_array($event['event'], ['transfer.success', 'transfer.failed', 'transfer.reversed'], true)) {
+            InvestmentWebhookEvent::create([
+                'gateway' => 'paystack_transfer',
+                'event_type' => $event['event'],
+                'reference' => $transferCode,
+                'investment_withdrawal_request_id' => $withdrawalRequestId,
+                'investment_interest_payout_id' => $interestPayoutId,
+                'status' => InvestmentWebhookEventStatus::ignored,
+                'payload' => $event,
+            ]);
+
+            return;
+        }
+
+        try {
+            if ($interestPayoutId) {
+                match ($event['event']) {
+                    'transfer.success' => $this->handleInterestPayoutTransferSuccess($transferCode),
+                    'transfer.failed', 'transfer.reversed' => $this->handleInterestPayoutTransferFailed($transferCode),
+                };
+            } else {
+                match ($event['event']) {
+                    'transfer.success' => $this->handleTransferSuccess($transferCode),
+                    'transfer.failed', 'transfer.reversed' => $this->handleTransferFailed($transferCode),
+                };
+            }
+
+            InvestmentWebhookEvent::create([
+                'gateway' => 'paystack_transfer',
+                'event_type' => $event['event'],
+                'reference' => $transferCode,
+                'investment_withdrawal_request_id' => $withdrawalRequestId,
+                'investment_interest_payout_id' => $interestPayoutId,
+                'status' => InvestmentWebhookEventStatus::processed,
+                'payload' => $event,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Investment transfer webhook error: '.$e->getMessage(), ['transfer_code' => $transferCode]);
+
+            InvestmentWebhookEvent::create([
+                'gateway' => 'paystack_transfer',
+                'event_type' => $event['event'],
+                'reference' => $transferCode,
+                'investment_withdrawal_request_id' => $withdrawalRequestId,
+                'investment_interest_payout_id' => $interestPayoutId,
+                'status' => InvestmentWebhookEventStatus::failed,
+                'error_message' => $e->getMessage(),
+                'payload' => $event,
+            ]);
+        }
     }
 }

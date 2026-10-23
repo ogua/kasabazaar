@@ -6,10 +6,8 @@ use Illuminate\Support\Facades\Schedule;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote')->hourly();
+})->purpose('Display an inspiring quote');
 
-// Fetch latest USD → GHS exchange rate from open.er-api.com daily.
-// The free-tier API resets at ~00:02 UTC; run at 00:05 UTC to get fresh data.
 // Settle auctions as soon as their clock runs out, so winners are notified
 // and the payment window opens within a minute of closing.
 Schedule::command('app:close-ended-auctions')
@@ -24,6 +22,9 @@ Schedule::command('app:cleanup-expired-ecommerce-carts')
     ->withoutOverlapping()
     ->runInBackground();
 
+// Fetch latest USD → GHS exchange rate from open.er-api.com daily. Cedi checkouts for
+// shipment balances are converted at this rate. The free-tier API resets at ~00:02 UTC;
+// run at 00:05 UTC to get fresh data.
 Schedule::command('app:exchange-rate')
     ->dailyAt('00:05')
     ->withoutOverlapping()
@@ -64,3 +65,31 @@ Schedule::command('app:generate-annual-investment-statements')
     ->onFailure(function () {
         logger()->error('Scheduled app:generate-annual-investment-statements command failed.');
     });
+
+// Stored Paystack webhook calls are kept for webhook-client.delete_after_days, then pruned.
+Schedule::command('model:prune', ['--model' => [\Spatie\WebhookClient\Models\WebhookCall::class]])
+    ->daily()
+    ->withoutOverlapping()
+    ->runInBackground();
+
+// Confirms shipment checkouts whose callback and webhook were both missed.
+Schedule::command('app:reconcile-shipment-payments')
+    ->everyFiveMinutes()
+    ->withoutOverlapping()
+    ->runInBackground();
+
+// Housekeeping. Failed jobs are kept a month for debugging; finished batches two days;
+// expired password-reset links are cleared so old tokens cannot be replayed.
+Schedule::command('queue:prune-failed', ['--hours' => 720])
+    ->daily()
+    ->withoutOverlapping()
+    ->runInBackground();
+
+Schedule::command('queue:prune-batches', ['--hours' => 48])
+    ->daily()
+    ->withoutOverlapping()
+    ->runInBackground();
+
+Schedule::command('auth:clear-resets')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping();
