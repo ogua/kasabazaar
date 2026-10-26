@@ -104,49 +104,6 @@
             </div>
         </div>
 
-        <!-- Tracking Info -->
-        {{-- <div class="tracking-info">
-            <span class="tracking-label">Tracking Number</span>
-            <div class="tracking-number">{{ $shipping->tracking_number }}</div>
-        </div> --}}
-
-        <!-- Pickup Items (if any) -->
-        @if ($shipping->pickupitems && count($shipping->receivers) > 1)
-            <div class="section">
-                <div class="section-title">Pickup Items</div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 50px;">#</th>
-                            <th>Item Description</th>
-                            <th style="width: 80px;" class="text-center">Qty</th>
-                            <th style="width: 100px;" class="text-right">Unit Cost</th>
-                            <th style="width: 100px;" class="text-right">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($shipping->pickupitems as $index => $item)
-                            <tr>
-                                <td>{{ $index + 1 }}</td>
-                                <td>{{ $item->product?->name ?? 'N/A' }}</td>
-                                <td class="text-center">{{ $item->quantity }}</td>
-                                <td class="text-right">${{ number_format($item->item_cost, 2) }}</td>
-                                <td class="text-right">${{ number_format($item->quantity * $item->item_cost, 2) }}</td>
-                            </tr>
-                        @endforeach
-                        <tr style="background: #f3f4f6; font-weight: bold;">
-                            <td colspan="2">Pickup Items Subtotal</td>
-                            <td class="text-center">{{ $shipping->pickupitems->sum('quantity') }}</td>
-                            <td></td>
-                            <td class="text-right">
-                                ${{ number_format($shipping->pickupitems->sum(fn($i) => $i->quantity * $i->item_cost), 2) }}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        @endif
-
         <!-- Receivers and Their Items -->
         @if ($shipping->receivers && $shipping->receivers->count() > 0)
             <div class="section">
