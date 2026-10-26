@@ -176,8 +176,10 @@
         </div>
     </template>
 
+    {{-- Rows are "pickup-item", never "item": Tom Select marks each chosen product with
+         class "item", and counting those as rows broke the numbering and dropped items. --}}
     <template id="item-template">
-        <div class="item bg-white border border-gray-200 rounded-lg p-3">
+        <div class="pickup-item bg-white border border-gray-200 rounded-lg p-3">
             <div class="grid grid-cols-12 gap-2 items-end">
                 <div class="col-span-12 md:col-span-6">
                     <div class="flex items-center justify-between mb-1">
@@ -227,7 +229,7 @@
                     input.name = `receivers[${r}][${input.dataset.name}]`;
                 });
 
-                const items = receiver.querySelectorAll('.item');
+                const items = receiver.querySelectorAll('.pickup-item');
                 items.forEach((item, i) => {
                     item.querySelectorAll('[data-name]').forEach(input => {
                         input.name = `receivers[${r}][items][${i}][${input.dataset.name}]`;
@@ -346,7 +348,7 @@
                 }
             });
             receiver.querySelector('.remove-receiver').addEventListener('click', () => {
-                receiver.querySelectorAll('.item').forEach(item => item.productPicker.destroy());
+                receiver.querySelectorAll('.pickup-item').forEach(item => item.productPicker.destroy());
                 receiver.remove();
                 renumber();
             });
@@ -367,7 +369,7 @@
         window.scrollTo(0, 0);
 
         document.getElementById('pickupForm').addEventListener('submit', (event) => {
-            const missing = [...document.querySelectorAll('.item')].find(item => item.dataset.newProduct !== '1' && !item.productPicker.getValue());
+            const missing = [...document.querySelectorAll('.pickup-item')].find(item => item.dataset.newProduct !== '1' && !item.productPicker.getValue());
             if (missing) {
                 event.preventDefault();
                 missing.productPicker.focus();
