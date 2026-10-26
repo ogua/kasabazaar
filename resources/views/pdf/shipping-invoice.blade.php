@@ -11,13 +11,20 @@
 </head>
 
 <body>
+    @if (file_exists(public_path('images/kasarose-logo.png')))
+        <div class="watermark">
+            <img src="data:image/png;base64,{{ base64_encode(file_get_contents(public_path('images/kasarose-logo.png'))) }}"
+                alt="">
+        </div>
+    @endif
+
     <div class="container">
         <!-- Header -->
         <div class="header">
             <div class="header-left">
                 @if (file_exists(public_path('images/kasarose-logo.png')))
                     <img src="{{ URL::to('images/kasarose-logo.png') }}" alt="Logo" class="logo"
-                        style="max-width: 200px;position: relative; top: -30px;">
+                        style="max-width: 160px;position: relative; top: -30px;">
                 @endif
 
                 {{-- <div class="company-name">
@@ -44,7 +51,7 @@
                    
                     <div class="balance">Balance: ${{ number_format($balance, 2) }}</div>
                 </div> --}}
-                <div class="invoice-title">SHIPPING INVOICE</div>
+                <div class="invoice-title">INVOICE</div>
                 <div class="invoice-details">
                     <p><strong>Invoice No:</strong> {{ $shipping->shipping_reference }}</p>
                     <p><strong>Date:</strong> {{ $shipping->created_at->format('j M Y') }}</p>
@@ -85,10 +92,6 @@
                     <div class="info-row">
                         <span class="info-label">To:</span>
                         <span class="info-value">{{ $shipping->destination_branch_id }}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Status:</span>
-                        <span class="info-value">{{ $shipping->status->getLabel() }}</span>
                     </div>
                     @if ($shipping->estimated_delivery_date)
                         <div class="info-row">
@@ -222,63 +225,10 @@
             </div>
         @endif
 
-        <!-- Insurance Status -->
-        <div style="margin-bottom: 15px;">
-            @if ($shipping->insurance_accepted)
-                <span class="insurance-status insurance-accepted">
-                    ✓ Insurance Accepted - Coverage: ${{ number_format($shipping->insurance ?? 0, 2) }}
-                </span>
-            @else
-                <span class="insurance-status insurance-declined">
-                    ✗ Insurance Declined - No coverage for damage or loss
-                </span>
-            @endif
-        </div>
-
-        <!-- Tracking Number -->
-        @if ($shipping->publicTrackingUrl())
-            <a href="{{ $shipping->publicTrackingUrl() }}" target="_blank" class="track-box">
-                <div class="track-label">Click to <span class="track-word">TRACK</span> Your Shipment</div>
-                <div class="track-number">{{ $shipping->tracking_number ?: $shipping->shipping_reference }}</div>
-            </a>
-        @endif
-
         <!-- Totals & Payment Methods -->
         <div class="totals-section">
-            <div class="totals-left" style="margin-right: 20px;">
-                <div class="payment-section">
-                    <div class="payment-title"
-                        style="text-align: center;font-weight: bold;font-size: 16px;color: #003151;">Payment Methods:
-                    </div>
-                    <div class="payment-methods">
-                        <div class="payment-method">
-                            <img src="{{ URL::to('images/cash-app.png') }}" alt="Logo" class="logo"
-                                style="max-width: 120px; margin-bottom: 5px;">
-                            <p style="font-size: 11px;font-weight: bold; margin-bottom: 2px;">Phone #: (317) 774-6913
-                            </p>
-                            <p style="font-size: 11px;font-weight: bold; margin-bottom: 2px;">Name: Rose Adel</p>
-                            <p style="font-size: 11px;font-weight: bold;">$KasaBazaar1</p>
-                        </div>
-                        <div class="payment-method" style="text-align: right;">
-                            <img src="{{ URL::to('images/zelle.png') }}" alt="Logo" class="logo"
-                                style="max-width: 120px; margin-bottom: 5px;">
-                            <p style="font-size: 11px;font-weight: bold; margin-bottom: 2px;">Phone #: (317) 774-6913
-                            </p>
-                            <p style="font-size: 11px;font-weight: bold;">Name: Kasabazaar</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="totals-right">
-                <table class="totals-table" style="margin-left: auto;">
-                    {{-- @if ($shipping->pickupitems && $shipping->pickupitems->count() > 0)
-                        <tr>
-                            <td class="total-label">Pickup Items Total:</td>
-                            <td class="total-value">
-                                ${{ number_format($shipping->pickupitems->sum(fn($i) => $i->quantity * $i->item_cost), 2) }}
-                            </td>
-                        </tr>
-                    @endif --}}
+            <div class="totals-left" style="width: 45%; vertical-align: top; text-align: left;">
+                <table class="totals-table" style="width: 100%; margin-left: 0;">
                     <tr>
                         <td class="total-label">Shipping Cost:</td>
                         <td class="total-value">${{ number_format($shipping->shipping_cost, 2) }}</td>
@@ -316,7 +266,37 @@
                     @endif
                 </table>
             </div>
+            <div class="totals-right" style="width: 55%; vertical-align: top; text-align: left;">
+                <div class="payment-section" style="margin-bottom: 0;">
+                    <div class="payment-title" style="text-align: center;font-weight: bold;font-size: 16px;color: #003151;">
+                        Payment Methods:
+                    </div>
+                    <div class="payment-methods">
+                        <div class="payment-method">
+                            <img src="{{ URL::to('images/cash-app.png') }}" alt="Logo" class="logo"
+                                style="max-width: 120px; margin-bottom: 5px;">
+                            <p style="font-size: 11px;font-weight: bold; margin-bottom: 2px;">Phone #: (317) 774-6913</p>
+                            <p style="font-size: 11px;font-weight: bold; margin-bottom: 2px;">Name: Rose Adel</p>
+                            <p style="font-size: 11px;font-weight: bold;">$KasaBazaar1</p>
+                        </div>
+                        <div class="payment-method" style="text-align: right;">
+                            <img src="{{ URL::to('images/zelle.png') }}" alt="Logo" class="logo"
+                                style="max-width: 120px; margin-bottom: 5px;">
+                            <p style="font-size: 11px;font-weight: bold; margin-bottom: 2px;">Phone #: (317) 774-6913</p>
+                            <p style="font-size: 11px;font-weight: bold;">Name: Kasabazaar</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <!-- Tracking Number -->
+        @if ($shipping->publicTrackingUrl())
+            <a href="{{ $shipping->publicTrackingUrl() }}" target="_blank" class="track-box">
+                <div class="track-label">Click to <span class="track-word">TRACK</span> Your Shipment</div>
+                <div class="track-number">{{ $shipping->tracking_number ?: $shipping->shipping_reference }}</div>
+            </a>
+        @endif
 
         <!-- Signature Section -->
         <div class="signature-section">
@@ -330,18 +310,19 @@
                 <div class="signature-label">Authorized Signature</div>
                 <div class="signature-label" style="margin-top: 5px;">Date: {{ now()->format('j M Y') }}</div>
             </div>
-            <div class="signature-box right">
-                <div class="signature-title">Client Signature</div>
-                <div class="signature-line"></div>
-                <div class="signature-label">Client Signature</div>
-                {{-- <div class="signature-label" style="margin-top: 10px;">
-                    <strong>Client Name:</strong> {{ $shipping->client?->name }}
-                </div>
-                <div class="signature-label">
-                    <strong>Email:</strong> {{ $shipping->client?->email }}
-                </div> --}}
-                <div class="signature-label" style="margin-top: 5px;">Date: {{ now()->format('j M Y') }}</div>
-            </div>
+        </div>
+
+        <!-- Insurance Status -->
+        <div style="margin-top: 15px; text-align: center;">
+            @if ($shipping->insurance_accepted)
+                <span class="insurance-status insurance-accepted">
+                    ✓ Insurance Accepted - Coverage: ${{ number_format($shipping->insurance ?? 0, 2) }}
+                </span>
+            @else
+                <span class="insurance-status insurance-declined">
+                    ✗ Insurance Declined - No coverage for damage or loss
+                </span>
+            @endif
         </div>
 
         <!-- Footer -->

@@ -15,8 +15,23 @@
         }
 
         .container {
+            position: relative;
             max-width: 100%;
             padding: 20px;
+        }
+
+        .watermark {
+            position: fixed;
+            top: 30%;
+            left: 0;
+            right: 0;
+            text-align: center;
+            opacity: 0.06;
+            z-index: -1;
+        }
+
+        .watermark img {
+            width: 70%;
         }
 
         .header {
@@ -207,8 +222,9 @@
         }
 
         .receiver-table th {
-            background: #003151;
-            color: #fff;
+            background: #e6eef4;
+            color: #003151;
+            border-bottom: 2px solid #003151;
         }
 
         .totals-section {
