@@ -39,15 +39,15 @@
                   @if (! $confirmed)
                      <h3 class="h5 mb-2"><i class="fa-solid fa-shield-halved text-primary me-1"></i> Confirm it&rsquo;s you</h3>
                      <p>To keep your account private, we show the balance only after you confirm the
-                        <strong>sender&rsquo;s or receiver&rsquo;s phone number</strong> we have on file for this shipment.</p>
+                        <strong>sender&rsquo;s or receiver&rsquo;s phone number or email</strong> we have on file for this shipment.</p>
 
-                     <form method="post" action="{{ route('tracking-payment.confirm-phone', $trackingNumber) }}" class="mt-4" novalidate>
+                     <form method="post" action="{{ route('tracking-payment.confirm', $trackingNumber) }}" class="mt-4" novalidate>
                         @csrf
-                        <label for="phone" class="form-label fw-bold">Phone number</label>
-                        <input type="tel" id="phone" name="phone" inputmode="tel" autocomplete="tel"
-                           class="form-control @error('phone') is-invalid @enderror"
-                           value="{{ old('phone') }}" placeholder="e.g. 024 123 4567 or +1 555 123 4567" required autofocus>
-                        @error('phone')
+                        <label for="contact" class="form-label fw-bold">Phone number or email</label>
+                        <input type="text" id="contact" name="contact" autocomplete="on"
+                           class="form-control @error('contact') is-invalid @enderror"
+                           value="{{ old('contact') }}" placeholder="e.g. 024 123 4567 or you@example.com" required autofocus>
+                        @error('contact')
                            <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                         <button type="submit" class="btn btn-primary mt-4 w-100">
@@ -113,7 +113,7 @@
                         <label for="email" class="form-label fw-bold mt-4">Email for your receipt</label>
                         <input type="email" id="email" name="email" autocomplete="email"
                            class="form-control @error('email') is-invalid @enderror"
-                           value="{{ old('email') }}" placeholder="you@example.com" required>
+                           value="{{ old('email', $confirmedEmail) }}" placeholder="you@example.com" required>
                         @error('email')
                            <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror

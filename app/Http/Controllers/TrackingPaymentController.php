@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ConfirmTrackingPaymentPhoneRequest;
+use App\Http\Requests\ConfirmTrackingPaymentContactRequest;
 use App\Http\Requests\StoreTrackingPaymentRequest;
 use App\Models\Shipment;
 use App\Models\ShipmentPaymentAttempt;
@@ -20,7 +20,7 @@ use Illuminate\View\View;
  *
  * The tracking page never shows payment state to someone who merely holds a
  * number, so the balance is only revealed after the visitor proves a link to the
- * shipment: the sender's or a receiver's phone number on file. Payments are
+ * shipment: the sender's or a receiver's phone number or email on file. Payments are
  * reached by the random tracking number only, never the sequential reference.
  * Anyone holding a payment reference can open its receipt to verify it.
  */
@@ -30,12 +30,13 @@ class TrackingPaymentController extends Controller
 
     private const CONFIRMATION_MINUTES = 30;
 
-    private const MAX_PHONE_ATTEMPTS = 5;
+    private const MAX_CONTACT_ATTEMPTS = 5;
 
     public function create(string $trackingNumber, PublicShipmentTracking $tracking, ShipmentPaymentService $payments): View
     {
         $shipment = $this->payableShipment($trackingNumber, $tracking);
-        $confirmed = $this->confirmedPhone($shipment) !== null;
+        $confirmation = $this->confirmation($shipment);
+        $confirmed = $confirmation !== null;
         $balance = $confirmed ? round($shipment->outstanding_balance, 2) : null;
 
         return view('site.tracking-pay', [
@@ -43,6 +44,7 @@ class TrackingPaymentController extends Controller
             'trackingNumber' => $shipment->tracking_number,
             'confirmed' => $confirmed,
             'balance' => $balance,
+            'confirmedEmail' => $confirmation['email'] ?? null,
             'charge' => $balance > 0 ? $payments->chargeFor((float) old('amount', $balance)) : null,
             'feePercent' => (float) config('services.paystack.transaction_fee_percent', 0),
             'total' => $confirmed ? (float) $shipment->total : null,
@@ -52,28 +54,38 @@ class TrackingPaymentController extends Controller
         ]);
     }
 
-    public function confirmPhone(ConfirmTrackingPaymentPhoneRequest $request, string $trackingNumber, PublicShipmentTracking $tracking): RedirectResponse
+    public function confirmContact(ConfirmTrackingPaymentContactRequest $request, string $trackingNumber, PublicShipmentTracking $tracking): RedirectResponse
     {
         $shipment = $this->payableShipment($trackingNumber, $tracking);
-        $limiterKey = 'tracking-payment-phone:'.$shipment->id;
+        $limiterKey = 'tracking-payment-contact:'.$shipment->id;
 
-        if (RateLimiter::tooManyAttempts($limiterKey, self::MAX_PHONE_ATTEMPTS)) {
+        if (RateLimiter::tooManyAttempts($limiterKey, self::MAX_CONTACT_ATTEMPTS)) {
             $minutes = (int) ceil(RateLimiter::availableIn($limiterKey) / 60);
 
-            return back()->withErrors(['phone' => "Too many attempts. Please try again in {$minutes} minute(s), or call us."]);
+            return back()->withErrors(['contact' => "Too many attempts. Please try again in {$minutes} minute(s), or call us."]);
         }
 
-        if (! $this->phoneMatches($shipment, $request->validated('phone'))) {
+        $contact = trim($request->validated('contact'));
+        $isEmail = $request->isEmail();
+
+        $party = $this->matchingParty($shipment, $contact, $isEmail);
+
+        if ($party === null) {
             RateLimiter::hit($limiterKey, 15 * 60);
 
             return back()->withInput()->withErrors([
-                'phone' => 'That number doesn’t match our records for this shipment. Use the sender’s or receiver’s number as given when the shipment was booked.',
+                'contact' => $isEmail
+                    ? 'That email doesn’t match our records for this shipment. Use the sender’s or receiver’s email as given when the shipment was booked, or try a phone number.'
+                    : 'That number doesn’t match our records for this shipment. Use the sender’s or receiver’s number as given when the shipment was booked, or try an email address.',
             ]);
         }
 
+        // Remember the matched person's own details, so the receipt email is filled in
+        // and the SMS receipt has a number, whichever of the two they confirmed with.
         RateLimiter::clear($limiterKey);
         $request->session()->put(self::SESSION_KEY.'.'.$shipment->id, [
-            'phone' => $request->validated('phone'),
+            'phone' => $isEmail ? $party['phone'] : $contact,
+            'email' => $isEmail ? strtolower($contact) : $party['email'],
             'at' => now()->timestamp,
         ]);
 
@@ -87,11 +99,11 @@ class TrackingPaymentController extends Controller
         ShipmentPaymentService $payments,
     ): RedirectResponse {
         $shipment = $this->payableShipment($trackingNumber, $tracking);
-        $phone = $this->confirmedPhone($shipment);
+        $confirmation = $this->confirmation($shipment);
 
-        if ($phone === null) {
+        if ($confirmation === null) {
             return redirect()->route('tracking-payment.create', $shipment->tracking_number)
-                ->withErrors(['phone' => 'Please confirm your phone number again to continue.']);
+                ->withErrors(['contact' => 'Please confirm your phone number or email again to continue.']);
         }
 
         $balance = round($shipment->outstanding_balance, 2);
@@ -115,7 +127,7 @@ class TrackingPaymentController extends Controller
                 route('tracking-payment.callback'),
                 'tracking_page',
                 $request->validated('email'),
-                $phone,
+                $confirmation['phone'],
             );
         } catch (\Throwable $e) {
             logger()->error('Tracking page payment init failed for '.$shipment->id.': '.$e->getMessage());
@@ -217,10 +229,12 @@ class TrackingPaymentController extends Controller
     }
 
     /**
-     * The phone number the visitor confirmed for this shipment in this session, if
-     * the confirmation is still fresh.
+     * The phone number or email the visitor confirmed for this shipment in this
+     * session, if the confirmation is still fresh.
+     *
+     * @return array{phone: ?string, email: ?string}|null
      */
-    private function confirmedPhone(Shipment $shipment): ?string
+    private function confirmation(Shipment $shipment): ?array
     {
         $confirmation = session(self::SESSION_KEY.'.'.$shipment->id);
 
@@ -228,27 +242,42 @@ class TrackingPaymentController extends Controller
             return null;
         }
 
-        return $confirmation['phone'] ?? null;
+        return [
+            'phone' => $confirmation['phone'] ?? null,
+            'email' => $confirmation['email'] ?? null,
+        ];
     }
 
     /**
-     * Whether the number matches the sender's or a receiver's phone on file. Compared
-     * on the last nine digits so +233 24…, 024… and 24… all match the same number.
+     * The sender or receiver whose phone or email on file matches what the visitor
+     * typed, sender first. Phones are compared on the last nine digits so +233 24…,
+     * 024… and 24… all match the same number; emails ignoring case.
+     *
+     * @return array{phone: ?string, email: ?string}|null
      */
-    private function phoneMatches(Shipment $shipment, string $phone): bool
+    private function matchingParty(Shipment $shipment, string $contact, bool $isEmail): ?array
     {
-        $given = self::lastNineDigits($phone);
+        $given = $isEmail ? strtolower($contact) : self::lastNineDigits($contact);
 
-        if (strlen($given) < 9) {
-            return false;
+        if (! $isEmail && strlen($given) < 9) {
+            return null;
         }
 
-        $onFile = collect([$shipment->client?->phone])
-            ->merge($shipment->receivers()->pluck('receiver_phone'))
-            ->map(fn (?string $number): string => self::lastNineDigits((string) $number))
-            ->filter(fn (string $digits): bool => strlen($digits) === 9);
+        $parties = collect([['phone' => $shipment->client?->phone, 'email' => $shipment->client?->email]])
+            ->merge($shipment->receivers()->get(['receiver_phone', 'receiver_email'])->map(fn ($receiver): array => [
+                'phone' => $receiver->receiver_phone,
+                'email' => $receiver->receiver_email,
+            ]))
+            ->map(fn (array $party): array => [
+                'phone' => filled($party['phone']) ? trim($party['phone']) : null,
+                'email' => filled($party['email']) ? strtolower(trim($party['email'])) : null,
+            ]);
 
-        return $onFile->contains(fn (string $digits): bool => hash_equals($digits, $given));
+        return $parties->first(function (array $party) use ($given, $isEmail): bool {
+            $onFile = $isEmail ? (string) $party['email'] : self::lastNineDigits((string) $party['phone']);
+
+            return $onFile !== '' && ($isEmail || strlen($onFile) === 9) && hash_equals($onFile, $given);
+        });
     }
 
     private static function lastNineDigits(string $phone): string

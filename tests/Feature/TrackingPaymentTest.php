@@ -22,7 +22,7 @@ use Spatie\WebhookClient\Models\WebhookCall;
 use Tests\TestCase;
 
 /**
- * Paying a shipment balance from the public tracking page: the phone check that
+ * Paying a shipment balance from the public tracking page: the phone/email check that
  * guards the balance, the USD Paystack checkout, the callback, receipts and their
  * verification, and the group-wide Paystack webhook.
  */
@@ -84,25 +84,25 @@ class TrackingPaymentTest extends TestCase
     public function test_a_wrong_phone_is_refused_and_repeated_guesses_are_locked_out(): void
     {
         $shipment = $this->makeShipment();
-        $url = route('tracking-payment.confirm-phone', $shipment->tracking_number);
+        $url = route('tracking-payment.confirm', $shipment->tracking_number);
 
         for ($i = 0; $i < 5; $i++) {
-            $this->post($url, ['phone' => '0559999999'])->assertSessionHasErrors('phone');
+            $this->post($url, ['contact' => '0559999999'])->assertSessionHasErrors('contact');
         }
 
-        $this->post($url, ['phone' => '0201234567'])
-            ->assertSessionHasErrors(['phone' => 'Too many attempts. Please try again in 15 minute(s), or call us.']);
+        $this->post($url, ['contact' => '0201234567'])
+            ->assertSessionHasErrors(['contact' => 'Too many attempts. Please try again in 15 minute(s), or call us.']);
 
         $this->get(route('tracking-payment.create', $shipment->tracking_number))->assertDontSee('Balance due');
 
-        RateLimiter::clear('tracking-payment-phone:'.$shipment->id);
+        RateLimiter::clear('tracking-payment-contact:'.$shipment->id);
     }
 
     public function test_the_senders_phone_in_any_format_reveals_the_balance(): void
     {
         $shipment = $this->makeShipment();
 
-        $this->post(route('tracking-payment.confirm-phone', $shipment->tracking_number), ['phone' => '020 123 4567'])
+        $this->post(route('tracking-payment.confirm', $shipment->tracking_number), ['contact' => '020 123 4567'])
             ->assertRedirect(route('tracking-payment.create', $shipment->tracking_number));
 
         $this->get(route('tracking-payment.create', $shipment->tracking_number))
@@ -116,8 +116,104 @@ class TrackingPaymentTest extends TestCase
         $shipment = $this->makeShipment();
         Receiver::create(['shipment_id' => $shipment->id, 'receiver_name' => 'Kofi Boateng', 'receiver_phone' => '+233 24 765 4321']);
 
-        $this->post(route('tracking-payment.confirm-phone', $shipment->tracking_number), ['phone' => '0247654321'])
+        $this->post(route('tracking-payment.confirm', $shipment->tracking_number), ['contact' => '0247654321'])
             ->assertSessionHasNoErrors();
+    }
+
+    public function test_the_senders_email_in_any_case_reveals_the_balance(): void
+    {
+        $shipment = $this->makeShipment();
+
+        $this->post(route('tracking-payment.confirm', $shipment->tracking_number), ['contact' => '  AMA@Kasarose-Mail.com '])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('tracking-payment.create', $shipment->tracking_number));
+
+        $this->get(route('tracking-payment.create', $shipment->tracking_number))
+            ->assertSee('Balance due')
+            ->assertSee('value="ama@kasarose-mail.com"', false);
+    }
+
+    public function test_a_receivers_email_is_accepted_when_the_receiver_has_no_phone(): void
+    {
+        $shipment = $this->makeShipment();
+        Receiver::create(['shipment_id' => $shipment->id, 'receiver_name' => 'Kofi Boateng', 'receiver_email' => 'kofi@kasarose-mail.com']);
+
+        $this->post(route('tracking-payment.confirm', $shipment->tracking_number), ['contact' => 'kofi@kasarose-mail.com'])
+            ->assertSessionHasNoErrors();
+    }
+
+    public function test_a_wrong_email_is_refused_and_counts_towards_the_lockout(): void
+    {
+        $shipment = $this->makeShipment();
+        Receiver::create(['shipment_id' => $shipment->id, 'receiver_name' => 'No Email', 'receiver_email' => null]);
+        $url = route('tracking-payment.confirm', $shipment->tracking_number);
+
+        $this->post($url, ['contact' => 'someone@else.com'])
+            ->assertSessionHasErrors(['contact' => 'That email doesn’t match our records for this shipment. Use the sender’s or receiver’s email as given when the shipment was booked, or try a phone number.']);
+
+        for ($i = 0; $i < 4; $i++) {
+            $this->post($url, ['contact' => '0559999999']);
+        }
+
+        $this->post($url, ['contact' => 'ama@kasarose-mail.com'])
+            ->assertSessionHasErrors(['contact' => 'Too many attempts. Please try again in 15 minute(s), or call us.']);
+
+        RateLimiter::clear('tracking-payment-contact:'.$shipment->id);
+    }
+
+    public function test_something_that_is_neither_a_phone_nor_an_email_is_rejected(): void
+    {
+        $shipment = $this->makeShipment();
+
+        $this->post(route('tracking-payment.confirm', $shipment->tracking_number), ['contact' => 'ama'])
+            ->assertSessionHasErrors(['contact' => 'Enter a full phone number (with the area or network code) or an email address.']);
+
+        $this->post(route('tracking-payment.confirm', $shipment->tracking_number), ['contact' => ''])
+            ->assertSessionHasErrors(['contact' => 'Enter the phone number or email address we have on file for this shipment.']);
+    }
+
+    public function test_confirming_with_the_senders_phone_fills_in_the_clients_email_for_the_receipt(): void
+    {
+        $shipment = $this->makeShipment();
+        $this->confirmPhone($shipment);
+
+        $this->get(route('tracking-payment.create', $shipment->tracking_number))
+            ->assertSee('value="ama@kasarose-mail.com"', false);
+    }
+
+    public function test_confirming_with_a_receivers_phone_fills_in_that_receivers_email_never_the_senders(): void
+    {
+        $shipment = $this->makeShipment();
+        Receiver::create(['shipment_id' => $shipment->id, 'receiver_name' => 'Kofi Boateng', 'receiver_phone' => '0247654321', 'receiver_email' => 'Kofi@Kasarose-Mail.com']);
+        Receiver::create(['shipment_id' => $shipment->id, 'receiver_name' => 'Esi Owusu', 'receiver_phone' => '0271112222']);
+
+        $this->post(route('tracking-payment.confirm', $shipment->tracking_number), ['contact' => '0247654321']);
+        $this->get(route('tracking-payment.create', $shipment->tracking_number))
+            ->assertSee('value="kofi@kasarose-mail.com"', false)
+            ->assertDontSee('ama@kasarose-mail.com');
+
+        $this->post(route('tracking-payment.confirm', $shipment->tracking_number), ['contact' => '027 111 2222']);
+        $this->get(route('tracking-payment.create', $shipment->tracking_number))
+            ->assertSee('Balance due')
+            ->assertDontSee('ama@kasarose-mail.com')
+            ->assertDontSee('kofi@kasarose-mail.com');
+    }
+
+    public function test_checkout_after_an_email_check_uses_that_persons_phone_for_the_sms_receipt(): void
+    {
+        $shipment = $this->makeShipment();
+        Http::fake(['*/transaction/initialize' => Http::response([
+            'status' => true,
+            'data' => ['authorization_url' => 'https://checkout.paystack.test/abc', 'access_code' => 'abc', 'reference' => 'ignored'],
+        ])]);
+
+        $this->post(route('tracking-payment.confirm', $shipment->tracking_number), ['contact' => 'ama@kasarose-mail.com'])
+            ->assertSessionHasNoErrors();
+
+        $this->post(route('tracking-payment.store', $shipment->tracking_number), ['amount' => 100, 'email' => 'ama@kasarose-mail.com'])
+            ->assertRedirect('https://checkout.paystack.test/abc');
+
+        $this->assertSame('+233201234567', ShipmentPaymentAttempt::where('shipment_id', $shipment->id)->sole()->payer_phone);
     }
 
     public function test_a_fully_paid_shipment_says_so_after_the_phone_check(): void
@@ -139,7 +235,7 @@ class TrackingPaymentTest extends TestCase
 
         $this->post(route('tracking-payment.store', $shipment->tracking_number), ['amount' => 100, 'email' => 'payer@kasarose-mail.com'])
             ->assertRedirect(route('tracking-payment.create', $shipment->tracking_number))
-            ->assertSessionHasErrors('phone');
+            ->assertSessionHasErrors('contact');
 
         Http::assertNothingSent();
     }
@@ -589,7 +685,7 @@ class TrackingPaymentTest extends TestCase
 
     private function confirmPhone(Shipment $shipment): void
     {
-        $this->post(route('tracking-payment.confirm-phone', $shipment->tracking_number), ['phone' => '+233201234567'])
+        $this->post(route('tracking-payment.confirm', $shipment->tracking_number), ['contact' => '+233201234567'])
             ->assertSessionHasNoErrors();
     }
 }

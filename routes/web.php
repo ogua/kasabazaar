@@ -36,14 +36,14 @@ Route::view('/quote', 'site.quote')->name('quote');
 Route::get('/tracking', [WebsiteController::class, 'tracking'])->name('our-tracking');
 
 // Paying a shipment balance from the tracking page (USD, Paystack). The balance is
-// only shown after a phone check; receipts are public to whoever holds the reference.
+// only shown after a phone or email check; receipts are public to whoever holds the reference.
 Route::prefix('tracking')->name('tracking-payment.')->controller(TrackingPaymentController::class)->group(function () {
     Route::get('payment/callback', 'callback')->name('callback');
     Route::get('payment/verify', 'verify')->middleware('throttle:30,1')->name('verify');
     Route::get('payment/{reference}', 'show')->middleware('throttle:30,1')->name('show');
     Route::get('payment/{reference}/pdf', 'pdf')->middleware('throttle:10,1')->name('pdf');
     Route::get('{trackingNumber}/pay', 'create')->middleware('throttle:30,1')->name('create');
-    Route::post('{trackingNumber}/pay/confirm-phone', 'confirmPhone')->middleware('throttle:10,1')->name('confirm-phone');
+    Route::post('{trackingNumber}/pay/confirm', 'confirmContact')->middleware('throttle:10,1')->name('confirm');
     Route::post('{trackingNumber}/pay', 'store')->middleware('throttle:10,1')->name('store');
 });
 Route::view('/contact-us', 'site.contact')->name('contact-us');

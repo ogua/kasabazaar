@@ -132,7 +132,7 @@
                         <div class="track-pay-cta mb-5">
                            <div class="track-pay-cta-text">
                               <h3 class="h5 mb-1"><i class="fa-solid fa-credit-card"></i> Paying for this shipment?</h3>
-                              <p class="mb-0">Settle your balance online in US dollars. We&rsquo;ll ask for your phone number first, so only you see the amount.</p>
+                              <p class="mb-0">Settle your balance online in US dollars. We&rsquo;ll ask for your phone number or email first, so only you see the amount.</p>
                            </div>
                            <a href="{{ route('tracking-payment.create', $shipment->tracking_number) }}" class="btn btn-primary">
                               Pay Now <i class="fa fa-arrow-right"></i><span></span>
