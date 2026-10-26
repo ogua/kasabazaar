@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ShipmentRequestResource\Pages;
 
 use App\Filament\Resources\ShipmentRequestResource;
+use App\Filament\Resources\ShipmentResource;
 use Filament\Actions;
 use Filament\Infolists\Components;
 use Filament\Infolists\Infolist;
@@ -15,6 +16,13 @@ class ViewShipmentRequest extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('convert')
+                ->label('Convert to Shipment')
+                ->icon('heroicon-o-arrow-right-circle')
+                ->color('success')
+                ->visible(fn (): bool => $this->getRecord()->isEditable() && ! $this->getRecord()->shipment_id && ShipmentResource::canCreate())
+                ->url(fn (): string => ShipmentResource::getUrl('from-request', ['shipmentRequest' => $this->getRecord()->id])),
+
             Actions\EditAction::make()
                 ->visible(fn (): bool => $this->getRecord()->isEditable() && ShipmentRequestResource::canEdit($this->getRecord())),
         ];

@@ -96,56 +96,67 @@ class ShipmentRequestApprovalService
                         'product_id' => $product->id,
                         'quantity' => $itemData['quantity'] ?? 1,
                         'box_no' => 'R'.($index + 1).'-'.($itemIndex + 1),
-                        'item_cost' => $itemData['estimated_value'] ?? 0,
+                        // A line's value is the unit value times the quantity, as the shipment form stores it.
+                        'item_cost' => round((float) ($itemData['estimated_value'] ?? 0) * (int) ($itemData['quantity'] ?? 1), 2),
                     ]);
                 }
             }
 
-            $request->update([
-                'shipment_id' => $shipment->id,
-                'status' => 'approved',
-                'reviewed_by' => $approvedBy->id,
-                'reviewed_at' => now(),
-            ]);
-
-            $shipment->load(['client:id,name,phone,email', 'receivers.items.product', 'payments']);
-
-            // Database notification to client user
-            $clientUser = User::where('client_id', $request->client_id)
-                ->whereNotNull('client_id')
-                ->first();
-
-            if ($clientUser) {
-                try {
-                    $clientUser->notify(new ShipmentRequestApproved($request, $shipment));
-                } catch (\Throwable) {
-                }
-            }
-
-            // The shipment's `created` event fires ShipmentObserver, which sends
-            // the client the tracking + payment-link email and SMS. This block
-            // additionally emails the signed invoice PDF.
-            $paymentUrl = route('make-payment', $shipment->id);
-
-            if ($client->email) {
-                try {
-                    $pdf = InvoiceService::generatePdf($shipment);
-                    Mail::send(
-                        'emails.shipment_approved',
-                        ['shipment' => $shipment, 'client' => $client, 'paymentUrl' => $paymentUrl],
-                        function ($m) use ($client, $shipment, $pdf) {
-                            $m->to($client->email)
-                                ->subject('Your Shipment Has Been Approved – '.$shipment->shipping_reference)
-                                ->attachData($pdf->output(), 'invoice-'.$shipment->shipping_reference.'.pdf', [
-                                    'mime' => 'application/pdf',
-                                ]);
-                        }
-                    );
-                } catch (\Throwable) {
-                }
-            }
+            $this->markConverted($request, $shipment, $approvedBy);
 
             return $shipment;
         });
+    }
+
+    /**
+     * Link the request to the shipment made from it, mark it approved and tell the
+     * client: an in-app notification plus the invoice by email. Shared by the quick
+     * approval and the full shipment wizard.
+     */
+    public function markConverted(ShipmentRequest $request, Shipment $shipment, User $approvedBy): void
+    {
+        $request->update([
+            'shipment_id' => $shipment->id,
+            'status' => 'approved',
+            'reviewed_by' => $approvedBy->id,
+            'reviewed_at' => now(),
+        ]);
+
+        $client = $request->client ?? $request->load('client')->client;
+        $shipment->load(['client:id,name,phone,email', 'receivers.items.product', 'payments']);
+
+        $clientUser = User::where('client_id', $request->client_id)
+            ->whereNotNull('client_id')
+            ->first();
+
+        if ($clientUser) {
+            try {
+                $clientUser->notify(new ShipmentRequestApproved($request, $shipment));
+            } catch (\Throwable) {
+            }
+        }
+
+        // The shipment's `created` event fires ShipmentObserver, which sends the
+        // client the tracking + payment-link email and SMS. This additionally emails
+        // the signed invoice PDF.
+        $paymentUrl = route('make-payment', $shipment->id);
+
+        if ($client?->email) {
+            try {
+                $pdf = InvoiceService::generatePdf($shipment);
+                Mail::send(
+                    'emails.shipment_approved',
+                    ['shipment' => $shipment, 'client' => $client, 'paymentUrl' => $paymentUrl],
+                    function ($m) use ($client, $shipment, $pdf) {
+                        $m->to($client->email)
+                            ->subject('Your Shipment Has Been Approved – '.$shipment->shipping_reference)
+                            ->attachData($pdf->output(), 'invoice-'.$shipment->shipping_reference.'.pdf', [
+                                'mime' => 'application/pdf',
+                            ]);
+                    }
+                );
+            } catch (\Throwable) {
+            }
+        }
     }
 }

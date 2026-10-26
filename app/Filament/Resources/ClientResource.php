@@ -17,6 +17,7 @@ use Filament\Resources\Resource;
 use Filament\Forms\Components\Hidden;
 use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\ClientResource\Pages;
+use App\Filament\Resources\ShipmentResource\Pages\CreateShipment;
 use Ysfkaya\FilamentPhoneInput\Forms\PhoneInput;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use App\Filament\Resources\ClientResource\RelationManagers;
@@ -94,7 +95,9 @@ class ClientResource extends Resource
                         ->email(),
 
                     PhoneInput::make('phone')
-                        ->label('Sender Phone number'),
+                        ->label('Sender Phone number')
+                        ->live(onBlur: true)
+                        ->afterStateUpdated(fn (?string $state, Forms\Set $set, Forms\Get $get) => CreateShipment::fillCountryFromPhone($state, $set, $get)),
 
                     WhatsappConsentToggle::make(
                         'Agreed to WhatsApp updates',

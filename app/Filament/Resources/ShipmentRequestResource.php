@@ -230,10 +230,13 @@ class ShipmentRequestResource extends Resource
                         Notification::make()->title('Marked as Under Review')->success()->send();
                     }),
 
+                static::convertAction(),
+
                 Action::make('approve')
-                    ->label('Approve')
-                    ->icon('heroicon-o-check-circle')
-                    ->color('success')
+                    ->label('Quick Approve')
+                    ->icon('heroicon-o-bolt')
+                    ->color('gray')
+                    ->modalDescription('Creates the shipment straight from the request with these few details. Use "Convert to Shipment" to review everything in the full shipment form instead.')
                     ->visible(fn ($record) => in_array($record->status->value, ['submitted', 'under_review']))
                     ->fillForm(fn (ShipmentRequest $record): array => [
                         'shipping_cost' => $record->itemsTotal(),
@@ -332,6 +335,19 @@ class ShipmentRequestResource extends Resource
                     ->visible(fn (ShipmentRequest $record): bool => $record->isEditable() && static::canEdit($record)),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    /**
+     * Opens the full create-shipment wizard pre-filled from the request.
+     */
+    public static function convertAction(): Action
+    {
+        return Action::make('convert')
+            ->label('Convert to Shipment')
+            ->icon('heroicon-o-arrow-right-circle')
+            ->color('success')
+            ->visible(fn (ShipmentRequest $record): bool => $record->isEditable() && ! $record->shipment_id && ShipmentResource::canCreate())
+            ->url(fn (ShipmentRequest $record): string => ShipmentResource::getUrl('from-request', ['shipmentRequest' => $record->id]));
     }
 
     public static function getPages(): array

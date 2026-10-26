@@ -1560,6 +1560,7 @@ class ShipmentResource extends Resource
         return [
             'index' => Pages\ListShipments::route('/'),
             'create' => Pages\CreateShipment::route('/create'),
+            'from-request' => Pages\CreateShipmentFromRequest::route('/from-request/{shipmentRequest}'),
             'edit' => Pages\EditShipment::route('/{record}/edit'),
             'upload-evidence' => Pages\UploadShipmentEvidence::route('/{record}/upload-evidence'),
             'print-label' => Pages\PrintShipmentLabel::route('/{record}/print-label'),

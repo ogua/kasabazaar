@@ -11,11 +11,13 @@ use App\Models\City;
 use App\Models\Client;
 use App\Models\Country;
 use App\Models\Invoice;
+use App\Models\Product;
 use App\Models\Receiver;
 use App\Models\Shipment;
 use App\Models\ShipmentItem;
 use App\Models\ShipmentUpdate;
 use App\Models\State;
+use App\Services\LocationLookup;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Components\Hidden;
@@ -53,8 +55,31 @@ class CreateShipment extends CreateRecord
                 ->relationship('product', 'name')
                 ->preload()
                 ->searchable()
+                ->live()
+                ->afterStateUpdated(function (?string $state, Forms\Set $set, Forms\Get $get): void {
+                    $value = self::productValue($state);
+
+                    if ($value !== null) {
+                        $set('item_cost', self::lineValue($value, $get('quantity')));
+                    }
+                })
+                ->helperText(fn (Forms\Get $get): ?string => blank($get('product_id')) && filled($get('requested_name'))
+                    ? "Client asked for \"{$get('requested_name')}\". Pick it from the list or add it with +."
+                    : null)
                 ->createOptionForm(ProductResource::productself())
+                ->createOptionAction(fn (Forms\Components\Actions\Action $action) => $action
+                    ->mountUsing(function (?Forms\ComponentContainer $form, Forms\Get $get): void {
+                        $form?->fill();
+
+                        if ($form && filled($get('requested_name'))) {
+                            $form->fill([...$form->getRawState(), 'name' => $get('requested_name')]);
+                        }
+                    }))
                 ->editOptionForm(ProductResource::productself()),
+
+            // What the client typed for a product not in the catalogue (from a shipment
+            // request); only shown as a hint, never saved on the item.
+            Forms\Components\Hidden::make('requested_name')->dehydrated(false),
 
             Forms\Components\TextInput::make('quantity')
                 ->label('Qty')
@@ -62,7 +87,15 @@ class CreateShipment extends CreateRecord
                 ->default(1)
                 ->numeric()
                 ->minValue(1)
-                ->live(onBlur: true),
+                ->live(onBlur: true)
+                ->afterStateUpdated(function ($state, $old, Forms\Set $set, Forms\Get $get): void {
+                    $value = self::productValue($get('product_id'));
+
+                    // Re-price only a value that still follows the product, never one staff typed.
+                    if ($value !== null && abs((float) $get('item_cost') - self::lineValue($value, $old)) < 0.005) {
+                        $set('item_cost', self::lineValue($value, $state));
+                    }
+                }),
 
             Forms\Components\TextInput::make('item_cost')
                 ->required()
@@ -99,6 +132,43 @@ class CreateShipment extends CreateRecord
         ];
 
         return $schema;
+    }
+
+    /**
+     * The product's unit value, or null when it has none yet (a product just added
+     * with the + button is saved at $0), so an item's value is never wiped by it.
+     */
+    private static function productValue(?string $productId): ?float
+    {
+        $value = filled($productId) ? (float) Product::whereKey($productId)->value('value') : 0.0;
+
+        return $value > 0 ? $value : null;
+    }
+
+    /**
+     * An item's value is the line total: the product's unit value times the quantity.
+     */
+    private static function lineValue(float $unitValue, mixed $quantity): float
+    {
+        return round($unitValue * max(1, (int) $quantity), 2);
+    }
+
+    /**
+     * Pick the receiver's country from the dialling code of the phone just entered
+     * (+233 → Ghana, +1 → United States), clearing a region and city that belonged
+     * to the previous country. Local numbers without a code leave it alone.
+     */
+    public static function fillCountryFromPhone(?string $phone, Forms\Set $set, Forms\Get $get): void
+    {
+        $countryId = LocationLookup::countryIdForPhone($phone);
+
+        if ($countryId === null || (int) $get('country') === $countryId) {
+            return;
+        }
+
+        $set('country', $countryId);
+        $set('state_region', null);
+        $set('city', null);
     }
 
     /**
@@ -514,7 +584,9 @@ class CreateShipment extends CreateRecord
                                                 ->placeholder('Receiver\'s name'),
 
                                             PhoneInput::make('receiver_phone')
-                                                ->label('Phone'),
+                                                ->label('Phone')
+                                                ->live(onBlur: true)
+                                                ->afterStateUpdated(fn (?string $state, Forms\Set $set, Forms\Get $get) => self::fillCountryFromPhone($state, $set, $get)),
 
                                             Forms\Components\TextInput::make('receiver_email')
                                                 ->email()
@@ -574,10 +646,12 @@ class CreateShipment extends CreateRecord
                                                 ->native(false),
                                         ]),
 
+                                    // Kept out of the way when empty, but shown (and so saved) when
+                                    // filled in, e.g. from a previous receiver or a shipment request.
                                     Forms\Components\Textarea::make('address')
                                         ->label('Address')
                                         ->rows(1)
-                                        ->hidden()
+                                        ->hidden(fn (?string $state): bool => blank($state))
                                         ->columnSpanFull(),
 
                                     Forms\Components\Section::make('Items for this Receiver')
