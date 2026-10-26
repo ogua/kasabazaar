@@ -1,6 +1,11 @@
 <?php
 
 return [
+    // Annual rate (%) used for any year with no override, investor rate or company-wide
+    // rate configured, so interest postings never stop for want of a rate. Set to an
+    // empty value to require a configured rate instead.
+    'default_annual_rate' => env('INVESTMENT_DEFAULT_ANNUAL_RATE', 15),
+
     // Minimum amount for a partial withdrawal request.
     'partial_minimum' => 5000,
 

@@ -142,7 +142,13 @@
                         <tr>
                             <td>{{ $year }}</td>
                             <td>{{ $rate['rate'] !== null ? number_format($rate['rate'], 2).'%' : 'Not set' }}</td>
-                            <td>{{ $rate['source'] === 'override' ? 'Negotiated rate' : ($rate['source'] === 'company_default' ? 'Company default' : ucfirst($rate['source'])) }}</td>
+                            <td>{{ match ($rate['source']) {
+                                'override' => 'Negotiated rate',
+                                'company_default' => 'Company default',
+                                'standard_rate' => 'Standard rate',
+                                'investor_default' => 'Investor rate',
+                                default => ucfirst((string) $rate['source']),
+                            } }}</td>
                         </tr>
                     @endforeach
                 </table>

@@ -19,6 +19,8 @@ class InvestmentTransferServiceTest extends TestCase
     public function test_full_withdrawal_transfer_success_webhook_completes_the_payout(): void
     {
         InvestmentRateSetting::firstOrCreate(['year' => now()->year], ['annual_rate' => 10]);
+        // Tranches start in 2025, so the full-withdrawal true-up accrues 2025 too.
+        InvestmentRateSetting::firstOrCreate(['year' => 2025], ['annual_rate' => 10]);
 
         $investor = Investor::create([
             'name' => 'Transfer Test Investor',
@@ -77,6 +79,8 @@ class InvestmentTransferServiceTest extends TestCase
     public function test_failed_transfer_reverts_request_to_approved_for_retry(): void
     {
         InvestmentRateSetting::firstOrCreate(['year' => now()->year], ['annual_rate' => 10]);
+        // Tranches start in 2025, so the full-withdrawal true-up accrues 2025 too.
+        InvestmentRateSetting::firstOrCreate(['year' => 2025], ['annual_rate' => 10]);
 
         $investor = Investor::create([
             'name' => 'Failed Transfer Investor',

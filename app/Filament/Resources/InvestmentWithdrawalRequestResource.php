@@ -234,7 +234,8 @@ class InvestmentWithdrawalRequestResource extends Resource
                     ->label('Record Payment')
                     ->icon('heroicon-o-banknotes')
                     ->color('primary')
-                    ->visible(fn ($record) => in_array($record->status->value, ['approved', 'processing']))
+                    ->visible(fn ($record) => in_array($record->status->value, ['approved', 'processing'])
+                        && ! app(InvestmentWithdrawalApprovalService::class)->hasTransferInFlight($record))
                     ->form([
                         Forms\Components\Placeholder::make('full_withdrawal_note')
                             ->label('')

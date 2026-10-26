@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Enums\InvestmentCapitalType;
 use App\Enums\InvestmentInterestPayoutStatus;
 use App\Enums\InvestmentWebhookEventStatus;
 use App\Enums\InvestmentWithdrawalStatus;
@@ -57,10 +58,17 @@ class InvestmentTransferService
      */
     public function initiatePaystackTransfer(InvestmentWithdrawalRequest $request, User $initiatedBy): array
     {
+        if ($request->status !== InvestmentWithdrawalStatus::approved) {
+            throw new \RuntimeException("Only an approved request can be sent via Paystack; this one is {$request->status->value}.");
+        }
+
         $investment = $request->investment;
 
         if ($request->is_full_withdrawal) {
-            $this->interestService->postStubPeriodInterest($investment, now(), $initiatedBy);
+            if ($investment->capital_type !== InvestmentCapitalType::loan) {
+                $this->interestService->postStubPeriodInterest($investment, now(), $initiatedBy);
+            }
+
             $investment->refresh();
             $amount = (float) $investment->current_balance;
         } else {
@@ -143,7 +151,15 @@ class InvestmentTransferService
      */
     public function initiatePaystackInterestPayout(InvestmentInterestPayout $payout, User $initiatedBy): array
     {
-        $amount = (float) $payout->amount - (float) $payout->amount_paid;
+        if ($payout->status !== InvestmentInterestPayoutStatus::due) {
+            throw new \RuntimeException("Only a due payout can be sent via Paystack; this one is {$payout->status->value}.");
+        }
+
+        $amount = round((float) $payout->amount - (float) $payout->amount_paid, 2);
+
+        if ($amount <= 0) {
+            throw new \RuntimeException('Nothing is left to pay on this payout.');
+        }
         $recipientCode = $this->ensureRecipient($payout->investor);
         $reference = 'INVPO-'.$payout->id.'-'.now()->timestamp;
 

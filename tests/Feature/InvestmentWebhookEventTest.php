@@ -119,6 +119,8 @@ class InvestmentWebhookEventTest extends TestCase
     {
         config(['services.paystack.secret_key' => 'test-secret']);
         InvestmentRateSetting::firstOrCreate(['year' => now()->year], ['annual_rate' => 10]);
+        // Tranches start in 2025, so the full-withdrawal true-up accrues 2025 too.
+        InvestmentRateSetting::firstOrCreate(['year' => 2025], ['annual_rate' => 10]);
 
         $investor = Investor::create([
             'name' => 'Webhook Transfer Investor',

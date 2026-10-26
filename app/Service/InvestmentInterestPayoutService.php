@@ -10,6 +10,7 @@ use App\Models\InvestmentTransaction;
 use App\Models\User;
 use App\Notifications\InvestmentInterestPayoutStatusUpdated;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -71,6 +72,47 @@ class InvestmentInterestPayoutService
     }
 
     /**
+     * Create a due payout row for every scheduled period that has fallen due by $asOf
+     * and has none yet, then point next_payout_due_date at the next unpaid period (null
+     * once the final period is generated). Driven by projectSchedule(), so the rows
+     * always match the agreement, and a run missed for any reason catches up every
+     * period it skipped. A period counts as generated when a row (including a
+     * discarded one) ends within a few days of its due date, which also recognises
+     * rows created before due dates were anchored without month overflow.
+     *
+     * @return Collection<int, InvestmentInterestPayout>
+     */
+    public function generateDuePayouts(Investment $investment, Carbon $asOf): Collection
+    {
+        $created = collect();
+        $nextDueDate = null;
+
+        foreach ($this->projectSchedule($investment) as $period) {
+            if ($period['due_date']->greaterThan($asOf)) {
+                $nextDueDate = $period['due_date'];
+
+                break;
+            }
+
+            $alreadyGenerated = InvestmentInterestPayout::withTrashed()
+                ->where('investment_id', $investment->id)
+                ->whereBetween('period_end', [
+                    $period['due_date']->copy()->subDays(4)->toDateString(),
+                    $period['due_date']->copy()->addDays(4)->toDateString(),
+                ])
+                ->exists();
+
+            if (! $alreadyGenerated) {
+                $created->push($this->generateDue($investment, $period['period_start'], $period['period_end'], $period['due_date']));
+            }
+        }
+
+        $investment->update(['next_payout_due_date' => $nextDueDate]);
+
+        return $created;
+    }
+
+    /**
      * Project the full payout schedule for a loan from start_date to maturity_date —
      * used both by the agreement PDF (so the schedule shown to the lender matches
      * exactly what will be generated) and available for staff preview. Read-only;
@@ -98,8 +140,10 @@ class InvestmentInterestPayoutService
             // periods share their boundary date (period 1 ends May 15, period 2 begins
             // May 15) rather than starting the day after, since interest is now a flat
             // per-period share rather than day-counted.
-            $periodStart = $startDate->copy()->addMonths(($period - 1) * $months);
-            $naturalDueDate = $startDate->copy()->addMonths($period * $months);
+            // No-overflow, so a loan started on the 31st falls due on the last day of
+            // shorter months (Feb 28) instead of spilling into the next (Mar 3).
+            $periodStart = $startDate->copy()->addMonthsNoOverflow(($period - 1) * $months);
+            $naturalDueDate = $startDate->copy()->addMonthsNoOverflow($period * $months);
 
             // Clamp the final period to the true maturity date rather than overshooting
             // it — this keeps the schedule aligned whether maturity_date lands exactly
@@ -137,8 +181,24 @@ class InvestmentInterestPayoutService
      */
     public function recordPayment(InvestmentInterestPayout $payout, ?float $amountOverride, User $recordedBy, array $paymentData = []): InvestmentInterestPayout
     {
-        return DB::transaction(function () use ($payout, $amountOverride, $recordedBy, $paymentData) {
-            $amount = $amountOverride ?? ((float) $payout->amount - (float) $payout->amount_paid);
+        if (! in_array($payout->status, [InvestmentInterestPayoutStatus::due, InvestmentInterestPayoutStatus::processing], true)) {
+            throw new \InvalidArgumentException("Only a due or processing payout can be paid; this one is {$payout->status->getLabel()}.");
+        }
+
+        // While a Paystack transfer is in flight only its own confirmation may record
+        // it — a manual entry as well would pay the same money twice.
+        if ($this->hasTransferInFlight($payout) && ($paymentData['payment_reference'] ?? null) !== $payout->paystack_transfer_code) {
+            throw new \InvalidArgumentException('A Paystack transfer for this payout is still in progress. Wait for it to be confirmed or fail before recording a payment.');
+        }
+
+        $outstanding = round((float) $payout->amount - (float) $payout->amount_paid, 2);
+        $amount = round($amountOverride ?? $outstanding, 2);
+
+        if ($amount <= 0 || $amount > $outstanding + 0.01) {
+            throw new \InvalidArgumentException('The amount must be more than $0 and no more than the $'.number_format($outstanding, 2).' still owed for this period.');
+        }
+
+        return DB::transaction(function () use ($payout, $amount, $recordedBy, $paymentData) {
             $investment = $payout->investment;
 
             // debit = credit so cl_balance collapses back to op_balance: cash leaves
@@ -180,6 +240,13 @@ class InvestmentInterestPayoutService
 
             return $payout->fresh();
         });
+    }
+
+    public function hasTransferInFlight(InvestmentInterestPayout $payout): bool
+    {
+        return $payout->status === InvestmentInterestPayoutStatus::processing
+            && $payout->payout_gateway === 'paystack'
+            && filled($payout->paystack_transfer_code);
     }
 
     public function markSkipped(InvestmentInterestPayout $payout, User $staff, string $reason): void

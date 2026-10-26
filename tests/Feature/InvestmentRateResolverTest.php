@@ -105,8 +105,25 @@ class InvestmentRateResolverTest extends TestCase
         $this->assertSame('investor_default', $resultNextYear['source']);
     }
 
-    public function test_throws_when_no_rate_is_configured_anywhere(): void
+    public function test_falls_back_to_the_standard_rate_when_no_rate_is_configured(): void
     {
+        $investor = Investor::create(['name' => 'Standard Rate Investor', 'status' => 'active']);
+        $investment = Investment::create([
+            'investor_id' => $investor->id,
+            'principal_amount' => 10000,
+            'start_date' => '2019-01-01',
+        ]);
+
+        $result = app(InvestmentRateResolver::class)->resolve($investment, 2019);
+
+        $this->assertEquals(15.0, $result['rate']);
+        $this->assertSame('standard_rate', $result['source']);
+    }
+
+    public function test_throws_when_no_rate_is_configured_and_the_standard_rate_is_disabled(): void
+    {
+        config(['investment.default_annual_rate' => null]);
+
         $investor = Investor::create(['name' => 'No Rate Investor', 'status' => 'active']);
         $investment = Investment::create([
             'investor_id' => $investor->id,

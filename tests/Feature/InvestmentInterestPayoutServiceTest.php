@@ -8,6 +8,7 @@ use App\Models\InvestmentRateOverride;
 use App\Models\Investor;
 use App\Models\User;
 use App\Service\InvestmentInterestPayoutService;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
@@ -196,5 +197,123 @@ class InvestmentInterestPayoutServiceTest extends TestCase
         ));
         $this->assertSame([900.0, 900.0, 900.0, 900.0], array_map(fn (array $row) => $row['amount'], $schedule));
         $this->assertEqualsWithDelta(3600.0, array_sum(array_column($schedule, 'amount')), 0.001);
+    }
+
+    public function test_record_payment_rejects_zero_negative_and_overpaid_amounts(): void
+    {
+        $investor = Investor::create(['name' => 'Overpaid Loan Investor', 'status' => 'active']);
+        $staff = User::first() ?? User::factory()->create();
+        $loan = $this->makeLoan($investor);
+        InvestmentRateOverride::create(['investment_id' => $loan->id, 'year' => 2026, 'annual_rate' => 9]);
+
+        $service = app(InvestmentInterestPayoutService::class);
+        $payout = $service->generateDue($loan, Carbon::parse('2026-02-15'), Carbon::parse('2026-05-15'), Carbon::parse('2026-05-15'));
+
+        foreach ([0, -50, 900.50] as $amount) {
+            try {
+                $service->recordPayment($payout->fresh(), $amount, $staff, ['payout_gateway' => 'manual']);
+                $this->fail("An amount of {$amount} against a \$900 payout must be refused.");
+            } catch (\InvalidArgumentException $e) {
+                $this->assertStringContainsString('still owed', $e->getMessage());
+            }
+        }
+
+        $service->recordPayment($payout->fresh(), 400, $staff, ['payout_gateway' => 'manual']);
+        $this->assertSame('processing', $payout->fresh()->status->value);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $service->recordPayment($payout->fresh(), 600, $staff, ['payout_gateway' => 'manual']);
+    }
+
+    /**
+     * Regression: "Record Payment" stayed available while a Paystack transfer was in
+     * flight, so a manual entry plus the transfer confirmation paid the lender twice.
+     */
+    public function test_manual_payment_is_refused_while_a_paystack_transfer_is_in_flight(): void
+    {
+        $investor = Investor::create(['name' => 'In Flight Loan Investor', 'status' => 'active']);
+        $staff = User::first() ?? User::factory()->create();
+        $loan = $this->makeLoan($investor);
+        InvestmentRateOverride::create(['investment_id' => $loan->id, 'year' => 2026, 'annual_rate' => 9]);
+
+        $service = app(InvestmentInterestPayoutService::class);
+        $payout = $service->generateDue($loan, Carbon::parse('2026-02-15'), Carbon::parse('2026-05-15'), Carbon::parse('2026-05-15'));
+        $payout->update(['status' => 'processing', 'payout_gateway' => 'paystack', 'paystack_transfer_code' => 'TRF_LOAN_1']);
+
+        try {
+            $service->recordPayment($payout->fresh(), null, $staff, ['payout_gateway' => 'manual', 'payment_reference' => 'BANK-1']);
+            $this->fail('A manual payment must not be recorded on top of an in-flight transfer.');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertStringContainsString('still in progress', $e->getMessage());
+        }
+
+        // The transfer's own confirmation is still accepted.
+        $service->recordPayment($payout->fresh(), null, $staff, ['payout_gateway' => 'paystack', 'payment_reference' => 'TRF_LOAN_1']);
+
+        $this->assertSame('paid', $payout->fresh()->status->value);
+        $this->assertEquals(900.0, (float) $payout->fresh()->amount_paid);
+    }
+
+    /**
+     * Regression: due dates were advanced with overflowing month arithmetic, so a loan
+     * started on Nov 30 fell due on Mar 2 instead of Feb 28 and drifted further from
+     * the agreement every period.
+     */
+    public function test_month_end_loan_falls_due_on_the_last_day_of_shorter_months(): void
+    {
+        $investor = Investor::create(['name' => 'Month End Investor', 'status' => 'active']);
+        $loan = $this->makeLoan($investor, ['start_date' => '2026-11-30']);
+        InvestmentRateOverride::create(['investment_id' => $loan->id, 'year' => 2026, 'annual_rate' => 9]);
+
+        $this->assertSame('2027-02-28', $loan->next_payout_due_date->toDateString());
+        $this->assertSame(['2027-02-28', '2027-05-30', '2027-08-30', '2027-11-30'], array_map(
+            fn (array $row) => $row['due_date']->toDateString(),
+            app(InvestmentInterestPayoutService::class)->projectSchedule($loan->fresh())
+        ));
+    }
+
+    public function test_daily_job_catches_up_missed_quarters_without_duplicating_them(): void
+    {
+        $investor = Investor::create(['name' => 'Catch Up Investor', 'status' => 'active']);
+        $loan = $this->makeLoan($investor, ['maturity_date' => '2027-02-14']);
+        InvestmentRateOverride::create(['investment_id' => $loan->id, 'year' => 2026, 'annual_rate' => 9]);
+
+        $service = app(InvestmentInterestPayoutService::class);
+
+        // The job did not run in May or August.
+        $created = $service->generateDuePayouts($loan->fresh(), Carbon::parse('2026-09-01'));
+
+        $this->assertSame(['2026-05-15', '2026-08-15'], $created->map(fn ($payout) => $payout->due_date->toDateString())->all());
+        $this->assertSame([900.0, 900.0], $created->map(fn ($payout) => (float) $payout->amount)->all());
+        $this->assertSame('2026-11-15', $loan->fresh()->next_payout_due_date->toDateString());
+
+        $this->assertCount(0, $service->generateDuePayouts($loan->fresh(), Carbon::parse('2026-09-02')));
+        $this->assertSame(2, $loan->interestPayouts()->count());
+    }
+
+    /**
+     * Loan principal is due in full at maturity. The daily job now opens the repayment
+     * in the staff withdrawal queue once all four quarters are generated, exactly once.
+     */
+    public function test_matured_loan_gets_its_final_payout_and_a_principal_repayment_request(): void
+    {
+        $investor = Investor::create(['name' => 'Matured Loan Investor', 'status' => 'active']);
+        $loan = $this->makeLoan($investor, [
+            'start_date' => now()->subYear()->subDays(2)->toDateString(),
+            'current_balance' => 40000,
+        ]);
+        InvestmentRateOverride::create(['investment_id' => $loan->id, 'year' => $loan->start_date->year, 'annual_rate' => 9]);
+
+        $this->artisan('app:generate-investment-interest-payout-drafts')->assertSuccessful();
+        $this->artisan('app:generate-investment-interest-payout-drafts')->assertSuccessful();
+
+        $loan->refresh();
+        $this->assertSame(4, $loan->interestPayouts()->count());
+        $this->assertNull($loan->next_payout_due_date);
+
+        $request = $loan->withdrawalRequests()->sole();
+        $this->assertTrue($request->is_full_withdrawal);
+        $this->assertSame('submitted', $request->status->value);
+        $this->assertStringContainsString('principal repayment due', $request->notes);
     }
 }

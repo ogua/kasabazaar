@@ -147,12 +147,15 @@ class InvestmentInterestPayoutResource extends Resource
                     ->label('Record Payment')
                     ->icon('heroicon-o-banknotes')
                     ->color('primary')
-                    ->visible(fn (InvestmentInterestPayout $record) => in_array($record->status->value, ['due', 'processing']))
+                    ->visible(fn (InvestmentInterestPayout $record) => in_array($record->status->value, ['due', 'processing'])
+                        && ! app(InvestmentInterestPayoutService::class)->hasTransferInFlight($record))
                     ->form([
                         Forms\Components\TextInput::make('amount')
                             ->numeric()
                             ->prefix('USD')
                             ->required()
+                            ->minValue(0.01)
+                            ->maxValue(fn (InvestmentInterestPayout $record) => round((float) $record->amount - (float) $record->amount_paid, 2))
                             ->default(fn (InvestmentInterestPayout $record) => (float) $record->amount - (float) $record->amount_paid),
 
                         Forms\Components\Select::make('payout_gateway')

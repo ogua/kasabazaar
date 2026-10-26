@@ -77,7 +77,7 @@ class Investment extends Model
                 $investment->isDirty(['start_date', 'contract_term_months']) || ! $investment->maturity_date
             )) {
                 $investment->maturity_date = Carbon::parse($investment->start_date)
-                    ->addMonths($investment->contract_term_months ?? 12);
+                    ->addMonthsNoOverflow($investment->contract_term_months ?? 12);
             }
 
             // Only (re)seed the payout cursor for a loan that hasn't started its
@@ -90,7 +90,7 @@ class Investment extends Model
                 && ($investment->exists === false || ! $investment->interestPayouts()->exists())
             ) {
                 $investment->next_payout_due_date = Carbon::parse($investment->start_date)
-                    ->addMonths($investment->payout_frequency->months());
+                    ->addMonthsNoOverflow($investment->payout_frequency->months());
             }
         });
     }

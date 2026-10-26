@@ -2,6 +2,7 @@
 
 namespace App\Service;
 
+use App\Enums\InvestmentCapitalType;
 use App\Enums\InvestmentTransactionType;
 use App\Models\Investment;
 use App\Models\InvestmentTransaction;
@@ -118,89 +119,170 @@ class InvestmentInterestService
     }
 
     /**
-     * Compute (without persisting) the accrual for a year, using the same
-     * "latest posted transaction before Jan 1" baseline rule as generateDraft().
+     * The last date interest has been posted through, or null when nothing has been posted yet.
      */
-    public function previewAccrual(Investment $investment, int $year): array
+    public function postedThrough(Investment $investment): ?Carbon
     {
-        $baselineTxn = InvestmentTransaction::where('investment_id', $investment->id)
-            ->where('posted', true)
-            ->where('date', '<', Carbon::create($year, 1, 1))
-            ->orderByDesc('date')
-            ->orderByDesc('created_at')
-            ->first();
+        if ($investment->last_interest_posted_through) {
+            return Carbon::parse($investment->last_interest_posted_through)->startOfDay();
+        }
 
-        $balanceAtStartOfYear = $baselineTxn ? (float) $baselineTxn->cl_balance : (float) $investment->principal_amount;
-
-        return $this->yearAccrual($investment, $year, $balanceAtStartOfYear);
+        return $investment->last_interest_posted_year
+            ? Carbon::create($investment->last_interest_posted_year, 12, 31)
+            : null;
     }
 
     /**
-     * Generate (or regenerate) a draft interest_credit ledger row for a given year.
-     * Does not touch investment.current_balance — requires postDraft() to finalize.
+     * The first day not yet covered by posted interest — the day after the posting
+     * cursor, or the start date for an investment that has never had interest posted.
+     */
+    public function nextUnpostedDate(Investment $investment): Carbon
+    {
+        $startDate = Carbon::parse($investment->start_date)->startOfDay();
+        $postedThrough = $this->postedThrough($investment);
+
+        return $postedThrough ? $postedThrough->copy()->addDay()->max($startDate) : $startDate;
+    }
+
+    /**
+     * The ledger balance at the start of $date: every posted movement dated before it,
+     * plus the principal when the opening deposit was never recorded as a ledger row
+     * (tranches created directly in the admin panel).
+     */
+    public function balanceBefore(Investment $investment, Carbon $date): float
+    {
+        $hasOpeningRow = InvestmentTransaction::where('investment_id', $investment->id)
+            ->where('posted', true)
+            ->whereIn('type', [InvestmentTransactionType::contribution->value, InvestmentTransactionType::conversion_in->value])
+            ->exists();
+
+        $priorRows = InvestmentTransaction::where('investment_id', $investment->id)
+            ->where('posted', true)
+            ->where('date', '<', $date->toDateString());
+
+        $net = (float) (clone $priorRows)->sum('credit') - (float) (clone $priorRows)->sum('debit');
+
+        return round(($hasOpeningRow ? 0.0 : (float) $investment->principal_amount) + $net, 2);
+    }
+
+    /**
+     * Accrue interest from $from to $to off the ledger, one segment per calendar year.
+     * Posted capital movements (contributions, withdrawals, conversions, adjustments)
+     * change the earning balance from their ledger date, so money withdrawn mid-year
+     * stops earning and money added starts earning. Interest is simple within a year at
+     * that year's rate (Actual/365, as the signed agreements are written) and compounds
+     * at each Dec 31.
+     *
+     * @return array{segments: list<array{year: int, period_start: string, period_end: string, balance_start: float, average_balance: float, has_movements: bool, days_held: int, rate: float, rate_source: string, interest: float, balance_end: float}>, total_interest: float, balance_end: float}
+     */
+    public function ledgerAccrual(Investment $investment, Carbon $from, Carbon $to): array
+    {
+        $from = $from->copy()->startOfDay();
+        $to = $to->copy()->startOfDay();
+
+        if ($from->greaterThan($to)) {
+            throw new \InvalidArgumentException('Period start must not be after period end.');
+        }
+
+        $movementsByDate = InvestmentTransaction::where('investment_id', $investment->id)
+            ->where('posted', true)
+            ->where('type', '!=', InvestmentTransactionType::interest_credit->value)
+            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+            ->get()
+            ->groupBy(fn (InvestmentTransaction $row) => $row->date->toDateString())
+            ->map(fn (Collection $rows) => round($rows->sum(fn (InvestmentTransaction $row) => (float) $row->credit - (float) $row->debit), 2));
+
+        $balance = $this->balanceBefore($investment, $from);
+        $segments = [];
+        $cursor = $from->copy();
+
+        while ($cursor->lessThanOrEqualTo($to)) {
+            $segmentEnd = Carbon::create($cursor->year, 12, 31)->min($to);
+            $resolved = $this->rateResolver->resolve($investment, $cursor->year);
+
+            $balanceStart = null;
+            $balanceDays = 0.0;
+            $daysHeld = 0;
+            $hasMovements = false;
+
+            for ($day = $cursor->copy(); $day->lessThanOrEqualTo($segmentEnd); $day->addDay()) {
+                $movement = $movementsByDate->get($day->toDateString(), 0.0);
+                $balance = round($balance + $movement, 2);
+                $hasMovements = $hasMovements || ($movement != 0.0 && $balanceStart !== null);
+                $balanceStart ??= $balance;
+                $balanceDays += $balance;
+                $daysHeld++;
+            }
+
+            $interest = round($balanceDays * ($resolved['rate'] / 100) / 365, 2);
+            $balance = round($balance + $interest, 2);
+
+            $segments[] = [
+                'year' => $cursor->year,
+                'period_start' => $cursor->toDateString(),
+                'period_end' => $segmentEnd->toDateString(),
+                'balance_start' => $balanceStart,
+                'average_balance' => round($balanceDays / $daysHeld, 2),
+                'has_movements' => $hasMovements,
+                'days_held' => $daysHeld,
+                'rate' => $resolved['rate'],
+                'rate_source' => $resolved['source'],
+                'interest' => $interest,
+                'balance_end' => $balance,
+            ];
+
+            $cursor = $segmentEnd->copy()->addDay();
+        }
+
+        return [
+            'segments' => $segments,
+            'total_interest' => round(collect($segments)->sum('interest'), 2),
+            'balance_end' => $balance,
+        ];
+    }
+
+    /**
+     * Generate the year-end draft for $year and return its row. See generateYearEndDrafts().
      */
     public function generateDraft(Investment $investment, int $year): InvestmentTransaction
     {
-        $alreadyPosted = InvestmentTransaction::where('investment_id', $investment->id)
-            ->where('type', InvestmentTransactionType::interest_credit->value)
-            ->where('year', $year)
-            ->where('posted', true)
-            ->exists();
+        return $this->generateYearEndDrafts($investment, $year)->last();
+    }
 
-        if ($alreadyPosted || ($investment->last_interest_posted_year && $investment->last_interest_posted_year >= $year)) {
+    /**
+     * Draft the interest an investment has earned by Dec 31 of $year. Accrual runs
+     * from the first unposted day to Dec 31, so a tranche opened in November earns its
+     * pro-rated days at year end, a year already part-posted (e.g. through Sep 30) gets
+     * the remainder, and a year that was missed is caught up instead of lost — one
+     * draft row per calendar year. Does not touch investment.current_balance — requires
+     * postDraft()/postDraftBatch() to finalize.
+     *
+     * @return Collection<int, InvestmentTransaction>
+     */
+    public function generateYearEndDrafts(Investment $investment, int $year): Collection
+    {
+        $this->assertCompounding($investment);
+
+        $yearEnd = Carbon::create($year, 12, 31);
+
+        if (Carbon::parse($investment->start_date)->greaterThan($yearEnd)) {
+            throw new \RuntimeException("Investment {$investment->reference} starts after {$year}; it has no interest for that year.");
+        }
+
+        $from = $this->nextUnpostedDate($investment);
+
+        if ($from->greaterThan($yearEnd)) {
             throw new \RuntimeException("Interest for {$year} has already been posted for investment {$investment->reference}.");
         }
 
-        // If a partial-year period (e.g. a quarterly posting) has already been posted
-        // for this year via generateDraftForPeriod(), a full-calendar-year post here
-        // would double-count the days already covered — use the custom period action instead.
-        $partialYearPosted = InvestmentTransaction::where('investment_id', $investment->id)
-            ->where('type', InvestmentTransactionType::interest_credit->value)
-            ->where('year', $year)
-            ->where('posted', true)
-            ->where('period_end', '<', Carbon::create($year, 12, 31))
-            ->first();
-
-        if ($partialYearPosted) {
-            throw new \RuntimeException(
-                "Partial-year interest already posted for {$year} through {$partialYearPosted->period_end->toDateString()}; use the custom period posting action to post the remainder."
-            );
-        }
-
-        // Regenerate cleanly if a stale draft exists (e.g. rates changed since it was last generated).
+        // Regenerate cleanly if stale drafts for these days exist (e.g. rates changed since).
         InvestmentTransaction::where('investment_id', $investment->id)
             ->where('type', InvestmentTransactionType::interest_credit->value)
-            ->where('year', $year)
             ->where('posted', false)
+            ->where(fn ($query) => $query->whereNull('period_start')->orWhere('period_start', '<=', $yearEnd->toDateString()))
             ->delete();
 
-        $accrual = $this->previewAccrual($investment, $year);
-        $balanceAtStartOfYear = $accrual['balance_start'];
-
-        $startDate = Carbon::parse($investment->start_date);
-        $periodStart = Carbon::create($year, 1, 1)->max($startDate);
-        $periodEnd = Carbon::create($year, 12, 31);
-
-        return InvestmentTransaction::create([
-            'investment_id' => $investment->id,
-            'investor_id' => $investment->investor_id,
-            'date' => $periodEnd,
-            'period_start' => $periodStart,
-            'period_end' => $periodEnd,
-            'rate_applied' => $accrual['rate'],
-            'type' => InvestmentTransactionType::interest_credit->value,
-            'op_balance' => $balanceAtStartOfYear,
-            'credit' => $accrual['interest'],
-            'year' => $year,
-            'posted' => false,
-            'description' => sprintf(
-                '%s%% (%s) x %d days / 365 on %s',
-                number_format($accrual['rate'], 2),
-                $accrual['rate_source'],
-                $accrual['days_held'],
-                number_format($balanceAtStartOfYear, 2)
-            ),
-        ]);
+        return $this->createDrafts($investment, $from, $yearEnd);
     }
 
     /**
@@ -212,15 +294,13 @@ class InvestmentInterestService
      */
     public function generateDraftForPeriod(Investment $investment, Carbon $periodStart, Carbon $periodEnd): Collection
     {
+        $this->assertCompounding($investment);
+
         if ($periodStart->greaterThan($periodEnd)) {
             throw new \InvalidArgumentException('Period start must not be after period end.');
         }
 
-        $cursor = $investment->last_interest_posted_through
-            ? Carbon::parse($investment->last_interest_posted_through)
-            : ($investment->last_interest_posted_year
-                ? Carbon::create($investment->last_interest_posted_year, 12, 31)
-                : null);
+        $cursor = $this->postedThrough($investment);
 
         if ($cursor && $periodStart->lessThanOrEqualTo($cursor)) {
             throw new \RuntimeException(
@@ -234,48 +314,58 @@ class InvestmentInterestService
             ->where('posted', false)
             ->delete();
 
-        // The authoritative running balance — deliberately not the "latest posted
-        // transaction before Jan 1" baseline that previewAccrual()/generateDraft() use,
-        // since a custom period may start mid-year with no year-boundary reference point.
-        $balanceAtPeriodStart = (float) $investment->current_balance;
+        return $this->createDrafts($investment, $periodStart, $periodEnd);
+    }
 
-        $accrual = $this->periodAccrual($investment, $periodStart, $periodEnd, $balanceAtPeriodStart);
+    /**
+     * Persist one unposted interest_credit row per calendar-year segment of the ledger
+     * accrual between the two dates. Each row's op_balance is the balance just before
+     * its credit lands, which postDraft() re-derives from the ledger at posting time.
+     *
+     * @return Collection<int, InvestmentTransaction>
+     */
+    protected function createDrafts(Investment $investment, Carbon $from, Carbon $to, ?string $label = null): Collection
+    {
+        $accrual = $this->ledgerAccrual($investment, $from, $to);
 
-        $drafts = collect();
-        $opBalance = $balanceAtPeriodStart;
+        return collect($accrual['segments'])->map(fn (array $segment) => InvestmentTransaction::create([
+            'investment_id' => $investment->id,
+            'investor_id' => $investment->investor_id,
+            'date' => $segment['period_end'],
+            'period_start' => $segment['period_start'],
+            'period_end' => $segment['period_end'],
+            'rate_applied' => $segment['rate'],
+            'type' => InvestmentTransactionType::interest_credit->value,
+            'op_balance' => round($segment['balance_end'] - $segment['interest'], 2),
+            'credit' => $segment['interest'],
+            'year' => $segment['year'],
+            'posted' => false,
+            'description' => trim(sprintf(
+                '%s %s%% (%s) x %d days / 365 on %s%s [%s – %s]',
+                $label ?? '',
+                number_format($segment['rate'], 2),
+                $segment['rate_source'],
+                $segment['days_held'],
+                $segment['has_movements'] ? 'average balance ' : '',
+                number_format($segment['has_movements'] ? $segment['average_balance'] : $segment['balance_start'], 2),
+                $segment['period_start'],
+                $segment['period_end']
+            )),
+        ]));
+    }
 
-        foreach ($accrual['segments'] as $segment) {
-            if ($segment['days_held'] <= 0) {
-                continue;
-            }
-
-            $drafts->push(InvestmentTransaction::create([
-                'investment_id' => $investment->id,
-                'investor_id' => $investment->investor_id,
-                'date' => $segment['period_end'],
-                'period_start' => $segment['period_start'],
-                'period_end' => $segment['period_end'],
-                'rate_applied' => $segment['rate'],
-                'type' => InvestmentTransactionType::interest_credit->value,
-                'op_balance' => $opBalance,
-                'credit' => $segment['interest'],
-                'year' => $segment['year'],
-                'posted' => false,
-                'description' => sprintf(
-                    '%s%% (%s) x %d days / 365 on %s [%s – %s]',
-                    number_format($segment['rate'], 2),
-                    $segment['rate_source'],
-                    $segment['days_held'],
-                    number_format($segment['balance_start'], 2),
-                    $segment['period_start'],
-                    $segment['period_end']
-                ),
-            ]));
-
-            $opBalance = $segment['balance_end'];
+    /**
+     * Loans pay simple interest in cash on their payout schedule
+     * (InvestmentInterestPayoutService) and must never have interest credited to
+     * their balance, which would pay the same interest twice.
+     */
+    protected function assertCompounding(Investment $investment): void
+    {
+        if ($investment->capital_type === InvestmentCapitalType::loan) {
+            throw new \RuntimeException(
+                "{$investment->reference} is a loan — its interest is paid in cash on the payout schedule, never credited to the balance."
+            );
         }
-
-        return $drafts;
     }
 
     /**
@@ -288,15 +378,13 @@ class InvestmentInterestService
      */
     public function generateManualDraft(Investment $investment, Carbon $periodStart, Carbon $periodEnd, float $rate): InvestmentTransaction
     {
+        $this->assertCompounding($investment);
+
         if ($periodStart->greaterThan($periodEnd)) {
             throw new \InvalidArgumentException('Period start must not be after period end.');
         }
 
-        $cursor = $investment->last_interest_posted_through
-            ? Carbon::parse($investment->last_interest_posted_through)
-            : ($investment->last_interest_posted_year
-                ? Carbon::create($investment->last_interest_posted_year, 12, 31)
-                : null);
+        $cursor = $this->postedThrough($investment);
 
         if ($cursor && $periodStart->lessThanOrEqualTo($cursor)) {
             throw new \RuntimeException(
@@ -339,24 +427,72 @@ class InvestmentInterestService
 
     /**
      * Finalize a draft interest_credit row, optionally overriding the computed amount,
-     * and update the investment's authoritative running balance.
+     * and update the investment's authoritative running balance. The credit lands after
+     * everything already on the ledger for its date, and every later row is re-chained
+     * onto it — so a withdrawal or contribution recorded since the draft was generated
+     * is kept, never overwritten by the draft's stale opening balance.
      */
     public function postDraft(InvestmentTransaction $draft, User $postedBy, ?float $overrideAmount = null): InvestmentTransaction
     {
-        return DB::transaction(function () use ($draft, $postedBy, $overrideAmount) {
+        $investment = $draft->investment;
+        $this->assertCompounding($investment);
+
+        return DB::transaction(function () use ($draft, $postedBy, $overrideAmount, $investment) {
+            if ($draft->period_start && $draft->period_end) {
+                $overlapping = InvestmentTransaction::where('investment_id', $investment->id)
+                    ->where('type', InvestmentTransactionType::interest_credit->value)
+                    ->where('posted', true)
+                    ->where('credit', '!=', 0)
+                    ->where('period_start', '<=', $draft->period_end->toDateString())
+                    ->where('period_end', '>=', $draft->period_start->toDateString())
+                    ->first();
+
+                if ($overlapping) {
+                    throw new \RuntimeException(sprintf(
+                        'Interest for %s – %s is already posted on %s; discard this draft instead.',
+                        $overlapping->period_start->toDateString(),
+                        $overlapping->period_end->toDateString(),
+                        $investment->reference
+                    ));
+                }
+            }
+
             if ($overrideAmount !== null) {
                 $draft->credit = round($overrideAmount, 2);
             }
 
+            $draftDate = Carbon::parse($draft->date)->startOfDay();
+
+            $draft->op_balance = $this->balanceBefore($investment, $draftDate->copy()->addDay());
             $draft->posted = true;
             $draft->posted_by = $postedBy->id;
             $draft->posted_at = now();
             $draft->save();
 
-            $draft->investment->update([
-                'current_balance' => $draft->cl_balance,
-                'last_interest_posted_year' => $draft->year,
-                'last_interest_posted_through' => $draft->period_end ?? Carbon::create($draft->year, 12, 31),
+            $running = (float) $draft->cl_balance;
+
+            $later = InvestmentTransaction::where('investment_id', $investment->id)
+                ->where('posted', true)
+                ->where('date', '>', $draftDate->toDateString())
+                ->orderBy('date')
+                ->orderBy('created_at')
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($later as $row) {
+                $row->op_balance = $running;
+                $row->save();
+                $running = (float) $row->cl_balance;
+            }
+
+            $postedThrough = $draft->period_end ?? Carbon::create($draft->year, 12, 31);
+            $previousCursor = $this->postedThrough($investment);
+            $advancesCursor = ! $previousCursor || $postedThrough->greaterThan($previousCursor);
+
+            $investment->update([
+                'current_balance' => $running,
+                'last_interest_posted_year' => $advancesCursor ? $draft->year : $investment->last_interest_posted_year,
+                'last_interest_posted_through' => $advancesCursor ? $postedThrough : $previousCursor,
             ]);
 
             InvestorNotifier::notify($draft->investor_id, new InvestmentInterestPosted($draft->fresh()));
@@ -501,15 +637,14 @@ class InvestmentInterestService
 
         $balance = (float) $investment->current_balance;
 
-        $fromYear = $investment->last_interest_posted_year
-            ? $investment->last_interest_posted_year + 1
-            : (int) Carbon::parse($investment->start_date)->year;
+        // Accrue from the first unposted day, not Jan 1 of the year after the last
+        // posting — a year posted only through Sep 30 still has Oct–Dec to earn.
+        $from = $this->nextUnpostedDate($investment);
 
-        for ($year = $fromYear; $year <= $asOfDate->year; $year++) {
-            $capDate = $year === $asOfDate->year ? $asOfDate : null;
-            $accrual = $this->yearAccrual($investment, $year, $balance, $capDate);
+        if ($from->lessThanOrEqualTo($asOfDate)) {
+            $accrual = $this->ledgerAccrual($investment, $from, $asOfDate);
             $balance = $accrual['balance_end'];
-            $totalInterest += $accrual['interest'];
+            $totalInterest += $accrual['total_interest'];
         }
 
         return [
@@ -561,7 +696,7 @@ class InvestmentInterestService
         $lastCoveredDate = $lastPosted ? Carbon::parse($lastPosted->period_end) : Carbon::parse($investment->start_date);
 
         if ($includeUnposted && $cursor->lessThanOrEqualTo($asOfDate)) {
-            $trailing = $this->periodAccrual($investment, $cursor, $asOfDate, $balance);
+            $trailing = $this->ledgerAccrual($investment, $cursor, $asOfDate);
 
             foreach ($trailing['segments'] as $segment) {
                 if ($segment['days_held'] <= 0) {
@@ -594,51 +729,32 @@ class InvestmentInterestService
     }
 
     /**
-     * True-up interest for a partial year ending at $throughDate (e.g. before a full
-     * withdrawal payout closes the investment), then immediately post it.
+     * True-up every unposted day through $throughDate (e.g. before a full withdrawal
+     * payout closes the investment), then immediately post it. Covers whatever is
+     * outstanding — the rest of a part-posted year, or a whole prior year whose
+     * year-end draft is still awaiting review — and supersedes any pending drafts.
+     * Returns the last row posted, or null when nothing was left to post.
      */
-    public function postStubPeriodInterest(Investment $investment, Carbon $throughDate, User $postedBy): InvestmentTransaction
+    public function postStubPeriodInterest(Investment $investment, Carbon $throughDate, User $postedBy): ?InvestmentTransaction
     {
-        $year = $throughDate->year;
+        $this->assertCompounding($investment);
 
-        $alreadyPosted = InvestmentTransaction::where('investment_id', $investment->id)
-            ->where('type', InvestmentTransactionType::interest_credit->value)
-            ->where('year', $year)
-            ->where('posted', true)
-            ->first();
+        $from = $this->nextUnpostedDate($investment);
+        $throughDate = $throughDate->copy()->startOfDay();
 
-        if ($alreadyPosted) {
-            return $alreadyPosted;
+        if ($from->greaterThan($throughDate)) {
+            return null;
         }
 
-        $balanceAtStartOfYear = (float) $investment->current_balance;
-        $accrual = $this->yearAccrual($investment, $year, $balanceAtStartOfYear, $throughDate);
+        return DB::transaction(function () use ($investment, $from, $throughDate, $postedBy) {
+            InvestmentTransaction::where('investment_id', $investment->id)
+                ->where('type', InvestmentTransactionType::interest_credit->value)
+                ->where('posted', false)
+                ->delete();
 
-        $cursor = $investment->last_interest_posted_through
-            ? Carbon::parse($investment->last_interest_posted_through)->addDay()
-            : Carbon::create($year, 1, 1)->max(Carbon::parse($investment->start_date));
+            $drafts = $this->createDrafts($investment, $from, $throughDate, "Stub-period interest through {$throughDate->toDateString()}:");
 
-        $draft = InvestmentTransaction::create([
-            'investment_id' => $investment->id,
-            'investor_id' => $investment->investor_id,
-            'date' => $throughDate,
-            'period_start' => $cursor,
-            'period_end' => $throughDate,
-            'rate_applied' => $accrual['rate'],
-            'type' => InvestmentTransactionType::interest_credit->value,
-            'op_balance' => $balanceAtStartOfYear,
-            'credit' => $accrual['interest'],
-            'year' => $year,
-            'posted' => false,
-            'description' => sprintf(
-                'Stub-period interest through %s (%d days at %s%%, %s)',
-                $throughDate->toDateString(),
-                $accrual['days_held'],
-                number_format($accrual['rate'], 2),
-                $accrual['rate_source']
-            ),
-        ]);
-
-        return $this->postDraft($draft, $postedBy);
+            return $this->postDraftBatch($drafts, $postedBy)->last();
+        });
     }
 }

@@ -14,6 +14,7 @@ class InvestmentRateResolver
      *   1. A one-off override for this exact investment tranche and year.
      *   2. The investor's own standing rate, which applies every year until changed.
      *   3. The company-wide default rate for the year.
+     *   4. The standard rate in config('investment.default_annual_rate') (15%).
      *
      * @return array{rate: float, source: string}
      */
@@ -37,6 +38,12 @@ class InvestmentRateResolver
 
         if ($setting) {
             return ['rate' => (float) $setting->annual_rate, 'source' => 'company_default'];
+        }
+
+        $standardRate = config('investment.default_annual_rate');
+
+        if (filled($standardRate)) {
+            return ['rate' => (float) $standardRate, 'source' => 'standard_rate'];
         }
 
         throw new MissingInvestmentRateException($year);

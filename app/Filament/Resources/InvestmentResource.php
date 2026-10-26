@@ -241,6 +241,7 @@ class InvestmentResource extends Resource
                             'override' => 'One-off rate override for '.now()->year,
                             'investor_default' => "The investor's standing rate",
                             'company_default' => 'Company-wide default rate for '.now()->year,
+                            'standard_rate' => 'Standard rate — no rate configured for '.now()->year,
                             default => 'No rate configured for '.now()->year,
                         };
                     })

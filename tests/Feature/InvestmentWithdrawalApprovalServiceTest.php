@@ -3,9 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\Investment;
+use App\Models\InvestmentRateOverride;
 use App\Models\InvestmentRateSetting;
 use App\Models\Investor;
 use App\Models\User;
+use App\Service\InvestmentInterestPayoutService;
 use App\Services\InvestmentWithdrawalApprovalService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
@@ -42,6 +44,105 @@ class InvestmentWithdrawalApprovalServiceTest extends TestCase
         $this->assertSame('active', $investment->fresh()->status->value);
     }
 
+    public function test_partial_withdrawal_payment_cannot_exceed_the_requested_amount(): void
+    {
+        $investor = Investor::create(['name' => 'Overpaid Withdrawal Investor', 'status' => 'active']);
+        $staff = User::first() ?? User::factory()->create();
+        $service = app(InvestmentWithdrawalApprovalService::class);
+
+        $investment = Investment::create([
+            'investor_id' => $investor->id,
+            'principal_amount' => 20000,
+            'current_balance' => 20000,
+            'start_date' => '2025-01-01',
+            'status' => 'active',
+        ]);
+
+        $request = $service->submit($investment, ['is_full_withdrawal' => false, 'requested_amount' => 6000]);
+        $request = $service->approve($request->fresh(), $staff, []);
+
+        try {
+            $service->recordPayment($request->fresh(), 16000, $staff, ['payout_gateway' => 'manual']);
+            $this->fail('Paying more than was requested must be refused.');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertStringContainsString('still owed', $e->getMessage());
+        }
+
+        $this->assertEquals(20000, (float) $investment->fresh()->current_balance);
+    }
+
+    public function test_manual_payment_is_refused_while_a_paystack_withdrawal_transfer_is_in_flight(): void
+    {
+        $investor = Investor::create(['name' => 'In Flight Withdrawal Investor', 'status' => 'active']);
+        $staff = User::first() ?? User::factory()->create();
+        $service = app(InvestmentWithdrawalApprovalService::class);
+
+        $investment = Investment::create([
+            'investor_id' => $investor->id,
+            'principal_amount' => 20000,
+            'current_balance' => 20000,
+            'start_date' => '2025-01-01',
+            'status' => 'active',
+        ]);
+
+        $request = $service->submit($investment, ['is_full_withdrawal' => false, 'requested_amount' => 6000]);
+        $request = $service->approve($request->fresh(), $staff, []);
+        $request->update(['status' => 'processing', 'payout_gateway' => 'paystack', 'paystack_transfer_code' => 'TRF_WD_1']);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('still in progress');
+
+        $service->recordPayment($request->fresh(), 6000, $staff, ['payout_gateway' => 'manual', 'payment_reference' => 'BANK-2']);
+    }
+
+    /**
+     * Loan principal is due on the maturity date with any accrued interest. Approval
+     * is refused while interest is unpaid (generating the final quarter first), and
+     * once approved the principal is due at once rather than after the 60-day window.
+     */
+    public function test_loan_principal_repayment_requires_settled_interest_and_is_due_immediately(): void
+    {
+        $investor = Investor::create(['name' => 'Principal Repayment Investor', 'status' => 'active']);
+        $staff = User::first() ?? User::factory()->create();
+        $service = app(InvestmentWithdrawalApprovalService::class);
+
+        $loan = Investment::create([
+            'investor_id' => $investor->id,
+            'capital_type' => 'loan',
+            'principal_amount' => 40000,
+            'current_balance' => 40000,
+            'start_date' => now()->subYear()->subDays(2)->toDateString(),
+            'contract_term_months' => 12,
+            'payout_frequency' => 'quarterly',
+            'status' => 'active',
+        ]);
+        InvestmentRateOverride::create(['investment_id' => $loan->id, 'year' => $loan->start_date->year, 'annual_rate' => 9]);
+
+        $request = $service->requestLoanPrincipalRepayment($loan->fresh());
+
+        try {
+            $service->approve($request->fresh(), $staff, []);
+            $this->fail('Principal must not be approved while interest is unpaid.');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertStringContainsString('4 unpaid interest payout(s) totalling $3,600.00', $e->getMessage());
+        }
+
+        $payoutService = app(InvestmentInterestPayoutService::class);
+        foreach ($loan->interestPayouts()->get() as $payout) {
+            $payoutService->recordPayment($payout, null, $staff, ['payout_gateway' => 'manual']);
+        }
+
+        $request = $service->approve($request->fresh(), $staff, []);
+        $this->assertTrue($request->payment_due_by->isToday());
+
+        $request = $service->recordPayment($request->fresh(), null, $staff, ['payout_gateway' => 'manual']);
+
+        $this->assertSame('paid', $request->status->value);
+        $this->assertEquals(40000.0, (float) $request->amount_paid);
+        $this->assertSame('withdrawn', $loan->fresh()->status->value);
+        $this->assertEquals(0.0, (float) $loan->fresh()->current_balance);
+    }
+
     public function test_partial_withdrawal_below_minimum_remaining_balance_is_rejected(): void
     {
         $investor = Investor::create(['name' => 'Rejected Withdrawal Investor', 'status' => 'active']);
@@ -69,6 +170,8 @@ class InvestmentWithdrawalApprovalServiceTest extends TestCase
     public function test_full_withdrawal_pays_out_the_freshly_trued_up_balance(): void
     {
         InvestmentRateSetting::firstOrCreate(['year' => now()->year], ['annual_rate' => 10]);
+        // Tranches start in 2025, so the full-withdrawal true-up accrues 2025 too.
+        InvestmentRateSetting::firstOrCreate(['year' => 2025], ['annual_rate' => 10]);
 
         $investor = Investor::create(['name' => 'Full Withdrawal Investor', 'status' => 'active']);
         $staff = User::first() ?? User::factory()->create();

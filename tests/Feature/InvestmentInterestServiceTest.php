@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Enums\InvestmentTransactionType;
 use App\Models\Investment;
 use App\Models\InvestmentRateSetting;
+use App\Models\InvestmentTransaction;
 use App\Models\Investor;
 use App\Models\User;
 use App\Service\InvestmentInterestService;
@@ -112,7 +114,12 @@ class InvestmentInterestServiceTest extends TestCase
         $this->assertSame('2025-01-31', $fresh->last_interest_posted_through->toDateString());
     }
 
-    public function test_generate_draft_rejects_year_when_partial_year_already_posted(): void
+    /**
+     * Regression: once a year was part-posted (e.g. a Q1 posting), the year-end run used
+     * to refuse it — and the scheduled job skipped it entirely because
+     * last_interest_posted_year already matched — so Apr–Dec interest was never earned.
+     */
+    public function test_generate_draft_posts_the_rest_of_a_part_posted_year(): void
     {
         $investor = Investor::create(['name' => 'Partial Year Investor', 'status' => 'active']);
         $staffUser = User::first() ?? User::factory()->create();
@@ -129,9 +136,195 @@ class InvestmentInterestServiceTest extends TestCase
 
         $drafts = $service->generateDraftForPeriod($investment, Carbon::parse('2025-01-01'), Carbon::parse('2025-03-31'));
         $service->postDraftBatch($drafts, $staffUser);
+        $this->assertEquals(10369.86, (float) $investment->fresh()->current_balance);
 
-        $this->expectException(\RuntimeException::class);
-        $service->generateDraft($investment->fresh(), 2025);
+        $remainder = $service->generateDraft($investment->fresh(), 2025);
+
+        $this->assertSame('2025-04-01', $remainder->period_start->toDateString());
+        $this->assertSame('2025-12-31', $remainder->period_end->toDateString());
+        $this->assertSame(275, $this->daysFromDescription($remainder->description));
+        $this->assertEquals(1171.94, (float) $remainder->credit);
+
+        $service->postDraft($remainder, $staffUser);
+        $this->assertEquals(11541.80, (float) $investment->fresh()->current_balance);
+    }
+
+    /**
+     * The company posts interest at Dec 31: a yearly tranche opened in November earns
+     * its pro-rated days at the first year end, then a full year after that.
+     */
+    public function test_year_end_command_drafts_pro_rated_interest_for_a_november_tranche(): void
+    {
+        $investor = Investor::create(['name' => 'November Investor', 'status' => 'active']);
+        InvestmentRateSetting::create(['year' => 2026, 'annual_rate' => 10]);
+
+        $investment = Investment::create([
+            'investor_id' => $investor->id,
+            'principal_amount' => 10000,
+            'start_date' => '2026-11-15',
+            'status' => 'active',
+        ]);
+
+        $this->artisan('app:post-year-end-investment-interest', ['year' => 2026])->assertSuccessful();
+
+        $draft = InvestmentTransaction::where('investment_id', $investment->id)->sole();
+
+        $this->assertFalse($draft->posted);
+        $this->assertSame('2026-12-31', $draft->date->toDateString());
+        $this->assertSame('2026-11-15', $draft->period_start->toDateString());
+        $this->assertSame(47, $this->daysFromDescription($draft->description));
+        $this->assertEquals(128.77, (float) $draft->credit);
+    }
+
+    /**
+     * Regression: loans pay cash interest on their payout schedule. The year-end job
+     * used to draft compounding credits for them too, paying the same interest twice.
+     */
+    public function test_year_end_interest_is_never_drafted_or_posted_for_a_loan(): void
+    {
+        $investor = Investor::create(['name' => 'Year End Loan Investor', 'status' => 'active']);
+        $staffUser = User::first() ?? User::factory()->create();
+        InvestmentRateSetting::create(['year' => 2026, 'annual_rate' => 10]);
+
+        $loan = Investment::create([
+            'investor_id' => $investor->id,
+            'capital_type' => 'loan',
+            'principal_amount' => 40000,
+            'start_date' => '2026-02-15',
+            'payout_frequency' => 'quarterly',
+            'status' => 'active',
+        ]);
+
+        $this->artisan('app:post-year-end-investment-interest', ['year' => 2026])->assertSuccessful();
+        $this->assertSame(0, InvestmentTransaction::where('investment_id', $loan->id)->count());
+
+        $staleDraft = InvestmentTransaction::create([
+            'investment_id' => $loan->id,
+            'investor_id' => $investor->id,
+            'date' => '2026-12-31',
+            'period_start' => '2026-02-15',
+            'period_end' => '2026-12-31',
+            'type' => InvestmentTransactionType::interest_credit->value,
+            'op_balance' => 40000,
+            'credit' => 3500,
+            'year' => 2026,
+            'posted' => false,
+        ]);
+
+        try {
+            app(InvestmentInterestService::class)->postDraft($staleDraft, $staffUser);
+            $this->fail('A loan interest credit must not be postable.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('is a loan', $e->getMessage());
+        }
+
+        $this->assertEquals(40000, (float) $loan->fresh()->current_balance);
+    }
+
+    /**
+     * Regression: a partial withdrawal mid-year used to earn interest for the whole
+     * year, and posting the year-end draft then reset the balance to the pre-withdrawal
+     * figure — wiping the withdrawal off the books.
+     */
+    public function test_partial_withdrawal_stops_earning_and_survives_the_year_end_posting(): void
+    {
+        $investor = Investor::create(['name' => 'Partial Withdrawal Investor', 'status' => 'active']);
+        $staffUser = User::first() ?? User::factory()->create();
+        InvestmentRateSetting::create(['year' => 2025, 'annual_rate' => 10]);
+
+        $investment = Investment::create([
+            'investor_id' => $investor->id,
+            'principal_amount' => 10000,
+            'start_date' => '2025-01-01',
+            'status' => 'active',
+        ]);
+
+        $this->postWithdrawal($investment, '2025-07-01', 5000);
+
+        $service = app(InvestmentInterestService::class);
+        $draft = $service->generateDraft($investment->fresh(), 2025);
+
+        // 181 days on 10,000 (Jan 1 – Jun 30) + 184 days on 5,000 (Jul 1 – Dec 31).
+        $this->assertEquals(747.95, (float) $draft->credit);
+        $this->assertStringContainsString('average balance', $draft->description);
+
+        $service->postDraft($draft, $staffUser);
+
+        $this->assertEquals(5747.95, (float) $investment->fresh()->current_balance);
+        $this->assertEquals(5000.00, (float) $draft->fresh()->op_balance);
+    }
+
+    public function test_posting_keeps_a_withdrawal_recorded_after_the_draft_was_generated(): void
+    {
+        $investor = Investor::create(['name' => 'Late Withdrawal Investor', 'status' => 'active']);
+        $staffUser = User::first() ?? User::factory()->create();
+        InvestmentRateSetting::create(['year' => 2025, 'annual_rate' => 10]);
+        InvestmentRateSetting::create(['year' => 2026, 'annual_rate' => 10]);
+
+        $investment = Investment::create([
+            'investor_id' => $investor->id,
+            'principal_amount' => 10000,
+            'start_date' => '2025-01-01',
+            'status' => 'active',
+        ]);
+
+        $service = app(InvestmentInterestService::class);
+        $draft = $service->generateDraft($investment, 2025);
+        $this->assertEquals(1000.00, (float) $draft->credit);
+
+        // Paid out on Jan 1, before staff got round to approving the Dec 31 draft.
+        $this->postWithdrawal($investment, '2026-01-01', 2000);
+
+        $service->postDraft($draft, $staffUser);
+
+        $this->assertEquals(9000.00, (float) $investment->fresh()->current_balance);
+        $this->assertSame('2025-12-31', $investment->fresh()->last_interest_posted_through->toDateString());
+    }
+
+    /**
+     * Regression: a year whose drafts were never posted used to be skipped for good —
+     * the next year's run started at Jan 1 on the bare principal.
+     */
+    public function test_year_end_run_catches_up_a_year_that_was_never_posted(): void
+    {
+        $investor = Investor::create(['name' => 'Missed Year Investor', 'status' => 'active']);
+        $staffUser = User::first() ?? User::factory()->create();
+        InvestmentRateSetting::create(['year' => 2024, 'annual_rate' => 17]);
+        InvestmentRateSetting::create(['year' => 2025, 'annual_rate' => 15]);
+
+        $investment = Investment::create([
+            'investor_id' => $investor->id,
+            'principal_amount' => 20000,
+            'start_date' => '2024-10-02',
+            'status' => 'active',
+        ]);
+
+        $service = app(InvestmentInterestService::class);
+        $drafts = $service->generateYearEndDrafts($investment, 2025);
+
+        $this->assertSame([2024, 2025], $drafts->pluck('year')->all());
+        $this->assertSame([847.67, 3127.15], $drafts->map(fn ($draft) => (float) $draft->credit)->all());
+
+        $service->postDraftBatch($drafts, $staffUser);
+
+        // Same figures as the signed agreement posted one year at a time.
+        $this->assertEquals(23974.82, (float) $investment->fresh()->current_balance);
+    }
+
+    private function postWithdrawal(Investment $investment, string $date, float $amount): void
+    {
+        InvestmentTransaction::create([
+            'investment_id' => $investment->id,
+            'investor_id' => $investment->investor_id,
+            'date' => $date,
+            'type' => InvestmentTransactionType::withdrawal->value,
+            'op_balance' => $investment->fresh()->current_balance,
+            'debit' => $amount,
+            'posted' => true,
+            'posted_at' => now(),
+        ]);
+
+        $investment->update(['current_balance' => round((float) $investment->fresh()->current_balance - $amount, 2)]);
     }
 
     public function test_segmented_valuation_matches_valuation_as_of_and_breaks_down_by_segment(): void
