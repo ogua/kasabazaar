@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Widgets\FinancialOverviewWidget;
+use App\Filament\Widgets\ManagementKPIWidget;
 use App\Models\Shipment;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Section;
@@ -94,9 +95,18 @@ class Dashboard extends BaseDashboard implements HasForms
     }
 
     /**
-     * The financial overview first, then every chart, then the remaining stats and
-     * tables. Each group keeps its widgets' own sort order, so a new widget lands in
-     * the right group by its type.
+     * Stat widgets whose cards draw trend graphs; they sit with the charts.
+     *
+     * @var array<int, class-string<Widget>>
+     */
+    protected const GRAPH_STAT_WIDGETS = [
+        ManagementKPIWidget::class,
+    ];
+
+    /**
+     * The financial overview first, then every chart (and the stat cards that draw
+     * trend graphs), then the remaining stats and tables. Each group keeps its
+     * widgets' own sort order, so a new chart lands with the charts by its type.
      *
      * @return array<class-string<Widget> | WidgetConfiguration>
      */
@@ -106,7 +116,8 @@ class Dashboard extends BaseDashboard implements HasForms
         $classOf = fn ($widget): string => $widget instanceof WidgetConfiguration ? $widget->widget : $widget;
 
         $financial = $widgets->filter(fn ($widget): bool => $classOf($widget) === FinancialOverviewWidget::class);
-        $charts = $widgets->filter(fn ($widget): bool => is_subclass_of($classOf($widget), ChartWidget::class));
+        $charts = $widgets->filter(fn ($widget): bool => is_subclass_of($classOf($widget), ChartWidget::class))
+            ->union($widgets->filter(fn ($widget): bool => in_array($classOf($widget), self::GRAPH_STAT_WIDGETS, true)));
 
         return $financial
             ->merge($charts)
