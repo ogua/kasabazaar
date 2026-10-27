@@ -2,14 +2,18 @@
 
 namespace App\Filament\Pages;
 
-use Filament\Pages\Dashboard as BaseDashboard;
-use Filament\Forms\Form;
-use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Section;
-use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Concerns\InteractsWithForms;
+use App\Filament\Widgets\FinancialOverviewWidget;
 use App\Models\Shipment;
+use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Form;
+use Filament\Pages\Dashboard as BaseDashboard;
+use Filament\Widgets\ChartWidget;
+use Filament\Widgets\Widget;
+use Filament\Widgets\WidgetConfiguration;
 
 class Dashboard extends BaseDashboard implements HasForms
 {
@@ -18,7 +22,9 @@ class Dashboard extends BaseDashboard implements HasForms
     protected static string $view = 'filament.pages.dashboard';
 
     public ?string $start_date = null;
+
     public ?string $end_date = null;
+
     public ?string $container_number = null;
 
     public function mount(): void
@@ -70,9 +76,10 @@ class Dashboard extends BaseDashboard implements HasForms
                                     ->limit(50)
                                     ->get()
                                     ->mapWithKeys(function ($container) {
-                                        $label = 'CON' . $container->container_number .
-                                                ' (' . $container->shipment_count . ' shipments, ' .
-                                                '$' . number_format($container->total_amount, 2) . ')';
+                                        $label = 'CON'.$container->container_number.
+                                                ' ('.$container->shipment_count.' shipments, '.
+                                                '$'.number_format($container->total_amount, 2).')';
+
                                         return [$container->container_number => $label];
                                     })
                                     ->toArray();
@@ -84,6 +91,28 @@ class Dashboard extends BaseDashboard implements HasForms
                     ->compact(),
             ])
             ->statePath('data');
+    }
+
+    /**
+     * The financial overview first, then every chart, then the remaining stats and
+     * tables. Each group keeps its widgets' own sort order, so a new widget lands in
+     * the right group by its type.
+     *
+     * @return array<class-string<Widget> | WidgetConfiguration>
+     */
+    public function getWidgets(): array
+    {
+        $widgets = collect(parent::getWidgets());
+        $classOf = fn ($widget): string => $widget instanceof WidgetConfiguration ? $widget->widget : $widget;
+
+        $financial = $widgets->filter(fn ($widget): bool => $classOf($widget) === FinancialOverviewWidget::class);
+        $charts = $widgets->filter(fn ($widget): bool => is_subclass_of($classOf($widget), ChartWidget::class));
+
+        return $financial
+            ->merge($charts)
+            ->merge($widgets->except($financial->keys()->merge($charts->keys())))
+            ->values()
+            ->all();
     }
 
     public function updateDashboard(): void
