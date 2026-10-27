@@ -7,6 +7,7 @@ use App\Filament\Resources\ShipmentRequestResource\Pages\ListShipmentRequests;
 use App\Filament\Resources\ShipmentResource;
 use App\Filament\Resources\ShipmentResource\Pages\CreateShipment;
 use App\Filament\Resources\ShipmentResource\Pages\CreateShipmentFromRequest;
+use App\Filament\Resources\ShipmentResource\Pages\ListShipments;
 use App\Models\Branch;
 use App\Models\Client;
 use App\Models\Country;
@@ -294,6 +295,25 @@ class ShipmentWizardAssistTest extends TestCase
         Livewire::test(ListShipmentRequests::class)
             ->assertTableActionVisible('convert', $request)
             ->assertTableActionHasUrl('convert', ShipmentResource::getUrl('from-request', ['shipmentRequest' => $request->id]), $request);
+    }
+
+    public function test_clicking_the_sender_shows_the_clients_details(): void
+    {
+        $admin = $this->actingAsShipmentAdmin();
+        $request = $this->makeRequest();
+        $shipment = app(ShipmentRequestApprovalService::class)->approve($request, $admin, ['branch_id' => $this->branch->id]);
+        $client = $shipment->client;
+        $client->update(['address' => '6554 Marissa St', 'country' => $this->usa->id]);
+
+        Livewire::test(ListShipments::class)
+            ->assertTableColumnExists('client.name')
+            ->mountTableAction('viewClient', $shipment)
+            ->assertSee('Sender details')
+            ->assertSee($client->phone)
+            ->assertSee($client->email)
+            ->assertSee('6554 Marissa St')
+            ->assertSee('United States')
+            ->assertSee('$148.00');
     }
 
     public function test_quick_approval_stores_line_values_not_unit_values(): void

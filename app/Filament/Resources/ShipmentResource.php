@@ -716,7 +716,9 @@ class ShipmentResource extends Resource
                 Tables\Columns\TextColumn::make('client.name')
                     ->label('Sender')
                     ->searchable()
-                    ->badge(),
+                    ->badge()
+                    ->tooltip('View client details')
+                    ->action(static::clientDetailsAction()),
 
                 Tables\Columns\TextColumn::make('client_existence')
                     ->label('Client')
@@ -1553,6 +1555,77 @@ class ShipmentResource extends Resource
             ->get()
             ->filter(fn (ShipmentMedia $item) => $item->isRemovableBy($user))
             ->values();
+    }
+
+    /**
+     * Clicking the sender's name shows who they are and where they stand, without
+     * leaving the shipments list.
+     */
+    public static function clientDetailsAction(): Tables\Actions\Action
+    {
+        return Tables\Actions\Action::make('viewClient')
+            ->modalHeading(fn (Shipment $record): string => $record->client?->name ?? 'Client')
+            ->modalDescription('Sender details')
+            ->modalIcon('heroicon-o-user')
+            ->slideOver()
+            ->modalWidth('lg')
+            ->visible(fn (Shipment $record): bool => $record->client !== null)
+            ->infolist([
+                \Filament\Infolists\Components\Section::make('Contact')
+                    ->schema([
+                        TextEntry::make('client.name')->label('Name'),
+                        TextEntry::make('client.phone')->label('Phone')->copyable()->placeholder('—')
+                            ->url(fn (Shipment $record): ?string => $record->client?->phone ? 'tel:'.$record->client->phone : null),
+                        TextEntry::make('client.email')->label('Email')->copyable()->placeholder('—')
+                            ->url(fn (Shipment $record): ?string => $record->client?->email ? 'mailto:'.$record->client->email : null),
+                        TextEntry::make('client_whatsapp')->label('WhatsApp updates')
+                            ->state(fn (Shipment $record): string => match (true) {
+                                filled($record->client?->whatsapp_opted_out_at) => 'Opted out',
+                                filled($record->client?->whatsapp_opt_in_at) => 'Agreed',
+                                default => 'Not agreed (SMS only)',
+                            })
+                            ->badge()
+                            ->color(fn (string $state): string => $state === 'Agreed' ? 'success' : 'gray'),
+                    ])
+                    ->columns(2),
+
+                \Filament\Infolists\Components\Section::make('Location & ID')
+                    ->schema([
+                        TextEntry::make('client.mcountry.name')->label('Country')->placeholder('—'),
+                        TextEntry::make('client.mstate.name')->label('State / Region')->placeholder('—'),
+                        TextEntry::make('client.mcity.name')->label('City')->placeholder('—'),
+                        TextEntry::make('client.branch.name')->label('Branch')->placeholder('—'),
+                        TextEntry::make('client.address')->label('Address')->placeholder('—')->columnSpanFull(),
+                        TextEntry::make('client.id_type')->label('ID type')->placeholder('—'),
+                        TextEntry::make('client.id_number')->label('ID number')->placeholder('—'),
+                    ])
+                    ->columns(2),
+
+                \Filament\Infolists\Components\Section::make('Shipping history')
+                    ->schema([
+                        TextEntry::make('client_shipments')->label('Shipments')
+                            ->state(fn (Shipment $record): int => $record->client->shipments()->count()),
+                        TextEntry::make('client_since')->label('Client since')
+                            ->state(fn (Shipment $record) => $record->client->created_at)
+                            ->date('M j, Y'),
+                        TextEntry::make('client_billed')->label('Total billed')
+                            ->state(fn (Shipment $record): float => (float) $record->client->shipments()->sum('total'))
+                            ->money('USD'),
+                        TextEntry::make('client_outstanding')->label('Outstanding')
+                            ->state(fn (Shipment $record): float => (float) $record->client->shipments()->with('payments')->get()->sum(fn (Shipment $shipment) => max(0, $shipment->outstanding_balance)))
+                            ->money('USD')
+                            ->color(fn ($state): string => $state > 0 ? 'danger' : 'success'),
+                    ])
+                    ->columns(2),
+            ])
+            ->modalSubmitAction(false)
+            ->modalCancelActionLabel('Close')
+            ->extraModalFooterActions(fn (Shipment $record): array => ClientResource::canEdit($record->client) ? [
+                Tables\Actions\Action::make('openClient')
+                    ->label('Open client record')
+                    ->icon('heroicon-o-arrow-top-right-on-square')
+                    ->url(ClientResource::getUrl('edit', ['record' => $record->client])),
+            ] : []);
     }
 
     public static function getPages(): array
