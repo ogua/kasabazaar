@@ -4,50 +4,44 @@ namespace App\Service;
 
 use App\Models\ExchangeRateLog;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 
 class ExchangeRateService
 {
     protected string $defaultFrom = 'USD';
+
     protected string $defaultTo = 'GHS';
 
     /**
-     * Get current exchange rate
-     * PRIORITIZES MANUAL RATES - API fetching is disabled by default
+     * Sources staff enter by hand. On the same date they win over the daily API rate,
+     * and the API sync never overwrites them.
+     */
+    public const STAFF_SOURCES = ['manual', 'bank', 'official'];
+
+    /**
+     * The current rate: the newest one dated today or earlier, whatever its source.
+     * A rate staff set for a date wins over the API's rate for that same date, but a
+     * newer API rate replaces an older staff rate — an old manual rate must never
+     * stand in for today's.
      */
     public function getCurrentRate(string $from = 'USD', string $to = 'GHS', bool $useApi = false): float
     {
-        // Try to get from cache first (cache for 1 hour)
-        $cacheKey = "exchange_rate_{$from}_{$to}";
+        $cacheKey = self::cacheKey($from, $to);
 
         return Cache::remember($cacheKey, 3600, function () use ($from, $to, $useApi) {
-            // PRIORITY 1: Check for manually entered rates for today or the most recent date
-            $manualRate = ExchangeRateLog::where('from_currency', $from)
-                ->where('to_currency', $to)
-                ->where('rate_date', '<=', today())
-                ->whereIn('source', ['manual', 'bank', 'official']) // Prioritize manual sources
-                ->orderBy('rate_date', 'desc')
-                ->first();
-
-            if ($manualRate) {
-                logger()->info("Using manual exchange rate: {$manualRate->rate} from {$manualRate->rate_date}");
-                return (float) $manualRate->rate;
-            }
-
-            // PRIORITY 2: Check for any rate in the database (including API rates)
-            $anyRate = ExchangeRateLog::where('from_currency', $from)
+            $latest = ExchangeRateLog::where('from_currency', $from)
                 ->where('to_currency', $to)
                 ->where('rate_date', '<=', today())
                 ->orderBy('rate_date', 'desc')
+                ->orderByRaw("CASE WHEN source IN ('".implode("','", self::STAFF_SOURCES)."') THEN 0 ELSE 1 END")
                 ->first();
 
-            if ($anyRate) {
-                logger()->info("Using database exchange rate: {$anyRate->rate} from {$anyRate->rate_date}");
-                return (float) $anyRate->rate;
+            if ($latest) {
+                return (float) $latest->rate;
             }
 
-            // PRIORITY 3: Only fetch from API if explicitly enabled
+            // Only fetch from API if explicitly enabled
             if ($useApi) {
                 $rate = $this->fetchRateFromApi($from, $to);
 
@@ -55,12 +49,14 @@ class ExchangeRateService
                     // Log the rate but mark it as API
                     $this->logRate($rate, $from, $to, 'api');
                     logger()->info("Using API exchange rate: {$rate}");
+
                     return $rate;
                 }
             }
 
             // PRIORITY 4: Default fallback rate
-            logger()->warning("No exchange rate found, using default fallback: 12.0");
+            logger()->warning('No exchange rate found, using default fallback: 12.0');
+
             return 12.0; // Default fallback rate for USD to GHS
         });
     }
@@ -77,10 +73,11 @@ class ExchangeRateService
 
             if ($response->successful()) {
                 $data = $response->json();
+
                 return $data['rates'][$to] ?? null;
             }
         } catch (\Exception $e) {
-            logger()->warning("Failed to fetch exchange rate: " . $e->getMessage());
+            logger()->warning('Failed to fetch exchange rate: '.$e->getMessage());
         }
 
         return null;
@@ -106,6 +103,19 @@ class ExchangeRateService
      */
     public function logRate(float $rate, string $from = 'USD', string $to = 'GHS', ?string $source = null, ?string $userId = null): ExchangeRateLog
     {
+        // The API sync must not overwrite a rate staff set for today.
+        if ($source === 'api') {
+            $staffRate = ExchangeRateLog::where('from_currency', $from)
+                ->where('to_currency', $to)
+                ->whereDate('rate_date', today())
+                ->whereIn('source', self::STAFF_SOURCES)
+                ->first();
+
+            if ($staffRate) {
+                return $staffRate;
+            }
+        }
+
         return ExchangeRateLog::updateOrCreate(
             [
                 'from_currency' => $from,
@@ -125,10 +135,12 @@ class ExchangeRateService
      */
     public function setTodayRate(float $rate, string $from = 'USD', string $to = 'GHS', ?string $userId = null): ExchangeRateLog
     {
-        // Clear cache
-        Cache::forget("exchange_rate_{$from}_{$to}");
-
         return $this->logRate($rate, $from, $to, 'manual', $userId);
+    }
+
+    public static function cacheKey(string $from, string $to): string
+    {
+        return "exchange_rate_{$from}_{$to}";
     }
 
     /**
@@ -137,6 +149,7 @@ class ExchangeRateService
     public function convert(float $amount, string $from = 'USD', string $to = 'GHS'): float
     {
         $rate = $this->getCurrentRate($from, $to);
+
         return round($amount * $rate, 2);
     }
 

@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Service\ExchangeRateService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Cache;
 
 class ExchangeRateLog extends Model
 {
@@ -16,6 +18,18 @@ class ExchangeRateLog extends Model
         'rate' => 'decimal:4',
         'rate_date' => 'date',
     ];
+
+    /**
+     * Any added, edited or deleted rate (Quick Update, the resource, the daily sync)
+     * takes effect at once instead of after the current rate's one-hour cache.
+     */
+    protected static function booted(): void
+    {
+        $forget = fn (self $log) => Cache::forget(ExchangeRateService::cacheKey($log->from_currency, $log->to_currency));
+
+        static::saved($forget);
+        static::deleted($forget);
+    }
 
     public function recordedBy(): BelongsTo
     {
