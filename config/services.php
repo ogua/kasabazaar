@@ -89,10 +89,11 @@ return [
     /*
      * URL scheme of the mobile app that in-app payments should bounce back to
      * (see the /app/payment-complete route). Staff, client and investor now
-     * share one binary, so this is the rdd-shipping app's scheme.
+     * share one binary, so this is the KASAROSE app's scheme (`scheme` in its
+     * app.json, D:/Mobile/kasarose).
      */
     'mobile' => [
-        'scheme' => env('MOBILE_APP_SCHEME', 'rddshipping'),
+        'scheme' => env('MOBILE_APP_SCHEME', 'kasaroseclient'),
     ],
 
 ];
