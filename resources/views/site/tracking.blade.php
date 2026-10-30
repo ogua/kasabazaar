@@ -223,6 +223,15 @@
             </div>
          </div>
 
+         <div class="row mb-5">
+            <div class="col-lg-10 mx-auto">
+               @include('site.partials.app-promo', [
+                   'heading' => 'Track on the go.',
+                   'text' => 'Follow every stage of your shipment in the KASAROSE app, without looking up your number each time.',
+               ])
+            </div>
+         </div>
+
          @if ($market)
             <!-- KASAROSE MARKET banner: copy is text, product photos are artwork (public/site/images/market) -->
             <div class="row">

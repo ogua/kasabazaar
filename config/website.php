@@ -39,6 +39,16 @@ return [
     'staff_mail_url' => 'https://mail.hostinger.com',
 
     /*
+    | The KASAROSE customer app. The Android link is the Play testing opt-in page;
+    | set MOBILE_APP_ANDROID_URL to the public store listing once it is in production.
+    */
+    'mobile_app' => [
+        'android_url' => env('MOBILE_APP_ANDROID_URL', 'https://play.google.com/apps/testing/com.kasarose.clientapp'),
+        'ios_url' => env('MOBILE_APP_IOS_URL', 'https://apps.apple.com/us/app/kasarose/id6807400170'),
+        'ios_app_id' => env('MOBILE_APP_IOS_ID', '6807400170'),
+    ],
+
+    /*
     | Every inbox that receives a copy of a website form submission (contact, quote,
     | feedback). Submissions are also stored as Contact Messages / Customer Feedback.
     */

@@ -73,6 +73,44 @@ class PublicWebsiteTest extends TestCase
             ->assertDontSee('rddshipping.com');
     }
 
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function appPromoPages(): array
+    {
+        return [
+            'home' => ['/'],
+            'services' => ['/our-services'],
+            'tracking' => ['/tracking'],
+            'contact' => ['/contact-us'],
+        ];
+    }
+
+    #[DataProvider('appPromoPages')]
+    public function test_the_key_pages_link_to_both_app_stores(string $path): void
+    {
+        config([
+            'website.mobile_app.android_url' => 'https://play.google.com/store/apps/details?id=com.kasarose.clientapp',
+            'website.mobile_app.ios_url' => 'https://apps.apple.com/us/app/kasarose/id6807400170',
+        ]);
+
+        $this->get($path)
+            ->assertOk()
+            ->assertSee('class="app-promo"', false)
+            ->assertSee('https://play.google.com/store/apps/details?id=com.kasarose.clientapp', false)
+            ->assertSee('https://apps.apple.com/us/app/kasarose/id6807400170', false)
+            ->assertSee('<meta name="apple-itunes-app" content="app-id=6807400170">', false);
+    }
+
+    public function test_the_footer_carries_the_app_store_links_on_every_page(): void
+    {
+        $this->get('/faq')
+            ->assertOk()
+            ->assertDontSee('class="app-promo"', false)
+            ->assertSee(config('website.mobile_app.ios_url'), false)
+            ->assertSee(config('website.mobile_app.android_url'), false);
+    }
+
     public function test_hidden_sister_companies_stay_off_the_marketing_pages_but_not_the_legal_ones(): void
     {
         $this->get('/our-companies')->assertOk()->assertDontSee('Neoride Africa');

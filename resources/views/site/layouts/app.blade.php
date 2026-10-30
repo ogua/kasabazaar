@@ -83,6 +83,7 @@
    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('site/images/favicon-16x16.png') }}">
    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('site/images/apple-touch-icon.png') }}">
    <link rel="manifest" href="{{ asset('site/images/site.webmanifest') }}">
+   <meta name="apple-itunes-app" content="app-id={{ config('website.mobile_app.ios_app_id') }}">
 
    <script type="application/ld+json">{!! $organizationJson !!}</script>
    @if ($breadcrumbJson !== null)

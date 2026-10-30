@@ -236,6 +236,12 @@ $services_json = json_encode(['@context' => 'https://schema.org', '@graph' => $s
    </div>
    <!-- Services Section End -->
 
+   <section class="pb-5">
+      <div class="container">
+         @include('site.partials.app-promo')
+      </div>
+   </section>
+
 @include('site.partials.cta', [
     'eyebrow' => 'Go Ghana',
     'heading' => 'Ready to ship to Ghana? Let\'s get it moving.',

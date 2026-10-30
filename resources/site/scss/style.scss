@@ -30,6 +30,7 @@ STYLESHEET INDEX
 	- Why-us
 	- Contact
 	- Single-post
+	- App-download
 
 Removed with their pages: brands, review, pricing, shop,
 single-product, cart, checkout.
@@ -116,3 +117,6 @@ Notes:
 
 /*! Single Post */
 @import './components/single-post';
+
+/*! App Download */
+@import './components/app-download';

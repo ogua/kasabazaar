@@ -1,0 +1,115 @@
+// App Store / Google Play buttons and the "get the app" card
+.app-badges {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 12px;
+}
+
+.app-badge {
+   display: inline-flex;
+   align-items: center;
+   gap: 10px;
+   min-width: 170px;
+   padding: 8px 18px;
+   border: 1px solid rgba(var(--white-rgb), 0.35);
+   border-radius: 12px;
+   background: var(--black);
+   color: var(--white);
+   line-height: 1.15;
+   transition: transform 0.2s ease, background 0.2s ease;
+
+   i {
+      font-size: 28px;
+   }
+
+   small {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 0.02em;
+   }
+
+   strong {
+      display: block;
+      font-family: var(--font-family-headings);
+      font-size: 18px;
+      font-weight: 600;
+   }
+
+   &:hover,
+   &:focus {
+      background: #1c1c1c;
+      color: var(--white);
+      transform: translateY(-2px);
+   }
+}
+
+.app-badges-sm .app-badge {
+   min-width: 0;
+   padding: 6px 14px;
+
+   i {
+      font-size: 22px;
+   }
+
+   strong {
+      font-size: 15px;
+   }
+}
+
+.app-promo {
+   display: flex;
+   flex-wrap: wrap;
+   align-items: center;
+   gap: 30px;
+   padding: 40px;
+   border-radius: 30px;
+   background: var(--dark);
+   color: rgba(var(--white-rgb), 0.8);
+
+   .app-promo-icon {
+      flex: 0 0 auto;
+      padding: 10px;
+      border-radius: 20px;
+      background: var(--white);
+
+      img {
+         display: block;
+         width: 64px;
+         height: 64px;
+         object-fit: contain;
+      }
+   }
+
+   .app-promo-copy {
+      flex: 1 1 320px;
+
+      .sub-title2 {
+         font-size: 16px;
+         margin-bottom: 6px;
+      }
+
+      p {
+         margin: 0;
+      }
+   }
+
+   .app-promo-title {
+      color: var(--white);
+      font-size: 30px;
+      margin-bottom: 8px;
+   }
+
+   @media (max-width: 767.98px) {
+      justify-content: center;
+      padding: 30px 20px;
+      text-align: center;
+
+      .app-badges {
+         justify-content: center;
+      }
+
+      .app-promo-title {
+         font-size: 24px;
+      }
+   }
+}

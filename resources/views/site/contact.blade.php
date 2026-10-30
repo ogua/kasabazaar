@@ -158,4 +158,13 @@
       </div>
    </section>
 
+   <section class="pb-5">
+      <div class="container">
+         @include('site.partials.app-promo', [
+             'heading' => 'Prefer your phone?',
+             'text' => 'Get the KASAROSE app to follow your shipments and reach our team from anywhere.',
+         ])
+      </div>
+   </section>
+
 @endsection

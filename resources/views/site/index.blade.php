@@ -90,6 +90,17 @@
    </section>
    <!-- Quick Track Section End -->
 
+   <!-- App Section Start -->
+   <section class="pt-5">
+      <div class="container">
+         @include('site.partials.app-promo', [
+             'heading' => 'The KASAROSE app is here.',
+             'text' => 'Track your shipments and get status updates from your phone &mdash; free on iPhone and Android.',
+         ])
+      </div>
+   </section>
+   <!-- App Section End -->
+
    <!-- About Section Start -->
    <section class="about-sec2 overflow-hidden">
       <img src="{{ asset('site/images/container.png') }}" alt="container" class="position-absolute top-0">

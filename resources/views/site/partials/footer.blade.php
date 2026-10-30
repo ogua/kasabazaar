@@ -13,6 +13,8 @@
                   </div>
                   <p>KASAROSE LOGISTICS: door-to-door air and sea freight, ecommerce package forwarding,
                      real estate and property management &mdash; alongside our sister company KASAROSE MARKET.</p>
+                  <h3 class="widget-title mt-4">Get the App</h3>
+                  @include('site.partials.app-badges', ['small' => true])
                </div>
             </div>
             <div class="col-lg-2 col-md-4 col-sm-6">
