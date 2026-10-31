@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AppUpdateController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BranchController;
 use App\Http\Controllers\Api\V1\Cashbook\CashbookDirectorAccountController;
@@ -82,6 +83,9 @@ Route::prefix('v1')->group(function () {
     // signature-checked, stored in webhook_calls, then routed by ProcessPaystackWebhookJob
     // to shipment payments, investment deposits/transfers and marketplace orders.
     Route::webhooks('webhooks/paystack', 'paystack');
+
+    // Public on purpose: a signed-out or deactivated device must still be told to update.
+    Route::get('app/update-check', AppUpdateController::class);
 
     // ── Authenticated ────────────────────────────────────────────────────────
     Route::middleware(['auth:sanctum', 'active'])->group(function () {
