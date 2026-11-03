@@ -3,7 +3,11 @@
 namespace App\Service;
 
 use App\Enums\InvestmentCapitalType;
+use App\Enums\InvestmentStatus;
+use App\Enums\InvestmentWithdrawalStatus;
 use App\Models\Investment;
+use App\Models\InvestmentWithdrawalRequest;
+use Illuminate\Support\Collection;
 
 class InvestorPortfolioSummaryService
 {
@@ -60,6 +64,51 @@ class InvestorPortfolioSummaryService
             'total_principal' => round((float) $totalPrincipal, 2),
             'current_portfolio_value' => round((float) $totalCurrentValue, 2),
             'total_interest_earned' => round((float) $totalInterestEarned, 2),
+        ];
+    }
+
+    /**
+     * The dashboard's "at a glance" facts: open holdings, the next maturity and loan
+     * payout, and withdrawals still in progress. A full withdrawal has no requested
+     * amount, so it counts at the tranche's current balance.
+     *
+     * @return array{holdings: Collection<int, Investment>, active_count: int, next_maturity_date: ?string, next_payout_date: ?string, pending_withdrawal_count: int, pending_withdrawal_amount: float}
+     */
+    public function facts(string $investorId): array
+    {
+        $holdings = Investment::where('investor_id', $investorId)
+            ->excludingConverted()
+            ->whereIn('status', [InvestmentStatus::active->value, InvestmentStatus::pending_payment->value])
+            ->orderBy('maturity_date')
+            ->get();
+
+        $active = $holdings->where('status', InvestmentStatus::active);
+
+        $pendingWithdrawals = InvestmentWithdrawalRequest::where('investor_id', $investorId)
+            ->whereIn('status', [
+                InvestmentWithdrawalStatus::submitted->value,
+                InvestmentWithdrawalStatus::under_review->value,
+                InvestmentWithdrawalStatus::approved->value,
+                InvestmentWithdrawalStatus::processing->value,
+            ])
+            ->with('investment:id,current_balance')
+            ->get();
+
+        return [
+            'holdings' => $holdings,
+            'active_count' => $active->count(),
+            'next_maturity_date' => $active->whereNotNull('maturity_date')
+                ->filter(fn (Investment $investment) => $investment->maturity_date->isFuture())
+                ->min('maturity_date')?->toDateString(),
+            'next_payout_date' => $active->where('capital_type', InvestmentCapitalType::loan)
+                ->whereNotNull('next_payout_due_date')
+                ->min('next_payout_due_date')?->toDateString(),
+            'pending_withdrawal_count' => $pendingWithdrawals->count(),
+            'pending_withdrawal_amount' => round((float) $pendingWithdrawals->sum(
+                fn (InvestmentWithdrawalRequest $request) => $request->is_full_withdrawal
+                    ? (float) $request->investment?->current_balance
+                    : (float) $request->requested_amount
+            ), 2),
         ];
     }
 }

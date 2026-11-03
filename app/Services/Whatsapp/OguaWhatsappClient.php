@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Http;
  * X-Signature = HMAC-SHA256(client secret, "{timestamp}.{METHOD}.{path}.{body}"),
  * where path is relative to the gateway root, e.g. "api/partner/v1/whatsapp/messages".
  */
-class OguaWhatsappClient
+class OguaWhatsappClient implements WhatsappGateway
 {
     private const API_PREFIX = 'api/partner/v1/whatsapp';
 

@@ -2,23 +2,23 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Models\Client;
-use App\Models\Shipment;
-use App\Models\ClientRating;
-use Illuminate\Http\Request;
-use App\Models\ClientInteraction;
-use Illuminate\Http\JsonResponse;
 use App\Http\Resources\ClientResource;
-use App\Http\Controllers\Api\V1\BaseApiController;
+use App\Models\Client;
+use App\Models\ClientInteraction;
+use App\Models\ClientRating;
+use App\Models\Shipment;
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ClientController extends BaseApiController
 {
     public function index(Request $request): JsonResponse
-    {        
+    {
         abort_unless(auth()->user()->can('view_any_client'), 403);
 
         $branchId = $this->resolveBranch($request);
-        $query    = Client::where('branch_id', $branchId);
+        $query = Client::where('branch_id', $branchId);
 
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
@@ -40,15 +40,15 @@ class ClientController extends BaseApiController
         $branchId = $this->resolveBranch($request);
 
         $request->validate([
-            'name'         => 'required|string|max:255',
-            'email'        => 'nullable|email|max:255',
-            'phone'        => 'nullable|string|max:30',
-            'country'      => 'nullable|string',
+            'name' => 'required|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'phone' => 'nullable|string|max:30',
+            'country' => 'nullable|string',
             'state_region' => 'nullable|string',
-            'city'         => 'nullable|string',
-            'address'      => 'nullable|string',
-            'id_type'      => 'nullable|string',
-            'id_number'    => 'nullable|string',
+            'city' => 'nullable|string',
+            'address' => 'nullable|string',
+            'id_type' => 'nullable|string',
+            'id_number' => 'nullable|string',
         ]);
 
         $client = Client::create(array_merge(
@@ -64,9 +64,22 @@ class ClientController extends BaseApiController
         abort_unless(auth()->user()->can('view_client'), 403);
 
         $branchId = $this->resolveBranch($request);
-        $client   = Client::where('branch_id', $branchId)->findOrFail($id);
+        $client = Client::where('branch_id', $branchId)->findOrFail($id);
 
-        return $this->success(new ClientResource($client));
+        // The admin's client card (shown when a client's name is clicked in the shipments list).
+        $shipments = $client->shipments()->get(['id', 'total', 'paid', 'created_at']);
+
+        return $this->success([
+            ...(new ClientResource($client))->resolve($request),
+            'summary' => [
+                'whatsapp_opt_in' => $client->hasWhatsappConsent(),
+                'shipment_count' => $shipments->count(),
+                'first_shipment_at' => $shipments->min('created_at'),
+                'total_billed' => round((float) $shipments->sum('total'), 2),
+                'outstanding' => round((float) $shipments->sum(fn ($s) => max(0, (float) $s->total - (float) $s->paid)), 2),
+                'has_app_account' => User::where('client_id', $client->id)->exists(),
+            ],
+        ]);
     }
 
     public function update(Request $request, string $id): JsonResponse
@@ -74,18 +87,18 @@ class ClientController extends BaseApiController
         abort_unless(auth()->user()->can('update_client'), 403);
 
         $branchId = $this->resolveBranch($request);
-        $client   = Client::where('branch_id', $branchId)->findOrFail($id);
+        $client = Client::where('branch_id', $branchId)->findOrFail($id);
 
         $request->validate([
-            'name'         => 'sometimes|string|max:255',
-            'email'        => 'nullable|email|max:255',
-            'phone'        => 'nullable|string|max:30',
-            'country'      => 'nullable|string',
+            'name' => 'sometimes|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'phone' => 'nullable|string|max:30',
+            'country' => 'nullable|string',
             'state_region' => 'nullable|string',
-            'city'         => 'nullable|string',
-            'address'      => 'nullable|string',
-            'id_type'      => 'nullable|string',
-            'id_number'    => 'nullable|string',
+            'city' => 'nullable|string',
+            'address' => 'nullable|string',
+            'id_type' => 'nullable|string',
+            'id_number' => 'nullable|string',
         ]);
 
         $client->update($request->only(['name', 'email', 'phone', 'country', 'state_region', 'city', 'address', 'id_type', 'id_number']));
@@ -98,7 +111,7 @@ class ClientController extends BaseApiController
         abort_unless(auth()->user()->can('delete_client'), 403);
 
         $branchId = $this->resolveBranch($request);
-        $client   = Client::where('branch_id', $branchId)->findOrFail($id);
+        $client = Client::where('branch_id', $branchId)->findOrFail($id);
         $client->delete();
 
         return $this->success(null, 'Client deleted.');
@@ -117,14 +130,14 @@ class ClientController extends BaseApiController
             ->paginate((int) $request->input('per_page', 20));
 
         return $this->paginated($paginated, fn ($s) => [
-            'id'                => $s->id,
-            'shipping_reference'=> $s->shipping_reference,
-            'status'            => $s->status instanceof \BackedEnum ? $s->status->value : $s->status,
-            'payment_status'    => $s->payment_status,
-            'total'             => $s->total,
-            'paid'              => $s->paid,
-            'shipped_at'        => $s->shipped_at,
-            'destination_branch'=> $s->destinationBranch?->name,
+            'id' => $s->id,
+            'shipping_reference' => $s->shipping_reference,
+            'status' => $s->status instanceof \BackedEnum ? $s->status->value : $s->status,
+            'payment_status' => $s->payment_status,
+            'total' => $s->total,
+            'paid' => $s->paid,
+            'shipped_at' => $s->shipped_at,
+            'destination_branch' => $s->destinationBranch?->name,
         ]);
     }
 
@@ -140,15 +153,15 @@ class ClientController extends BaseApiController
             ->latest()
             ->get()
             ->map(fn ($i) => [
-                'id'                 => $i->id,
-                'interaction_type'   => $i->interaction_type instanceof \BackedEnum ? $i->interaction_type->value : $i->interaction_type,
-                'subject'            => $i->subject,
-                'notes'              => $i->notes,
-                'outcome'            => $i->outcome instanceof \BackedEnum ? $i->outcome->value : $i->outcome,
-                'follow_up_date'     => $i->follow_up_date,
-                'follow_up_completed'=> $i->follow_up_completed,
-                'created_at'         => $i->created_at,
-                'staff'              => $i->staff ? ['id' => $i->staff->id, 'name' => $i->staff->name] : null,
+                'id' => $i->id,
+                'interaction_type' => $i->interaction_type instanceof \BackedEnum ? $i->interaction_type->value : $i->interaction_type,
+                'subject' => $i->subject,
+                'notes' => $i->notes,
+                'outcome' => $i->outcome instanceof \BackedEnum ? $i->outcome->value : $i->outcome,
+                'follow_up_date' => $i->follow_up_date,
+                'follow_up_completed' => $i->follow_up_completed,
+                'created_at' => $i->created_at,
+                'staff' => $i->staff ? ['id' => $i->staff->id, 'name' => $i->staff->name] : null,
             ]);
 
         return $this->success($interactions);
@@ -167,6 +180,4 @@ class ClientController extends BaseApiController
 
         return $this->success($ratings);
     }
-
-
 }

@@ -6,6 +6,7 @@ use App\Models\ShipmentRequest;
 use App\Services\ShipmentRequestApprovalService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ShipmentRequestController extends BaseApiController
 {
@@ -45,33 +46,43 @@ class ShipmentRequestController extends BaseApiController
     public function approve(Request $request, string $id): JsonResponse
     {
         $request->validate([
-            'shipping_cost'        => 'nullable|numeric|min:0',
-            'vat_percentage'       => 'nullable|numeric|min:0',
-            'notes'                => 'nullable|string',
-            'shipment_type'        => 'nullable|in:new,existing',
-            'existing_shipment_id' => 'nullable|uuid|required_if:shipment_type,existing',
+            'shipping_cost' => 'nullable|numeric|min:0',
+            'vat_percentage' => 'nullable|numeric|min:0|max:100',
+            'insurance_accepted' => 'nullable|boolean',
+            'insurance' => 'nullable|numeric|min:0|required_if:insurance_accepted,true',
+            'notes' => 'nullable|string|max:2000',
+            'shipment_type' => 'nullable|in:new,existing',
+            'existing_shipment_id' => [
+                'nullable', 'uuid', 'required_if:shipment_type,existing',
+                Rule::exists('shipments', 'id')->whereIn('status', ['pending', 'pickup']),
+            ],
+        ], [
+            'existing_shipment_id.exists' => 'Only shipments still awaiting pickup can take more items.',
         ]);
 
         $shipmentRequest = ShipmentRequest::with('client')->findOrFail($id);
 
-        if (!in_array($shipmentRequest->status->value, ['submitted', 'under_review'])) {
+        if (! $shipmentRequest->isEditable()) {
             return $this->error('Only submitted or under-review requests can be approved.', 422);
         }
 
-        $service  = new ShipmentRequestApprovalService();
-        $shipment = $service->approve(
-            $shipmentRequest,
-            auth()->user(),
-            [
-                ...$request->only('shipping_cost', 'vat_percentage', 'notes'),
-                'shipment_type'        => $request->input('shipment_type', 'new'),
-                'existing_shipment_id' => $request->input('existing_shipment_id'),
-                'branch_id'            => $this->resolveBranch($request),
-            ]
-        );
+        try {
+            $shipment = (new ShipmentRequestApprovalService)->approve(
+                $shipmentRequest,
+                $request->user(),
+                [
+                    ...$request->only('shipping_cost', 'vat_percentage', 'insurance_accepted', 'insurance', 'notes'),
+                    'shipment_type' => $request->input('shipment_type', 'new'),
+                    'existing_shipment_id' => $request->input('existing_shipment_id'),
+                    'branch_id' => $this->resolveBranch($request),
+                ]
+            );
+        } catch (\InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 422);
+        }
 
         return $this->success([
-            'shipment_id'        => $shipment->id,
+            'shipment_id' => $shipment->id,
             'shipping_reference' => $shipment->shipping_reference,
         ], 'Request approved. Shipment created.');
     }
@@ -84,16 +95,11 @@ class ShipmentRequestController extends BaseApiController
 
         $shipmentRequest = ShipmentRequest::findOrFail($id);
 
-        if ($shipmentRequest->status->value === 'approved') {
-            return $this->error('Approved requests cannot be rejected.', 422);
+        if (! $shipmentRequest->isEditable()) {
+            return $this->error('Only submitted or under-review requests can be rejected.', 422);
         }
 
-        $shipmentRequest->update([
-            'status'           => 'rejected',
-            'rejection_reason' => $request->rejection_reason,
-            'reviewed_by'      => auth()->id(),
-            'reviewed_at'      => now(),
-        ]);
+        (new ShipmentRequestApprovalService)->reject($shipmentRequest, $request->rejection_reason, $request->user());
 
         return $this->success(null, 'Request rejected.');
     }
@@ -101,25 +107,25 @@ class ShipmentRequestController extends BaseApiController
     private function formatRequest(ShipmentRequest $r): array
     {
         $data = [
-            'id'                  => $r->id,
-            'status'              => $r->status->value,
-            'status_label'        => $r->status->getLabel(),
-            'receivers'           => $r->receivers,
-            'pickup_location'     => $r->pickup_location,
+            'id' => $r->id,
+            'status' => $r->status->value,
+            'status_label' => $r->status->getLabel(),
+            'receivers' => $r->receivers,
+            'pickup_location' => $r->pickup_location,
             'preferred_pickup_at' => $r->preferred_pickup_at?->toISOString(),
-            'notes'               => $r->notes,
-            'rejection_reason'    => $r->rejection_reason,
-            'shipment_id'         => $r->shipment_id,
-            'created_at'          => $r->created_at?->toISOString(),
-            'reviewed_at'         => $r->reviewed_at?->toISOString(),
-            'client'              => null,
-            'shipment'            => null,
+            'notes' => $r->notes,
+            'rejection_reason' => $r->rejection_reason,
+            'shipment_id' => $r->shipment_id,
+            'created_at' => $r->created_at?->toISOString(),
+            'reviewed_at' => $r->reviewed_at?->toISOString(),
+            'client' => null,
+            'shipment' => null,
         ];
 
         if ($r->relationLoaded('client') && $r->client) {
             $data['client'] = [
-                'id'    => $r->client->id,
-                'name'  => $r->client->name,
+                'id' => $r->client->id,
+                'name' => $r->client->name,
                 'phone' => $r->client->phone,
                 'email' => $r->client->email,
             ];
@@ -127,10 +133,10 @@ class ShipmentRequestController extends BaseApiController
 
         if ($r->relationLoaded('shipment') && $r->shipment) {
             $data['shipment'] = [
-                'id'                 => $r->shipment->id,
+                'id' => $r->shipment->id,
                 'shipping_reference' => $r->shipment->shipping_reference,
-                'tracking_number'    => $r->shipment->tracking_number,
-                'status'             => $r->shipment->status instanceof \App\Enums\ShippingStatus
+                'tracking_number' => $r->shipment->tracking_number,
+                'status' => $r->shipment->status instanceof \App\Enums\ShippingStatus
                     ? $r->shipment->status->value
                     : $r->shipment->status,
             ];

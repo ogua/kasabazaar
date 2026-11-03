@@ -48,8 +48,10 @@ return [
         'transaction_fee_percent' => (float) env('PAYSTACK_TRANSACTION_FEE_PERCENT', 1.99),
     ],
 
-    'fcm' => [
-        'server_key' => env('FCM_SERVER_KEY'),
+    // Expo Push API (mobile app push notifications). The access token is optional and
+    // only needed when "enhanced push security" is turned on for the Expo project.
+    'expo' => [
+        'access_token' => env('EXPO_ACCESS_TOKEN'),
     ],
 
     'mnotify' => [
@@ -68,8 +70,25 @@ return [
         'sender' => env('ARKESEL_SENDER_ID', 'RDDSHIP'),
     ],
 
+    /*
+     * Infobip (infobip.com) — international SMS and WhatsApp. The SMS and WhatsApp
+     * keys are separate, channel-scoped API keys. The WhatsApp numbers are the
+     * Infobip senders used for logistics and marketplace templates; marketplace
+     * falls back to the logistics number when blank.
+     */
+    'infobip' => [
+        'base_url' => env('INFOBIP_BASE_URL', 'https://api.infobip.com'),
+        'sms_key' => env('INFOBIP_SMS_API_KEY'),
+        'sms_sender' => env('INFOBIP_SMS_SENDER'),
+        'whatsapp_key' => env('INFOBIP_WHATSAPP_API_KEY'),
+        'whatsapp_number_logistics' => env('INFOBIP_WHATSAPP_NUMBER_LOGISTICS'),
+        'whatsapp_number_marketplace' => env('INFOBIP_WHATSAPP_NUMBER_MARKETPLACE'),
+    ],
+
     'sms' => [
-        'default' => env('SMS_DRIVER', 'twilio'),
+        'default' => env('SMS_DRIVER', 'infobip'),
+        // Provider for every non-Ghana number (Ghana numbers always use Arkesel).
+        'international' => env('SMS_INTERNATIONAL_DRIVER', 'infobip'),
     ],
 
     /*

@@ -138,7 +138,12 @@ class ShipmentObserver
                     $clientUserId,
                     $label,
                     "Update for {$ref}: {$label}.",
-                    ['shipment_id' => $shipment->id, 'status' => $status, 'type' => 'shipment_status']
+                    [
+                        'type' => 'shipment_status_updated',
+                        'shipment_id' => $shipment->id,
+                        'tracking_number' => $shipment->tracking_number,
+                        'status' => $status,
+                    ]
                 );
             }
         }

@@ -3,7 +3,6 @@
 namespace App\Filament\Investor\Resources\InvestmentWithdrawalRequestResource\Pages;
 
 use App\Filament\Investor\Resources\InvestmentWithdrawalRequestResource;
-use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 
 class ViewInvestmentWithdrawalRequest extends ViewRecord
@@ -12,8 +11,7 @@ class ViewInvestmentWithdrawalRequest extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        return [
-            Actions\EditAction::make(),
-        ];
+        // A submitted request is reviewed by staff; the investor cannot edit it.
+        return [];
     }
 }

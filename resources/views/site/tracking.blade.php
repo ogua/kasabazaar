@@ -81,6 +81,16 @@
                         </span>
                      </div>
 
+                     @php
+                        $trackingPath = 'kasarose.com/tracking?ref='.urlencode($shipment->tracking_number ?: $shipment->shipping_reference);
+                        $appIntent = 'intent://'.$trackingPath.'#Intent;scheme=https;package='.config('website.mobile_app.package')
+                           .';S.browser_fallback_url='.urlencode(config('website.mobile_app.android_url')).';end';
+                     @endphp
+                     {{-- Android only (shown by the script below): opens this shipment in the app, or the store if it is missing. --}}
+                     <a href="{{ $appIntent }}" class="btn btn-outline-primary btn-sm mb-4 d-none" id="open-in-app">
+                        <i class="fa-solid fa-mobile-screen"></i> Open in the KASAROSE app
+                     </a>
+
                      @if ($status['step'] !== null)
                         @php
                            $step = $status['step'];
@@ -256,7 +266,7 @@
                         <img src="{{ asset('site/images/market/market-products.jpg') }}" width="990" height="710" loading="lazy"
                              alt="Rice, vegetable oil, a kitchen sink, headlamps, a drive shaft and suspension struts">
                      </picture>
-                     <a href="#" target="_blank" rel="noopener" class="market-banner-footer">
+                     <a href="{{ $market['url'] }}" target="_blank" rel="noopener" class="market-banner-footer">
                         <i class="fa-solid fa-globe" aria-hidden="true"></i>{{ preg_replace('#^https?://#', '', $market['url']) }}
                      </a>
                      {{-- <a>{{ $market['url'] }}</a> --}}
@@ -286,6 +296,11 @@
             button.disabled = false;
             button.innerHTML = buttonHtml;
          });
+      }
+
+      var openInApp = document.getElementById('open-in-app');
+      if (openInApp && /Android/i.test(navigator.userAgent)) {
+         openInApp.classList.remove('d-none');
       }
 
       var results = document.getElementById('track-results');

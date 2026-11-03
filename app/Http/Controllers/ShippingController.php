@@ -81,7 +81,7 @@ class ShippingController extends Controller
     public function shippinginvoice(Shipment $id)
     {
         $shipping = $id;
-        $shipping->load(['client', 'receivers.items.product', 'pickupitems.product', 'puchaseditems', 'payments']);
+        $shipping->load(InvoiceService::INVOICE_RELATIONS);
 
         return view('pdf.shipping-invoice', ['shipping' => $shipping]);
     }

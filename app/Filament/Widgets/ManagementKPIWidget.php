@@ -2,14 +2,10 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Client;
-use App\Models\Expense;
-use App\Models\Payment;
 use App\Models\Shipment;
-use App\Service\ExchangeRateService;
+use App\Services\ManagementKpiService;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
-use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\On;
 
 class ManagementKPIWidget extends BaseWidget
@@ -46,124 +42,25 @@ class ManagementKPIWidget extends BaseWidget
         $endDate = $this->endDate ?? now()->format('Y-m-d');
         $containerNumber = $this->containerNumber;
 
-        // Calculate previous period
-        $days = \Carbon\Carbon::parse($startDate)->diffInDays(\Carbon\Carbon::parse($endDate)) + 1;
-        $prevEndDate = \Carbon\Carbon::parse($startDate)->subDay()->format('Y-m-d');
-        $prevStartDate = \Carbon\Carbon::parse($prevEndDate)->subDays($days - 1)->format('Y-m-d');
-
-        $exchangeService = app(ExchangeRateService::class);
-        $currentRate = $exchangeService->getCurrentRate('USD', 'GHS');
-
-        // === CURRENT PERIOD METRICS ===
-
-        // Average Shipment Value
-        $avgShipmentQuery = Shipment::whereBetween('created_at', [$startDate, $endDate]);
-        if ($containerNumber) {
-            $avgShipmentQuery->where('container_number', $containerNumber);
-        }
-        $avgShipmentValue = $avgShipmentQuery->avg('total');
-
-        // Collection Efficiency (Payments received vs Revenue generated)
-        $monthRevenueQuery = Shipment::whereBetween('created_at', [$startDate, $endDate]);
-        if ($containerNumber) {
-            $monthRevenueQuery->where('container_number', $containerNumber);
-        }
-        $monthRevenue = $monthRevenueQuery->sum('total_ghs');
-
-        $monthPaymentsQuery = Payment::where('payment_type', 'credit')
-            ->whereBetween('paid_on', [$startDate, $endDate]);
-        if ($containerNumber) {
-            $monthPaymentsQuery->whereHas('shipment', function ($query) use ($containerNumber) {
-                $query->where('container_number', $containerNumber);
-            });
-        }
-        $monthPayments = $monthPaymentsQuery->sum('amount_ghs');
-
-        $collectionRate = $monthRevenue > 0 ? ($monthPayments / $monthRevenue) * 100 : 0;
-
-        // Average Payment Processing Time (days from shipment to first payment)
-        $avgPaymentQuery = DB::table('shipments')
-            ->join('payments', 'payments.shipment_id', '=', 'shipments.id')
-            ->whereBetween('shipments.created_at', [$startDate, $endDate])
-            ->where('payments.payment_type', 'credit');
-        if ($containerNumber) {
-            $avgPaymentQuery->where('shipments.container_number', $containerNumber);
-        }
-        $avgPaymentDays = $avgPaymentQuery
-            ->selectRaw('AVG(DATEDIFF(payments.paid_on, shipments.created_at)) as avg_days')
-            ->value('avg_days') ?: 0;
-
-        // Active Clients This Period
-        $activeClientsQuery = Shipment::whereBetween('created_at', [$startDate, $endDate]);
-        if ($containerNumber) {
-            $activeClientsQuery->where('container_number', $containerNumber);
-        }
-        $activeClients = $activeClientsQuery->distinct('client_id')->count('client_id');
-
-        // === PREVIOUS PERIOD COMPARISON ===
-
-        $lastMonthRevenueQuery = Shipment::whereBetween('created_at', [$prevStartDate, $prevEndDate]);
-        if ($containerNumber) {
-            $lastMonthRevenueQuery->where('container_number', $containerNumber);
-        }
-        $lastMonthRevenue = $lastMonthRevenueQuery->sum('total_ghs');
-
-        $revenueGrowth = $lastMonthRevenue > 0
-            ? (($monthRevenue - $lastMonthRevenue) / $lastMonthRevenue) * 100
-            : 0;
-
-        $lastMonthShipmentsQuery = Shipment::whereBetween('created_at', [$prevStartDate, $prevEndDate]);
-        if ($containerNumber) {
-            $lastMonthShipmentsQuery->where('container_number', $containerNumber);
-        }
-        $lastMonthShipments = $lastMonthShipmentsQuery->count();
-
-        $thisMonthShipmentsQuery = Shipment::whereBetween('created_at', [$startDate, $endDate]);
-        if ($containerNumber) {
-            $thisMonthShipmentsQuery->where('container_number', $containerNumber);
-        }
-        $thisMonthShipments = $thisMonthShipmentsQuery->count();
-
-        $shipmentGrowth = $lastMonthShipments > 0
-            ? (($thisMonthShipments - $lastMonthShipments) / $lastMonthShipments) * 100
-            : 0;
-
-        // === OPERATIONAL METRICS ===
-
-        // Outstanding Receivables.
-        //
-        // Summed per shipment off the maintained `paid` column rather than joining to
-        // payments: a LEFT JOIN duplicates the shipment row once per payment, so
-        // SUM(shipments.total) counted any shipment with two payments twice and
-        // overstated this figure. Only shipments still owing are counted, which is the
-        // same definition FinancialStatementService::accountsReceivable() uses for the
-        // bank-facing schedule — the two now agree.
-        $outstandingQuery = DB::table('shipments')->whereRaw('total > paid');
-
-        if ($containerNumber) {
-            $outstandingQuery->where('shipments.container_number', $containerNumber);
-        }
-
-        $outstandingReceivables = (float) $outstandingQuery
-            ->selectRaw('COALESCE(SUM(shipments.total - shipments.paid), 0) as outstanding')
-            ->value('outstanding') ?: 0;
-
-        // Total Debt/Receivables Ratio (Days Sales Outstanding equivalent)
-        $monthRevenueUsd = $currentRate > 0 ? $monthRevenue / $currentRate : 0;
-        $dailyRevenue = $monthRevenueUsd / max($days, 1);
-        $dso = $dailyRevenue > 0 ? $outstandingReceivables / $dailyRevenue : 0;
-
-        // Expense to Revenue Ratio
-        $monthExpensesQuery = Expense::whereBetween('expense_date', [$startDate, $endDate]);
-        if ($containerNumber) {
-            $monthExpensesQuery->forContainer($containerNumber);
-        }
-        $monthExpenses = $monthExpensesQuery->sum('amount_ghs');
-
-        $expenseRatio = $monthRevenue > 0 ? ($monthExpenses / $monthRevenue) * 100 : 0;
-
-        // New Clients This Period
-        $newClients = Client::whereBetween('created_at', [$startDate, $endDate])->count();
+        [
+            'period_days' => $days,
+            'current_rate' => $currentRate,
+            'avg_shipment_value' => $avgShipmentValue,
+            'collection_rate' => $collectionRate,
+            'avg_payment_days' => $avgPaymentDays,
+            'active_clients' => $activeClients,
+            'new_clients' => $newClients,
+            'total_clients' => $totalClients,
+            'revenue_ghs' => $monthRevenue,
+            'previous_revenue_ghs' => $lastMonthRevenue,
+            'revenue_growth' => $revenueGrowth,
+            'shipments' => $thisMonthShipments,
+            'previous_shipments' => $lastMonthShipments,
+            'shipment_growth' => $shipmentGrowth,
+            'outstanding_receivables' => $outstandingReceivables,
+            'dso' => $dso,
+            'expense_ratio' => $expenseRatio,
+        ] = app(ManagementKpiService::class)->compute($startDate, $endDate, $containerNumber);
 
         // Period label
         $periodLabel = $days <= 31 ? "({$days} days)" : '('.round($days / 30, 1).' months)';
@@ -195,7 +92,7 @@ class ManagementKPIWidget extends BaseWidget
                 ->color($avgPaymentDays <= 7 ? 'success' : ($avgPaymentDays <= 14 ? 'warning' : 'danger')),
 
             Stat::make('Active Clients', $activeClients)
-                ->description('New: '.$newClients.' | Total: '.Client::count())
+                ->description('New: '.$newClients.' | Total: '.$totalClients)
                 ->descriptionIcon('heroicon-m-user-group')
                 ->color('info'),
 

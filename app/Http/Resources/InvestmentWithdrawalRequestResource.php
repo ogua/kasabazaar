@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\InvestmentCapitalType;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -13,6 +14,11 @@ class InvestmentWithdrawalRequestResource extends JsonResource
             'id' => $this->id,
             'investment_id' => $this->investment_id,
             'investment_reference' => $this->investment?->reference,
+            'capital_type' => $this->investment?->capital_type?->value,
+            // Investors cannot withdraw loans; a loan's request is always the principal
+            // repayment raised automatically at maturity.
+            'is_principal_repayment' => $this->investment?->capital_type === InvestmentCapitalType::loan,
+            'notes' => $this->notes,
             'is_full_withdrawal' => (bool) $this->is_full_withdrawal,
             'requested_amount' => $this->requested_amount !== null ? (float) $this->requested_amount : null,
             'amount_paid' => (float) $this->amount_paid,

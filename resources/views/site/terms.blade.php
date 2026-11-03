@@ -131,7 +131,7 @@
                   <li><strong>Carriers:</strong> Mobile carriers are not liable for delayed or undelivered
                      messages.</li>
                   <li><strong>Providers and privacy:</strong> Messages are delivered through our messaging providers,
-                     Twilio and Arkesel. Mobile numbers and opt-in consent are handled in line with our
+                     Infobip, Twilio and Arkesel. Mobile numbers and opt-in consent are handled in line with our
                      <a href="{{ route('privacy-policy') }}#sms-notifications">Privacy Policy</a> and are never sold,
                      rented, or shared with third parties or other group companies for their own marketing or
                      promotional purposes.</li>

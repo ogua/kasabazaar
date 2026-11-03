@@ -13,6 +13,7 @@ class CustomerPaymentController extends CustomerBaseController
     public function index(Request $request): JsonResponse
     {
         $paginated = Payment::whereHas('shipment', fn ($q) => $q->where('client_id', $this->clientId()))
+            ->when($request->input('shipment_id'), fn ($q, $shipmentId) => $q->where('shipment_id', $shipmentId))
             ->with(['shipment:id,shipping_reference'])
             ->latest('paid_on')
             ->paginate((int) $request->input('per_page', 20));
@@ -93,6 +94,7 @@ class CustomerPaymentController extends CustomerBaseController
             'shipment' => $p->shipment ? ['id' => $p->shipment->id, 'shipping_reference' => $p->shipment->shipping_reference] : null,
             'invoice_url' => $p->shipment_id ? url("/shipping-invoice-download/{$p->shipment_id}") : null,
             'receipt_url' => $p->shipment_id ? url("/shipping-receipt/{$p->shipment_id}") : null,
+            'payment_receipt_url' => route('payment-receipt', $p->id),
         ];
     }
 }

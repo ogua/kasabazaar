@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Customer;
 
+use App\Http\Requests\SaveCustomerShipmentRequest;
 use App\Models\ShipmentRequest;
 use App\Services\ShipmentRequestSubmissionService;
 use Illuminate\Http\JsonResponse;
@@ -20,29 +21,11 @@ class CustomerShipmentRequestController extends CustomerBaseController
         return $this->paginated($query->paginate(15), fn ($r) => $this->formatRequest($r));
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(SaveCustomerShipmentRequest $request): JsonResponse
     {
-        $request->validate([
-            'receivers' => 'required|array|min:1',
-            'receivers.*.name' => 'required|string|max:255',
-            'receivers.*.phone' => 'required|string|max:30',
-            'receivers.*.country' => 'nullable|string|max:100',
-            'receivers.*.state_region' => 'nullable|string|max:100',
-            'receivers.*.city' => 'nullable|string|max:100',
-            'receivers.*.address' => 'nullable|string',
-            'receivers.*.items' => 'required|array|min:1',
-            'receivers.*.items.*.description' => 'required|string|max:255',
-            'receivers.*.items.*.product_id' => 'nullable|uuid|exists:products,id',
-            'receivers.*.items.*.quantity' => 'required|integer|min:1',
-            'receivers.*.items.*.estimated_value' => 'nullable|numeric|min:0',
-            'pickup_location' => 'required|string|max:255',
-            'preferred_pickup_at' => 'required|date|after:now',
-            'notes' => 'nullable|string',
-        ]);
-
         $shipmentRequest = app(ShipmentRequestSubmissionService::class)->submit(
             $this->client(),
-            $request->only(['receivers', 'pickup_location', 'preferred_pickup_at', 'notes'])
+            $request->shipmentRequestData()
         );
 
         return $this->success($this->formatRequest($shipmentRequest), 'Shipment request submitted.', 201);
@@ -58,42 +41,19 @@ class CustomerShipmentRequestController extends CustomerBaseController
         return $this->success($this->formatRequest($shipmentRequest));
     }
 
-    public function update(Request $request, string $id): JsonResponse
+    public function update(SaveCustomerShipmentRequest $request, string $id): JsonResponse
     {
         $shipmentRequest = ShipmentRequest::where('id', $id)
             ->where('client_id', $this->clientId())
             ->firstOrFail();
 
-        if (! in_array($shipmentRequest->status->value, ['submitted', 'under_review'])) {
+        if (! $shipmentRequest->isEditable()) {
             return $this->error('Only submitted or under-review requests can be edited.', 422);
         }
 
-        $request->validate([
-            'receivers' => 'required|array|min:1',
-            'receivers.*.name' => 'required|string|max:255',
-            'receivers.*.phone' => 'required|string|max:30',
-            'receivers.*.country' => 'nullable|string|max:100',
-            'receivers.*.state_region' => 'nullable|string|max:100',
-            'receivers.*.city' => 'nullable|string|max:100',
-            'receivers.*.address' => 'nullable|string',
-            'receivers.*.items' => 'required|array|min:1',
-            'receivers.*.items.*.description' => 'required|string|max:255',
-            'receivers.*.items.*.product_id' => 'nullable|uuid|exists:products,id',
-            'receivers.*.items.*.quantity' => 'required|integer|min:1',
-            'receivers.*.items.*.estimated_value' => 'nullable|numeric|min:0',
-            'pickup_location' => 'required|string|max:255',
-            'preferred_pickup_at' => 'required|date|after:now',
-            'notes' => 'nullable|string',
-        ]);
+        $shipmentRequest = app(ShipmentRequestSubmissionService::class)->update($shipmentRequest, $request->shipmentRequestData());
 
-        $shipmentRequest->update([
-            'receivers' => $request->receivers,
-            'pickup_location' => $request->pickup_location,
-            'preferred_pickup_at' => $request->preferred_pickup_at,
-            'notes' => $request->notes,
-        ]);
-
-        return $this->success($this->formatRequest($shipmentRequest->fresh()), 'Request updated.');
+        return $this->success($this->formatRequest($shipmentRequest), 'Request updated.');
     }
 
     public function cancel(string $id): JsonResponse
@@ -102,15 +62,11 @@ class CustomerShipmentRequestController extends CustomerBaseController
             ->where('client_id', $this->clientId())
             ->firstOrFail();
 
-        if (! in_array($shipmentRequest->status->value, ['submitted', 'under_review'])) {
+        if (! $shipmentRequest->isEditable()) {
             return $this->error('Only submitted or under-review requests can be cancelled.', 422);
         }
 
-        $shipmentRequest->update([
-            'status' => 'rejected',
-            'rejection_reason' => 'Cancelled by client',
-            'reviewed_at' => now(),
-        ]);
+        app(ShipmentRequestSubmissionService::class)->cancel($shipmentRequest);
 
         return $this->success(null, 'Request cancelled.');
     }
@@ -129,6 +85,7 @@ class CustomerShipmentRequestController extends CustomerBaseController
             'under_review' => $counts['under_review'] ?? 0,
             'approved' => $counts['approved'] ?? 0,
             'rejected' => $counts['rejected'] ?? 0,
+            'cancelled' => $counts['cancelled'] ?? 0,
         ]);
     }
 
@@ -138,7 +95,10 @@ class CustomerShipmentRequestController extends CustomerBaseController
             'id' => $r->id,
             'status' => $r->status->value,
             'status_label' => $r->status->getLabel(),
+            'is_editable' => $r->isEditable(),
+            'source' => $r->source,
             'receivers' => $r->receivers,
+            'items_total' => $r->itemsTotal(),
             'pickup_location' => $r->pickup_location,
             'preferred_pickup_at' => $r->preferred_pickup_at?->toISOString(),
             'notes' => $r->notes,

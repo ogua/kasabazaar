@@ -15,6 +15,25 @@ class InvestorCompanyPerformanceController extends InvestorBaseController
         return $this->success($service->monthlyRevenueTrend());
     }
 
+    /**
+     * The dashboard's "Company Performance" zone in one call: year-to-date income,
+     * costs and shipments, plus the monthly revenue trend. These are the company's
+     * figures, not the investor's balance.
+     */
+    public function overview(InvestorCompanyPerformanceService $service): JsonResponse
+    {
+        $start = now()->startOfYear();
+        $end = now();
+
+        return $this->success([
+            'period' => ['start' => $start->toDateString(), 'end' => $end->toDateString()],
+            'shipments' => $service->shipmentSummary($start, $end),
+            'income' => $service->incomeSummary($start, $end),
+            'expenses' => $service->expenseSummary($start, $end),
+            'monthly_revenue' => $service->monthlyRevenueTrend(),
+        ]);
+    }
+
     public function shipments(Request $request, InvestorCompanyPerformanceService $service): JsonResponse
     {
         [$start, $end] = $this->resolvePeriod($request);

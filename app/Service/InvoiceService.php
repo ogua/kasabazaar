@@ -4,6 +4,9 @@ namespace App\Service;
 
 use App\Models\Shipment;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Dompdf\Canvas;
+use Dompdf\Dompdf;
+use Dompdf\FontMetrics;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
@@ -14,10 +17,11 @@ class InvoiceService
      */
     public static function generatePdf(Shipment $shipment): \Barryvdh\DomPDF\PDF
     {
-        $shipment->load(['client', 'receivers.items.product', 'pickupitems.product', 'payments']);
+        $shipment->load(self::INVOICE_RELATIONS);
 
-        return Pdf::loadView('pdf.shipping-invoice', [
+        $pdf = Pdf::loadView('pdf.shipping-invoice', [
             'shipping' => $shipment,
+            'forPdf' => true,
         ])
             ->setPaper('a4', 'portrait')
             ->setOptions([
@@ -25,6 +29,41 @@ class InvoiceService
                 'isRemoteEnabled' => true,
                 'defaultFont' => 'sans-serif',
             ]);
+
+        $pdf->render();
+        self::stampPageNumbers($pdf->getDomPDF());
+
+        return $pdf;
+    }
+
+    /**
+     * Relations the invoice template reads.
+     *
+     * @var list<string>
+     */
+    public const INVOICE_RELATIONS = [
+        'client',
+        'receivers.items.product',
+        'receivers.mcountry',
+        'receivers.mstate',
+        'receivers.mcity',
+        'payments',
+    ];
+
+    /**
+     * Print "page / pages" in the bottom-right corner of every page. dompdf's CSS has no
+     * total-pages counter, so this is drawn on the canvas once the page count is known.
+     */
+    private static function stampPageNumbers(Dompdf $dompdf): void
+    {
+        $dompdf->getCanvas()->page_script(function (int $pageNumber, int $pageCount, Canvas $canvas, FontMetrics $fontMetrics): void {
+            $text = "{$pageNumber} / {$pageCount}";
+            $font = $fontMetrics->getFont('Helvetica');
+            $size = 8;
+            $width = $fontMetrics->getTextWidth($text, $font, $size);
+
+            $canvas->text($canvas->get_width() - 36 - $width, $canvas->get_height() - 24, $text, $font, $size, [0.42, 0.45, 0.5]);
+        });
     }
 
     /**
@@ -33,7 +72,7 @@ class InvoiceService
     public static function downloadPdf(Shipment $shipment)
     {
         $pdf = self::generatePdf($shipment);
-        $filename = 'invoice-' . $shipment->shipping_reference . '.pdf';
+        $filename = 'invoice-'.$shipment->shipping_reference.'.pdf';
 
         return $pdf->download($filename);
     }
@@ -44,7 +83,7 @@ class InvoiceService
     public static function streamPdf(Shipment $shipment)
     {
         $pdf = self::generatePdf($shipment);
-        $filename = 'invoice-' . $shipment->shipping_reference . '.pdf';
+        $filename = 'invoice-'.$shipment->shipping_reference.'.pdf';
 
         return $pdf->stream($filename);
     }
@@ -55,7 +94,7 @@ class InvoiceService
     public static function savePdf(Shipment $shipment, string $disk = 'public'): string
     {
         $pdf = self::generatePdf($shipment);
-        $filename = 'invoices/invoice-' . $shipment->shipping_reference . '-' . now()->format('Ymd') . '.pdf';
+        $filename = 'invoices/invoice-'.$shipment->shipping_reference.'-'.now()->format('Ymd').'.pdf';
 
         Storage::disk($disk)->put($filename, $pdf->output());
 
@@ -69,21 +108,21 @@ class InvoiceService
     {
         $clientEmail = $shipment->client?->email;
 
-        if (!$clientEmail) {
+        if (! $clientEmail) {
             return false;
         }
 
         $pdf = self::generatePdf($shipment);
-        $filename = 'invoice-' . $shipment->shipping_reference . '.pdf';
+        $filename = 'invoice-'.$shipment->shipping_reference.'.pdf';
 
         try {
             Mail::send('emails.invoice', [
-                'shipment'   => $shipment,
+                'shipment' => $shipment,
                 'clientName' => $shipment->client?->name,
                 'paymentUrl' => route('make-payment', $shipment->id),
             ], function ($message) use ($clientEmail, $shipment, $pdf, $filename) {
                 $message->to($clientEmail)
-                    ->subject('Shipping Invoice - ' . $shipment->shipping_reference)
+                    ->subject('Shipping Invoice - '.$shipment->shipping_reference)
                     ->attachData($pdf->output(), $filename, [
                         'mime' => 'application/pdf',
                     ]);
@@ -94,7 +133,8 @@ class InvoiceService
 
             return true;
         } catch (\Exception $e) {
-            logger()->error("Failed to send invoice email: " . $e->getMessage());
+            logger()->error('Failed to send invoice email: '.$e->getMessage());
+
             return false;
         }
     }

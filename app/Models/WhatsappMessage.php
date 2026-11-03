@@ -8,8 +8,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * A WhatsApp notification handed to the Ogua gateway, tracked until the
- * gateway's callback reports delivered/read or failed.
+ * A WhatsApp notification handed to the provider (Infobip or the Ogua
+ * gateway), tracked until its callback reports delivered/read or failed.
  */
 class WhatsappMessage extends Model
 {
@@ -27,6 +27,18 @@ class WhatsappMessage extends Model
 
     public const STATUS_FAILED = 'failed';
 
+    /**
+     * Statuses only move forward; a late "sent" never overwrites "delivered".
+     */
+    public const STATUS_RANK = [
+        self::STATUS_PENDING => 0,
+        self::STATUS_QUEUED => 1,
+        self::STATUS_SENT => 2,
+        self::STATUS_DELIVERED => 3,
+        self::STATUS_READ => 4,
+        self::STATUS_FAILED => 5,
+    ];
+
     protected $guarded = ['id'];
 
     protected function casts(): array
@@ -34,6 +46,32 @@ class WhatsappMessage extends Model
         return [
             'fallback_sent_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Apply a provider's status report for the message with this gateway id; a
+     * failure triggers the SMS fallback.
+     */
+    public static function applyStatusReport(?string $gatewayMessageId, string $status, ?string $errorCode = null, ?string $errorMessage = null): void
+    {
+        $message = filled($gatewayMessageId) ? static::where('gateway_message_id', $gatewayMessageId)->first() : null;
+
+        if (! $message || ! isset(self::STATUS_RANK[$status])) {
+            return;
+        }
+
+        if (self::STATUS_RANK[$status] <= (self::STATUS_RANK[$message->status] ?? -1)) {
+            return;
+        }
+
+        if ($status === self::STATUS_FAILED) {
+            $message->markFailed($errorCode, $errorMessage);
+            $message->sendFallbackSms();
+
+            return;
+        }
+
+        $message->update(['status' => $status]);
     }
 
     public function markFailed(?string $code, ?string $message): void

@@ -46,33 +46,88 @@ class ShipmentRequestSubmissionService
             ]);
         });
 
-        $this->schedulePickup($client, $data);
+        $this->schedulePickup($client, $shipmentRequest);
         $this->notifyAdmin($shipmentRequest, $client);
 
         return $shipmentRequest;
     }
 
     /**
-     * @param  array<string, mixed>  $data
+     * Apply a client's edit to a still-open request and move its pickup with it.
+     *
+     * @param  array{receivers: array<int, array<string, mixed>>, pickup_location: string, preferred_pickup_at: string, notes?: ?string}  $data
      */
-    private function schedulePickup(Client $client, array $data): void
+    public function update(ShipmentRequest $shipmentRequest, array $data): ShipmentRequest
+    {
+        $shipmentRequest->update([
+            'receivers' => $data['receivers'],
+            'pickup_location' => $data['pickup_location'],
+            'preferred_pickup_at' => $data['preferred_pickup_at'],
+            'notes' => $data['notes'] ?? null,
+        ]);
+
+        $schedule = PickupSchedule::where('shipment_request_id', $shipmentRequest->id)
+            ->whereIn('status', ['scheduled', 'confirmed'])
+            ->first();
+
+        $schedule?->update([
+            'scheduled_at' => $shipmentRequest->preferred_pickup_at,
+            'pickup_location' => $shipmentRequest->pickup_location,
+            'notes' => $shipmentRequest->notes,
+            'items_description' => $this->itemsDescription($shipmentRequest),
+        ]);
+
+        return $shipmentRequest->fresh();
+    }
+
+    /**
+     * The client withdrew the request: mark it cancelled and drop its pickup.
+     */
+    public function cancel(ShipmentRequest $shipmentRequest): void
+    {
+        $shipmentRequest->update([
+            'status' => 'cancelled',
+            'reviewed_at' => now(),
+        ]);
+
+        self::cancelPickup($shipmentRequest);
+    }
+
+    /**
+     * Cancel the pickup booked for a request that will not go ahead.
+     */
+    public static function cancelPickup(ShipmentRequest $shipmentRequest): void
+    {
+        PickupSchedule::where('shipment_request_id', $shipmentRequest->id)
+            ->whereIn('status', ['scheduled', 'confirmed'])
+            ->update(['status' => 'cancelled']);
+    }
+
+    private function schedulePickup(Client $client, ShipmentRequest $shipmentRequest): void
     {
         try {
             PickupSchedule::create([
                 'branch_id' => $client->branch_id,
                 'client_id' => $client->id,
-                'scheduled_at' => $data['preferred_pickup_at'],
-                'pickup_location' => $data['pickup_location'],
+                'shipment_request_id' => $shipmentRequest->id,
+                'scheduled_at' => $shipmentRequest->preferred_pickup_at,
+                'pickup_location' => $shipmentRequest->pickup_location,
                 'contact_phone' => $client->phone,
-                'notes' => $data['notes'] ?? null,
+                'notes' => $shipmentRequest->notes,
                 'status' => 'scheduled',
-                'items_description' => collect($data['receivers'])
-                    ->flatMap(fn ($r) => $r['items'] ?? [])
-                    ->pluck('description')
-                    ->implode(', '),
+                'items_description' => $this->itemsDescription($shipmentRequest),
             ]);
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            report($e);
         }
+    }
+
+    private function itemsDescription(ShipmentRequest $shipmentRequest): string
+    {
+        return collect($shipmentRequest->receivers ?? [])
+            ->flatMap(fn ($r) => $r['items'] ?? [])
+            ->map(fn ($item) => trim(($item['quantity'] ?? 1).' × '.($item['description'] ?? '')))
+            ->implode(', ');
     }
 
     /**

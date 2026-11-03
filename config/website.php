@@ -46,6 +46,17 @@ return [
         'android_url' => env('MOBILE_APP_ANDROID_URL', 'https://play.google.com/apps/testing/com.kasarose.clientapp'),
         'ios_url' => env('MOBILE_APP_IOS_URL', 'https://apps.apple.com/us/app/kasarose/id6807400170'),
         'ios_app_id' => env('MOBILE_APP_IOS_ID', '6807400170'),
+
+        // App Links / Universal Links: tracking links on kasarose.com open in the app
+        // when it is installed. Served at /.well-known/assetlinks.json and
+        // /.well-known/apple-app-site-association; nothing is published until the
+        // fingerprints / team id are set.
+        'package' => env('MOBILE_APP_PACKAGE', 'com.kasarose.clientapp'),
+        // Comma-separated SHA-256 signing-cert fingerprints: the EAS upload key AND the
+        // Play App Signing key (Play Console > App integrity).
+        'android_sha256' => array_values(array_filter(array_map('trim', explode(',', (string) env('MOBILE_APP_ANDROID_SHA256', ''))))),
+        'ios_team_id' => env('MOBILE_APP_IOS_TEAM_ID'),
+        'ios_bundle_id' => env('MOBILE_APP_IOS_BUNDLE_ID', 'com.kasarose.clientapp'),
     ],
 
     /*

@@ -113,8 +113,8 @@
                      plan.</li>
                   <li><strong>Opting out:</strong> Reply <strong>STOP</strong> to any message to unsubscribe, or
                      <strong>HELP</strong> for assistance. You may also contact us using the details below.</li>
-                  <li><strong>Providers:</strong> Messages are delivered through our messaging providers, Twilio and
-                     Arkesel, acting as data processors on our behalf.</li>
+                  <li><strong>Providers:</strong> Messages are delivered through our messaging providers, Infobip,
+                     Twilio and Arkesel, acting as data processors on our behalf.</li>
                   <li><strong>No sharing:</strong> Mobile numbers collected for SMS notifications, and your opt-in
                      consent, are never sold, rented, or shared with third parties or other group companies for their
                      own marketing or promotional purposes.</li>
@@ -122,7 +122,7 @@
                <p>This programme is also documented on our <a href="{{ route('sms-terms') }}">SMS Terms</a> page.</p>
                <p id="whatsapp-notifications"><strong>WhatsApp:</strong> if you separately agree to receive updates
                   on WhatsApp, the same shipment and payment updates are sent to your WhatsApp number instead of by
-                  SMS, through WhatsApp (operated by Meta) and our WhatsApp messaging provider. WhatsApp's own privacy
+                  SMS, through WhatsApp (operated by Meta) and our WhatsApp messaging provider, Infobip. WhatsApp's own privacy
                   policy applies to its handling of those messages. You can ask us to stop WhatsApp updates at any
                   time using the contact details below; we will then use SMS only if you have opted in to it.</p>
 
@@ -130,7 +130,7 @@
                <p>We share your information only in the following circumstances:</p>
                <ul class="ct-list">
                   <li><strong>Service providers:</strong> payment processors (Paystack), SMS/messaging providers
-                     (Twilio, Arkesel, and WhatsApp for customers who opted in to it), logistics partners and warehouse operators, strictly to fulfil your
+                     (Infobip, Twilio, Arkesel, and WhatsApp for customers who opted in to it), logistics partners and warehouse operators, strictly to fulfil your
                      shipment.</li>
                   <li><strong>Legal requirements:</strong> when required by law, regulation or government authority
                      in Ghana or the United States.</li>

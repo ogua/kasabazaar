@@ -313,19 +313,14 @@ class ShipmentRequestResource extends Resource
                     ->label('Reject')
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
-                    ->visible(fn ($record) => $record->status->value !== 'approved' && $record->status->value !== 'rejected')
+                    ->visible(fn ($record) => $record->isEditable())
                     ->form([
                         Forms\Components\Textarea::make('rejection_reason')
                             ->required()
                             ->label('Reason for Rejection'),
                     ])
                     ->action(function ($record, array $data) {
-                        $record->update([
-                            'status' => 'rejected',
-                            'rejection_reason' => $data['rejection_reason'],
-                            'reviewed_by' => auth()->id(),
-                            'reviewed_at' => now(),
-                        ]);
+                        app(ShipmentRequestApprovalService::class)->reject($record, $data['rejection_reason'], auth()->user());
                         Notification::make()->title('Request Rejected')->warning()->send();
                     }),
 

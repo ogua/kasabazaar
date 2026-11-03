@@ -6,6 +6,7 @@ use App\Enums\InvestmentCapitalType;
 use App\Http\Resources\InvestmentResource;
 use App\Http\Resources\InvestmentTransactionResource;
 use App\Models\Investment;
+use App\Models\InvestmentInterestPayout;
 use App\Service\InvestmentInterestService;
 use App\Service\InvestmentPaymentService;
 use App\Service\InvestorPortfolioSummaryService;
@@ -47,7 +48,55 @@ class InvestorInvestmentController extends InvestorBaseController
      */
     public function portfolioSummary(InvestorPortfolioSummaryService $service): JsonResponse
     {
-        return $this->success($service->compute($this->investorId()));
+        $facts = $service->facts($this->investorId());
+
+        return $this->success([
+            ...$service->compute($this->investorId()),
+            ...collect($facts)->except('holdings')->all(),
+            // The rules a withdrawal request is checked against, so the app can explain them up front.
+            'withdrawal_rules' => [
+                'partial_minimum' => (float) config('investment.partial_minimum'),
+                'minimum_remaining_balance' => (float) config('investment.minimum_remaining_balance'),
+            ],
+            'holdings' => $facts['holdings']->map(fn (Investment $investment) => [
+                'id' => $investment->id,
+                'reference' => $investment->reference,
+                'capital_type' => $investment->capital_type->value,
+                'capital_type_label' => $investment->capital_type->getLabel(),
+                'principal_amount' => (float) $investment->principal_amount,
+                'current_balance' => (float) $investment->current_balance,
+                'maturity_date' => $investment->maturity_date?->toDateString(),
+                'status' => $investment->status->value,
+                'status_label' => $investment->status->getLabel(),
+            ])->values(),
+        ]);
+    }
+
+    /**
+     * A loan tranche's interest payout schedule (all of the investor's loans, or one).
+     */
+    public function interestPayouts(Request $request): JsonResponse
+    {
+        $payouts = InvestmentInterestPayout::where('investor_id', $this->investorId())
+            ->when($request->input('investment_id'), fn ($query, $id) => $query->where('investment_id', $id))
+            ->with('investment:id,reference')
+            ->orderByDesc('due_date')
+            ->paginate((int) $request->input('per_page', 30));
+
+        return $this->paginated($payouts, fn (InvestmentInterestPayout $payout) => [
+            'id' => $payout->id,
+            'investment_id' => $payout->investment_id,
+            'investment_reference' => $payout->investment?->reference,
+            'period_start' => $payout->period_start?->toDateString(),
+            'period_end' => $payout->period_end?->toDateString(),
+            'due_date' => $payout->due_date?->toDateString(),
+            'rate_applied' => (float) $payout->rate_applied,
+            'amount' => (float) $payout->amount,
+            'amount_paid' => (float) $payout->amount_paid,
+            'status' => $payout->status->value,
+            'status_label' => $payout->status->getLabel(),
+            'paid_at' => $payout->paid_at?->toDateString(),
+        ]);
     }
 
     public function show(string $id): JsonResponse

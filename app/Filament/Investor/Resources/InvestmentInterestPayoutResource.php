@@ -86,6 +86,7 @@ class InvestmentInterestPayoutResource extends Resource
                         'paid' => 'Paid',
                         'skipped' => 'Skipped',
                         'reversed' => 'Reversed',
+                        'converted' => 'Converted',
                     ])
                     ->disabled(),
             ])

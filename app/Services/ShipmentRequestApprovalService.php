@@ -9,6 +9,7 @@ use App\Models\ShipmentItem;
 use App\Models\ShipmentRequest;
 use App\Models\User;
 use App\Notifications\ShipmentRequestApproved;
+use App\Notifications\ShipmentRequestRejected;
 use App\Service\InvoiceService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -21,15 +22,22 @@ class ShipmentRequestApprovalService
             throw new \InvalidArgumentException('This request has already been approved.');
         }
 
+        $unpriced = collect($request->receivers ?? [])
+            ->flatMap(fn ($receiver) => $receiver['items'] ?? [])
+            ->filter(fn ($item) => blank($item['product_id'] ?? null) || ! Product::whereKey($item['product_id'])->exists())
+            ->pluck('description')
+            ->filter();
+
+        if ($unpriced->isNotEmpty()) {
+            throw new \InvalidArgumentException(
+                'Pick or create a catalogue product for: '.$unpriced->implode(', ').'. Edit the request first, or use Convert to Shipment.'
+            );
+        }
+
         return DB::transaction(function () use ($request, $approvedBy, $options) {
             // new = open a new container, existing = join an existing shipment's container
             $shipmentType = $options['shipment_type'] ?? 'new';
-            $refData = Shipment::generateShippingReference(
-                $shipmentType,
-                null,
-                null,
-                $options['existing_shipment_id'] ?? null
-            );
+            $referenceFields = ShipmentCreationService::referenceFields($shipmentType, now(), $options['existing_shipment_id'] ?? null);
 
             $clientExistence = Shipment::where('client_id', $request->client_id)->exists()
                 ? 'returning-client'
@@ -39,7 +47,7 @@ class ShipmentRequestApprovalService
 
             // Default the cost to the sum of the requested items' estimated values
             $shippingCost = (float) ($options['shipping_cost'] ?? $request->itemsTotal());
-            $vatPercentage = (float) ($options['vat_percentage'] ?? 0);
+            $vatPercentage = min(100, max(0, (float) ($options['vat_percentage'] ?? 0)));
             $vat = round($shippingCost * $vatPercentage / 100, 2);
             $insuranceAccepted = (bool) ($options['insurance_accepted'] ?? false);
             $insurance = $insuranceAccepted ? (float) ($options['insurance'] ?? 0) : 0.0;
@@ -52,10 +60,11 @@ class ShipmentRequestApprovalService
                 'client_id' => $request->client_id,
                 'branch_id' => $branchId,
                 'status' => 'pending',
-                'shipping_reference' => $refData['reference'],
+                ...$referenceFields,
                 'tracking_number' => Shipment::generateTrackingNumber(),
                 'external_token' => Shipment::generateExternalToken(),
                 'client_note' => $request->notes,
+                'description' => filled($options['notes'] ?? null) && $options['notes'] !== $request->notes ? $options['notes'] : null,
                 'recorded_by' => $approvedBy->id,
                 'client_existence' => $clientExistence,
                 'origin_branch_id' => $branchId,
@@ -68,44 +77,84 @@ class ShipmentRequestApprovalService
                 'total' => round($shippingCost + $vat + $insurance, 2),
             ]);
 
-            foreach ($request->receivers as $index => $receiverData) {
+            $products = Product::whereIn('id', collect($request->receivers)->flatMap(fn ($r) => $r['items'] ?? [])->pluck('product_id'))
+                ->get(['id', 'value'])
+                ->keyBy('id');
+
+            foreach ($request->receivers as $receiverData) {
+                // Locations are stored as ids, as the shipment wizard stores them;
+                // a name that matches nothing in the lists is kept as typed.
+                $countryId = LocationLookup::countryIdForName($receiverData['country'] ?? null)
+                    ?? LocationLookup::countryIdForPhone($receiverData['phone'] ?? null);
+                $stateId = LocationLookup::stateIdForName($countryId, $receiverData['state_region'] ?? null);
+                $cityId = LocationLookup::cityIdForName($stateId, $receiverData['city'] ?? null);
+
                 $receiver = Receiver::create([
                     'shipment_id' => $shipment->id,
                     'receiver_name' => $receiverData['name'],
                     'receiver_phone' => $receiverData['phone'] ?? null,
-                    'country' => $receiverData['country'] ?? null,
-                    'state_region' => $receiverData['state_region'] ?? null,
-                    'city' => $receiverData['city'] ?? null,
+                    'country' => $countryId ?? ($receiverData['country'] ?? null),
+                    'state_region' => $stateId ?? ($receiverData['state_region'] ?? null),
+                    'city' => $cityId ?? ($receiverData['city'] ?? null),
                     'address' => $receiverData['address'] ?? null,
                 ]);
 
-                foreach ($receiverData['items'] ?? [] as $itemIndex => $itemData) {
-                    $product = ! empty($itemData['product_id'])
-                        ? (Product::find($itemData['product_id']) ?? Product::firstOrCreate(
-                            ['name' => $itemData['description']],
-                            ['branch_id' => null, 'category' => 'general', 'value' => $itemData['estimated_value'] ?? 0]
-                        ))
-                        : Product::firstOrCreate(
-                            ['name' => $itemData['description']],
-                            ['branch_id' => null, 'category' => 'general', 'value' => $itemData['estimated_value'] ?? 0]
-                        );
+                foreach ($receiverData['items'] ?? [] as $itemData) {
+                    $quantity = max(1, (int) ($itemData['quantity'] ?? 1));
 
                     ShipmentItem::create([
                         'shipment_id' => $shipment->id,
                         'receiver_id' => $receiver->id,
-                        'product_id' => $product->id,
-                        'quantity' => $itemData['quantity'] ?? 1,
-                        'box_no' => 'R'.($index + 1).'-'.($itemIndex + 1),
+                        'product_id' => $itemData['product_id'],
+                        'quantity' => $quantity,
+                        'box_no' => null,
                         // A line's value is the unit value times the quantity, as the shipment form stores it.
-                        'item_cost' => round((float) ($itemData['estimated_value'] ?? 0) * (int) ($itemData['quantity'] ?? 1), 2),
+                        'item_cost' => round((float) ($products->get($itemData['product_id'])?->value ?? 0) * $quantity, 2),
                     ]);
                 }
             }
+
+            app(ShipmentCreationService::class)->finalise($shipment);
 
             $this->markConverted($request, $shipment, $approvedBy);
 
             return $shipment;
         });
+    }
+
+    /**
+     * Reject a request and tell the client why (in-app notification plus push).
+     * Shared by the Filament action and the staff API.
+     */
+    public function reject(ShipmentRequest $request, string $reason, User $rejectedBy): void
+    {
+        $request->update([
+            'status' => 'rejected',
+            'rejection_reason' => $reason,
+            'reviewed_by' => $rejectedBy->id,
+            'reviewed_at' => now(),
+        ]);
+
+        ShipmentRequestSubmissionService::cancelPickup($request);
+
+        $clientUser = User::where('client_id', $request->client_id)
+            ->whereNotNull('client_id')
+            ->first();
+
+        if (! $clientUser) {
+            return;
+        }
+
+        try {
+            $clientUser->notify(new ShipmentRequestRejected($request));
+            app(PushNotificationService::class)->sendToUser(
+                $clientUser->id,
+                'Shipment Request Not Approved',
+                $reason,
+                ['type' => 'shipment_request_rejected', 'request_id' => $request->id]
+            );
+        } catch (\Throwable) {
+        }
     }
 
     /**
@@ -132,6 +181,17 @@ class ShipmentRequestApprovalService
         if ($clientUser) {
             try {
                 $clientUser->notify(new ShipmentRequestApproved($request, $shipment));
+                app(PushNotificationService::class)->sendToUser(
+                    $clientUser->id,
+                    'Shipment Request Approved',
+                    "Your request is now shipment {$shipment->shipping_reference}.",
+                    [
+                        'type' => 'shipment_request_approved',
+                        'request_id' => $request->id,
+                        'shipment_id' => $shipment->id,
+                        'tracking_number' => $shipment->tracking_number,
+                    ]
+                );
             } catch (\Throwable) {
             }
         }

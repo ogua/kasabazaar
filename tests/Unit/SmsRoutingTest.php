@@ -22,9 +22,9 @@ class SmsRoutingTest extends TestCase
             'ghana local' => ['0201234567', 'arkesel'],
             'ghana local spaced' => ['024 123 4567', 'arkesel'],
             'ghana bare subscriber' => ['201234567', 'arkesel'],
-            'us number' => ['+14155550123', 'twilio'],
-            'us number no plus' => ['12125550123', 'twilio'],
-            'uk number' => ['+442071838750', 'twilio'],
+            'us number' => ['+14155550123', 'infobip'],
+            'us number no plus' => ['12125550123', 'infobip'],
+            'uk number' => ['+442071838750', 'infobip'],
         ];
     }
 }

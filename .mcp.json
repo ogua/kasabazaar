@@ -16,6 +16,20 @@
         "chrome-devtools-mcp@latest"
       ],
       "env": {}
+    },
+    "infobip-sms": {
+      "type": "http",
+      "url": "https://mcp.infobip.com/sms",
+      "headers": {
+        "Authorization": "App ${INFOBIP_SMS_API_KEY}"
+      }
+    },
+    "infobip-whatsapp": {
+      "type": "http",
+      "url": "https://mcp.infobip.com/whatsapp",
+      "headers": {
+        "Authorization": "App ${INFOBIP_WHATSAPP_API_KEY}"
+      }
     }
   }
 }

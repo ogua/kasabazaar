@@ -27,6 +27,7 @@ class WhatsappSettingsPageTest extends TestCase
         $this->actingAs($user);
         Filament::setCurrentPanel(Filament::getPanel('admin'));
 
+        SystemSetting::set('whatsapp_provider', GatewaySettings::PROVIDER_OGUA, 'whatsapp');
         SystemSetting::set('whatsapp_gateway_url', 'https://gateway.test', 'whatsapp');
         SystemSetting::set('whatsapp_client_key', 'pck_live_key', 'whatsapp');
         SystemSetting::set('whatsapp_client_secret', 'secret', 'whatsapp');

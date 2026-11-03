@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Models\Payment;
+use App\Services\Whatsapp\PhoneNumber;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 
@@ -66,14 +67,16 @@ class NotificationService
         match ($driver) {
             'arkesel' => self::sendViaArkesel($phone, $message),
             'mnotify' => self::sendViaMNotify($phone, $message),
+            'infobip' => self::sendViaInfobip($phone, $message),
             default => self::sendViaTwilio($phone, $message),
         };
     }
 
     /**
      * Route by the destination number: Ghana numbers (+233… or a local
-     * 0XXXXXXXXX) go through Arkesel, everything else through Twilio. A number
-     * we cannot classify falls back to the configured default driver.
+     * 0XXXXXXXXX) go through Arkesel, everything else through the international
+     * provider (Infobip by default). A number we cannot classify falls back to
+     * the configured default driver.
      */
     public static function resolveSmsDriverForPhone(string $phone): string
     {
@@ -93,10 +96,10 @@ class NotificationService
         }
 
         if ($digits !== '') {
-            return 'twilio';
+            return SystemSetting::get('sms_international_driver', config('services.sms.international', 'infobip'));
         }
 
-        return SystemSetting::get('sms_driver', config('services.sms.default', 'twilio'));
+        return SystemSetting::get('sms_driver', config('services.sms.default', 'infobip'));
     }
 
     /**
@@ -146,6 +149,50 @@ class NotificationService
             }
         } catch (\Throwable $e) {
             logger()->error('Arkesel SMS failed: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Infobip SMS. Without an API key the message still goes out through Twilio,
+     * so switching the default provider never silences international alerts.
+     */
+    private static function sendViaInfobip(string $phone, string $message): void
+    {
+        $key = SystemSetting::get('infobip_sms_key', config('services.infobip.sms_key'));
+        $sender = SystemSetting::get('infobip_sms_sender', config('services.infobip.sms_sender'));
+        $baseUrl = rtrim((string) SystemSetting::get('infobip_base_url', config('services.infobip.base_url')), '/');
+        $to = PhoneNumber::toE164($phone);
+
+        if (! $key) {
+            logger()->warning('Infobip SMS not configured — sending through Twilio instead.');
+            self::sendViaTwilio($phone, $message);
+
+            return;
+        }
+
+        if ($to === null) {
+            logger()->warning("Infobip SMS skipped — \"{$phone}\" is not a valid international number.");
+
+            return;
+        }
+
+        try {
+            $response = Http::withHeaders(['Authorization' => 'App '.$key])
+                ->acceptJson()
+                ->timeout(15)
+                ->post("{$baseUrl}/sms/2/text/advanced", [
+                    'messages' => [array_filter([
+                        'from' => $sender ?: null,
+                        'destinations' => [['to' => ltrim($to, '+')]],
+                        'text' => $message,
+                    ])],
+                ]);
+
+            if ($response->failed()) {
+                logger()->error('Infobip SMS failed: HTTP '.$response->status().' '.$response->body());
+            }
+        } catch (\Throwable $e) {
+            logger()->error('Infobip SMS failed: '.$e->getMessage());
         }
     }
 

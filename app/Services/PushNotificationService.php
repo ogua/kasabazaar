@@ -5,67 +5,83 @@ namespace App\Services;
 use App\Models\DeviceToken;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
+/**
+ * Sends push notifications to the KasaRose mobile app through the Expo Push API.
+ *
+ * The app registers Expo push tokens (`ExponentPushToken[...]`), which only Expo's
+ * service can deliver to; it relays to FCM and APNs itself, so no Firebase server
+ * key is needed. Tokens Expo reports as `DeviceNotRegistered` are pruned.
+ */
 class PushNotificationService
 {
-    private string $serverKey;
+    private const ENDPOINT = 'https://exp.host/--/api/v2/push/send';
 
-    public function __construct()
-    {
-        $this->serverKey = config('services.fcm.server_key') ?? '';
-    }
+    private const BATCH_SIZE = 100;
 
     public function sendToUser(string $userId, string $title, string $body, array $data = []): void
     {
-        if (empty($this->serverKey)) {
-            Log::debug('FCM server key not configured — skipping push notification.');
+        $tokens = DeviceToken::where('user_id', $userId)->pluck('token')->all();
 
-            return;
-        }
-
-        $tokens = DeviceToken::where('user_id', $userId)->pluck('token')->toArray();
-
-        if (empty($tokens)) {
-            return;
-        }
-
-        $this->dispatch($tokens, $title, $body, $data);
+        $this->sendToTokens($tokens, $title, $body, $data);
     }
 
+    /**
+     * @param  array<int, string>  $tokens
+     */
     public function sendToTokens(array $tokens, string $title, string $body, array $data = []): void
     {
-        if (empty($this->serverKey) || empty($tokens)) {
-            return;
-        }
+        $tokens = array_values(array_unique(array_filter($tokens, fn (string $token) => $this->isExpoToken($token))));
 
-        $this->dispatch($tokens, $title, $body, $data);
+        foreach (array_chunk($tokens, self::BATCH_SIZE) as $batch) {
+            $this->dispatch($batch, $title, $body, $data);
+        }
     }
 
+    public function isExpoToken(string $token): bool
+    {
+        return Str::startsWith($token, ['ExponentPushToken[', 'ExpoPushToken[']);
+    }
+
+    /**
+     * @param  array<int, string>  $tokens
+     */
     private function dispatch(array $tokens, string $title, string $body, array $data): void
     {
-        $payload = [
-            'registration_ids' => $tokens,
-            'notification' => ['title' => $title, 'body' => $body, 'sound' => 'default'],
-            'data' => $data,
-        ];
+        $messages = array_map(fn (string $token) => [
+            'to' => $token,
+            'title' => $title,
+            'body' => $body,
+            'data' => (object) $data,
+            'sound' => 'default',
+            'priority' => 'high',
+            'channelId' => 'default',
+        ], $tokens);
 
-        $response = Http::withToken($this->serverKey)
-            ->post('https://fcm.googleapis.com/fcm/send', $payload);
+        try {
+            $request = Http::acceptJson()->asJson()->timeout(15);
 
-        if (! $response->successful()) {
-            Log::warning('FCM push failed', ['status' => $response->status(), 'body' => $response->body()]);
+            if ($accessToken = config('services.expo.access_token')) {
+                $request = $request->withToken($accessToken);
+            }
+
+            $response = $request->post(self::ENDPOINT, $messages);
+        } catch (\Throwable $e) {
+            Log::warning('Expo push request failed', ['error' => $e->getMessage()]);
 
             return;
         }
 
-        $result = $response->json();
+        if (! $response->successful()) {
+            Log::warning('Expo push failed', ['status' => $response->status(), 'body' => $response->body()]);
 
-        // Remove tokens that FCM reports as invalid
-        if (! empty($result['results'])) {
-            foreach ($result['results'] as $i => $item) {
-                if (! empty($item['error']) && in_array($item['error'], ['NotRegistered', 'InvalidRegistration'])) {
-                    DeviceToken::where('token', $tokens[$i])->delete();
-                }
+            return;
+        }
+
+        foreach ($response->json('data', []) as $i => $ticket) {
+            if (($ticket['status'] ?? null) === 'error' && ($ticket['details']['error'] ?? null) === 'DeviceNotRegistered') {
+                DeviceToken::where('token', $tokens[$i] ?? null)->delete();
             }
         }
     }

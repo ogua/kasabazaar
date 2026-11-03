@@ -8,6 +8,10 @@ use App\Models\Shipment;
 use App\Observers\PaymentObserver;
 use App\Observers\ShipmentObserver;
 use App\Services\PublicWebsite;
+use App\Services\Whatsapp\InfobipWhatsappClient;
+use App\Services\Whatsapp\OguaWhatsappClient;
+use App\Services\Whatsapp\WhatsappGateway;
+use App\Services\Whatsapp\WhatsappSettings;
 use Filament\Http\Responses\Auth\Contracts\LoginResponse as LoginContract;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Database\Eloquent\Model;
@@ -27,6 +31,10 @@ class AppServiceProvider extends ServiceProvider
             LoginContract::class,
             LoginResponse::class
         );
+
+        $this->app->bind(WhatsappGateway::class, fn () => WhatsappSettings::provider() === WhatsappSettings::PROVIDER_OGUA
+            ? new OguaWhatsappClient
+            : new InfobipWhatsappClient);
 
         $loader = AliasLoader::getInstance();
         $loader->alias('Paystack', \Unicodeveloper\Paystack\Facades\Paystack::class);

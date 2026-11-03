@@ -10,14 +10,13 @@ use App\Filament\Resources\ShipmentResource;
 use App\Models\City;
 use App\Models\Client;
 use App\Models\Country;
-use App\Models\Invoice;
 use App\Models\Product;
 use App\Models\Receiver;
 use App\Models\Shipment;
 use App\Models\ShipmentItem;
-use App\Models\ShipmentUpdate;
 use App\Models\State;
 use App\Services\LocationLookup;
+use App\Services\ShipmentCreationService;
 use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Components\Hidden;
@@ -1122,17 +1121,7 @@ class CreateShipment extends CreateRecord
         $shippedAt = $data['shipped_at'] ?? now();
         $existingShipmentId = $this->data['existing_shipment_id'] ?? null;
 
-        $refData = \App\Models\Shipment::generateShippingReference(
-            $shipmentType,
-            $shippedAt,
-            null, // excludeShipmentId (not editing)
-            $existingShipmentId // existing shipment to use for container reference
-        );
-
-        $data['shipping_reference'] = $refData['reference'];
-        $data['container_number'] = $refData['container_number'];
-        $data['client_sequence'] = $refData['client_sequence'];
-        $data['total_shipment_sequence'] = $refData['total_shipment_sequence'];
+        $data = [...$data, ...ShipmentCreationService::referenceFields($shipmentType, $shippedAt, $existingShipmentId)];
 
         unset($data['single_receiver_name']);
         unset($data['single_receiver_phone']);
@@ -1184,45 +1173,7 @@ class CreateShipment extends CreateRecord
             }
         }
 
-        $amountopay = $shipment->total;
-        $paid = $shipment->payments->sum('amount');
-
-        $shipment->total = $amountopay;
-        $shipment->paid = $paid;
-
-        // Update payment status based on payments
-        if ($paid >= $amountopay && $amountopay > 0) {
-            $shipment->payment_status = 'paid';
-        } elseif ($paid > 0) {
-            $shipment->payment_status = 'partial';
-        } else {
-            $shipment->payment_status = 'pending';
-        }
-
-        $shipment->save();
-
-        $left = $amountopay - $paid;
-
-        // Determine invoice status (invoices.status enum is unpaid|partial|paid)
-        $invoiceStatus = 'unpaid';
-        if ($paid >= $amountopay && $amountopay > 0) {
-            $invoiceStatus = 'paid';
-        } elseif ($paid > 0) {
-            $invoiceStatus = 'partial';
-        }
-
-        Invoice::create([
-            'shipment_id' => $shipment->id,
-            'total_amount' => $shipment->total,
-            'status' => $invoiceStatus,
-        ]);
-
-        ShipmentUpdate::create([
-            'shipment_id' => $shipment->id,
-            'location' => $shipment->origin_branch_id ?? 'Origin',
-            'status' => $shipment->status->value,
-            'remarks' => 'Shipment created - '.ucfirst($shipment->status->value),
-        ]);
+        app(ShipmentCreationService::class)->finalise($shipment);
 
         // The shipment's `created` event fires ShipmentObserver, which sends the
         // client the tracking + payment-link email and SMS (see ShipmentNotifier).

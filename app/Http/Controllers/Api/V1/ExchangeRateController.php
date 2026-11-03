@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\ExchangeRateLog;
-use App\Http\Controllers\Api\V1\BaseApiController;
+use App\Service\ExchangeRateService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -26,31 +26,44 @@ class ExchangeRateController extends BaseApiController
 
         $request->validate([
             'from_currency' => 'required|string|max:10',
-            'to_currency'   => 'required|string|max:10',
-            'rate'          => 'required|numeric|min:0',
-            'source'        => 'nullable|string|max:100',
+            'to_currency' => 'required|string|max:10',
+            'rate' => 'required|numeric|min:0',
+            'source' => 'nullable|string|max:100',
+            'rate_date' => 'nullable|date|before_or_equal:today',
         ]);
 
-        $rate = ExchangeRateLog::create([
-            'from_currency' => strtoupper($request->from_currency),
-            'to_currency'   => strtoupper($request->to_currency),
-            'rate'          => $request->rate,
-            'source'        => $request->input('source', 'manual'),
-            'recorded_by'   => auth()->id(),
-        ]);
+        // One rate per currency pair per day (unique index): logging again replaces that day's rate.
+        $rate = ExchangeRateLog::updateOrCreate(
+            [
+                'from_currency' => strtoupper($request->from_currency),
+                'to_currency' => strtoupper($request->to_currency),
+                'rate_date' => $request->input('rate_date', today()->toDateString()),
+            ],
+            [
+                'rate' => $request->rate,
+                'source' => $request->input('source', 'manual'),
+                'recorded_by' => auth()->id(),
+            ]
+        );
 
         return $this->success($this->formatRate($rate), 'Exchange rate logged.', 201);
     }
 
-    public function current(): JsonResponse
+    /**
+     * The rate shipments and payments use (ExchangeRateService::getCurrentRate):
+     * the newest rate dated today or earlier, a staff rate winning on the same day.
+     */
+    public function current(ExchangeRateService $exchangeRates): JsonResponse
     {
         $rate = ExchangeRateLog::where('from_currency', 'USD')
             ->where('to_currency', 'GHS')
-            ->latest()
+            ->where('rate_date', '<=', today())
+            ->orderBy('rate_date', 'desc')
+            ->orderByRaw("CASE WHEN source IN ('".implode("','", ExchangeRateService::STAFF_SOURCES)."') THEN 0 ELSE 1 END")
             ->first();
 
-        if (!$rate) {
-            return $this->success(['rate' => 12.0, 'from_currency' => 'USD', 'to_currency' => 'GHS', 'source' => 'default']);
+        if (! $rate) {
+            return $this->success(['rate' => $exchangeRates->getCurrentRate('USD', 'GHS'), 'from_currency' => 'USD', 'to_currency' => 'GHS', 'source' => 'default']);
         }
 
         return $this->success($this->formatRate($rate));
@@ -59,13 +72,13 @@ class ExchangeRateController extends BaseApiController
     private function formatRate(ExchangeRateLog $r): array
     {
         return [
-            'id'            => $r->id,
+            'id' => $r->id,
             'from_currency' => $r->from_currency,
-            'to_currency'   => $r->to_currency,
-            'rate'          => $r->rate,
-            'source'        => $r->source,
-            'recorded_by'   => $r->recordedBy ? ['id' => $r->recordedBy->id, 'name' => $r->recordedBy->name] : null,
-            'created_at'    => $r->created_at,
+            'to_currency' => $r->to_currency,
+            'rate' => $r->rate,
+            'source' => $r->source,
+            'recorded_by' => $r->recordedBy ? ['id' => $r->recordedBy->id, 'name' => $r->recordedBy->name] : null,
+            'created_at' => $r->created_at,
         ];
     }
 }

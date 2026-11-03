@@ -1,5 +1,6 @@
-{{-- Shared by the shipping invoice and the online payment receipt so the two documents
-     look the same. Plain CSS that dompdf understands (table layout, no flex/grid). --}}
+{{-- Styles for the online payment receipt (pdf/tracking-payment-receipt). The shipping invoice
+     carries its own stylesheet since its October 2026 redesign. Plain CSS that dompdf
+     understands (table layout, no flex/grid). --}}
         * {
             margin: 0;
             padding: 0;

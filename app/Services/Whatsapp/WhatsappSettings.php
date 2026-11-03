@@ -5,8 +5,9 @@ namespace App\Services\Whatsapp;
 use App\Service\SystemSetting;
 
 /**
- * WhatsApp gateway settings (SystemSetting group "whatsapp", edited on the
- * WhatsApp Settings page) and the fixed list of events that can go out over
+ * WhatsApp settings (SystemSetting group "whatsapp", edited on the WhatsApp
+ * Settings page): the provider (Infobip by default, or the Ogua gateway), its
+ * credentials, and the fixed list of events that can go out over
  * WhatsApp, with the body parameters each event supplies — in order — to
  * whichever approved template an admin maps to it.
  */
@@ -36,12 +37,71 @@ class WhatsappSettings
         ],
     ];
 
+    public const PROVIDER_INFOBIP = 'infobip';
+
+    public const PROVIDER_OGUA = 'ogua';
+
     public static function enabled(): bool
     {
-        return (bool) SystemSetting::get('whatsapp_enabled', false)
-            && filled(self::gatewayUrl())
-            && filled(self::clientKey())
-            && filled(self::clientSecret());
+        return (bool) SystemSetting::get('whatsapp_enabled', false) && self::isConfigured();
+    }
+
+    public static function provider(): string
+    {
+        return SystemSetting::get('whatsapp_provider') === self::PROVIDER_OGUA ? self::PROVIDER_OGUA : self::PROVIDER_INFOBIP;
+    }
+
+    /**
+     * Whether the active provider has the credentials it needs to talk to its API.
+     */
+    public static function isConfigured(): bool
+    {
+        if (self::provider() === self::PROVIDER_OGUA) {
+            return filled(self::gatewayUrl()) && filled(self::clientKey()) && filled(self::clientSecret());
+        }
+
+        return filled(self::infobipApiKey()) && filled(self::infobipNumber(self::SENDER_LOGISTICS));
+    }
+
+    public static function infobipBaseUrl(): string
+    {
+        return rtrim((string) (SystemSetting::get('infobip_base_url') ?: config('services.infobip.base_url')), '/');
+    }
+
+    public static function infobipApiKey(): ?string
+    {
+        return SystemSetting::get('infobip_whatsapp_key') ?: config('services.infobip.whatsapp_key');
+    }
+
+    /**
+     * The Infobip WhatsApp number (digits only) for one of our senders; the
+     * marketplace uses the logistics number until it has its own.
+     */
+    public static function infobipNumber(string $sender): ?string
+    {
+        $number = SystemSetting::get("infobip_whatsapp_number_{$sender}") ?: config("services.infobip.whatsapp_number_{$sender}");
+
+        if (blank($number) && $sender !== self::SENDER_LOGISTICS) {
+            return self::infobipNumber(self::SENDER_LOGISTICS);
+        }
+
+        $digits = preg_replace('/\D+/', '', (string) $number);
+
+        return $digits === '' ? null : $digits;
+    }
+
+    /**
+     * Secret path segment that authenticates Infobip's webhook calls (Infobip
+     * does not sign them). Derived from the app key, so there is nothing to store.
+     */
+    public static function infobipWebhookToken(): string
+    {
+        return substr(hash_hmac('sha256', 'infobip-webhook', (string) config('app.key')), 0, 40);
+    }
+
+    public static function infobipWebhookUrl(): string
+    {
+        return route('webhooks.infobip', ['token' => self::infobipWebhookToken()]);
     }
 
     public static function gatewayUrl(): ?string

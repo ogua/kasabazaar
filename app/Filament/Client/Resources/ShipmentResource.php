@@ -5,7 +5,6 @@ namespace App\Filament\Client\Resources;
 use App\Filament\Client\Concerns\HasShipmentMediaAction;
 use App\Filament\Client\Resources\ShipmentResource\Pages;
 use App\Filament\Client\Widgets\ShipmentstatisticsWidget;
-use App\Filament\Tables\Actions\UpdateMscTrackingBulkAction;
 use App\Models\Shipment;
 use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\RepeatableEntry;
@@ -83,7 +82,7 @@ class ShipmentResource extends Resource
             ])
             ->actions([
                 ActionGroup::make([
-                    Tables\Actions\Action::make('pay')->label('Pay Now')->icon('heroicon-m-banknotes')->color('primary')->requiresConfirmation()->url(fn ($record) => route('make-payment', ['record' => $record]), shouldOpenInNewTab: true),
+                    Tables\Actions\Action::make('pay')->label('Pay Now')->icon('heroicon-m-banknotes')->color('primary')->requiresConfirmation()->visible(fn ($record) => $record->payment_status !== 'paid')->url(fn ($record) => route('make-payment', ['record' => $record]), shouldOpenInNewTab: true),
 
                     Tables\Actions\Action::make('receiver')
                         ->label('Receiver Information')
@@ -144,9 +143,8 @@ class ShipmentResource extends Resource
                         ->modalSubmitAction(false),
                 ]),
             ])
-            ->bulkActions([
-                UpdateMscTrackingBulkAction::make(),
-            ]);
+            // MSC numbers are set by staff (the action alerts the client); clients only read them.
+            ->bulkActions([]);
     }
 
     public static function getWidgets(): array

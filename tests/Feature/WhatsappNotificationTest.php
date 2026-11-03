@@ -39,6 +39,7 @@ class WhatsappNotificationTest extends TestCase
 
         $settings = [
             'whatsapp_enabled' => 1,
+            'whatsapp_provider' => WhatsappSettings::PROVIDER_OGUA,
             'whatsapp_gateway_url' => 'https://gateway.test',
             'whatsapp_client_key' => 'pck_live_key',
             'whatsapp_client_secret' => self::CLIENT_SECRET,

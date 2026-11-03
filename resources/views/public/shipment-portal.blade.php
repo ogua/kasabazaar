@@ -239,7 +239,7 @@
                     @forelse ($shipment->statusupdate as $update)
                         <div class="d-flex justify-content-between border-bottom py-2">
                             <div>
-                                <span class="fw-bold">{{ ucfirst($update->status) }}</span>
+                                <span class="fw-bold">{{ \App\Services\PublicShipmentTracking::statusMeta((string) $update->status)['label'] }}</span>
                                 @if ($update->location)
                                     <span class="text-muted">— {{ $update->location }}</span>
                                 @endif

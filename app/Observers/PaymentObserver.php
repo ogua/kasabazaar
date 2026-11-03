@@ -34,7 +34,7 @@ class PaymentObserver
                 $clientUser->id,
                 'Payment Received',
                 "Your payment of USD {$payment->amount_usd} has been recorded.",
-                ['payment_id' => $payment->id, 'type' => 'payment_received']
+                ['type' => 'payment_received', 'payment_id' => $payment->id, 'shipment_id' => $shipment->id]
             );
         }
 

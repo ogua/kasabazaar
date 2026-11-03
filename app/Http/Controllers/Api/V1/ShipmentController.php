@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\ShippingStatus;
 use App\Http\Requests\StoreShipmentRequest;
 use App\Http\Requests\UpdateShipmentRequest;
 use App\Http\Resources\TrackingResource;
@@ -10,11 +11,74 @@ use App\Models\Shipment;
 use App\Models\ShipmentItem;
 use App\Models\ShipmentMedia;
 use App\Models\Tracking;
+use App\Services\LocationLookup;
+use App\Services\PublicShipmentTracking;
+use App\Services\ShipmentCreationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class ShipmentController extends BaseApiController
 {
+    /**
+     * Payment-method codes the mobile app sends, mapped to the labels the admin
+     * wizard stores. Labels already in that form pass through unchanged.
+     */
+    private const PAYING_METHODS = [
+        'cash' => 'CASH',
+        'bank_transfer' => 'BANK TRANSFER',
+        'card' => 'CREDIT/DEBIT CARD',
+        'cheque' => 'CHEQUE',
+        'zelle' => 'Zelle',
+        'cash_app' => 'Cash App',
+        'paypal' => 'PAYPAL',
+        'waived' => 'WAIVED',
+    ];
+
+    /**
+     * One of ShipmentMedia::STAGES. Older app builds send free-text labels from
+     * their own list; those are mapped onto the four stages the web library uses.
+     */
+    private static function mediaStage(?string $stage): string
+    {
+        $key = Str::slug((string) $stage);
+
+        if (array_key_exists($key, ShipmentMedia::STAGES)) {
+            return $key;
+        }
+
+        return match ($key) {
+            'in-transit', 'at-warehouse', 'customs', 'loaded', 'shipped', 'port', 'sorting' => 'in-transit',
+            'out-for-delivery', 'delivered', 'at-delivery' => 'delivery',
+            'received', 'post-delivery' => 'post-delivery',
+            default => 'pickup',
+        };
+    }
+
+    /**
+     * A receiver's country/region/city as the ids the wizard stores. The app may
+     * send ids, or names that are matched to the lists; an unmatched name is kept.
+     *
+     * @param  array<string, mixed>  $receiverData
+     * @return array{country: mixed, state_region: mixed, city: mixed}
+     */
+    private function receiverLocation(array $receiverData): array
+    {
+        $countryId = $receiverData['country_id']
+            ?? LocationLookup::countryIdForName($receiverData['country'] ?? null)
+            ?? LocationLookup::countryIdForPhone($receiverData['receiver_phone'] ?? null);
+        $stateId = $receiverData['state_id'] ?? LocationLookup::stateIdForName($countryId, $receiverData['state_region'] ?? null);
+        $cityId = $receiverData['city_id'] ?? LocationLookup::cityIdForName($stateId, $receiverData['city'] ?? null);
+
+        return [
+            'country' => $countryId ?? ($receiverData['country'] ?? null),
+            'state_region' => $stateId ?? ($receiverData['state_region'] ?? null),
+            'city' => $cityId ?? ($receiverData['city'] ?? null),
+        ];
+    }
+
     public function index(Request $request): JsonResponse
     {
         // /logger('loadig shipments with branch: ' . $request->header('X-Branch-Id'));
@@ -32,8 +96,16 @@ class ShipmentController extends BaseApiController
             });
         }
 
+        // A group (awaiting / in_transit / completed — the groups the customer API and
+        // client panel use), a single status, or a comma-separated list of statuses.
         if ($status = $request->input('status')) {
-            $query->where('status', $status);
+            $groups = [
+                'awaiting' => ShippingStatus::awaitingDispatchValues(),
+                'in_transit' => ShippingStatus::inTransitValues(),
+                'completed' => ShippingStatus::completedValues(),
+            ];
+
+            $query->whereIn('status', $groups[$status] ?? explode(',', $status));
         }
 
         if ($from = $request->input('date_from')) {
@@ -53,65 +125,109 @@ class ShipmentController extends BaseApiController
     public function store(StoreShipmentRequest $request): JsonResponse
     {
         $branchId = $this->resolveBranch($request);
+        $receivers = $request->input('receivers', []);
 
-        $shipmentType = $request->input('shipment_type', 'new');
-        $refData = Shipment::generateShippingReference(
-            $shipmentType,
-            $request->input('shipped_at'),
-            null,
-            $request->input('existing_shipment_id')
-        );
+        // Item costs are line totals (unit value x quantity), as the wizard keeps them.
+        $itemsSubtotal = collect($receivers)->flatMap(fn ($r) => $r['items'] ?? [])->sum(fn ($item) => (float) ($item['item_cost'] ?? 0));
+        $subtotal = (float) ($request->input('shipping_cost') ?? $itemsSubtotal);
+        $discount = (float) ($request->input('discount') ?? 0);
+        $vatPercentage = (float) ($request->input('vat_percentage') ?? 0);
+        $vat = round($subtotal * $vatPercentage / 100, 2);
+        $insuranceAccepted = $request->boolean('insurance_accepted');
+        $insurance = $insuranceAccepted ? (float) ($request->input('insurance') ?? 0) : 0.0;
 
-        $shipment = Shipment::create([
-            'client_id' => $request->client_id,
-            'branch_id' => $branchId,
-            'origin_branch_id' => $request->origin_branch_id,
-            'destination_branch_id' => $request->destination_branch_id,
-            'shipping_reference' => $refData['reference'],
-            'tracking_number' => Shipment::generateTrackingNumber(),
-            'status' => 'pending',
-            'payment_status' => $request->input('payment_status', 'pending'),
-            'shipped_at' => $request->input('shipped_at'),
-            'estimated_delivery_date' => $request->input('estimated_delivery_date'),
-            'shipping_cost' => $request->input('shipping_cost', 0),
-            'exchange_rate_at_shipment' => $request->input('exchange_rate_at_shipment'),
-            'vat_percentage' => $request->input('vat_percentage') ?? 0,
-            'insurance_accepted' => $request->input('insurance_accepted') ?? false,
-            'insurance' => $request->input('insurance') ?? 0,
-            'total' => $request->input('total') ?? $request->input('shipping_cost', 0),
-            'paid' => $request->input('paid') ?? 0,
-            'recorded_by' => auth()->id(),
-            'external_token' => Shipment::generateExternalToken(),
-            'client_existence' => $shipmentType,
-            'description' => $request->input('description'),
-        ]);
-
-        // Create receivers and their items
-        foreach ($request->input('receivers', []) as $receiverData) {
-            $receiver = Receiver::create([
-                'shipment_id' => $shipment->id,
-                'receiver_name' => $receiverData['receiver_name'],
-                'receiver_phone' => $receiverData['receiver_phone'] ?? null,
-                'receiver_email' => $receiverData['receiver_email'] ?? null,
-                'country' => $receiverData['country'] ?? null,
-                'state_region' => $receiverData['state_region'] ?? null,
-                'city' => $receiverData['city'] ?? null,
-                'address' => $receiverData['address'] ?? null,
-                'receiver_id_type' => $receiverData['receiver_id_type'] ?? null,
-                'receiver_id_number' => $receiverData['receiver_id_number'] ?? null,
+        $shipment = DB::transaction(function () use ($request, $branchId, $receivers, $subtotal, $discount, $vatPercentage, $vat, $insuranceAccepted, $insurance) {
+            $shipment = Shipment::create([
+                'client_id' => $request->client_id,
+                'branch_id' => $branchId,
+                'origin_branch_id' => $request->origin_branch_id ?? $branchId,
+                'destination_branch_id' => $request->destination_branch_id,
+                ...ShipmentCreationService::referenceFields(
+                    $request->input('shipment_type', 'new'),
+                    $request->input('shipped_at'),
+                    $request->input('existing_shipment_id'),
+                ),
+                'tracking_number' => Shipment::generateTrackingNumber(),
+                'status' => $request->input('status') ?? 'pickup',
+                'shipped_at' => $request->input('shipped_at'),
+                'estimated_delivery_date' => $request->input('estimated_delivery_date'),
+                'shipping_cost' => $subtotal,
+                'discount' => $discount,
+                'exchange_rate_at_shipment' => $request->input('exchange_rate_at_shipment'),
+                'vat_percentage' => $vatPercentage,
+                'vat' => $vat,
+                'insurance_accepted' => $insuranceAccepted,
+                'insurance' => $insurance,
+                'total' => max(round($subtotal - $discount + $insurance + $vat, 2), 0),
+                'paid' => 0,
+                'recorded_by' => auth()->id(),
+                'external_token' => Shipment::generateExternalToken(),
+                'client_existence' => $request->input('client_existence')
+                    ?? (Shipment::where('client_id', $request->client_id)->exists() ? 'returning-client' : 'new-client'),
+                'client_note' => $request->input('client_note'),
+                'description' => $request->input('description'),
             ]);
 
-            foreach ($receiverData['items'] ?? [] as $item) {
-                ShipmentItem::create([
+            foreach ($receivers as $receiverData) {
+                $receiver = Receiver::create([
                     'shipment_id' => $shipment->id,
-                    'receiver_id' => $receiver->id,
-                    'product_id' => $item['product_id'] ?? null,
-                    'quantity' => $item['quantity'] ?? 1,
-                    'item_cost' => $item['item_cost'] ?? 0,
-                    'box_no' => $item['box_no'] ?? null,
+                    'receiver_name' => $receiverData['receiver_name'],
+                    'receiver_phone' => $receiverData['receiver_phone'] ?? null,
+                    'receiver_email' => $receiverData['receiver_email'] ?? null,
+                    ...$this->receiverLocation($receiverData),
+                    'address' => $receiverData['address'] ?? null,
+                    'receiver_id_type' => $receiverData['receiver_id_type'] ?? null,
+                    'receiver_id_number' => $receiverData['receiver_id_number'] ?? null,
+                    'whatsapp_opt_in_at' => ! empty($receiverData['whatsapp_opt_in']) ? now() : null,
+                ]);
+
+                foreach ($receiverData['items'] ?? [] as $item) {
+                    $isVehicle = (bool) ($item['is_vehicle'] ?? false);
+
+                    ShipmentItem::create([
+                        'shipment_id' => $shipment->id,
+                        'receiver_id' => $receiver->id,
+                        'product_id' => $item['product_id'] ?? null,
+                        'quantity' => $item['quantity'] ?? 1,
+                        'item_cost' => $item['item_cost'] ?? 0,
+                        'box_no' => $item['box_no'] ?? null,
+                        'is_vehicle' => $isVehicle,
+                        'vin' => $isVehicle ? ($item['vin'] ?? null) : null,
+                        'vehicle_make' => $isVehicle ? ($item['vehicle_make'] ?? null) : null,
+                        'vehicle_model' => $isVehicle ? ($item['vehicle_model'] ?? null) : null,
+                        'vehicle_year' => $isVehicle ? ($item['vehicle_year'] ?? null) : null,
+                    ]);
+                }
+            }
+
+            foreach ($request->input('payments', []) as $paymentData) {
+                $amountUsd = (float) $paymentData['amount_usd'];
+                $rate = (float) ($paymentData['exchange_rate'] ?? $request->input('exchange_rate_at_shipment') ?? 0);
+
+                $shipment->payments()->create([
+                    'branch_id' => $shipment->branch_id,
+                    'user_id' => auth()->id(),
+                    'currency' => 'USD',
+                    'paying_method' => self::PAYING_METHODS[strtolower($paymentData['paying_method'])] ?? $paymentData['paying_method'],
+                    'amount' => $amountUsd,
+                    'amount_usd' => $amountUsd,
+                    'exchange_rate' => $rate ?: null,
+                    'amount_ghs' => $paymentData['amount_ghs'] ?? ($rate ? round($amountUsd * $rate, 2) : null),
+                    'paid_on' => $paymentData['paid_on'] ?? now(),
+                    'payment_note' => $paymentData['payment_note'] ?? null,
+                    'bankname' => $paymentData['bankname'] ?? null,
+                    'accountnumber' => $paymentData['accountnumber'] ?? null,
+                    'cheque_no' => $paymentData['cheque_no'] ?? null,
+                    'payment_ref' => 'PAY-'.strtoupper(bin2hex(random_bytes(4))),
+                    'payment_type' => 'credit',
+                    'change' => 0,
                 ]);
             }
-        }
+
+            app(ShipmentCreationService::class)->finalise($shipment);
+
+            return $shipment;
+        });
 
         $shipment->load(['client', 'originBranch', 'destinationBranch', 'receivers.items.product']);
 
@@ -143,20 +259,38 @@ class ShipmentController extends BaseApiController
         $shipment = Shipment::whereIn('branch_id', $this->userBranchIds())->findOrFail($id);
 
         $data = $request->only([
-            'status', 'payment_status', 'destination_branch_id',
-            'estimated_delivery_date', 'shipping_cost', 'total', 'paid',
+            'status', 'destination_branch_id',
+            'estimated_delivery_date', 'shipping_cost', 'discount',
             'vat_percentage', 'insurance_accepted', 'insurance',
-            'is_received', 'delivered_at', 'description',
+            'is_received', 'delivered_at', 'description', 'client_note',
+            'shipped_at', 'exchange_rate_at_shipment',
         ]);
 
-        $notNullableFields = ['total', 'paid', 'insurance', 'vat_percentage', 'insurance_accepted'];
+        $notNullableFields = ['shipping_cost', 'discount', 'insurance', 'vat_percentage', 'insurance_accepted'];
         foreach ($notNullableFields as $field) {
             if (array_key_exists($field, $data) && is_null($data[$field])) {
                 unset($data[$field]);
             }
         }
 
+        // Money is recalculated the wizard's way whenever any part of it changes;
+        // the total and paid figures are never taken from the client.
+        if (array_intersect(array_keys($data), ['shipping_cost', 'discount', 'vat_percentage', 'insurance_accepted', 'insurance'])) {
+            $subtotal = (float) ($data['shipping_cost'] ?? $shipment->shipping_cost);
+            $discount = (float) ($data['discount'] ?? $shipment->discount);
+            $vatPercentage = (float) ($data['vat_percentage'] ?? $shipment->vat_percentage);
+            $insuranceAccepted = (bool) ($data['insurance_accepted'] ?? $shipment->insurance_accepted);
+            $insurance = $insuranceAccepted ? (float) ($data['insurance'] ?? $shipment->insurance) : 0.0;
+            $vat = round($subtotal * $vatPercentage / 100, 2);
+
+            $data = [...$data, 'insurance' => $insurance, 'vat' => $vat, 'total' => max(round($subtotal - $discount + $insurance + $vat, 2), 0)];
+        }
+
         $shipment->update($data);
+
+        if (array_key_exists('total', $data)) {
+            $shipment->recalculatePaymentStatus();
+        }
 
         return $this->success($this->formatShipmentDetail($shipment->fresh(['client', 'originBranch', 'destinationBranch'])));
     }
@@ -219,12 +353,78 @@ class ShipmentController extends BaseApiController
             'type' => $m->type,
             'file_path' => $m->file_path ? asset('storage/'.$m->file_path) : null,
             'stage' => $m->stage,
+            'stage_label' => $m->stageLabel(),
             'caption' => $m->caption,
             'uploaded_by' => $m->uploaded_by,
+            // update_shipment may remove anything; others only their own uploads.
+            'can_remove' => $m->isRemovableBy($request->user()),
             'created_at' => $m->created_at,
         ]);
 
         return $this->success($media);
+    }
+
+    /**
+     * The branch's Media & Evidence library (the admin page of that name): every
+     * shipment's photos, videos and documents, newest first, with the client and
+     * container each belongs to so the app can group them into albums.
+     */
+    public function mediaLibrary(Request $request): JsonResponse
+    {
+        abort_unless($request->user()->can('view_any_shipment'), 403);
+
+        $request->validate([
+            'search' => 'nullable|string|max:100',
+            'container' => 'nullable|integer',
+            'client_id' => 'nullable|uuid',
+            'shipment_id' => 'nullable|uuid',
+            'stage' => ['nullable', Rule::in(array_keys(ShipmentMedia::STAGES))],
+            'type' => 'nullable|in:image,video,document',
+            'from' => 'nullable|date',
+            'until' => 'nullable|date',
+        ]);
+
+        $branchId = $this->resolveBranch($request);
+        $search = trim((string) $request->input('search'));
+
+        $paginated = ShipmentMedia::query()
+            ->whereHas('shipment', fn ($query) => $query->where('branch_id', $branchId))
+            ->with(['shipment:id,client_id,container_number,shipping_reference,tracking_number', 'shipment.client:id,name', 'uploader:id,name'])
+            ->when($search !== '', fn ($query) => $query->where(fn ($query) => $query
+                ->where('caption', 'like', "%{$search}%")
+                ->orWhereHas('shipment', fn ($shipment) => $shipment
+                    ->where('tracking_number', 'like', "%{$search}%")
+                    ->orWhere('shipping_reference', 'like', "%{$search}%")
+                    ->orWhereHas('client', fn ($client) => $client->where('name', 'like', "%{$search}%")))))
+            ->when($request->input('container'), fn ($query, $container) => $query->whereHas('shipment', fn ($q) => $q->where('container_number', $container)))
+            ->when($request->input('client_id'), fn ($query, $clientId) => $query->whereHas('shipment', fn ($q) => $q->where('client_id', $clientId)))
+            ->when($request->input('shipment_id'), fn ($query, $shipmentId) => $query->where('shipment_id', $shipmentId))
+            ->when($request->input('stage'), fn ($query, $stage) => $query->where('stage', $stage))
+            ->when($request->input('type'), fn ($query, $type) => $query->where('type', $type))
+            ->when($request->input('from'), fn ($query, $from) => $query->whereDate('created_at', '>=', $from))
+            ->when($request->input('until'), fn ($query, $until) => $query->whereDate('created_at', '<=', $until))
+            ->latest()
+            ->paginate((int) $request->input('per_page', 40));
+
+        return $this->paginated($paginated, fn (ShipmentMedia $media) => [
+            'id' => $media->id,
+            'type' => $media->type,
+            'url' => $media->url(),
+            'file_name' => $media->fileName(),
+            'stage' => $media->stage,
+            'stage_label' => $media->stageLabel(),
+            'caption' => $media->caption,
+            'uploaded_by' => $media->uploader?->name,
+            'can_remove' => $media->isRemovableBy($request->user()),
+            'created_at' => $media->created_at,
+            'shipment' => [
+                'id' => $media->shipment?->id,
+                'shipping_reference' => $media->shipment?->shipping_reference,
+                'tracking_number' => $media->shipment?->tracking_number,
+                'container_number' => $media->shipment?->container_number,
+                'client' => $media->shipment?->client ? ['id' => $media->shipment->client->id, 'name' => $media->shipment->client->name] : null,
+            ],
+        ]);
     }
 
     public function uploadMedia(Request $request, string $id): JsonResponse
@@ -233,11 +433,9 @@ class ShipmentController extends BaseApiController
 
         Shipment::whereIn('branch_id', $this->userBranchIds())->findOrFail($id);
 
-        logger($request->all());
-
         $request->validate([
             'file' => 'required|file|mimes:jpg,jpeg,png,webp,heic,mp4,mov,m4v,3gp,webm,pdf,doc,docx,xls,xlsx,csv,txt|max:51200',
-            'stage' => 'nullable',
+            'stage' => 'nullable|string|max:50',
             'caption' => 'nullable|string|max:255',
         ]);
 
@@ -248,7 +446,7 @@ class ShipmentController extends BaseApiController
             'shipment_id' => $id,
             'type' => ShipmentMedia::typeForPath($file->getClientOriginalName()),
             'file_path' => $path,
-            'stage' => $request->input('stage', 'pickup'),
+            'stage' => self::mediaStage($request->input('stage')),
             'caption' => $request->input('caption'),
             'uploaded_by' => auth()->id(),
         ]);
@@ -378,30 +576,56 @@ class ShipmentController extends BaseApiController
         return $this->success($receivers);
     }
 
-    public function publicTrack(string $trackingNumber): JsonResponse
+    /**
+     * Public tracking by tracking number or shipping reference, with the same content
+     * and privacy rules as the kasarose.com tracking page (PublicShipmentTracking).
+     * The original keys (origin_branch, destination_branch, tracking_history) are kept
+     * for app builds released before the nine-stage tracker.
+     */
+    public function publicTrack(string $trackingNumber, PublicShipmentTracking $tracking): JsonResponse
     {
-        $shipment = Shipment::where('tracking_number', $trackingNumber)
-            ->with(['originBranch:id,name', 'destinationBranch:id,name'])
+        $shipment = $tracking->find($trackingNumber);
+
+        if (! $shipment) {
+            return $this->error('Shipment not found.', 404);
+        }
+
+        return $this->success($this->trackingPayload($shipment, $tracking, $tracking->lookedUpByTrackingNumber($shipment, $trackingNumber)));
+    }
+
+    /**
+     * The same payload for the /my-shipment/{token} and /shipment-label/{token} links in
+     * alerts and on printed labels, so the app can open them directly.
+     */
+    public function publicView(string $token, PublicShipmentTracking $tracking): JsonResponse
+    {
+        $shipment = Shipment::query()
+            ->with(['originBranch:id,name,country', 'destinationBranch:id,name,country'])
+            ->where('public_view_token', $token)
             ->first();
 
         if (! $shipment) {
             return $this->error('Shipment not found.', 404);
         }
 
+        return $this->success($this->trackingPayload($shipment, $tracking, true));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function trackingPayload(Shipment $shipment, PublicShipmentTracking $tracking, bool $byTrackingNumber): array
+    {
         $trackings = Tracking::where('shipment_id', $shipment->id)
             ->orderBy('status_updated_at')
             ->get();
 
-        return $this->success([
-            'shipping_reference' => $shipment->shipping_reference,
-            'tracking_number' => $shipment->tracking_number,
-            'status' => $shipment->status instanceof \BackedEnum ? $shipment->status->value : $shipment->status,
-            'estimated_delivery_date' => $shipment->estimated_delivery_date,
-            'delivered_at' => $shipment->delivered_at,
-            'origin_branch' => $shipment->originBranch?->name,
-            'destination_branch' => $shipment->destinationBranch?->name,
-            'tracking_history' => TrackingResource::collection($trackings),
-        ]);
+        return [
+            ...$tracking->payload($shipment, $byTrackingNumber),
+            'origin_branch' => $tracking->placeName($shipment, 'origin'),
+            'destination_branch' => $tracking->placeName($shipment, 'destination'),
+            'tracking_history' => TrackingResource::collection($trackings)->resolve(),
+        ];
     }
 
     private function formatShipment(Shipment $s): array

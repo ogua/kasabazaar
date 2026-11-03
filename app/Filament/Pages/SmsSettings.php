@@ -37,7 +37,11 @@ class SmsSettings extends Page implements HasForms
     public function mount(): void
     {
         $this->form->fill([
-            'sms_driver' => SystemSetting::get('sms_driver', config('services.sms.default', 'twilio')),
+            'sms_driver' => SystemSetting::get('sms_driver', config('services.sms.default', 'infobip')),
+            'sms_international_driver' => SystemSetting::get('sms_international_driver', config('services.sms.international', 'infobip')),
+            'infobip_base_url' => SystemSetting::get('infobip_base_url') ?: config('services.infobip.base_url'),
+            'infobip_sms_key' => SystemSetting::get('infobip_sms_key', config('services.infobip.sms_key')),
+            'infobip_sms_sender' => SystemSetting::get('infobip_sms_sender', config('services.infobip.sms_sender')),
             'twilio_sid' => SystemSetting::get('twilio_sid', config('services.twilio.sid')),
             'twilio_token' => SystemSetting::get('twilio_token', config('services.twilio.token')),
             'twilio_from' => SystemSetting::get('twilio_from', config('services.twilio.from')),
@@ -74,18 +78,48 @@ class SmsSettings extends Page implements HasForms
                     ->columns(1),
 
                 Section::make('SMS Provider')
-                    ->description('Alerts route automatically by destination number: Ghana numbers (+233… or a local 0XXXXXXXXX) go through Arkesel, all other numbers go through Twilio. The provider below is only used for numbers that cannot be classified.')
+                    ->description('Alerts route automatically by destination number: Ghana numbers (+233… or a local 0XXXXXXXXX) go through Arkesel, all other numbers go through the international provider. The fallback provider is only used for numbers that cannot be classified.')
                     ->schema([
+                        Select::make('sms_international_driver')
+                            ->label('International SMS Provider')
+                            ->options([
+                                'infobip' => 'Infobip',
+                                'twilio' => 'Twilio',
+                            ])
+                            ->default('infobip')
+                            ->helperText('Infobip falls back to Twilio when it has no API key.')
+                            ->required(),
                         Select::make('sms_driver')
                             ->label('Fallback SMS Provider')
                             ->options([
+                                'infobip' => 'Infobip',
                                 'twilio' => 'Twilio',
                                 'arkesel' => 'Arkesel',
                                 'mnotify' => 'MNotify',
                             ])
-                            ->default('twilio')
+                            ->default('infobip')
                             ->required(),
-                    ]),
+                    ])
+                    ->columns(2),
+
+                Section::make('Infobip Configuration')
+                    ->description('An SMS-scoped API key from the Infobip portal (Developers → API keys). Used for international numbers.')
+                    ->schema([
+                        TextInput::make('infobip_base_url')
+                            ->label('API Base URL')
+                            ->url()
+                            ->placeholder('https://api.infobip.com'),
+                        TextInput::make('infobip_sms_key')
+                            ->label('API Key')
+                            ->password()
+                            ->revealable(),
+                        TextInput::make('infobip_sms_sender')
+                            ->label('Sender ID')
+                            ->placeholder('KASAROSE')
+                            ->helperText('Alphanumeric (max 11) or a number on your Infobip account. Leave blank to let Infobip pick one; some countries (e.g. the US) do not accept alphanumeric senders.')
+                            ->maxLength(15),
+                    ])
+                    ->columns(1),
 
                 Section::make('Arkesel Configuration')
                     ->description('Credentials from your Arkesel account (arkesel.com). Used for Ghana numbers.')

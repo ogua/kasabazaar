@@ -6,10 +6,9 @@ use App\Enums\ShippingStatus;
 use App\Filament\Resources\ShipmentResource;
 use App\Jobs\BulkContainerShipmentStatusJob;
 use App\Models\ClearingAgent;
-use App\Models\ContainerClearance;
 use App\Models\Shipment;
 use App\Models\ShipmentContainer;
-use App\Services\ShipmentNotifier;
+use App\Services\ContainerClearanceService;
 use Closure;
 use Filament\Actions;
 use Filament\Forms;
@@ -97,64 +96,18 @@ class ListShipments extends ListRecords
                 ->action(function (array $data): void {
                     $containerNumber = (int) $data['container_number'];
                     $nowCleared = (bool) ($data['is_cleared'] ?? false);
-                    $notifyClients = (bool) ($data['notify_clients'] ?? true);
 
-                    $year = null;
-                    $shipment = Shipment::query()
-                        ->where('container_number', '=', $containerNumber)
-                        ->whereNotNull('shipping_reference')
-                        ->first();
-
-                    if ($shipment?->shipping_reference) {
-                        $parsed = Shipment::parseShippingReference($shipment->shipping_reference);
-                        $year = $parsed['year'] ?? null;
-                    }
-
-                    $previous = (bool) ShipmentContainer::query()
-                        ->where('container_number', '=', $containerNumber)
-                        ->value('is_cleared');
-
-                    $clearingAgentId = $data['clearing_agent_id'] ?? null;
-                    $clearedAt = $nowCleared ? now() : null;
-
-                    ShipmentContainer::updateOrCreate(
-                        ['container_number' => $containerNumber],
-                        [
-                            'container_year' => $year,
-                            'is_cleared' => $nowCleared,
-                            'review' => $data['review'] ?? null,
-                            'clearing_agent_id' => $clearingAgentId,
-                            'cleared_at' => $clearedAt,
-                        ]
+                    app(ContainerClearanceService::class)->record(
+                        $containerNumber,
+                        $nowCleared,
+                        $data['clearing_agent_id'] ?? null,
+                        $data['review'] ?? null,
+                        (bool) ($data['notify_clients'] ?? true),
+                        auth()->id(),
                     );
-
-                    if ($clearingAgentId) {
-                        ContainerClearance::create([
-                            'container_number' => $containerNumber,
-                            'container_year' => $year,
-                            'clearing_agent_id' => $clearingAgentId,
-                            'is_cleared' => $nowCleared,
-                            'review' => $data['review'] ?? null,
-                            'recorded_by' => auth()->id(),
-                            'cleared_at' => $clearedAt ?? now(),
-                        ]);
-                    }
 
                     $label = $nowCleared ? 'marked as Cleared' : 'marked as Not Cleared';
                     $containerRef = 'CON'.$containerNumber;
-
-                    // Notify clients only when clearance state actually changes
-                    if ($notifyClients && $previous !== $nowCleared) {
-                        $shipments = Shipment::query()
-                            ->where('container_number', '=', $containerNumber)
-                            ->get();
-
-                        $event = $nowCleared ? 'container_cleared' : 'container_update';
-
-                        foreach ($shipments as $s) {
-                            ShipmentNotifier::sent($s, $event, ['note' => $data['review'] ?? null]);
-                        }
-                    }
 
                     Notification::make()
                         ->title('Container Updated')

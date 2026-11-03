@@ -5,11 +5,48 @@ namespace App\Http\Controllers\Api\V1;
 use App\Models\Income;
 use App\Models\Shipment;
 use App\Models\Trip;
+use App\Services\AnnualOperationsService;
+use App\Services\ManagementKpiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class DashboardController extends BaseApiController
 {
+    /**
+     * The admin dashboard's Management KPIs for a period (default: this month so
+     * far), optionally for one container.
+     */
+    public function managementKpis(Request $request, ManagementKpiService $kpis): JsonResponse
+    {
+        abort_unless($request->user()->can('view_any_shipment'), 403);
+
+        $request->validate([
+            'from' => 'nullable|date',
+            'to' => 'nullable|date|after_or_equal:from',
+            'container' => 'nullable|integer',
+        ]);
+
+        $from = $request->input('from', now()->startOfMonth()->toDateString());
+        $to = $request->input('to', now()->toDateString());
+
+        return $this->success([
+            'from' => $from,
+            'to' => $to,
+            'container' => $request->input('container'),
+            ...$kpis->compute($from, $to, $request->input('container')),
+        ]);
+    }
+
+    /**
+     * Cars shipped and demurrage paid, year to date.
+     */
+    public function annualOperations(Request $request, AnnualOperationsService $operations): JsonResponse
+    {
+        abort_unless($request->user()->can('view_any_shipment'), 403);
+
+        return $this->success($operations->compute($request->integer('year') ?: null));
+    }
+
     public function summary(Request $request): JsonResponse
     {
         $branchId = $this->resolveBranch($request);

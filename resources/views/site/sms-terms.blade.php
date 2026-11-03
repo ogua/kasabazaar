@@ -112,7 +112,7 @@
                   delayed or undelivered messages.</p>
 
                <h3 class="display-5 mt-5">Providers &amp; Sharing</h3>
-               <p>Messages are delivered through our messaging providers, Twilio and Arkesel, acting as data
+               <p>Messages are delivered through our messaging providers, Infobip, Twilio and Arkesel, acting as data
                   processors on our behalf. Mobile numbers collected for SMS notifications, and your opt-in
                   consent, are never sold, rented, or shared with third parties, or with other group companies
                   for their own marketing purposes.</p>

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1\Customer;
 
 use App\Models\DeviceToken;
-use App\Http\Controllers\Api\V1\Customer\CustomerBaseController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -17,12 +16,12 @@ class CustomerNotificationController extends CustomerBaseController
             ->paginate((int) $request->input('per_page', 20));
 
         return $this->paginated($notifications, fn ($n) => [
-            'id'         => $n->id,
-            'type'       => $n->data['type'] ?? null,
-            'title'      => $n->data['title'] ?? null,
-            'body'       => $n->data['body'] ?? null,
-            'data'       => $n->data,
-            'read_at'    => $n->read_at,
+            'id' => $n->id,
+            'type' => $n->data['type'] ?? null,
+            'title' => $n->data['title'] ?? null,
+            'body' => $n->data['body'] ?? null,
+            'data' => $n->data,
+            'read_at' => $n->read_at,
             'created_at' => $n->created_at,
         ]);
     }
@@ -35,10 +34,22 @@ class CustomerNotificationController extends CustomerBaseController
         return $this->success(null, 'Notification marked as read.');
     }
 
+    public function markAllRead(Request $request): JsonResponse
+    {
+        $request->user()->unreadNotifications()->update(['read_at' => now()]);
+
+        return $this->success(null, 'All notifications marked as read.');
+    }
+
+    public function unreadCount(Request $request): JsonResponse
+    {
+        return $this->success(['count' => $request->user()->unreadNotifications()->count()]);
+    }
+
     public function storeDeviceToken(Request $request): JsonResponse
     {
         $request->validate([
-            'token'    => 'required|string',
+            'token' => 'required|string',
             'platform' => 'nullable|in:ios,android',
         ]);
 

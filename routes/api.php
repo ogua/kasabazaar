@@ -35,6 +35,7 @@ use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\FeedbackController;
 use App\Http\Controllers\Api\V1\FinancialReportController;
 use App\Http\Controllers\Api\V1\IncomeController;
+use App\Http\Controllers\Api\V1\InfobipWebhookController;
 use App\Http\Controllers\Api\V1\Investment\InvestmentPaystackWebhookController;
 use App\Http\Controllers\Api\V1\Investment\InvestmentStripeWebhookController;
 use App\Http\Controllers\Api\V1\Investment\InvestmentTransferWebhookController;
@@ -73,11 +74,16 @@ Route::prefix('v1')->group(function () {
     // ── Public ──────────────────────────────────────────────────────────────
     Route::middleware('throttle:10,1')->post('auth/login', [AuthController::class, 'login']);
     Route::middleware('throttle:60,1')->get('shipments/track/{tracking_number}', [ShipmentController::class, 'publicTrack']);
+    Route::middleware('throttle:60,1')->get('shipments/view/{token}', [ShipmentController::class, 'publicView']);
     Route::get('exchange-rates/current', [ExchangeRateController::class, 'current']);
 
     // Ogua WhatsApp gateway callbacks (signature-verified, no auth)
     Route::post('webhooks/whatsapp-gateway', [WhatsappGatewayCallbackController::class, 'handle'])
         ->name('webhooks.whatsapp-gateway');
+
+    // Infobip WhatsApp delivery / seen reports and inbound messages (secret token in the URL, no auth)
+    Route::post('webhooks/infobip/{token}', [InfobipWebhookController::class, 'handle'])
+        ->name('webhooks.infobip');
 
     // The one Paystack webhook URL for the whole account (spatie/laravel-webhook-client):
     // signature-checked, stored in webhook_calls, then routed by ProcessPaystackWebhookJob
@@ -100,11 +106,14 @@ Route::prefix('v1')->group(function () {
         // Dashboard
         Route::get('dashboard/summary', [DashboardController::class, 'summary']);
         Route::get('dashboard/recent-shipments', [DashboardController::class, 'recentShipments']);
+        Route::get('dashboard/management-kpis', [DashboardController::class, 'managementKpis']);
+        Route::get('dashboard/annual-operations', [DashboardController::class, 'annualOperations']);
 
         // Shipments
         Route::apiResource('shipments', ShipmentController::class);
         Route::get('shipments/{id}/trackings', [ShipmentController::class, 'trackings']);
         Route::post('shipments/{id}/trackings', [ShipmentController::class, 'addTracking']);
+        Route::get('media', [ShipmentController::class, 'mediaLibrary']);
         Route::get('shipments/{id}/media', [ShipmentController::class, 'media']);
         Route::post('shipments/{id}/media', [ShipmentController::class, 'uploadMedia']);
         Route::delete('shipments/{id}/media/{mediaId}', [ShipmentController::class, 'deleteMedia']);
@@ -285,6 +294,7 @@ Route::prefix('v1')->group(function () {
         // ── Investor (role-specific) ────────────────────────────────────────
         Route::prefix('investor')->middleware('investor')->group(function () {
             Route::get('portfolio-summary', [InvestorInvestmentController::class, 'portfolioSummary']);
+            Route::get('interest-payouts', [InvestorInvestmentController::class, 'interestPayouts']);
             Route::get('investments', [InvestorInvestmentController::class, 'index']);
             Route::post('investments', [InvestorInvestmentController::class, 'store']);
             Route::get('investments/{id}', [InvestorInvestmentController::class, 'show']);
@@ -309,6 +319,7 @@ Route::prefix('v1')->group(function () {
             Route::get('statements', [InvestorDocumentController::class, 'statements']);
 
             Route::get('company-performance', [InvestorCompanyPerformanceController::class, 'index']);
+            Route::get('company-overview', [InvestorCompanyPerformanceController::class, 'overview']);
             Route::get('reports/shipments', [InvestorCompanyPerformanceController::class, 'shipments']);
             Route::get('reports/income', [InvestorCompanyPerformanceController::class, 'income']);
             Route::get('reports/expenses', [InvestorCompanyPerformanceController::class, 'expenses']);
@@ -323,13 +334,27 @@ Route::prefix('v1')->group(function () {
         Route::get('branches', [CustomerAuthController::class, 'branches']);
         Route::middleware('throttle:10,1')->group(function () {
             Route::post('auth/register', [CustomerAuthController::class, 'register']);
+            Route::post('auth/verify-otp', [CustomerAuthController::class, 'verifyOtp']);
             Route::post('auth/login', [CustomerAuthController::class, 'login']);
             Route::post('auth/reset-password', [CustomerAuthController::class, 'resetPassword']);
         });
         Route::middleware('throttle:5,1')->post('auth/forgot-password', [CustomerAuthController::class, 'forgotPassword']);
+        Route::middleware('throttle:3,1')->post('auth/resend-otp', [CustomerAuthController::class, 'resendOtp']);
 
         // Paystack webhook (signature-verified, no auth)
         Route::post('webhooks/paystack', [PaystackWebhookController::class, 'handle']);
+
+        // Push tokens and the in-app notification inbox serve every app user
+        // (clients and investors), so they sit outside the client-only group.
+        Route::middleware(['auth:sanctum', 'active'])->group(function () {
+            Route::post('device-tokens', [CustomerNotificationController::class, 'storeDeviceToken']);
+            Route::delete('device-tokens', [CustomerNotificationController::class, 'removeDeviceToken']);
+
+            Route::get('notifications', [CustomerNotificationController::class, 'index']);
+            Route::get('notifications/unread-count', [CustomerNotificationController::class, 'unreadCount']);
+            Route::put('notifications/read-all', [CustomerNotificationController::class, 'markAllRead']);
+            Route::put('notifications/{id}/read', [CustomerNotificationController::class, 'markRead']);
+        });
 
         // Authenticated customers
         Route::middleware(['auth:sanctum', 'active', 'customer'])->group(function () {
@@ -339,6 +364,7 @@ Route::prefix('v1')->group(function () {
             Route::put('auth/profile', [CustomerAuthController::class, 'updateProfile']);
             Route::put('auth/password', [CustomerAuthController::class, 'changePassword']);
 
+            Route::get('dashboard', [CustomerShipmentController::class, 'dashboard']);
             Route::get('shipments', [CustomerShipmentController::class, 'index']);
             Route::get('shipments/{id}', [CustomerShipmentController::class, 'show']);
 
@@ -354,9 +380,6 @@ Route::prefix('v1')->group(function () {
             Route::get('payments', [CustomerPaymentController::class, 'index']);
             Route::post('payments/initiate', [CustomerPaymentController::class, 'initiate']);
             Route::post('payments/verify', [CustomerPaymentController::class, 'verify']);
-
-            Route::post('device-tokens', [CustomerNotificationController::class, 'storeDeviceToken']);
-            Route::delete('device-tokens', [CustomerNotificationController::class, 'removeDeviceToken']);
 
             Route::get('complaints', [CustomerComplaintController::class, 'index']);
             Route::post('complaints', [CustomerComplaintController::class, 'store']);

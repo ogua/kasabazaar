@@ -2,8 +2,7 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\Expense;
-use App\Models\ShipmentItem;
+use App\Services\AnnualOperationsService;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -13,20 +12,13 @@ class AnnualOperationsWidget extends BaseWidget
 
     protected function getStats(): array
     {
-        $year = now()->year;
-
-        $carsThisYear = $this->vehiclesShipped($year);
-        $carsLastYear = $this->vehiclesShipped($year - 1);
-        $carsThisMonth = (int) ShipmentItem::vehicles()
-            ->whereHas('shipment', fn ($q) => $q->whereYear('created_at', $year)->whereMonth('created_at', now()->month))
-            ->sum('quantity');
-
-        $carsChange = $carsLastYear > 0
-            ? round((($carsThisYear - $carsLastYear) / $carsLastYear) * 100, 1)
-            : null;
-
-        $demurrageGhs = $this->demurrage($year, 'amount_ghs');
-        $demurrageUsd = $this->demurrage($year, 'amount_usd');
+        $ops = app(AnnualOperationsService::class)->compute();
+        $year = $ops['year'];
+        $carsThisYear = $ops['cars_this_year'];
+        $carsThisMonth = $ops['cars_this_month'];
+        $carsChange = $ops['cars_change_percent'];
+        $demurrageGhs = $ops['demurrage_ghs'];
+        $demurrageUsd = $ops['demurrage_usd'];
 
         return [
             Stat::make('Cars Shipped ('.$year.')', number_format($carsThisYear))
@@ -47,20 +39,5 @@ class AnnualOperationsWidget extends BaseWidget
                 ->description('Year to date')
                 ->descriptionIcon('heroicon-m-calendar'),
         ];
-    }
-
-    private function vehiclesShipped(int $year): int
-    {
-        return (int) ShipmentItem::vehicles()
-            ->whereHas('shipment', fn ($q) => $q->whereYear('created_at', $year))
-            ->sum('quantity');
-    }
-
-    private function demurrage(int $year, string $column): float
-    {
-        return (float) Expense::query()
-            ->whereHas('category', fn ($q) => $q->where('code', 'DEMURRAGE'))
-            ->whereYear('expense_date', $year)
-            ->sum($column);
     }
 }

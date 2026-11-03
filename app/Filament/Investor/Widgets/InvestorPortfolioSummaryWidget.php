@@ -2,15 +2,11 @@
 
 namespace App\Filament\Investor\Widgets;
 
-use App\Enums\InvestmentCapitalType;
-use App\Enums\InvestmentStatus;
-use App\Enums\InvestmentWithdrawalStatus;
 use App\Filament\Investor\Resources\InvestmentResource;
 use App\Filament\Investor\Resources\InvestmentWithdrawalRequestResource;
-use App\Models\Investment;
-use App\Models\InvestmentWithdrawalRequest;
 use App\Service\InvestorPortfolioSummaryService;
 use Filament\Widgets\Widget;
+use Illuminate\Support\Carbon;
 
 class InvestorPortfolioSummaryWidget extends Widget
 {
@@ -26,36 +22,17 @@ class InvestorPortfolioSummaryWidget extends Widget
     protected function getViewData(): array
     {
         $investorId = auth()->user()->investor_id;
-
-        $holdings = Investment::where('investor_id', $investorId)
-            ->excludingConverted()
-            ->whereIn('status', [InvestmentStatus::active->value, InvestmentStatus::pending_payment->value])
-            ->orderBy('maturity_date')
-            ->get();
-
-        $activeHoldings = $holdings->where('status', InvestmentStatus::active);
-
-        $pendingWithdrawals = InvestmentWithdrawalRequest::where('investor_id', $investorId)
-            ->whereIn('status', [
-                InvestmentWithdrawalStatus::submitted->value,
-                InvestmentWithdrawalStatus::under_review->value,
-                InvestmentWithdrawalStatus::approved->value,
-                InvestmentWithdrawalStatus::processing->value,
-            ])
-            ->get();
+        $service = app(InvestorPortfolioSummaryService::class);
+        $facts = $service->facts($investorId);
 
         return [
-            'summary' => app(InvestorPortfolioSummaryService::class)->compute($investorId),
-            'holdings' => $holdings,
-            'activeCount' => $activeHoldings->count(),
-            'nextMaturity' => $activeHoldings->whereNotNull('maturity_date')
-                ->filter(fn (Investment $investment) => $investment->maturity_date->isFuture())
-                ->min('maturity_date'),
-            'nextPayout' => $activeHoldings->where('capital_type', InvestmentCapitalType::loan)
-                ->whereNotNull('next_payout_due_date')
-                ->min('next_payout_due_date'),
-            'pendingWithdrawalCount' => $pendingWithdrawals->count(),
-            'pendingWithdrawalAmount' => (float) $pendingWithdrawals->sum('requested_amount'),
+            'summary' => $service->compute($investorId),
+            'holdings' => $facts['holdings'],
+            'activeCount' => $facts['active_count'],
+            'nextMaturity' => $facts['next_maturity_date'] ? Carbon::parse($facts['next_maturity_date']) : null,
+            'nextPayout' => $facts['next_payout_date'] ? Carbon::parse($facts['next_payout_date']) : null,
+            'pendingWithdrawalCount' => $facts['pending_withdrawal_count'],
+            'pendingWithdrawalAmount' => $facts['pending_withdrawal_amount'],
             'investmentsUrl' => InvestmentResource::getUrl('index'),
             'withdrawalsUrl' => InvestmentWithdrawalRequestResource::getUrl('index'),
         ];

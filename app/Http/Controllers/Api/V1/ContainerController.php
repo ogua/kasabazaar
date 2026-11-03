@@ -6,6 +6,7 @@ use App\Http\Requests\BulkContainerStatusRequest;
 use App\Jobs\BulkContainerShipmentStatusJob;
 use App\Models\Shipment;
 use App\Models\ShipmentContainer;
+use App\Services\ContainerClearanceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -123,29 +124,22 @@ class ContainerController extends BaseApiController
     {
         abort_unless(auth()->user()->can('update_shipment'), 403);
 
+        // The clearing agent is optional only so app builds released before it was
+        // asked for keep working; current builds always send it when clearing.
         $request->validate([
             'is_cleared' => 'required|boolean',
             'review' => 'nullable|string',
+            'clearing_agent_id' => 'nullable|exists:clearing_agents,id',
+            'notify_clients' => 'nullable|boolean',
         ]);
 
-        // Resolve 2-digit year from first shipment's shipping reference (mirrors Filament action)
-        $year = null;
-        $shipment = Shipment::where('container_number', $containerNumber)
-            ->whereNotNull('shipping_reference')
-            ->first();
-
-        if ($shipment?->shipping_reference && method_exists(Shipment::class, 'parseShippingReference')) {
-            $parsed = Shipment::parseShippingReference($shipment->shipping_reference);
-            $year = $parsed['year'] ?? null;
-        }
-
-        $container = ShipmentContainer::updateOrCreate(
-            ['container_number' => $containerNumber],
-            [
-                'container_year' => $year,
-                'is_cleared' => $request->boolean('is_cleared'),
-                'review' => $request->input('review'),
-            ]
+        $container = app(ContainerClearanceService::class)->record(
+            $containerNumber,
+            $request->boolean('is_cleared'),
+            $request->input('clearing_agent_id'),
+            $request->input('review'),
+            $request->boolean('notify_clients', true),
+            $request->user()->id,
         );
 
         return $this->success($this->formatContainer($container->fresh()));
@@ -191,6 +185,8 @@ class ContainerController extends BaseApiController
             'container_ref' => $c->container_ref,
             'is_cleared' => $c->is_cleared,
             'review' => $c->review,
+            'clearing_agent_id' => $c->clearing_agent_id,
+            'cleared_at' => $c->cleared_at,
             'created_at' => $c->created_at,
         ];
     }

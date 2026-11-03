@@ -150,6 +150,7 @@ class PendingShipmentResource extends Resource
                         ->icon('heroicon-m-banknotes')
                         ->color('primary')
                         ->requiresConfirmation()
+                        ->visible(fn ($record) => $record->payment_status !== 'paid')
                         ->url(fn ($record) => route('make-payment', ['record' => $record]), shouldOpenInNewTab: true),
 
                     Tables\Actions\Action::make('receiver')

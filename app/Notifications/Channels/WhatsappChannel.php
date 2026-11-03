@@ -4,22 +4,22 @@ namespace App\Notifications\Channels;
 
 use App\Models\WhatsappMessage;
 use App\Notifications\Messages\WhatsappTemplateMessage;
-use App\Services\Whatsapp\OguaWhatsappClient;
 use App\Services\Whatsapp\PhoneNumber;
+use App\Services\Whatsapp\WhatsappGateway;
 use App\Services\Whatsapp\WhatsappGatewayException;
 use App\Services\Whatsapp\WhatsappSettings;
 use Illuminate\Notifications\Notification;
 
 /**
- * Sends a notification as an approved WhatsApp template through the Ogua
- * gateway. A notification only reaches this channel when its recipient is
- * eligible (see WhatsappSettings::shouldSend()); if WhatsApp then fails — now,
- * or later via the gateway's failed callback — the notification's SMS text is
- * sent instead, so the recipient still hears about it.
+ * Sends a notification as an approved WhatsApp template through the configured
+ * provider (Infobip or the Ogua gateway). A notification only reaches this
+ * channel when its recipient is eligible (see WhatsappSettings::shouldSend());
+ * if WhatsApp then fails — now, or later via a failed delivery report — the
+ * notification's SMS text is sent instead, so the recipient still hears about it.
  */
 class WhatsappChannel
 {
-    public function __construct(private OguaWhatsappClient $client) {}
+    public function __construct(private WhatsappGateway $client) {}
 
     public function send(object $notifiable, Notification $notification): void
     {

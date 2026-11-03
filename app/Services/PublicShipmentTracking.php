@@ -225,6 +225,69 @@ class PublicShipmentTracking
         };
     }
 
+    /**
+     * The tracking page's content as JSON for the mobile app, under the same rules as the
+     * page: items and masked receivers only when $byTrackingNumber, never contact details,
+     * addresses, values or payment state. Anyone holding the shipment's public view token
+     * (the /my-shipment link in alerts) counts as holding the tracking number.
+     *
+     * @return array<string, mixed>
+     */
+    public function payload(Shipment $shipment, bool $byTrackingNumber): array
+    {
+        $rawStatus = $this->rawStatus($shipment);
+        $received = $this->isReceived($shipment);
+        $meta = self::statusMeta($rawStatus, $received);
+        $statusKey = $rawStatus === 'delivered' && $received ? 'received' : ($rawStatus === 'cleared' ? 'port' : str_replace(' ', '_', strtolower($rawStatus)));
+        $step = $meta['step'];
+
+        $shippedAt = $this->date($shipment->getRawOriginal('shipped_at'));
+        $deliveredAt = $this->date($shipment->getRawOriginal('delivered_at'));
+        $estimated = $this->date($shipment->getRawOriginal('estimated_delivery_date'));
+
+        $stages = collect(self::STAGES)->map(fn (array $stage, int $number): array => [
+            'step' => $number,
+            'label' => $stage['label'],
+            'image' => asset('site/'.$stage['image']),
+            'done' => $step !== null && $number < $step,
+            'current' => $step !== null && $number === $step,
+            'date' => match (true) {
+                $step === null || $number > $step => null,
+                $number === self::STAGE_SHIPPED => $shippedAt?->toDateString(),
+                $number === self::STAGE_DELIVERY => $deliveredAt?->toDateString(),
+                default => null,
+            },
+        ])->values()->all();
+
+        return [
+            'tracking_number' => $shipment->tracking_number,
+            'shipping_reference' => $shipment->shipping_reference,
+            'status' => $statusKey,
+            'status_meta' => ['key' => $statusKey, 'label' => $meta['label'], 'step' => $step, 'tone' => $meta['class'], 'icon' => $meta['icon']],
+            'is_cancelled' => $step === null,
+            'stages' => $stages,
+            'origin' => ['place' => $this->placeName($shipment, 'origin'), 'country' => $shipment->originBranch?->country],
+            'destination' => ['place' => $this->placeName($shipment, 'destination'), 'country' => $shipment->destinationBranch?->country],
+            'shipped_at' => $step !== null && $step >= self::STAGE_SHIPPED ? $shippedAt?->toISOString() : null,
+            'estimated_delivery_date' => $estimated?->toDateString(),
+            'delivered_at' => $deliveredAt?->toISOString(),
+            'history' => array_map(fn (array $row): array => [
+                'status' => $row['status'],
+                'label' => self::statusMeta($row['status'])['label'],
+                'note' => filled($row['note']) && $row['note'] !== self::statusMeta($row['status'])['label'] ? $row['note'] : null,
+                'location' => $row['location'] !== '' ? $row['location'] : null,
+                'happened_at' => $row['happened_at']?->toISOString(),
+            ], $this->timeline($shipment)),
+            'looked_up_by' => $byTrackingNumber ? 'tracking_number' : 'reference',
+            'can_pay' => $byTrackingNumber && $rawStatus !== 'cancelled',
+            'pay_url' => $byTrackingNumber && $rawStatus !== 'cancelled' && filled($shipment->tracking_number)
+                ? route('tracking-payment.create', $shipment->tracking_number)
+                : null,
+            'web_url' => route('our-tracking', ['ref' => $shipment->tracking_number ?? $shipment->shipping_reference]),
+            'items_by_receiver' => $byTrackingNumber ? $this->items($shipment) : [],
+        ];
+    }
+
     private function itemName(ShipmentItem $item): string
     {
         $name = trim((string) $item->product?->name);

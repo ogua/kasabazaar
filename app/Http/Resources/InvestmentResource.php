@@ -3,11 +3,29 @@
 namespace App\Http\Resources;
 
 use App\Enums\InvestmentCapitalType;
+use App\Service\InvestmentRateResolver;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class InvestmentResource extends JsonResource
 {
+    /**
+     * The annual rate applying this year and where it comes from (a per-tranche
+     * override, the investor's default, the company rate or the standard rate).
+     *
+     * @return array{annual_rate: ?float, rate_source: ?string}
+     */
+    private function currentRate(): array
+    {
+        try {
+            $resolved = app(InvestmentRateResolver::class)->resolve($this->resource, (int) now()->year);
+
+            return ['annual_rate' => $resolved['rate'], 'rate_source' => $resolved['source']];
+        } catch (\Throwable) {
+            return ['annual_rate' => null, 'rate_source' => null];
+        }
+    }
+
     public function toArray(Request $request): array
     {
         $isLoan = $this->capital_type === InvestmentCapitalType::loan;
@@ -47,6 +65,12 @@ class InvestmentResource extends JsonResource
             'maturity_date' => $this->maturity_date?->toDateString(),
             'is_contract_due' => $this->isContractDue(),
             'last_interest_posted_year' => $this->last_interest_posted_year,
+            // Interest is posted through this date (Dec 31 catch-up, Actual/365).
+            'last_interest_posted_through' => $this->last_interest_posted_through?->toDateString(),
+            'payout_frequency' => $this->payout_frequency?->value,
+            'payout_frequency_label' => $this->payout_frequency?->getLabel(),
+            'next_payout_due_date' => $isLoan ? $this->next_payout_due_date?->toDateString() : null,
+            ...$this->currentRate(),
             'interest_accrued_total' => $isLoan ? round((float) $payouts->sum('amount'), 2) : null,
             'interest_paid_total' => $isLoan ? round((float) $payouts->sum('amount_paid'), 2) : null,
             'interest_owed' => $isLoan

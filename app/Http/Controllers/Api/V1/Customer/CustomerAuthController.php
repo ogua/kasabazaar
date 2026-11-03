@@ -3,34 +3,42 @@
 namespace App\Http\Controllers\Api\V1\Customer;
 
 use App\Enums\UserStatus;
+use App\Http\Requests\RegisterCustomerRequest;
 use App\Models\Branch;
 use App\Models\Client;
+use App\Models\CustomerSignupVerification;
+use App\Models\DeliveryAddress;
+use App\Models\DeviceToken;
 use App\Models\EcommerceCart;
 use App\Models\User;
 use App\Service\SystemSetting;
+use App\Services\CustomerSignupService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 
 class CustomerAuthController extends CustomerBaseController
 {
-    public function register(Request $request): JsonResponse
+    /**
+     * Sign up a client. When the email or phone matches a client staff already
+     * created, no account is made yet: a code goes to that client's own phone or
+     * email and the account is created, linked to the existing client, by verifyOtp().
+     */
+    public function register(RegisterCustomerRequest $request, CustomerSignupService $signups): JsonResponse
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'phone' => 'nullable|string|max:30',
-            'password' => 'required|string|min:8|confirmed',
-            // 'branch_id' => 'required|uuid|exists:branches,id',
-            'country' => 'nullable|string|max:100',
-            'city' => 'nullable|string|max:100',
-            'address' => 'nullable|string',
-        ]);
+        $existingClient = $signups->findClaimableClient($request->email, $request->phone);
+
+        if ($existingClient) {
+            $verification = $signups->startVerification($existingClient, $request->validated());
+
+            return $this->success($this->verificationPayload($verification), 'We found your shipping record. Enter the code we sent to confirm it is you.', 202);
+        }
 
         $user = DB::transaction(function () use ($request) {
-            $branchId = $request->branch_id ?? Branch::query()->value('id');
+            $branchId = $request->branch_id ?? CustomerSignupService::defaultBranchId();
 
             $client = Client::create([
                 'branch_id' => $branchId,
@@ -53,6 +61,11 @@ class CustomerAuthController extends CustomerBaseController
             ]);
         });
 
+        if ($request->boolean('whatsapp_opt_in')) {
+            $user->setWhatsappConsent(true);
+            $user->client?->setWhatsappConsent(true);
+        }
+
         $this->mergeGuestCart($user, $request->header('X-Guest-Session-Id'));
 
         $token = $user->createToken('customer-app')->plainTextToken;
@@ -63,10 +76,70 @@ class CustomerAuthController extends CustomerBaseController
         ], 'Registration successful.', 201);
     }
 
+    public function verifyOtp(Request $request, CustomerSignupService $signups): JsonResponse
+    {
+        $request->validate([
+            'verification_id' => 'required|uuid',
+            'code' => 'required|digits:6',
+        ]);
+
+        $verification = CustomerSignupVerification::findOrFail($request->verification_id);
+
+        try {
+            $user = $signups->verify($verification, $request->code);
+        } catch (\InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+
+        $this->mergeGuestCart($user, $request->header('X-Guest-Session-Id'));
+
+        return $this->success([
+            'token' => $user->createToken('customer-app')->plainTextToken,
+            'user' => $this->formatUser($user->load('client')),
+        ], 'Your account is ready.', 201);
+    }
+
+    public function resendOtp(Request $request, CustomerSignupService $signups): JsonResponse
+    {
+        $request->validate(['verification_id' => 'required|uuid']);
+
+        $verification = CustomerSignupVerification::findOrFail($request->verification_id);
+
+        if (! $signups->resend($verification)) {
+            return $this->error('We cannot send another code. Please start the signup again.', 422);
+        }
+
+        return $this->success($this->verificationPayload($verification->fresh()), 'A new code is on its way.');
+    }
+
+    /**
+     * @return array{requires_verification: bool, verification_id: string, channel: string, masked_destination: string, expires_at: ?string}
+     */
+    private function verificationPayload(CustomerSignupVerification $verification): array
+    {
+        return [
+            'requires_verification' => true,
+            'verification_id' => $verification->id,
+            'channel' => $verification->channel,
+            'masked_destination' => $verification->maskedDestination(),
+            'expires_at' => $verification->expires_at?->toISOString(),
+        ];
+    }
+
     public function config(): JsonResponse
     {
         return $this->success([
             'minimum_app_version' => SystemSetting::get('minimum_customer_app_version', '1.0.0'),
+            // The tracking page's "Call us" lines and support address (config/website.php),
+            // so the app never carries its own copy of the published contact details.
+            'support' => [
+                'email' => config('website.contact.email_support'),
+                'phones' => [
+                    ['label' => config('website.contact.phone_gh_1'), 'tel' => config('website.contact.phone_gh_1_tel'), 'place' => 'Ghana'],
+                    ['label' => config('website.contact.phone_gh_2'), 'tel' => config('website.contact.phone_gh_2_tel'), 'place' => 'Ghana'],
+                    ['label' => config('website.contact.phone_us_1'), 'tel' => config('website.contact.phone_us_1_tel'), 'place' => 'USA'],
+                ],
+            ],
         ]);
     }
 
@@ -197,16 +270,47 @@ class CustomerAuthController extends CustomerBaseController
         return $this->success(null, 'Logged out.');
     }
 
+    /**
+     * Self-service account deletion (App Store / Play requirement). The client
+     * row owns shipments, payments, invoices and expenses whose foreign keys
+     * cascade or orphan on delete, so instead of a hard delete the personal data
+     * on both the user and the client is stripped and the login deactivated,
+     * keeping the financial history intact (as AuthController::deleteAccount does
+     * for staff).
+     */
     public function deleteAccount(Request $request): JsonResponse
     {
+        /** @var User $user */
         $user = $request->user();
 
         DB::transaction(function () use ($user) {
             $user->tokens()->delete();
+            DeviceToken::where('user_id', $user->id)->delete();
+            DeliveryAddress::where('user_id', $user->id)->delete();
+            EcommerceCart::where('user_id', $user->id)->delete();
+
             if ($user->client_id) {
-                Client::where('id', $user->client_id)->delete();
+                Client::whereKey($user->client_id)->update([
+                    'name' => 'Deleted Client',
+                    'email' => null,
+                    'phone' => null,
+                    'address' => null,
+                    'id_type' => null,
+                    'id_number' => null,
+                    'whatsapp_opt_in_at' => null,
+                    'whatsapp_opted_out_at' => now(),
+                ]);
             }
-            $user->delete();
+
+            $user->forceFill([
+                'name' => 'Deleted User',
+                'email' => 'deleted-'.$user->id.'@deleted.invalid',
+                'phone' => null,
+                'avatar' => null,
+                'password' => Hash::make(Str::random(64)),
+                'remember_token' => null,
+                'status' => UserStatus::Inactive,
+            ])->save();
         });
 
         return $this->success(null, 'Account deleted.');

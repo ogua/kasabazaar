@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AppLinksController;
 use App\Http\Controllers\ExternalShipmentController;
 use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\InvestmentController;
@@ -222,6 +223,11 @@ Route::get('/app/payment-complete', function (\Illuminate\Http\Request $request)
         .'</body></html>'
     );
 })->name('app-payment-complete');
+
+// Let tracking links open in the KASAROSE app when installed (Android App Links /
+// iOS Universal Links). Values come from config('website.mobile_app').
+Route::get('/.well-known/assetlinks.json', [AppLinksController::class, 'androidAssetLinks'])->name('app-links.android');
+Route::get('/.well-known/apple-app-site-association', [AppLinksController::class, 'appleAppSiteAssociation'])->name('app-links.apple');
 
 Route::get('/customer-feedback', CustomerFeedaback::class)
     ->name('customer-feedback');
