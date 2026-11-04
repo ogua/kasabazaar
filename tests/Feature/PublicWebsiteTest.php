@@ -45,7 +45,7 @@ class PublicWebsiteTest extends TestCase
     public static function pages(): array
     {
         return [
-            'home' => ['/', 'One group moving goods, people and property forward.'],
+            'home' => ['/', 'Their doorstep in America. <em>Your door in Ghana.</em>'],
             'about' => ['/about-us', 'About Us'],
             'our companies' => ['/our-companies', 'KASAROSE MARKET'],
             'services' => ['/our-services', 'Air Freight'],
@@ -109,6 +109,15 @@ class PublicWebsiteTest extends TestCase
             ->assertDontSee('class="app-promo"', false)
             ->assertSee(config('website.mobile_app.ios_url'), false)
             ->assertSee(config('website.mobile_app.android_url'), false);
+    }
+
+    public function test_the_about_page_shows_the_leadership_team(): void
+    {
+        $this->get('/about-us')
+            ->assertOk()
+            ->assertSee(asset('site/css/about.css'), false)
+            ->assertSeeInOrder(['J.W. Adel', 'Director', 'Rose N. Adel', 'Chief Executive Officer'])
+            ->assertDontSee('Tina Arhin');
     }
 
     public function test_hidden_sister_companies_stay_off_the_marketing_pages_but_not_the_legal_ones(): void

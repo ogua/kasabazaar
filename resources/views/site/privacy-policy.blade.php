@@ -7,7 +7,7 @@
 
    <!-- Promo Section Start -->
    <section class="promo-sec bg-cover jarallax" data-jarallax data-speed=".4">
-      <img src="{{ asset('site/images/promo.jpg') }}" alt="" class="jarallax-img">
+      <img src="{{ asset('site/'.config('website.page_banner')) }}" alt="" class="jarallax-img">
       <div class="parallax-overly"></div>
       <div class="container">
          <div class="row">
@@ -187,8 +187,8 @@
                   We will respond to reasonable requests within a reasonable timeframe.</p>
 
                <h3 class="display-5 mt-5">Children's Privacy</h3>
-               <p>Our services are intended for businesses and individuals seeking shipping, real estate or
-                  property management services, and are not directed at children. We do not knowingly collect
+               <p>Our services are intended for businesses and individuals seeking shipping and delivery
+                  services, and are not directed at children. We do not knowingly collect
                   information from children; if you believe we have, please contact us so we can delete it.</p>
 
                <h3 class="display-5 mt-5">Changes to This Policy</h3>

@@ -1,0 +1,519 @@
+/* Homepage hero (resources/views/site/index.blade.php, slides in config/website.php "hero_slides").
+   A navy copy panel with a slanted edge — the slant of the K mark — over full-height artwork. */
+
+.ksr-hero {
+   --ksr-red: #ff4b52;
+   --ksr-navy: var(--dark, #052240);
+   --ksr-navy-2: #0b3466;
+   --ksr-gutter: max(24px, calc((100vw - 1320px) / 2 + 12px));
+   position: relative;
+   background: var(--ksr-navy);
+   isolation: isolate;
+}
+
+.ksr-hero .swiper-slide { height: auto; }
+
+.ksr-slide {
+   position: relative;
+   min-height: clamp(700px, 88vh, 820px);
+   background: var(--ksr-navy-2);
+   overflow: hidden;
+}
+
+.ksr-slide__art {
+   position: absolute;
+   inset: 0 0 0 auto;
+   width: 64%;
+   overflow: hidden;
+}
+
+.ksr-slide__art img {
+   width: 100%;
+   height: 100%;
+   object-fit: cover;
+   object-position: 75% 50%;
+   transform: scale(1.06);
+   transition: transform 8s ease-out;
+}
+
+.ksr-hero.is-ready .swiper-slide-active .ksr-slide__art img { transform: scale(1); }
+
+.ksr-slide__accent,
+.ksr-slide__panel {
+   position: absolute;
+   inset: 0 auto 0 0;
+   width: 50%;
+   clip-path: polygon(0 0, 100% 0, 82% 100%, 0 100%);
+}
+
+.ksr-slide__accent {
+   background: var(--primary, #e4252c);
+   transform: translateX(16px);
+   z-index: 1;
+}
+
+.ksr-slide__panel {
+   display: flex;
+   align-items: center;
+   padding: 190px 0 110px var(--ksr-gutter);
+   background:
+      radial-gradient(circle at 0 0, rgba(255, 255, 255, .07), transparent 55%),
+      linear-gradient(165deg, #0a3462 0%, var(--ksr-navy) 62%);
+   z-index: 2;
+}
+
+.ksr-slide__copy {
+   min-width: 0;
+   max-width: min(600px, 80%);
+   color: #fff;
+}
+
+.ksr-route {
+   display: inline-flex;
+   align-items: center;
+   gap: 10px;
+   padding: 6px 14px;
+   margin-bottom: 22px;
+   border: 1px solid rgba(255, 255, 255, .22);
+   border-radius: 100px;
+   font-family: var(--font-family-headings);
+   font-size: 13px;
+   font-weight: 700;
+   letter-spacing: .14em;
+   color: #fff;
+   background: rgba(255, 255, 255, .06);
+}
+
+.ksr-route i { color: var(--ksr-red); font-size: 12px; }
+
+.ksr-eyebrow {
+   display: flex;
+   align-items: center;
+   gap: 12px;
+   margin: 0 0 14px;
+   font-family: var(--font-family-headings);
+   font-size: 15px;
+   font-weight: 700;
+   letter-spacing: .12em;
+   text-transform: uppercase;
+   color: #a9c1dc;
+}
+
+.ksr-eyebrow::before {
+   content: "";
+   width: 28px;
+   height: 3px;
+   border-radius: 3px;
+   background: var(--primary, #e4252c);
+}
+
+.ksr-title {
+   margin: 0 0 20px;
+   font-family: var(--font-family-headings);
+   font-size: clamp(2.5rem, 3.9vw, 4.25rem);
+   font-weight: 800;
+   line-height: 1.04;
+   letter-spacing: -.02em;
+   color: #fff;
+}
+
+.ksr-title em {
+   display: block;
+   font-style: normal;
+   color: var(--ksr-red);
+}
+
+.ksr-text {
+   max-width: 520px;
+   margin: 0 0 32px;
+   font-size: 18px;
+   line-height: 1.6;
+   color: rgba(255, 255, 255, .82);
+}
+
+.ksr-actions {
+   display: flex;
+   flex-wrap: wrap;
+   align-items: center;
+   gap: 14px 16px;
+}
+
+.ksr-hero .ksr-actions .btn { margin: 0; }
+.ksr-hero .ksr-actions .btn-outline { background: transparent; color: #fff; }
+.ksr-hero .ksr-actions .btn-outline:hover { color: var(--headings-color); }
+
+.ksr-phones {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 10px 22px;
+   margin-top: 26px;
+   font-size: 15px;
+   color: rgba(255, 255, 255, .7);
+}
+
+.ksr-phones a { color: #fff; font-weight: 600; text-decoration: none; }
+.ksr-phones a:hover { color: var(--ksr-red); }
+.ksr-phones i { color: var(--ksr-red); margin-right: 6px; }
+
+/* Poster slide: the printed flyer, framed on a navy field. */
+.ksr-slide--poster .ksr-slide__art {
+   background:
+      radial-gradient(circle at 70% 40%, rgba(255, 255, 255, .12), transparent 60%),
+      radial-gradient(rgba(255, 255, 255, .09) 1.5px, transparent 1.6px) 0 0 / 22px 22px,
+      linear-gradient(160deg, #0d3c70, #082a52);
+}
+
+.ksr-slide--poster .ksr-slide__art::before {
+   content: "";
+   position: absolute;
+   right: -6%;
+   bottom: -10%;
+   width: 62%;
+   aspect-ratio: 377 / 322;
+   background: url("../images/kasarose-icon-white.png") center / contain no-repeat;
+   opacity: .07;
+}
+
+.ksr-slide--poster .ksr-slide__art img {
+   position: absolute;
+   top: 57%;
+   left: 58%;
+   width: auto;
+   height: min(64%, 600px);
+   aspect-ratio: 1055 / 1391;
+   object-fit: contain;
+   border: 8px solid #fff;
+   border-radius: 14px;
+   box-shadow: 0 40px 80px rgba(0, 0, 0, .4), 0 0 0 1px rgba(0, 0, 0, .05);
+   transform: translate(-50%, -50%) rotate(-3deg) scale(.96);
+   transition: transform 1.2s cubic-bezier(.2, .7, .2, 1);
+}
+
+.ksr-hero.is-ready .ksr-slide--poster.swiper-slide-active .ksr-slide__art img {
+   transform: translate(-50%, -50%) rotate(-3deg) scale(1);
+}
+
+/* Copy reveal, only once the slider is running so the page reads fine without JS. */
+.ksr-hero.is-ready .ksr-slide__copy > * {
+   opacity: 0;
+   transform: translateY(18px);
+   transition: opacity .6s ease, transform .6s ease;
+}
+
+.ksr-hero.is-ready .swiper-slide-active .ksr-slide__copy > * { opacity: 1; transform: none; }
+.ksr-hero.is-ready .swiper-slide-active .ksr-slide__copy > :nth-child(1) { transition-delay: .3s; }
+.ksr-hero.is-ready .swiper-slide-active .ksr-slide__copy > :nth-child(2) { transition-delay: .4s; }
+.ksr-hero.is-ready .swiper-slide-active .ksr-slide__copy > :nth-child(3) { transition-delay: .5s; }
+.ksr-hero.is-ready .swiper-slide-active .ksr-slide__copy > :nth-child(4) { transition-delay: .6s; }
+.ksr-hero.is-ready .swiper-slide-active .ksr-slide__copy > :nth-child(5) { transition-delay: .7s; }
+.ksr-hero.is-ready .swiper-slide-active .ksr-slide__copy > :nth-child(6) { transition-delay: .8s; }
+
+/* Journey steps: the slider's navigation, with a progress bar on the active step.
+   It overlaps only the ground strip of the artwork so the scene stays visible. */
+.ksr-steps {
+   position: relative;
+   margin: -14px var(--ksr-gutter) 0;
+   z-index: 5;
+   display: flex;
+   align-items: stretch;
+   background: #fff;
+   border-radius: 18px 18px 0 0;
+   box-shadow: 0 -12px 40px rgba(5, 34, 64, .18);
+}
+
+.ksr-steps__list {
+   display: grid;
+   grid-auto-flow: column;
+   grid-auto-columns: minmax(0, 1fr);
+   flex: 1;
+   margin: 0;
+   padding: 0;
+   list-style: none;
+}
+
+.ksr-step {
+   position: relative;
+   display: flex;
+   align-items: center;
+   gap: 14px;
+   width: 100%;
+   height: 100%;
+   padding: 22px 24px 20px;
+   border: 0;
+   background: none;
+   text-align: left;
+   color: var(--headings-color);
+   cursor: pointer;
+}
+
+.ksr-steps__list li + li .ksr-step { border-left: 1px solid #e7ebef; }
+
+.ksr-step__num {
+   flex-shrink: 0;
+   display: grid;
+   place-items: center;
+   width: 40px;
+   height: 40px;
+   border-radius: 50%;
+   font-family: var(--font-family-headings);
+   font-size: 14px;
+   font-weight: 800;
+   color: var(--headings-color);
+   background: #eef2f6;
+   transition: background .3s, color .3s;
+}
+
+.ksr-step__label {
+   display: block;
+   font-family: var(--font-family-headings);
+   font-size: 17px;
+   font-weight: 700;
+   line-height: 1.2;
+}
+
+.ksr-step__note { display: block; font-size: 13px; color: var(--mute, #788094); }
+
+.ksr-step__bar {
+   position: absolute;
+   left: 0;
+   right: 0;
+   top: 0;
+   height: 3px;
+   overflow: hidden;
+   background: transparent;
+}
+
+.ksr-step__bar i {
+   display: block;
+   height: 100%;
+   background: var(--primary, #e4252c);
+   transform: scaleX(0);
+   transform-origin: left;
+}
+
+.ksr-step.is-active .ksr-step__num { background: var(--primary, #e4252c); color: #fff; }
+.ksr-step.is-active .ksr-step__bar i { animation: ksr-progress var(--ksr-delay, 7000ms) linear var(--ksr-speed, 900ms) forwards; }
+.ksr-hero.is-paused .ksr-step.is-active .ksr-step__bar i { animation: none; transform: scaleX(1); }
+.ksr-step:hover .ksr-step__num { background: var(--ksr-navy); color: #fff; }
+.ksr-step:focus-visible { outline: 3px solid var(--primary, #e4252c); outline-offset: -3px; }
+
+@keyframes ksr-progress { to { transform: scaleX(1); } }
+
+.ksr-controls {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   padding: 0 18px;
+   border-left: 1px solid #e7ebef;
+}
+
+.ksr-controls button {
+   display: grid;
+   place-items: center;
+   width: 42px;
+   height: 42px;
+   border: 1px solid #dfe4ea;
+   border-radius: 50%;
+   background: #fff;
+   color: var(--headings-color);
+   transition: background .2s, color .2s, border-color .2s;
+}
+
+.ksr-controls button:hover { background: var(--ksr-navy); border-color: var(--ksr-navy); color: #fff; }
+.ksr-controls button:focus-visible { outline: 3px solid var(--primary, #e4252c); outline-offset: 2px; }
+.ksr-toggle .fa-play, .ksr-hero.is-paused .ksr-toggle .fa-pause { display: none; }
+.ksr-hero.is-paused .ksr-toggle .fa-play { display: inline-block; }
+
+@media (max-width: 1399.98px) {
+   .ksr-step { padding: 20px 16px 18px; gap: 10px; }
+   .ksr-step__label { font-size: 15px; }
+}
+
+@media (max-width: 1199.98px) {
+   .ksr-slide__accent, .ksr-slide__panel { width: 56%; }
+   .ksr-slide__art { width: 60%; }
+   .ksr-step__note { display: none; }
+}
+
+/* Tablet and phone: copy on navy, artwork beneath it, steps as a strip under the slider. */
+@media (max-width: 991.98px) {
+   .ksr-slide { min-height: 0; display: flex; flex-direction: column; }
+   .ksr-slide__accent { display: none; }
+
+   .ksr-slide__panel {
+      position: relative;
+      display: block;
+      width: 100%;
+      clip-path: none;
+      padding: 190px 24px 40px;
+   }
+
+   .ksr-slide__copy { max-width: 640px; }
+
+   .ksr-slide__art {
+      order: 2;
+      position: relative;
+      inset: auto;
+      width: 100%;
+      aspect-ratio: 5 / 4;
+      border-top: 5px solid var(--primary, #e4252c);
+   }
+
+   .ksr-slide--poster .ksr-slide__art { aspect-ratio: 1000 / 860; }
+   .ksr-slide--poster .ksr-slide__art img { left: 50%; height: 84%; }
+
+   .ksr-steps {
+      margin: 0;
+      border-radius: 0;
+      box-shadow: none;
+      border-bottom: 1px solid #e7ebef;
+   }
+
+   .ksr-step { justify-content: center; padding: 16px 8px; }
+   .ksr-step__num { width: 34px; height: 34px; font-size: 13px; }
+}
+
+@media (max-width: 767.98px) {
+   .ksr-steps { flex-direction: column; }
+   .ksr-step__label { font-size: 13px; }
+   .ksr-step { flex-direction: column; gap: 6px; text-align: center; }
+   .ksr-controls { justify-content: center; padding: 10px; border-left: 0; border-top: 1px solid #e7ebef; }
+   .ksr-slide__panel { padding: 165px 16px 32px; }
+   .ksr-text { font-size: 16px; }
+   .ksr-actions .btn { flex: 1 1 auto; justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .ksr-slide__art img,
+   .ksr-hero.is-ready .ksr-slide__copy > * { transition: none; }
+   .ksr-step.is-active .ksr-step__bar i { animation: none; transform: scaleX(1); }
+}
+
+/* Homepage "About" strip: a USA photo and a Ghana photo joined by the route, beside the three-step journey. */
+.ksr-about { background: #fff; }
+
+.ksr-about__media {
+   position: relative;
+   padding: 0 0 70px;
+}
+
+.ksr-about__photo {
+   position: relative;
+   margin: 0;
+   overflow: hidden;
+   border-radius: 22px;
+}
+
+.ksr-about__photo img {
+   display: block;
+   width: 100%;
+   height: 100%;
+   object-fit: cover;
+}
+
+.ksr-about__photo--us {
+   width: 78%;
+   aspect-ratio: 4 / 3.4;
+}
+
+.ksr-about__photo--us img { object-position: 62% 50%; }
+
+.ksr-about__photo--gh {
+   position: absolute;
+   right: 0;
+   bottom: 0;
+   width: 56%;
+   aspect-ratio: 1 / 1;
+   border: 8px solid #fff;
+   box-shadow: 0 24px 50px rgba(5, 34, 64, .22);
+}
+
+.ksr-about__photo--gh img { object-position: 72% 50%; }
+
+.ksr-about__photo figcaption {
+   position: absolute;
+   left: 14px;
+   bottom: 14px;
+   padding: 7px 14px;
+   border-radius: 100px;
+   background: rgba(5, 34, 64, .88);
+   color: #fff;
+   font-family: var(--font-family-headings);
+   font-size: 14px;
+   font-weight: 700;
+}
+
+.ksr-about__photo figcaption i { color: var(--ksr-red, #ff4b52); margin-right: 4px; }
+
+/* The Ghana photo overlaps the USA photo's lower edge, so its label sits up top. */
+.ksr-about__photo--us figcaption { top: 14px; bottom: auto; }
+
+.ksr-about__route {
+   position: absolute;
+   left: 36%;
+   bottom: 34%;
+   z-index: 2;
+   display: grid;
+   place-items: center;
+   width: 72px;
+   height: 72px;
+   border-radius: 50%;
+   background: var(--primary, #e4252c);
+   color: #fff;
+   font-size: 24px;
+   box-shadow: 0 0 0 10px rgba(228, 37, 44, .15), 0 14px 30px rgba(5, 34, 64, .25);
+}
+
+.ksr-about__route i { transform: rotate(-20deg); }
+
+.ksr-about__journey {
+   position: relative;
+   margin: 30px 0 0;
+   padding: 0;
+   list-style: none;
+}
+
+/* The dashed line threading the three steps. */
+.ksr-about__journey::before {
+   content: "";
+   position: absolute;
+   left: 27px;
+   top: 28px;
+   bottom: 28px;
+   border-left: 2px dashed #d3dae2;
+}
+
+.ksr-about__journey li {
+   position: relative;
+   display: flex;
+   gap: 20px;
+   padding: 12px 0;
+}
+
+.ksr-about__journey h3 { margin: 6px 0 4px; }
+.ksr-about__journey p { margin: 0; }
+
+.ksr-about__icon {
+   position: relative;
+   flex-shrink: 0;
+   display: grid;
+   place-items: center;
+   width: 56px;
+   height: 56px;
+   border-radius: 50%;
+   background: var(--dark, #052240);
+   color: #fff;
+   font-size: 20px;
+   box-shadow: 0 0 0 6px #fff;
+}
+
+.ksr-about__journey li:nth-child(2) .ksr-about__icon { background: var(--primary, #e4252c); }
+
+@media (max-width: 575.98px) {
+   .ksr-about__media { padding-bottom: 50px; }
+   .ksr-about__photo--us { width: 88%; }
+   .ksr-about__photo--gh { width: 60%; border-width: 6px; }
+   .ksr-about__route { width: 56px; height: 56px; font-size: 19px; left: 30%; }
+   .ksr-about__photo figcaption { font-size: 12px; padding: 5px 10px; left: 10px; bottom: 10px; }
+   .ksr-about__photo--us figcaption { top: 10px; bottom: auto; }
+}

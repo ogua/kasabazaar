@@ -13,8 +13,8 @@
             </svg>
          </button>
       </div>
-      <p>KASAROSE LOGISTICS spans door-to-door air and sea freight, ecommerce package forwarding, real
-         estate and property management &mdash; and, through our sister companies, mobility and online
+      <p>KASAROSE LOGISTICS spans door-to-door air and sea freight, ecommerce package forwarding and
+         doorstep delivery in Ghana &mdash; and, through our sister companies, mobility and online
          retail across the US and Ghana.</p>
 
       <div class="mt-3">

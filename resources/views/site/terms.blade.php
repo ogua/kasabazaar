@@ -7,7 +7,7 @@
 
    <!-- Promo Section Start -->
    <section class="promo-sec bg-cover jarallax" data-jarallax data-speed=".4">
-      <img src="{{ asset('site/images/promo.jpg') }}" alt="" class="jarallax-img">
+      <img src="{{ asset('site/'.config('website.page_banner')) }}" alt="" class="jarallax-img">
       <div class="parallax-overly"></div>
       <div class="container">
          <div class="row">
@@ -52,7 +52,7 @@
                <h3 class="display-5 mt-5">2. Our Services and This Website</h3>
                <p>We provide freight forwarding, package consolidation and door-to-door shipping between the United
                   States and Ghana, together with related domestic delivery, warehousing and customs-coordination
-                  services, and real estate and property management services. Service availability, routes and
+                  services. Service availability, routes and
                   transit times may change without notice.</p>
                <p>Submitting a contact or quote request through this website is an inquiry only &mdash; it is not a
                   binding contract, order or reservation. Any shipping quote, service pricing or engagement is

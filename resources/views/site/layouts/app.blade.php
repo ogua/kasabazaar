@@ -2,7 +2,7 @@
 @php
     $siteName = config('group.parent.name');
     $pageTitle = trim($__env->yieldContent('title')) ?: $siteName;
-    $metaDescription = trim($__env->yieldContent('meta_description')) ?: 'KASAROSE LOGISTICS — door-to-door air and sea freight between the US and Ghana, ecommerce package forwarding, shipment tracking, real estate and property management.';
+    $metaDescription = trim($__env->yieldContent('meta_description')) ?: 'KASAROSE LOGISTICS — door-to-door air and sea freight between the US and Ghana, ecommerce package forwarding, shipment tracking and doorstep delivery in Ghana.';
     $metaRobots = trim($__env->yieldContent('meta_robots')) ?: 'index, follow';
     $canonicalUrl = url()->current();
     $orgLogo = asset('site/images/kasarose-logistics-logo.png');

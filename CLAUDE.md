@@ -136,7 +136,8 @@ generation, tenant/branch scoping, shipment workflow.
 - `config/group.php` — the roster, the parent-group URLs and this company's own identity strings. A company with
   `show_on_website => false` (Neoride, since 2026-09) stays in the roster but is left off the marketing pages.
 - `App\Services\PublicWebsite::groupCompanies()` — the parent card plus the visible sister companies; drives the
-  footer's "Our Companies" column, the homepage teaser and the tracking page's marketplace banner.
+  footer's "Our Companies" column, the About and Our Companies pages and the tracking page's marketplace
+  banner. The homepage deliberately has no companies section (trimmed 2026-11-03 to keep it short).
 - `resources/views/site/privacy-policy.blade.php` ("Sharing Within the KASAROSE LOGISTICS group") and
   `resources/views/site/terms.blade.php` ("12. Our Sister Companies") loop the **full** roster, hidden companies
   included — a legal disclosure of who receives data must not follow a display decision.

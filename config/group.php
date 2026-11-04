@@ -49,8 +49,8 @@ return [
         'name' => 'KASAROSE LOGISTICS',
         'group_name' => 'KASAROSE LOGISTICS group',
         // The parent's own card on the public site's "Our Companies" page and homepage teaser.
-        'tagline' => 'Door-to-door freight, real estate and property management.',
-        'description' => 'The group\'s founding company, incorporating the door-to-door freight business formerly run as RDD Shipping. Air and sea freight, ecommerce package forwarding and shipment tracking between the United States and Ghana, alongside real estate sales and property management.',
+        'tagline' => 'Door-to-door shipping from the USA to Ghana.',
+        'description' => 'The group\'s founding company, incorporating the door-to-door freight business formerly run as RDD Shipping. Pickup across the United States, air and sea freight, ecommerce package forwarding, shipment tracking and doorstep delivery in Ghana.',
         'logo' => 'images/kasarose-logistics-logo.png',
         'url' => 'https://kasarose.com',
         'companies_url' => rtrim(env('GROUP_SITE_URL') ?: 'https://kasarose.com', '/').'/our-companies.php',
@@ -115,7 +115,7 @@ return [
             'url_label' => 'kasarosemarket.com',
             'show_on_website' => true,
             'tagline' => "Ghana's multi-vendor marketplace, delivered.",
-            'logo' => 'images/kasarosemarket-logo.png',
+            'logo' => 'images/kasarosemarket-lockup.png',
         ],
     ],
 

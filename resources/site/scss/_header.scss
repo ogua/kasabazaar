@@ -356,22 +356,22 @@ Header Style*/
 	.navbar-brand {
 		img {
 			// The full KASAROSE / LOGISTICS horizontal lockup
-			// (images/kasarose-logistics-logo-h-white.png, ~4.4:1). 52px tall keeps the
-			// smaller "LOGISTICS" line legible. The gutter sits on the image rather than
-			// the brand link, because a later rule in this file resets .navbar-brand's
-			// margin to 0.
-			max-height: 52px;
-			max-width: 230px;
+			// (images/kasarose-logistics-logo-h.png, ~4.4:1). 38px tall keeps the
+			// smaller "LOGISTICS" line legible without crowding the nav. The gutter sits
+			// on the image rather than the brand link, because a later rule in this file
+			// resets .navbar-brand's margin to 0.
+			max-height: 38px;
+			max-width: 170px;
 			width: auto;
 			margin-right: 26px;
 
 			@include media-breakpoint-down(lg) {
-				max-height: 46px;
+				max-height: 34px;
 			}
 
 			@include media-breakpoint-down(md) {
-				max-height: 42px;
-				max-width: 190px;
+				max-height: 32px;
+				max-width: 145px;
 			}
 		}
 	}
@@ -490,7 +490,7 @@ Header Style*/
 				align-items: center;
 				background-color: var(--white);
 				@include border-radius(100px);
-				padding: 7px 22px 7px 18px;
+				padding: 6px 18px 6px 14px;
 				box-shadow: 0 4px 18px rgba(0, 0, 0, .12);
 
 				img {
@@ -502,12 +502,12 @@ Header Style*/
 				margin: 4px 22px 4px -12px;
 
 				@include media-breakpoint-down(md) {
-					padding: 6px 16px 6px 14px;
+					padding: 5px 14px 5px 12px;
 				}
 			}
 
 			.brand-plate img {
-				max-width: 190px;
+				max-width: 150px;
 			}
 
 			.offcanvas {

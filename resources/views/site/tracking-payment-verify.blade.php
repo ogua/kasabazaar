@@ -6,7 +6,7 @@
 @section('content')
 
    <section class="promo-sec bg-cover jarallax" data-jarallax data-speed=".4">
-      <img src="{{ asset('site/images/promo.jpg') }}" alt="" class="jarallax-img">
+      <img src="{{ asset('site/'.config('website.page_banner')) }}" alt="" class="jarallax-img">
       <div class="parallax-overly"></div>
       <div class="container">
          <div class="row">

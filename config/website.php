@@ -127,17 +127,76 @@ return [
             'icon' => 'fa-boxes-packing',
             'thumb' => 'images/serv-s4.png',
         ],
-        'real-estate' => [
-            'label' => 'Real Estate',
-            'tagline' => 'Guidance and support for buying, selling and investing in property.',
-            'icon' => 'fa-house-chimney',
-            'thumb' => 'images/serv-s7.png',
+    ],
+
+    /*
+    | Banner behind the page title on every sub-page (and the 404 and shipment portal),
+    | relative to public/site. The theme lays a 60% navy overlay over it and puts the
+    | title on the left, so the subject belongs on the right.
+    */
+    'page_banner' => 'images/hero/page-banner.jpg',
+
+    /*
+    | Homepage hero, in slide order. `image` is relative to public/site; photos are
+    | 1600px-wide JPGs in images/hero with the subjects in the right two-thirds, since
+    | the copy panel covers the left of the frame.
+    | `layout` is "scene" (full-bleed photo) or "poster" (a portrait flyer beside the copy).
+    */
+    'hero_slides' => [
+        [
+            'step' => 'Pickup',
+            'step_note' => 'Across the US',
+            'layout' => 'scene',
+            'image' => 'images/hero/pickup-usa.jpg',
+            'alt' => 'A KASAROSE LOGISTICS courier in branded uniform collecting a parcel from a home in the United States',
+            'eyebrow' => 'Ship from the USA to Ghana',
+            'heading' => 'Their doorstep in America. <em>Your door in Ghana.</em>',
+            'text' => 'Book a pickup anywhere in the US. Our uniformed crew collects, ships and hands it over in Ghana &mdash; tracked every mile.',
+            'cta' => ['label' => 'Book a Pickup', 'route' => 'quote'],
         ],
-        'property-management' => [
-            'label' => 'Property Management',
-            'tagline' => 'Day-to-day management so property owners can invest with confidence.',
-            'icon' => 'fa-building-user',
-            'thumb' => 'images/serv-s8.png',
+        [
+            'step' => 'Ship',
+            'step_note' => 'By air &amp; sea',
+            'layout' => 'scene',
+            'image' => 'images/hero/shipping-usa.jpg',
+            'alt' => 'KASAROSE LOGISTICS warehouse staff scanning and loading labelled boxes at the US warehouse',
+            'eyebrow' => 'Checked, scanned &amp; shipped',
+            'heading' => 'Every box scanned. <em>Every mile tracked.</em>',
+            'text' => 'Packed and labelled at our US warehouse, then flown or shipped to Ghana by air or sea &mdash; with status updates by SMS, email and the app.',
+            'cta' => ['label' => 'Get a Quote', 'route' => 'quote'],
+        ],
+        [
+            'step' => 'Deliver',
+            'step_note' => 'Anywhere in Ghana',
+            'layout' => 'scene',
+            'image' => 'images/hero/delivery-ghana.jpg',
+            'alt' => 'A KASAROSE LOGISTICS courier in branded uniform handing a parcel to a customer at her gate in Ghana',
+            'eyebrow' => 'Delivered to the door in Ghana',
+            'heading' => 'Accra, Kumasi &amp; beyond. <em>Right to your door.</em>',
+            'text' => 'No port queues, no chasing. Our Ghana crew brings your package to your home or business and gets a signature on handover.',
+            'cta' => ['label' => 'Track a Shipment', 'route' => 'our-tracking'],
+        ],
+        [
+            'step' => 'Doorstep',
+            'step_note' => 'Signed &amp; smiling',
+            'layout' => 'scene',
+            'image' => 'images/hero/delivery-ghana-family.jpg',
+            'alt' => 'A KASAROSE LOGISTICS courier handing a parcel to a smiling mother and daughter at their front door in Ghana',
+            'eyebrow' => 'Sent with love from the USA',
+            'heading' => 'Packed in America. <em>Opened with a smile in Ghana.</em>',
+            'text' => 'Gifts, groceries, electronics and everything in between &mdash; carried from your family in the US to your family in Ghana.',
+            'cta' => ['label' => 'Send a Package', 'route' => 'quote'],
+        ],
+        [
+            'step' => 'Home to Home',
+            'step_note' => 'Door to door',
+            'layout' => 'poster',
+            'image' => 'images/hero/usa-to-ghana-flyer.jpg',
+            'alt' => 'KASAROSE LOGISTICS flyer: Send your packages door-to-door from USA to Ghana — from US business to Ghana business, from US home to Ghana home',
+            'eyebrow' => 'Your trusted partner in Ghana shipping',
+            'heading' => 'Home to home. <em>Business to business.</em>',
+            'text' => 'From a US home to a Ghana home, or a US business to a Ghana business &mdash; one call on either side of the Atlantic gets your packages moving.',
+            'cta' => ['label' => 'Get a Quote', 'route' => 'quote'],
         ],
     ],
 

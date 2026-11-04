@@ -1,7 +1,7 @@
 @extends('site.layouts.app')
 
 @section('title', 'Our Services')
-@section('meta_description', 'KASAROSE LOGISTICS services: air freight, ocean freight, road freight, warehousing, ecommerce logistics, real estate and property management — all on one page.')
+@section('meta_description', 'KASAROSE LOGISTICS services: air freight, ocean freight, road freight, warehousing and ecommerce logistics between the USA and Ghana — all on one page.')
 
 @section('content')
 @php
@@ -83,34 +83,6 @@ $service_briefs = [
         ],
         'cta' => ['label' => 'Request a Shipping Quote', 'href' => route('quote')],
     ],
-    'real-estate' => [
-        'image' => asset('site/images/gallery/construction-1.jpg'),
-        'alt' => 'A residential development under construction, plans on site',
-        'timeframe' => null,
-        'body' => 'Alongside our import &amp; export shipping business, we offer real estate services for clients '
-            . 'looking to buy, sell or invest in property. Every situation is different, so we start with a '
-            . 'conversation about what you\'re looking for rather than a one-size-fits-all pitch.',
-        'highlights' => [
-            'Guidance on buying & selling property',
-            'Investment property advice',
-            'Support alongside our property management team',
-        ],
-        'cta' => ['label' => 'Talk to Our Team About Real Estate', 'href' => route('contact-us')],
-    ],
-    'property-management' => [
-        'image' => asset('site/images/gallery/shipping-20.jpg'),
-        'alt' => 'A residential property and its grounds',
-        'timeframe' => null,
-        'body' => 'Owning property is easier when someone reliable is looking after it. Our property management '
-            . 'service handles the day-to-day so owners can invest with confidence, whether that\'s a single '
-            . 'property or a small portfolio — built around what "well managed" looks like for your property.',
-        'highlights' => [
-            'Day-to-day property oversight',
-            'Clear, responsive communication with owners',
-            'Support for both single properties & small portfolios',
-        ],
-        'cta' => ['label' => 'Talk to Our Team About Property Management', 'href' => route('contact-us')],
-    ],
 ];
 
 // Service JSON-LD for each briefing on this page — this page used to be seven
@@ -136,7 +108,7 @@ $services_json = json_encode(['@context' => 'https://schema.org', '@graph' => $s
 
    <!-- Promo Section Start -->
    <section class="promo-sec bg-cover jarallax" data-jarallax data-speed=".4">
-      <img src="{{ asset('site/images/promo.jpg') }}" alt="" class="jarallax-img">
+      <img src="{{ asset('site/'.config('website.page_banner')) }}" alt="" class="jarallax-img">
       <div class="parallax-overly"></div>
       <div class="container">
          <div class="row">
@@ -162,7 +134,7 @@ $services_json = json_encode(['@context' => 'https://schema.org', '@graph' => $s
          <div class="sec-intro mx-auto text-center mb-5">
             <span class="sub-title2 fadeInUp">What We Do</span>
             <h2 class="sec-title">Everything KASAROSE LOGISTICS Offers, on One Page</h2>
-            <p class="lead">Freight, ecommerce forwarding, real estate and property management &mdash; open any
+            <p class="lead">Air, ocean and road freight, warehousing and ecommerce forwarding &mdash; open any
                section below for the details, delivery estimates and how to get started.</p>
          </div>
 

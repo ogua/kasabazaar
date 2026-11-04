@@ -1,13 +1,13 @@
 @extends('site.layouts.app')
 
 @section('title', 'FAQ')
-@section('meta_description', 'Frequently asked questions about KASAROSE LOGISTICS — shipping, tracking, real estate and property management.')
+@section('meta_description', 'Frequently asked questions about KASAROSE LOGISTICS — door-to-door shipping from the USA to Ghana, pickups and tracking.')
 
 @section('content')
 
    <!-- Promo Section Start -->
    <section class="promo-sec bg-cover jarallax" data-jarallax data-speed=".4">
-      <img src="{{ asset('site/images/promo.jpg') }}" alt="" class="jarallax-img">
+      <img src="{{ asset('site/'.config('website.page_banner')) }}" alt="" class="jarallax-img">
       <div class="parallax-overly"></div>
       <div class="container">
          <div class="row">
@@ -49,8 +49,8 @@
                         data-bs-parent="#tv-accordion">
                         <div class="accordion-body">
                            <p>KASAROSE LOGISTICS is the parent
-                              group behind our own door-to-door freight, import &amp; export shipping, real estate
-                              and property management business, plus KASAROSE MARKET (our ecommerce marketplace). See our
+                              group behind our own door-to-door freight and import &amp; export shipping business
+                              between the USA and Ghana, plus KASAROSE MARKET (our ecommerce marketplace). See our
                               <a href="{{ route('our-companies') }}">Our Companies</a> page for details on each.</p>
                         </div>
                      </div>
@@ -90,16 +90,15 @@
                      <h2 class="accordion-header" id="headingFour">
                         <button class="accordion-button display-5 collapsed" type="button" data-bs-toggle="collapse"
                            data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
-                           Do you handle real estate and property management?
+                           Can you pick up from my home in the US?
                         </button>
                      </h2>
                      <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour"
                         data-bs-parent="#tv-accordion">
                         <div class="accordion-body">
-                           <p>Yes &mdash; KASAROSE LOGISTICS offers real estate guidance alongside property management
-                              support. See our <a href="{{ route('our-services') }}#real-estate">Real Estate</a> and
-                              <a href="{{ route('our-services') }}#property-management">Property Management</a> briefings on our
-                              Services page, or <a href="{{ route('contact-us') }}">contact us</a> directly.</p>
+                           <p>Yes &mdash; we collect from homes and businesses across our US operating states and
+                              deliver to the door in Ghana. <a href="{{ route('quote') }}">Request a quote</a> to book a
+                              pickup, or <a href="{{ route('contact-us') }}">contact us</a> to check your area.</p>
                         </div>
                      </div>
                   </div>
@@ -184,7 +183,7 @@ $faq_items = [
     [
         'What is KASAROSE LOGISTICS?',
         'KASAROSE LOGISTICS is the parent group behind our own '
-            . 'door-to-door freight, import & export shipping, real estate and property management business, '
+            . 'door-to-door freight and import & export shipping business between the USA and Ghana, '
             . 'plus KASAROSE MARKET (our ecommerce marketplace). See our Our Companies '
             . 'page for details on each.',
     ],
@@ -198,9 +197,9 @@ $faq_items = [
             . 'origin/destination. Our team will follow up by phone or email.',
     ],
     [
-        'Do you handle real estate and property management?',
-        'Yes — KASAROSE LOGISTICS offers real estate guidance alongside property management support. Visit our '
-            . 'Real Estate and Property Management pages, or contact us directly.',
+        'Can you pick up from my home in the US?',
+        'Yes — we collect from homes and businesses across our US operating states and deliver to the door in '
+            . 'Ghana. Request a quote to book a pickup, or contact us to check your area.',
     ],
     [
         'Where does KASAROSE LOGISTICS operate?',

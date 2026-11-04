@@ -11,8 +11,8 @@
                         <img src="{{ asset('site/images/kasarose-logistics-logo-h-white.png') }}" alt="{!! config('group.parent.name') !!}" style="max-width:210px;">
                      </a>
                   </div>
-                  <p>KASAROSE LOGISTICS: door-to-door air and sea freight, ecommerce package forwarding,
-                     real estate and property management &mdash; alongside our sister company KASAROSE MARKET.</p>
+                  <p>KASAROSE LOGISTICS: door-to-door air and sea freight, ecommerce package forwarding
+                     and doorstep delivery in Ghana &mdash; alongside our sister company KASAROSE MARKET.</p>
                   <h3 class="widget-title mt-4">Get the App</h3>
                   @include('site.partials.app-badges', ['small' => true])
                </div>

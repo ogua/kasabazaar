@@ -26,7 +26,6 @@ $gallery = [
     'shipping-19.jpg' => 'Inside our warehouse',
     'shipping-20.jpg' => 'Arriving at a residential delivery',
     'shipping-21.jpg' => 'A delivery van out on its round',
-    'construction-1.jpg' => 'Reviewing plans on site for a property project',
 ];
 // shipping-05/11/15/16/22/23 were dropped from this list: they're old promotional flyer
 // graphics (ad copy, phone numbers, logos), not operational photography, and two
@@ -37,7 +36,7 @@ $gallery = [
 
    <!-- Promo Section Start -->
    <section class="promo-sec bg-cover jarallax" data-jarallax data-speed=".4">
-      <img src="{{ asset('site/images/promo.jpg') }}" alt="" class="jarallax-img">
+      <img src="{{ asset('site/'.config('website.page_banner')) }}" alt="" class="jarallax-img">
       <div class="parallax-overly"></div>
       <div class="container">
          <div class="row">

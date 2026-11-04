@@ -7,7 +7,7 @@
 
    <!-- Promo Section Start -->
    <section class="promo-sec bg-cover jarallax" data-jarallax data-speed=".4">
-      <img src="{{ asset('site/images/promo.jpg') }}" alt="" class="jarallax-img">
+      <img src="{{ asset('site/'.config('website.page_banner')) }}" alt="" class="jarallax-img">
       <div class="parallax-overly"></div>
       <div class="container">
          <div class="row">
@@ -248,8 +248,8 @@
                <div class="col-lg-10 mx-auto">
                   <aside class="market-banner" aria-labelledby="market-banner-title">
                      <div class="market-banner-body">
-                        <img class="market-banner-logo" src="{{ asset('site/images/market/kasarosemarket-poster-logo.png') }}"
-                             alt="{{ $market['name'] }}" width="891" height="187" loading="lazy">
+                        <img class="market-banner-logo" src="{{ asset('site/images/kasarosemarket-lockup.png') }}"
+                             alt="{{ $market['name'] }}" width="1452" height="327" loading="lazy">
                         <h2 class="market-banner-title" id="market-banner-title">Shop Ghana. <span>We&rsquo;ll deliver it to you.</span></h2>
                         <p class="market-banner-text">Find rice, cooking oil, kitchen fixtures, car parts and more.</p>
                         <a href="{{ $market['url'] }}" target="_blank" rel="noopener" class="market-banner-btn">

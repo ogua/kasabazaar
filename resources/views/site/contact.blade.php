@@ -7,7 +7,7 @@
 
    <!-- Promo Section Start -->
    <section class="promo-sec bg-cover jarallax" data-jarallax data-speed=".4">
-      <img src="{{ asset('site/images/promo.jpg') }}" alt="" class="jarallax-img">
+      <img src="{{ asset('site/'.config('website.page_banner')) }}" alt="" class="jarallax-img">
       <div class="parallax-overly"></div>
       <div class="container">
          <div class="row">
@@ -104,7 +104,7 @@
          <div class="row contact-form-wrap justify-content-center">
             <div class="col-lg-8">
                <div class="contact-form round"
-                  style="background: url({{ asset('site/images/form-bg2.jpg') }})no-repeat center center / cover;">
+                  style="background: url({{ asset('site/'.config('website.page_banner')) }}) no-repeat right center / cover;">
                   <div class="form-inner round">
                      <form id="ajax-contact" method="post" action="{{ route('website.enquiries.store') }}">
                         <input type="hidden" name="form_type" value="contact">
