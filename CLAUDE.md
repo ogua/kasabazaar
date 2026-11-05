@@ -41,7 +41,7 @@ legal pages:
 
 | Company | What it is | Repo | Stack |
 |---|---|---|---|
-| **KASAROSE LOGISTICS** (parent) | kasarose.com — public site (freight, real estate, property management), admin, portals, and the commerce API this storefront uses | `C:\xampp\htdocs\Projects\kasabazaar` | Laravel 11 + Filament 3 |
+| **KASAROSE LOGISTICS** (parent) | kasarose.com — public site (door-to-door USA–Ghana shipping), admin, portals, and the commerce API this storefront uses | `C:\xampp\htdocs\Projects\kasabazaar` | Laravel 11 + Filament 3 |
 | **KASAROSE MARKET** | Ecommerce marketplace | this repo | Laravel 12 + Livewire + Filament 4 |
 | Neoride Africa | Tricycle mobility, last-mile transport | `C:\xampp\htdocs\Projects\neoride` | Plain PHP template |
 

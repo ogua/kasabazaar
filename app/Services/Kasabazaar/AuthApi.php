@@ -16,6 +16,21 @@ class AuthApi
         return $this->client->post('customer/auth/register', $data, $this->guestHeader($guestSessionId))->data;
     }
 
+    /**
+     * Confirm a signup that matched an existing KASAROSE LOGISTICS client: the
+     * register call answered with requires_verification and a code was sent to
+     * that client's phone or email. Returns the token and user like register.
+     */
+    public function verifySignup(string $verificationId, string $code, ?string $guestSessionId = null): array
+    {
+        return $this->client->post('customer/auth/verify-otp', ['verification_id' => $verificationId, 'code' => $code], $this->guestHeader($guestSessionId))->data;
+    }
+
+    public function resendSignupCode(string $verificationId): array
+    {
+        return $this->client->post('customer/auth/resend-otp', ['verification_id' => $verificationId])->data;
+    }
+
     public function me(): array
     {
         return $this->client->get('customer/auth/me')->data;

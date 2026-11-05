@@ -18,9 +18,9 @@ class TrackOrder extends Component
 
     public ?string $error = null;
 
-    public function mount(): void
+    public function mount(?string $orderNumber = null): void
     {
-        $this->orderNumber = (string) request()->query('order_number', '');
+        $this->orderNumber = $orderNumber ?? (string) request()->query('order_number', '');
     }
 
     public function track(OrdersApi $ordersApi): void

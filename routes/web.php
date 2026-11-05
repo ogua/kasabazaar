@@ -48,7 +48,10 @@ Route::name('storefront.')->group(function () {
     Route::get('/checkout/callback', Storefront\CheckoutCallback::class)->name('checkout.callback')->middleware('auth');
     Route::get('/wishlist', Storefront\WishlistPage::class)->name('wishlist');
     Route::get('/compare', Storefront\ComparePage::class)->name('compare');
-    Route::get('/track-order', Storefront\TrackOrder::class)->name('track-order');
+    // The order number can be in the path (/track-order/KMB-…) or the query
+    // string. SMS links use the path form because some SMS gateways drop
+    // the "_" in "?order_number=", which breaks the link on the phone.
+    Route::get('/track-order/{orderNumber?}', Storefront\TrackOrder::class)->name('track-order');
 
     Route::get('/login', Storefront\Auth\Login::class)->name('login')->middleware('guest');
     Route::get('/register', Storefront\Auth\Register::class)->name('register')->middleware('guest');

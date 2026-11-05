@@ -23,6 +23,15 @@ class Register extends Component
 
     public string $error = '';
 
+    /** Set when the email or phone matched an existing shipping customer. */
+    public ?string $verificationId = null;
+
+    public string $maskedDestination = '';
+
+    public string $code = '';
+
+    public string $notice = '';
+
     public function submit(AuthApi $authApi): void
     {
         $this->validate([
@@ -46,6 +55,48 @@ class Register extends Component
             return;
         }
 
+        if (! empty($result['requires_verification'])) {
+            $this->error = '';
+            $this->verificationId = $result['verification_id'];
+            $this->maskedDestination = $result['masked_destination'] ?? '';
+
+            return;
+        }
+
+        $this->signIn($result);
+    }
+
+    public function verify(AuthApi $authApi): void
+    {
+        $this->validate(['code' => 'required|digits:6']);
+
+        try {
+            $result = $authApi->verifySignup((string) $this->verificationId, $this->code, CartApi::guestToken());
+        } catch (KasabazaarApiException $e) {
+            $this->error = $e->getMessage();
+
+            return;
+        }
+
+        $this->signIn($result);
+    }
+
+    public function resend(AuthApi $authApi): void
+    {
+        try {
+            $authApi->resendSignupCode((string) $this->verificationId);
+            $this->error = '';
+            $this->notice = 'A new code is on its way.';
+        } catch (KasabazaarApiException $e) {
+            $this->error = $e->getMessage();
+        }
+    }
+
+    /**
+     * @param  array{token: string, user: array<string, mixed>}  $result
+     */
+    private function signIn(array $result): void
+    {
         $user = User::updateOrCreate(
             ['kasabazaar_user_id' => $result['user']['id']],
             [

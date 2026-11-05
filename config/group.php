@@ -78,9 +78,9 @@ return [
         [
             'key' => 'kasarose-logistics',
             'name' => 'KASAROSE LOGISTICS',
-            'role' => 'Parent company — freight, real estate and property management',
+            'role' => 'Parent company — door-to-door shipping from the USA to Ghana',
             'tagline' => 'Your Trusted Partner for Global Shipments.',
-            'description' => "The group's parent company. KASAROSE LOGISTICS runs door-to-door air and ocean freight, ecommerce package forwarding and shipment tracking between the United States and Ghana, alongside real estate and property management. It carries KASAROSE MARKET deliveries that travel beyond a vendor's own delivery area.",
+            'description' => "The group's parent company. KASAROSE LOGISTICS runs door-to-door air and ocean freight, ecommerce package forwarding and shipment tracking between the United States and Ghana. It carries KASAROSE MARKET deliveries that travel beyond a vendor's own delivery area.",
             'url' => env('GROUP_SITE_URL') ?: 'https://kasarose.com',
             'url_label' => 'kasarose.com',
         ],

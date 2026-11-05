@@ -10,6 +10,27 @@
             <x-storefront.ui.alert variant="error" class="mb-5">{{ $error }}</x-storefront.ui.alert>
         @endif
 
+        @if ($verificationId)
+            <form wire:submit.prevent="verify" class="space-y-4">
+                <p class="text-sm text-fg">
+                    You have shipped with KASAROSE LOGISTICS before. To link this account to your shipping record,
+                    enter the 6-digit code we sent to <strong>{{ $maskedDestination }}</strong>.
+                </p>
+                @if ($notice)
+                    <p class="text-sm text-muted" role="status">{{ $notice }}</p>
+                @endif
+                <div>
+                    <label for="register-code" class="block text-sm font-medium text-fg mb-1.5">Verification code</label>
+                    <input id="register-code" autocomplete="one-time-code" inputmode="numeric" maxlength="6" type="text" required autofocus class="w-full border border-border rounded-sm px-3 py-2.5 text-lg tracking-[0.5em] text-center focus:outline-none focus-visible:outline-2 focus-visible:outline-accent" wire:model="code" @error('code') aria-invalid="true" aria-describedby="register-code-error" @enderror>
+                    @error('code') <p id="register-code-error" class="text-error text-xs mt-1">{{ $message }}</p> @enderror
+                </div>
+                <x-storefront.ui.button type="submit" variant="primary" size="lg" wire:loading.attr="disabled" wire:target="verify" class="w-full">
+                    <span wire:loading.remove wire:target="verify">Confirm and create account</span>
+                    <span wire:loading wire:target="verify" class="inline-flex items-center gap-2"><x-storefront.ui.spinner class="w-4 h-4" /> Checking...</span>
+                </x-storefront.ui.button>
+                <button type="button" wire:click="resend" class="w-full text-sm text-navy-900 font-semibold hover:text-accent">Send a new code</button>
+            </form>
+        @else
         <form wire:submit.prevent="submit" class="space-y-4">
             <div>
                 <label for="register-name" class="block text-sm font-medium text-fg mb-1.5">Full Name</label>
@@ -52,6 +73,7 @@
                 <span wire:loading wire:target="submit" class="inline-flex items-center gap-2"><x-storefront.ui.spinner class="w-4 h-4" /> Creating account...</span>
             </x-storefront.ui.button>
         </form>
+        @endif
     </x-storefront.ui.card>
 
     <p class="text-center text-sm text-muted mt-6">
