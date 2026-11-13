@@ -91,7 +91,8 @@
                 <li>Choose <strong>Request a return</strong>, pick the items, and tell us the reason.</li>
                 <li>Upload photos where the item is damaged, wrong or not as described — this settles most claims without a physical inspection.</li>
                 <li>The vendor has <strong>two business days</strong> to respond. If they do not, we decide the claim ourselves.</li>
-                <li>Once approved you get a return authorisation and instructions — either a collection is arranged or you are given a drop-off point.</li>
+                <li>Once approved we tell you which <strong>KASAROSE warehouse</strong> to bring or send the item to. Every return comes to our warehouse first, never straight to the vendor.</li>
+                <li>We check the item at the warehouse. If it passes, we send it back to the vendor and your refund is processed; if it does not meet the grounds for return, we tell you why.</li>
             </ol>
             <p>
                 Checked out as a guest? Email
@@ -134,7 +135,7 @@
         <section id="refunds">
             <h2>7. Refunds</h2>
             <p>
-                Once the returned item reaches the vendor and passes inspection — or once we approve a photo-based
+                Once the returned item reaches our warehouse and passes our inspection — or once we approve a photo-based
                 claim without a physical return — the refund is issued to your <strong>original payment
                 method</strong> within {{ config('group.returns.refund_days') }} days.
             </p>

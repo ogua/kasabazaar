@@ -39,6 +39,8 @@ Route::name('storefront.')->group(function () {
     Route::get('/vendor/{vendor}', Storefront\VendorStorePage::class)->name('vendor');
     Route::get('/become-a-vendor', Storefront\BecomeAVendor::class)->name('become-vendor');
 
+    Route::get('/membership', Storefront\Membership::class)->name('membership');
+
     Route::get('/auctions', Storefront\AuctionListing::class)->name('auctions');
     Route::get('/auctions/{slug}', Storefront\AuctionDetail::class)->name('auction');
     Route::get('/auctions/{slug}/pay', Storefront\AuctionPayment::class)->name('auction.pay')->middleware('auth');

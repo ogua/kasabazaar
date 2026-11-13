@@ -80,6 +80,8 @@
             <a href="{{ route('storefront.product', $product['id']) }}" class="hover:text-accent">{{ $product['name'] }}</a>
         </h3>
 
+        <x-storefront.condition-badge :condition="$product['condition'] ?? null" class="mt-1.5 self-start" />
+
         @if ($reviewsCount > 0)
             <div class="flex items-center gap-1 mt-1.5 text-xs text-muted" aria-label="Rated {{ number_format($rating, 1) }} out of 5 from {{ $reviewsCount }} reviews">
                 <span class="flex text-warning" aria-hidden="true">

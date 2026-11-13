@@ -306,6 +306,10 @@
                     <x-storefront.icon name="gavel" class="w-4 h-4 text-accent" />
                     Auctions
                 </a>
+                <a href="{{ route('storefront.membership') }}" class="flex items-center gap-1.5 {{ request()->routeIs('storefront.membership') ? 'text-white' : 'text-white/80 hover:text-white' }}">
+                    <x-storefront.icon name="user-group" class="w-4 h-4" />
+                    Membership
+                </a>
                 <a href="{{ route('storefront.vendors') }}" class="flex items-center gap-1.5 {{ request()->routeIs('storefront.vendors') ? 'text-white' : 'text-white/80 hover:text-white' }}">
                     <x-storefront.icon name="store" class="w-4 h-4" />
                     Vendors

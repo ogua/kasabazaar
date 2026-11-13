@@ -26,12 +26,14 @@
         <p class="mt-4"><strong>Total: GHS {{ number_format($order['total_ghs'], 2) }}</strong></p>
     </x-filament::section>
 
-    @if (!empty($order['delivery_detail']))
-        <x-filament::section heading="Delivery Address" class="mt-4">
-            <p>
-                {{ $order['delivery_detail']['full_name'] }}, {{ $order['delivery_detail']['phone'] }}<br>
-                {{ $order['delivery_detail']['street'] }}, {{ $order['delivery_detail']['city'] }}, {{ $order['delivery_detail']['region'] }}
-            </p>
-        </x-filament::section>
-    @endif
+    <x-filament::section heading="Where this order goes" class="mt-4">
+        <p>
+            Orders are not delivered to buyers by vendors. When the order is packed, send it to a KASAROSE warehouse.
+            We inspect it there, then deliver it to the customer ourselves. Returns also come to our warehouse and are
+            checked before they come back to you.
+        </p>
+        @if (! empty($order['warehouse']))
+            <p class="mt-2"><strong>Warehouse:</strong> {{ $order['warehouse']['name'] }}, {{ $order['warehouse']['address'] }}</p>
+        @endif
+    </x-filament::section>
 </x-filament-panels::page>

@@ -1,14 +1,18 @@
 @php
+    // Vendors never deliver to buyers: every order goes to our warehouse for inspection first.
+    $isPickup = ($order['delivery_method'] ?? 'delivery') === 'pickup';
     $steps = [
         'pending' => 'Order Placed',
         'awaiting_payment' => 'Order Accepted',
         'paid' => 'Payment Confirmed',
-        'processing' => 'Processing',
-        'packed' => 'Packed — Moved to Warehouse',
-        'dispatched' => 'Dispatched — Shipped',
-        'in_transit' => 'In Transit — Ready for Delivery',
-        'delivered' => 'Delivered',
-    ];
+        'processing' => 'Vendor Preparing Your Order',
+        'packed' => 'Order Ready',
+        'sent_to_warehouse' => 'Sent to KASAROSE Warehouse',
+        'at_warehouse' => 'Received at Warehouse',
+        'inspected' => 'Inspected',
+    ] + ($isPickup
+        ? ['ready_for_pickup' => 'Ready for Pickup', 'delivered' => 'Collected']
+        : ['dispatched' => 'Dispatched to You', 'in_transit' => 'In Transit', 'delivered' => 'Delivered']);
 
     $status = $order['status'] ?? 'pending';
     $stepKeys = array_keys($steps);
@@ -27,6 +31,12 @@
         @if (! empty($order['cancelled_reason']))
             <p class="mt-1">{{ $order['cancelled_reason'] }}</p>
         @endif
+    </x-storefront.ui.alert>
+@elseif ($status === 'inspection_failed')
+    <x-storefront.ui.alert variant="warning" class="mb-6">
+        <p class="font-semibold">Problem found at inspection</p>
+        <p class="mt-1">Your item did not pass our inspection at the warehouse. We will return it to the vendor and contact you about a refund.</p>
+        @if (! empty($order['inspection_notes'] ?? null))<p class="mt-1">{{ $order['inspection_notes'] }}</p>@endif
     </x-storefront.ui.alert>
 @elseif ($currentIndex !== false)
     <div class="border border-border rounded-lg p-4 sm:p-6 mb-6">

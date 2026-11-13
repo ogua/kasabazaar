@@ -23,6 +23,21 @@ class Checkout extends Component
 
     public string $notes = '';
 
+    /** The buyer's choice: 'delivery', 'pickup' or 'kasarose_shipping'. Items held in the USA always go with KASAROSE. */
+    public string $deliveryMethod = 'delivery';
+
+    /** The pickup station chosen when the method is 'pickup'. */
+    public string $pickupStationId = '';
+
+    /** Which country's pickup stations are listed: 'Ghana' or 'USA'. */
+    public string $pickupCountry = 'Ghana';
+
+    /** @var array<int, array<string, mixed>> */
+    public array $pickupStations = [];
+
+    /** @var array{total_items?: int, methods?: array<int, array<string, mixed>>} */
+    public array $deliveryOptions = [];
+
     public bool $whatsappOptIn = false;
 
     public string $error = '';
@@ -65,6 +80,64 @@ class Checkout extends Component
         $default = collect($this->addresses)->firstWhere('is_default', true) ?? ($this->addresses[0] ?? null);
         $this->selectedAddressId = $default['id'] ?? '';
         $this->showNewAddressForm = empty($this->addresses);
+
+        $this->loadDeliveryOptions($checkoutApi);
+
+        if ($this->deliveryMethod === 'pickup') {
+            $this->loadPickupStations($checkoutApi);
+        }
+    }
+
+    public function updatedDeliveryMethod(CheckoutApi $checkoutApi): void
+    {
+        if ($this->deliveryMethod === 'pickup') {
+            $this->loadPickupStations($checkoutApi);
+        }
+    }
+
+    public function updatedPickupCountry(CheckoutApi $checkoutApi): void
+    {
+        $this->pickupStationId = '';
+        $this->loadPickupStations($checkoutApi);
+    }
+
+    protected function loadPickupStations(CheckoutApi $checkoutApi): void
+    {
+        try {
+            $this->pickupStations = $checkoutApi->pickupStations($this->pickupCountry);
+        } catch (KasabazaarApiException $e) {
+            Log::warning('storefront.checkout: failed to load pickup stations', ['message' => $e->getMessage()]);
+            $this->pickupStations = [];
+        }
+    }
+
+    public function updatedSelectedAddressId(): void
+    {
+        $this->loadDeliveryOptions(app(CheckoutApi::class));
+    }
+
+    /**
+     * A failed lookup only hides the delivery cards: the backend still prices the order itself.
+     */
+    protected function loadDeliveryOptions(CheckoutApi $checkoutApi): void
+    {
+        $this->deliveryOptions = [];
+
+        if (! $this->selectedAddressId) {
+            return;
+        }
+
+        try {
+            $this->deliveryOptions = $checkoutApi->deliveryOptions($this->selectedAddressId);
+        } catch (KasabazaarApiException $e) {
+            Log::warning('storefront.checkout: failed to load delivery options', ['message' => $e->getMessage()]);
+        }
+
+        $local = collect($this->deliveryOptions['methods'] ?? [])->where('selectable', true)->pluck('key');
+
+        if ($local->isNotEmpty() && ! $local->contains($this->deliveryMethod)) {
+            $this->deliveryMethod = $local->first();
+        }
     }
 
     public function saveAddress(CheckoutApi $checkoutApi): void
@@ -90,6 +163,7 @@ class Checkout extends Component
 
             $this->addresses[] = $address;
             $this->selectedAddressId = $address['id'];
+            $this->loadDeliveryOptions($checkoutApi);
             $this->showNewAddressForm = false;
             $this->error = '';
         } catch (KasabazaarApiException $e) {
@@ -109,6 +183,16 @@ class Checkout extends Component
                 return;
             }
 
+            if (! in_array($this->deliveryMethod, ['delivery', 'pickup', 'kasarose_shipping'], true)) {
+                $this->deliveryMethod = 'delivery';
+            }
+
+            if ($this->deliveryMethod === 'pickup' && ! $this->pickupStationId) {
+                $this->error = 'Please choose the pickup station where you will collect your order.';
+
+                return;
+            }
+
             if (! $this->selectedAddressId) {
                 $this->error = 'Please select or add a delivery address.';
 
@@ -116,7 +200,7 @@ class Checkout extends Component
             }
 
             try {
-                $orderGroup = $checkoutApi->checkout($this->selectedAddressId, $this->notes, $this->whatsappOptIn);
+                $orderGroup = $checkoutApi->checkout($this->selectedAddressId, $this->notes, $this->whatsappOptIn, $this->deliveryMethod, $this->deliveryMethod === 'pickup' ? $this->pickupStationId : null);
             } catch (KasabazaarApiException $e) {
                 $this->error = $e->getMessage();
 

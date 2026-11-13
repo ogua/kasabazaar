@@ -27,9 +27,9 @@ LOGISTICS. Never name KasaBazaar on this site. Consequences:
   `kasa.png` (the K mark), `kasarose-2.png` (horizontal lockup) and `kasarose.png` (stacked lockup):
   marks, lockups, on-dark variants, `og-image.png`, every favicon size and `favicon.ico`. Always run the command
   rather than editing one size in isolation — they all derive from the same source files and drift apart otherwise.
-  The lockups are built from `kasarosemarket.png` / `kasarosemarket-2.png`, which are generated in the KasaRose Website
-  repo by `tools/make-kasarosemarket-logo.py` (real KASAROSE letterforms, "MARKET" in red) — re-copy them from there
-  if that script changes. The original `kasarose*.png` files stay as the parent's source art. Palette: blue `#055F9C`, red `#EF4136`. See [DESIGN.md](DESIGN.md); the Tailwind token names
+  Since November 2026 `kasa.png`, `kasarosemarket.png` and `kasarosemarket-2.png` are cut from the official KASAROSE MARKET
+  artwork (`kasarose-market-official.png`, navy K, black wordmark, grey MARKET), no longer from the KasaRose Website repo's
+  generated logo. The original `kasarose*.png` files stay as the parent's source art. Palette: blue `#055F9C`, red `#EF4136`. See [DESIGN.md](DESIGN.md); the Tailwind token names
   still read `navy-*` for the blue scale, which is deliberate.
 
 ## Group of Companies — cross-site sync (IMPORTANT)

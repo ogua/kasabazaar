@@ -155,7 +155,7 @@ return [
         [
             'service' => 'Same-city delivery (Accra, Kumasi)',
             'estimate' => '1–3 business days',
-            'notes' => 'Dispatched by the vendor once payment clears, delivered by our own riders or a partner courier.',
+            'notes' => 'Sent by the vendor to our warehouse for inspection, then delivered by our own riders or a partner courier. Delivery cost is confirmed by our team after you order.',
         ],
         [
             'service' => 'Nationwide delivery (other regions)',
@@ -165,12 +165,12 @@ return [
         [
             'service' => 'Bulky or oversized items',
             'estimate' => '5–10 business days',
-            'notes' => 'Furniture, appliances and anything requiring a dedicated vehicle. The vendor confirms a delivery window before dispatch.',
+            'notes' => 'Furniture, appliances and anything requiring a dedicated vehicle. We confirm a delivery window with you before dispatch.',
         ],
         [
             'service' => 'Items shipped from abroad',
             'estimate' => '10–21 business days',
-            'notes' => 'Handled by KASAROSE LOGISTICS. Measured from the day the item reaches our US warehouse, not from the day you ordered it.',
+            'notes' => 'Handled by KASAROSE LOGISTICS. Measured from the day the item is inspected at our US warehouse, not from the day you ordered it.',
         ],
     ],
 

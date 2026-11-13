@@ -23,6 +23,12 @@ class OrderDetail extends Component
 
     public bool $notFound = false;
 
+    public bool $showReturnForm = false;
+
+    public string $returnReason = '';
+
+    public string $returnDetails = '';
+
     public ?string $error = null;
 
     public function mount(string $order, OrdersApi $ordersApi): void
@@ -66,6 +72,60 @@ class OrderDetail extends Component
 
         if ($failure) {
             $this->dispatch('toast', type: 'error', message: $failure);
+        }
+    }
+
+    /**
+     * Pays the delivery cost the shipping team set. The customer bears it and pays it
+     * separately from the items.
+     */
+    public function payDeliveryFee(OrdersApi $ordersApi): void
+    {
+        if (($this->orderData['delivery_fee_status'] ?? null) !== 'quoted') {
+            return;
+        }
+
+        try {
+            $checkout = $ordersApi->payDeliveryFee($this->orderData['id']);
+        } catch (KasabazaarApiException $e) {
+            $this->dispatch('toast', type: 'error', message: $e->getMessage());
+
+            return;
+        }
+
+        $this->redirect($checkout['authorization_url'], navigate: false);
+    }
+
+    /**
+     * Whether the customer can still ask to return this order: delivered, inside the published
+     * return window, and no return already open. The backend enforces the same rules.
+     */
+    public function canRequestReturn(): bool
+    {
+        if (($this->orderData['status'] ?? null) !== 'delivered') {
+            return false;
+        }
+
+        $open = collect($this->orderData['returns'] ?? [])->contains(fn (array $r) => in_array($r['status'], ['requested', 'approved', 'received', 'inspected'], true));
+
+        return ! $open;
+    }
+
+    public function requestReturn(OrdersApi $ordersApi): void
+    {
+        $this->validate([
+            'returnReason' => 'required|string|max:500',
+            'returnDetails' => 'nullable|string|max:2000',
+        ]);
+
+        try {
+            $ordersApi->requestReturn($this->orderData['id'], $this->returnReason, $this->returnDetails ?: null);
+            $this->orderData = $ordersApi->show($this->orderData['id']);
+            $this->showReturnForm = false;
+            $this->reset('returnReason', 'returnDetails');
+            $this->dispatch('toast', type: 'success', message: 'Return requested. We will tell you where to bring the item.');
+        } catch (KasabazaarApiException $e) {
+            $this->dispatch('toast', type: 'error', message: $e->getMessage());
         }
     }
 

@@ -21,7 +21,7 @@ class CreateProduct extends Page
     {
         $this->categoryOptions = collect($vendorApi->categories())->pluck('name', 'id')->all();
 
-        $this->form->fill(['is_active' => true, 'stock' => 0]);
+        $this->form->fill(['is_active' => true, 'stock' => 0, 'condition' => 'new']);
     }
 
     public function save(VendorApi $vendorApi): void

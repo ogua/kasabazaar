@@ -47,7 +47,7 @@ class ListOrders extends Page implements HasTable
             ->columns([
                 TextColumn::make('order_number')->label('Order'),
                 TextColumn::make('user.name')->label('Customer')->default('—'),
-                TextColumn::make('status')->badge()->formatStateUsing(fn (string $state): string => ucfirst($state)),
+                TextColumn::make('status')->badge()->formatStateUsing(fn (string $state): string => ucfirst(str_replace('_', ' ', $state))),
                 TextColumn::make('total_ghs')
                     ->label('Total')
                     ->formatStateUsing(fn (?string $state): string => 'GHS '.number_format((float) $state, 2)),
@@ -57,6 +57,9 @@ class ListOrders extends Page implements HasTable
                     'paid' => 'Paid',
                     'processing' => 'Processing',
                     'packed' => 'Packed',
+                    'sent_to_warehouse' => 'Sent to warehouse',
+                    'at_warehouse' => 'At warehouse',
+                    'inspected' => 'Inspected',
                     'dispatched' => 'Dispatched',
                     'delivered' => 'Delivered',
                     'cancelled' => 'Cancelled',

@@ -61,6 +61,9 @@
     </div>
 
     <div class="flex flex-col flex-1 p-3">
+        @if (! empty($auction['members_only_tier']))
+            <span class="mb-1 inline-flex self-start rounded-sm bg-navy-900 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">{{ ucfirst($auction['members_only_tier']) }}+ members</span>
+        @endif
         <h3 class="text-sm text-fg leading-snug line-clamp-2 min-h-10 group-hover:text-accent">{{ $auction['title'] }}</h3>
 
         <div class="mt-2 flex items-end justify-between gap-2">

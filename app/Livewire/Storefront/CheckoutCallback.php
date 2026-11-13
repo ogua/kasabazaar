@@ -71,6 +71,22 @@ class CheckoutCallback extends Component
     {
         try {
             $result = $checkoutApi->verifyPaystack($reference);
+
+            // Delivery cost payments share this callback with orders.
+            if (($result['type'] ?? null) === 'delivery_fee') {
+                session()->flash('delivery_fee_paid', 'Payment received. Our delivery team will contact you to plan the delivery.');
+                $this->redirect(route('storefront.account.orders.show', $result['order_id']), navigate: false);
+
+                return;
+            }
+
+            // Membership dues share this callback with orders.
+            if (($result['type'] ?? null) === 'membership') {
+                session()->flash('membership_activated', 'Payment received. Your '.($result['plan'] ?? '').' membership is now active.');
+                $this->redirect(route('storefront.membership'), navigate: false);
+
+                return;
+            }
             $this->status = 'success';
             $this->orderGroupId = $result['order_group_id'] ?? null;
             $this->loadPlacedOrders($ordersApi);

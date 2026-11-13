@@ -76,9 +76,20 @@ class VendorApi
         $this->client->patch("marketplace/vendor/orders/{$id}/pack");
     }
 
-    public function dispatchOrder(string $id): void
+    /**
+     * Vendors do not deliver to buyers: a packed order is sent to a KASAROSE warehouse for inspection.
+     */
+    public function dispatchOrder(string $id, ?string $warehouseId = null, ?string $note = null): void
     {
-        $this->client->patch("marketplace/vendor/orders/{$id}/dispatch");
+        $this->client->patch("marketplace/vendor/orders/{$id}/dispatch", array_filter(['warehouse_id' => $warehouseId, 'note' => $note]));
+    }
+
+    /**
+     * @return array<int, array{id: string, name: string, country: string, address: string, phone: ?string, opening_hours: ?string, instructions: ?string}>
+     */
+    public function warehouses(): array
+    {
+        return $this->client->get('marketplace/vendor/warehouses')->data;
     }
 
     public function earningsSummary(): array

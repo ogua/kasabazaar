@@ -44,6 +44,74 @@
             </div>
         @endif
 
+        @if (session('delivery_fee_paid'))
+            <x-storefront.ui.alert variant="success" class="mb-6">{{ session('delivery_fee_paid') }}</x-storefront.ui.alert>
+        @endif
+
+        @php
+            $feeStatus = $order['delivery_fee_status'] ?? 'not_required';
+            $deliveryLabel = match ($order['delivery_method'] ?? 'delivery') {
+                'kasarose_shipping' => 'KASAROSE shipping (USA to Ghana)',
+                'pickup' => 'Pickup',
+                default => 'Delivery',
+            };
+        @endphp
+        @if ($feeStatus !== 'not_required')
+            <section class="rounded-lg border border-border bg-surface px-4 py-4 mb-6" aria-labelledby="delivery-cost-heading">
+                <h2 id="delivery-cost-heading" class="font-display font-semibold text-sm text-navy-900 uppercase tracking-wide mb-2">{{ $deliveryLabel }}</h2>
+
+                @if ($feeStatus === 'awaiting_quote')
+                    <p class="text-sm text-muted">
+                        Our shipping team is reviewing your items to set the delivery cost. We will notify you by SMS and email as soon as it is ready.
+                        Delivery is paid by you, separately from your items.
+                    </p>
+                @elseif ($feeStatus === 'quoted')
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                        <div class="flex-1 text-sm">
+                            <p class="font-semibold text-fg">Delivery cost: GHS {{ number_format($order['delivery_fee_ghs'], 2) }}</p>
+                            @if (! empty($order['delivery_fee_notes']))
+                                <p class="text-muted mt-0.5">{{ $order['delivery_fee_notes'] }}</p>
+                            @endif
+                            <p class="text-muted mt-0.5">Once you pay, our delivery team will contact you to plan the delivery.</p>
+                        </div>
+                        <x-storefront.ui.button variant="accent" wire:click="payDeliveryFee" wire:loading.attr="disabled" wire:target="payDeliveryFee" class="shrink-0">
+                            <span wire:loading.remove wire:target="payDeliveryFee" class="inline-flex items-center gap-2"><x-storefront.icon name="lock" class="w-4 h-4" /> Pay delivery cost</span>
+                            <span wire:loading wire:target="payDeliveryFee" class="inline-flex items-center gap-2"><x-storefront.ui.spinner class="w-4 h-4" /> Opening payment...</span>
+                        </x-storefront.ui.button>
+                    </div>
+                @elseif ($feeStatus === 'paid')
+                    <p class="text-sm text-fg">
+                        <span class="inline-flex items-center gap-1.5 font-medium text-success"><x-storefront.icon name="check-circle" class="w-4 h-4" /> Delivery cost paid (GHS {{ number_format($order['delivery_fee_ghs'], 2) }})</span>
+                    </p>
+                    @if (! empty($order['delivery_scheduled_at']))
+                        <p class="text-sm mt-1">Delivery planned for <strong>{{ \Illuminate\Support\Carbon::parse($order['delivery_scheduled_at'])->timezone(config('app.timezone'))->format('D j M Y, g:i a') }}</strong>.</p>
+                        @if (! empty($order['delivery_plan_notes']))
+                            <p class="text-sm text-muted mt-0.5">{{ $order['delivery_plan_notes'] }}</p>
+                        @endif
+                    @else
+                        <p class="text-sm text-muted mt-1">Our delivery team will contact you shortly to agree how and when your delivery will be made.</p>
+                    @endif
+                @endif
+            </section>
+        @endif
+
+        @if (($order['delivery_method'] ?? null) === 'pickup' && ! empty($order['pickup_station']))
+            <section class="rounded-lg border border-border bg-surface px-4 py-4 mb-6">
+                <h2 class="font-display font-semibold text-sm text-navy-900 uppercase tracking-wide mb-2">Pickup station</h2>
+                <p class="text-sm font-semibold text-fg">{{ $order['pickup_station']['name'] }}</p>
+                <p class="text-sm text-muted">{{ $order['pickup_station']['address'] }}</p>
+                @if (! empty($order['pickup_station']['opening_hours']))<p class="text-sm text-muted">{{ $order['pickup_station']['opening_hours'] }}</p>@endif
+                @if (! empty($order['pickup_station']['phone']))<p class="text-sm text-muted">{{ $order['pickup_station']['phone'] }}</p>@endif
+                <p class="text-xs text-muted mt-2">
+                    @if (($order['status'] ?? '') === 'ready_for_pickup')
+                        <span class="font-semibold text-success">Ready to collect.</span> Bring your order number ({{ $order['order_number'] }}).
+                    @else
+                        We will tell you when your order is ready to collect. It is checked at our warehouse first.
+                    @endif
+                </p>
+            </section>
+        @endif
+
         @include('livewire.storefront.partials.order-status-timeline', ['order' => $order])
 
         <div class="border border-border rounded-lg overflow-hidden mb-6">
@@ -69,12 +137,58 @@
             </table>
         </div>
 
+        @if (! empty($order['returns']) || $this->canRequestReturn())
+            <section class="rounded-lg border border-border bg-surface px-4 py-4 mb-6" aria-labelledby="returns-heading">
+                <h2 id="returns-heading" class="font-display font-semibold text-sm text-navy-900 uppercase tracking-wide mb-3">Returns</h2>
+
+                @foreach ($order['returns'] ?? [] as $return)
+                    <div class="text-sm mb-3 pb-3 border-b border-border last:border-b-0 last:pb-0 last:mb-0">
+                        <p class="font-semibold text-fg">{{ $return['return_number'] }} · {{ Str::headline($return['status']) }}</p>
+                        <p class="text-muted">{{ $return['reason'] }}</p>
+                        @if ($return['status'] === 'approved' && ! empty($return['warehouse']))
+                            <p class="mt-1 text-fg">Bring or send the item to <strong>{{ $return['warehouse']['name'] }}</strong>, {{ $return['warehouse']['address'] }}@if (! empty($return['warehouse']['phone'])) (tel. {{ $return['warehouse']['phone'] }})@endif.
+                                We check it before it goes back to the vendor.</p>
+                        @elseif ($return['status'] === 'requested')
+                            <p class="mt-1 text-muted">We are reviewing your request.</p>
+                        @elseif (! empty($return['staff_notes']) && $return['status'] === 'rejected')
+                            <p class="mt-1 text-muted">{{ $return['staff_notes'] }}</p>
+                        @endif
+                    </div>
+                @endforeach
+
+                @if ($this->canRequestReturn())
+                    @if ($showReturnForm)
+                        <form wire:submit="requestReturn" class="space-y-3">
+                            <div>
+                                <label for="return-reason" class="block text-sm font-medium text-fg mb-1">Why are you returning it?</label>
+                                <input id="return-reason" type="text" wire:model="returnReason" maxlength="500" class="w-full border border-border rounded-sm px-3 py-2 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent">
+                                @error('returnReason')<p class="text-error text-xs mt-1">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label for="return-details" class="block text-sm font-medium text-fg mb-1">More details (optional)</label>
+                                <textarea id="return-details" wire:model="returnDetails" rows="3" maxlength="2000" class="w-full border border-border rounded-sm px-3 py-2 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent"></textarea>
+                            </div>
+                            <p class="text-xs text-muted">Returns are accepted for {{ config('group.returns.window_days') }} days after delivery. The item comes to our warehouse and is checked before it goes back to the vendor.</p>
+                            <div class="flex gap-2">
+                                <x-storefront.ui.button type="submit" variant="primary" size="sm" wire:loading.attr="disabled" wire:target="requestReturn">Submit return request</x-storefront.ui.button>
+                                <x-storefront.ui.button type="button" variant="secondary" size="sm" wire:click="$set('showReturnForm', false)">Cancel</x-storefront.ui.button>
+                            </div>
+                        </form>
+                    @else
+                        <x-storefront.ui.button type="button" variant="secondary" size="sm" wire:click="$set('showReturnForm', true)">Request a return</x-storefront.ui.button>
+                    @endif
+                @endif
+            </section>
+        @endif
+
         <div class="grid sm:grid-cols-2 gap-6 mb-6">
             <x-storefront.ui.card>
                 <h2 class="font-display font-semibold text-sm text-navy-900 uppercase tracking-wide mb-3">Order Total</h2>
                 <div class="space-y-1.5 text-sm">
                     <div class="flex justify-between"><span class="text-muted">Subtotal</span><span class="tabular-nums">GHS {{ number_format($order['subtotal_ghs'] ?? 0, 2) }}</span></div>
-                    <div class="flex justify-between"><span class="text-muted">Shipping</span><span class="tabular-nums">GHS {{ number_format($order['shipping_fee_ghs'] ?? 0, 2) }}</span></div>
+                    @if (($order['delivery_fee_status'] ?? 'not_required') === 'not_required')
+                        <div class="flex justify-between"><span class="text-muted">Shipping</span><span class="tabular-nums">GHS {{ number_format($order['shipping_fee_ghs'] ?? 0, 2) }}</span></div>
+                    @endif
                     <div class="flex justify-between"><span class="text-muted">Tax</span><span class="tabular-nums">GHS {{ number_format($order['tax_ghs'] ?? 0, 2) }}</span></div>
                     @if (($order['discount_ghs'] ?? 0) > 0)
                         <div class="flex justify-between text-success"><span>Discount</span><span class="tabular-nums">-GHS {{ number_format($order['discount_ghs'], 2) }}</span></div>

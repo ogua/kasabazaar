@@ -5,6 +5,7 @@ namespace App\Livewire\Storefront;
 use App\Livewire\Storefront\Concerns\HasCartActions;
 use App\Services\Kasabazaar\KasabazaarApiException;
 use App\Services\Kasabazaar\ProductsApi;
+use App\Support\ProductCondition;
 use App\Support\StorefrontCategories;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Url;
@@ -30,6 +31,10 @@ class ProductListing extends Component
     #[Url]
     public bool $in_stock = false;
 
+    /** @var array<int, string> */
+    #[Url]
+    public array $condition = [];
+
     #[Url]
     public string $sort = 'newest';
 
@@ -50,7 +55,7 @@ class ProductListing extends Component
      */
     public function clearFilter(?string $filter = null): void
     {
-        $defaults = ['search' => '', 'category_id' => '', 'price_min' => null, 'price_max' => null, 'in_stock' => false];
+        $defaults = ['search' => '', 'category_id' => '', 'price_min' => null, 'price_max' => null, 'in_stock' => false, 'condition' => []];
 
         foreach ($filter ? [$filter => $defaults[$filter] ?? null] : $defaults as $property => $default) {
             if (array_key_exists($property, $defaults)) {
@@ -74,6 +79,7 @@ class ProductListing extends Component
                 'price_min' => $this->price_min,
                 'price_max' => $this->price_max,
                 'in_stock' => $this->in_stock ? 1 : null,
+                'condition' => array_values(array_intersect($this->condition, array_keys(ProductCondition::all()))),
                 'sort' => $this->sort,
                 'page' => $this->getPage(),
                 'per_page' => 20,

@@ -4,6 +4,7 @@
     $problems = $this->problems;
     $subtotal = (float) ($cart['subtotal_ghs'] ?? 0);
     $discount = (float) ($cart['discount_ghs'] ?? 0);
+    $memberDiscount = (float) ($cart['membership_discount_ghs'] ?? 0);
 @endphp
 
 <div class="bg-surface-muted pb-14">
@@ -143,13 +144,23 @@
                                         <dd class="font-medium tabular-nums">-GHS {{ number_format($discount, 2) }}</dd>
                                     </div>
                                 @endif
+                                @if ($memberDiscount > 0)
+                                    <div class="flex justify-between gap-3 text-success">
+                                        <dt>Member discount <span class="text-xs">({{ rtrim(rtrim(number_format($cart['membership_discount_percent'], 2), '0'), '.') }}%)</span></dt>
+                                        <dd class="font-medium tabular-nums">-GHS {{ number_format($memberDiscount, 2) }}</dd>
+                                    </div>
+                                @elseif (auth()->check())
+                                    <div class="flex justify-between gap-3 text-xs text-muted">
+                                        <dt><a href="{{ route('storefront.membership') }}" class="underline underline-offset-2 hover:text-accent">Become a member</a> to save on every order</dt>
+                                    </div>
+                                @endif
                                 <div class="flex justify-between text-muted">
                                     <dt>Delivery</dt>
                                     <dd>Added per vendor at checkout</dd>
                                 </div>
                                 <div class="flex justify-between border-t border-border pt-2">
                                     <dt class="font-semibold text-fg">Total before delivery</dt>
-                                    <dd class="font-display font-semibold text-navy-900 tabular-nums">GHS {{ number_format(max(0, $subtotal - $discount), 2) }}</dd>
+                                    <dd class="font-display font-semibold text-navy-900 tabular-nums">GHS {{ number_format(max(0, $subtotal - $discount - $memberDiscount), 2) }}</dd>
                                 </div>
                             </dl>
 

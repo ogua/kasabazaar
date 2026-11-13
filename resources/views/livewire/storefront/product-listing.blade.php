@@ -6,6 +6,7 @@
             'price_min' => $price_min !== null ? 'From GHS '.number_format($price_min, 2) : null,
             'price_max' => $price_max !== null ? 'Up to GHS '.number_format($price_max, 2) : null,
             'in_stock' => $in_stock ? 'In stock only' : null,
+            'condition' => $condition ? 'Condition: '.collect($condition)->map(fn ($c) => \App\Support\ProductCondition::for($c)['label'])->implode(', ') : null,
         ]);
     @endphp
 
@@ -16,7 +17,7 @@
 
     <div class="flex flex-wrap items-end justify-between gap-2 mb-5">
         <h1 class="font-display font-bold text-2xl text-navy-900">{{ $activeCategory['name'] ?? 'All Products' }}</h1>
-        <p class="text-sm text-muted tabular-nums" role="status" wire:loading.class="opacity-50" wire:target="search,category_id,price_min,price_max,in_stock,sort,gotoPage,previousPage,nextPage">
+        <p class="text-sm text-muted tabular-nums" role="status" wire:loading.class="opacity-50" wire:target="search,category_id,price_min,price_max,in_stock,condition,sort,gotoPage,previousPage,nextPage">
             {{ number_format($meta['total'] ?? count($products)) }} {{ Str::plural('result', $meta['total'] ?? count($products)) }}
         </p>
     </div>
@@ -67,6 +68,20 @@
                         <label for="filter-price-max" class="sr-only">Maximum price in GHS</label>
                         <input id="filter-price-max" type="number" min="0" step="any" inputmode="decimal" wire:model.live.debounce.500ms="price_max" placeholder="Max" class="w-full border border-border rounded-sm px-3 py-2 text-sm focus:outline-none focus-visible:outline-2 focus-visible:outline-accent">
                     </div>
+                    </fieldset>
+                </div>
+
+                <div>
+                    <fieldset>
+                        <legend class="font-display font-semibold text-sm text-navy-900 uppercase tracking-wide mb-3">Condition</legend>
+                        <div class="space-y-2">
+                            @foreach (\App\Support\ProductCondition::options() as $key => $label)
+                                <label class="flex items-center gap-2 text-sm text-fg cursor-pointer">
+                                    <input type="checkbox" wire:model.live="condition" value="{{ $key }}" class="w-4 h-4 rounded-sm border-border accent-accent">
+                                    {{ $label }}
+                                </label>
+                            @endforeach
+                        </div>
                     </fieldset>
                 </div>
 
@@ -123,7 +138,7 @@
             <div
                 class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 transition-opacity"
                 wire:loading.class="opacity-40"
-                wire:target="search,category_id,price_min,price_max,in_stock,sort,gotoPage,previousPage,nextPage"
+                wire:target="search,category_id,price_min,price_max,in_stock,condition,sort,gotoPage,previousPage,nextPage"
             >
                 @forelse ($products as $product)
                     <x-storefront.product-card :product="$product" />

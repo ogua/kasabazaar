@@ -22,6 +22,7 @@
         $viewer = $auction['viewer'] ?? null;
         $isWinner = $viewer['is_winner'] ?? false;
         $isLeading = $viewer['is_leading'] ?? false;
+        $membersLocked = ! empty($auction['members_only_tier']) && ! ($auction['viewer_can_bid'] ?? true);
     @endphp
 
     {{-- Poll while bidding is open, and after the clock stops until the result is settled. --}}
@@ -236,8 +237,15 @@
                                 </p>
                             @endif
 
+                            @if ($isLive && $membersLocked)
+                                <div class="mt-4 rounded-sm border border-accent/30 bg-accent-soft/40 px-3 py-3 text-sm text-fg">
+                                    <p class="font-semibold">{{ ucfirst($auction['members_only_tier']) }} members and above only</p>
+                                    <p class="mt-1 text-muted">This is an exclusive member auction. <a href="{{ route('storefront.membership') }}" class="font-medium text-navy-700 underline underline-offset-2 hover:text-accent">Join or upgrade your membership</a> to bid.</p>
+                                </div>
+                            @endif
+
                             {{-- Bid form --}}
-                            @if ($isLive && ! $isLeading)
+                            @if ($isLive && ! $isLeading && ! $membersLocked)
                                 @auth
                                     <form
                                         wire:submit="placeBid"

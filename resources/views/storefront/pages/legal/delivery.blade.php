@@ -15,6 +15,7 @@
             'Failed and refused deliveries',
             'Delays outside our control',
             'Damaged or missing items',
+            'Warehouse inspection and pickup',
         ];
 
         $intro = 'How long your order takes, what it costs, who carries it and what to do when a delivery does not go to plan.';
@@ -76,12 +77,15 @@
         <section id="delivery-charges">
             <h2>3. Delivery charges</h2>
             <p>
-                The delivery charge is calculated at checkout from the delivery address, the weight and size of the
-                items, and the vendor's location. It is always shown in full <strong>before</strong> you pay — we do
-                not add charges after an order is placed.
+                Delivery is not free. The cost is <strong>entered by our delivery team after they have seen your
+                items</strong>, because it depends on the delivery address, and the weight and size of the goods. It is
+                not added to your order total at checkout.
             </p>
             <ul>
-                <li>Orders containing items from several vendors may attract more than one delivery charge, because each vendor dispatches separately. The breakdown is itemised at checkout.</li>
+                <li>For <strong>Delivery</strong> and <strong>KASAROSE shipping</strong> orders you pay for the items first. We then tell you the delivery cost by SMS, email and in your account, and you pay it from your order page. <strong>You bear the delivery cost.</strong></li>
+                <li>We only arrange delivery once the delivery cost is paid. Our delivery team then contacts you to agree how and when delivery will be made.</li>
+                <li><strong>Pickup</strong> has no delivery cost.</li>
+                <li>Orders containing items from several vendors may be split into more than one order, each with its own delivery cost where it is delivered.</li>
                 <li>Bulky items (furniture, large appliances) are quoted individually and may require a dedicated vehicle.</li>
                 <li>Some vendors offer free delivery above a spend threshold. Where they do, it is applied automatically.</li>
                 <li>Items shipped in from abroad may attract customs duties and import taxes, which are payable by you and are not included in the delivery charge.</li>
@@ -95,8 +99,7 @@
                 stay inside the group's own logistics network. Depending on the route, your order may be carried by:
             </p>
             <ul>
-                <li><strong>The vendor's own delivery team</strong>, for local drops within their city.</li>
-                <li><strong>Our own riders and courier partners</strong>, for same-city delivery in Accra and Kumasi.</li>
+                <li><strong>Our own riders and courier partners</strong>, for delivery in Accra, Kumasi and other regions.</li>
                 <li><strong>KASAROSE LOGISTICS</strong> — our parent company — for nationwide road freight and for anything arriving from our US warehouse.</li>
                 <li><strong>Neoride Africa</strong> — the group's mobility company — for last-mile delivery in Kumasi and Ejisu.</li>
             </ul>
@@ -120,9 +123,12 @@
                 email address if you checked out as a guest.
             </p>
             <p>
-                Statuses run: <strong>Pending</strong> → <strong>Confirmed</strong> → <strong>Processing</strong> →
-                <strong>Dispatched</strong> → <strong>Out for delivery</strong> → <strong>Delivered</strong>. We email
-                you at dispatch and again on delivery. Where a shipment is carried by KASAROSE LOGISTICS, its tracking
+                Statuses run: <strong>Order placed</strong> → <strong>Payment confirmed</strong> →
+                <strong>Vendor preparing your order</strong> → <strong>Order ready</strong> →
+                <strong>Sent to KASAROSE warehouse</strong> → <strong>Received at warehouse</strong> →
+                <strong>Inspected</strong> → <strong>Dispatched</strong> → <strong>In transit</strong> →
+                <strong>Delivered</strong>. For Pickup orders, the last steps are <strong>Ready for pickup</strong> and
+                <strong>Collected</strong>. We message you at each warehouse step, at dispatch and on delivery. Where a shipment is carried by KASAROSE LOGISTICS, its tracking
                 events are pulled through and shown on the same page.
             </p>
         </section>
@@ -175,6 +181,20 @@
                 Claims raised inside that window are resolved by replacement or full refund at your choice, at no cost
                 to you. After 48 hours we can still help, but the claim is handled under our
                 <a href="{{ route('storefront.returns') }}">Returns &amp; Refunds Policy</a> instead.
+            </p>
+        </section>
+
+        <section id="warehouse-inspection-and-pickup">
+            <h2>10. Warehouse inspection and pickup</h2>
+            <p>
+                <strong>Vendors do not deliver to you directly.</strong> When an order is packed, the vendor sends it
+                to one of our warehouses. We check it there, and only then does it go on to you. If an item fails
+                inspection it is returned to the vendor and we contact you about a refund.
+            </p>
+            <p>
+                If you choose <strong>Pickup</strong>, you pick a pickup station in Ghana or the USA at checkout. Its
+                address and opening hours are shown on your order. We tell you when the order is ready, and you collect
+                it there with your order number.
             </p>
         </section>
     </x-storefront.legal-layout>

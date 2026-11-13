@@ -53,6 +53,7 @@
                     'Shop' => [
                         ['label' => 'All Products', 'route' => 'storefront.shop'],
                         ['label' => 'Auctions', 'route' => 'storefront.auctions'],
+                        ['label' => 'Membership', 'route' => 'storefront.membership'],
                         ['label' => 'Vendors', 'route' => 'storefront.vendors'],
                         ['label' => 'My Wishlist', 'route' => 'storefront.wishlist'],
                         ['label' => 'View Cart', 'route' => 'storefront.cart'],

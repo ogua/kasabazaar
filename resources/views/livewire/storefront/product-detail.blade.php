@@ -82,6 +82,8 @@
 
                         <h1 class="font-display font-bold text-2xl md:text-3xl leading-tight text-navy-900 mb-3 text-balance">{{ $product['name'] }}</h1>
 
+                        <x-storefront.condition-badge :condition="$product['condition'] ?? null" class="mb-3 self-start" />
+
                         @if ($reviewsCount > 0)
                             <a href="#reviews" class="flex items-center gap-1.5 text-sm mb-4 self-start group">
                                 <span class="flex text-warning" aria-hidden="true">
