@@ -290,6 +290,43 @@ class PublicWebsiteTest extends TestCase
         Cache::forget('site.market-showcase');
     }
 
+    public function test_tracking_slider_falls_back_to_in_stock_priced_products_when_nothing_is_on_sale(): void
+    {
+        Cache::forget('site.market-showcase');
+
+        $suffix = Str::lower(Str::random(8));
+        $branch = Branch::create([
+            'name' => 'Showcase',
+            'slug' => 'showcase-'.$suffix,
+            'country' => 'Ghana',
+            'state' => 'Ashanti',
+            'address' => '1 Test Street',
+            'email' => 'showcase-'.$suffix.'@example.com',
+            'phone' => '0200000000',
+        ]);
+        $products = [
+            'Kitchen Cabinet' => ['price_ghs' => 200, 'stock' => 6],
+            'Unpriced Phone' => ['price_ghs' => 0, 'stock' => 1],
+            'Sold Out Microwave' => ['price_ghs' => 350, 'stock' => 0],
+        ];
+        foreach ($products as $name => $attributes) {
+            $product = EcommerceProduct::create($attributes + ['branch_id' => $branch->id, 'name' => $name, 'is_active' => true]);
+            EcommerceProductImage::create(['ecommerce_product_id' => $product->id, 'path' => 'p/'.Str::slug($name).'.jpg', 'is_primary' => true]);
+        }
+
+        $shipment = $this->makeShipment();
+
+        $this->get('/tracking?ref='.$shipment->tracking_number)
+            ->assertOk()
+            ->assertSee('id="market-slider"', false)
+            ->assertSee('Kitchen Cabinet')
+            ->assertSee('Shop now')
+            ->assertDontSee('Unpriced Phone')
+            ->assertDontSee('Sold Out Microwave');
+
+        Cache::forget('site.market-showcase');
+    }
+
     public function test_tracking_accepts_the_query_parameter_the_shipment_portal_used(): void
     {
         $shipment = $this->makeShipment(['status' => 'shipped']);

@@ -9,7 +9,8 @@ use Illuminate\Support\Facades\Cache;
 /**
  * The KASAROSE MARKET slider on the public tracking page: marketplace products that are on
  * sale and auction lots that are live, each with a photo and a link to its page on the
- * storefront. Only public facts are exposed — never the reserve price or stock levels.
+ * storefront; with neither, in-stock priced products instead. Only public facts are
+ * exposed — never the reserve price or stock levels.
  */
 class PublicMarketShowcase
 {
@@ -30,15 +31,14 @@ class PublicMarketShowcase
 
         return Cache::remember('site.market-showcase', self::CACHE_SECONDS, function () use ($base): array {
             try {
-                $sales = $this->saleSlides($base);
-                $auctions = $this->auctionSlides($base);
+                $slides = $this->interleave($this->saleSlides($base), $this->auctionSlides($base));
+
+                return $slides !== [] ? $slides : $this->catalogueSlides($base);
             } catch (\Throwable $e) {
                 report($e);
 
                 return [];
             }
-
-            return $this->interleave($sales, $auctions);
         });
     }
 
@@ -75,6 +75,41 @@ class PublicMarketShowcase
                     'image' => asset('storage/'.$image->path),
                     'price' => $this->money($product->discount_price_ghs),
                     'was' => $this->money($product->price_ghs),
+                    'note' => null,
+                    'url' => $base.'/product/'.$product->id,
+                ];
+            })
+            ->all();
+    }
+
+    /**
+     * When nothing is on sale or up for auction: in-stock, priced products, featured ones first,
+     * so the banner still shows real goods rather than the static artwork.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function catalogueSlides(string $base): array
+    {
+        return EcommerceProduct::query()
+            ->with('primaryImage')
+            ->where('is_active', true)
+            ->where('stock', '>', 0)
+            ->where('price_ghs', '>', 0)
+            ->has('images')
+            ->orderByDesc('is_featured')
+            ->latest()
+            ->limit(self::LIMIT)
+            ->get()
+            ->map(function (EcommerceProduct $product) use ($base): array {
+                $image = $product->primaryImage->first() ?? $product->images()->first();
+
+                return [
+                    'kind' => 'shop',
+                    'badge' => $product->is_featured ? 'Featured' : 'Shop now',
+                    'name' => (string) $product->name,
+                    'image' => asset('storage/'.$image->path),
+                    'price' => $this->money($product->price_ghs),
+                    'was' => null,
                     'note' => null,
                     'url' => $base.'/product/'.$product->id,
                 ];
