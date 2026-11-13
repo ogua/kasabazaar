@@ -40,9 +40,9 @@ return [
 
     /*
     | The photo on the tracking page's "Get live support" card, relative to public/site.
-    | Temporary illustration — drop the real photo in images/support and change this path.
+    | 1200x675; the agent stands right of centre, so the card crops towards her (extras.css).
     */
-    'support_image' => 'images/support/agent-placeholder.svg',
+    'support_image' => 'images/support/support-agent.jpg',
 
     /*
     | The KASAROSE customer app. The Android link is the Play testing opt-in page;

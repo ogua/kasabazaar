@@ -10,6 +10,7 @@ $photos = [
     'warehouse' => 'images/hero/shipping-usa.jpg',
     'delivery' => 'images/hero/delivery-ghana.jpg',
     'family' => 'images/hero/delivery-ghana-family.jpg',
+    'usTeam' => 'images/team/us-warehouse-team.jpg',
 ];
 $journey = [
     ['step' => '01', 'title' => 'Collected in the USA', 'photo' => 'pickup', 'text' => 'Our uniformed crew picks up from homes and businesses across seven states, or you drop off at our US facility.', 'alt' => 'A KASAROSE LOGISTICS courier collecting a parcel from a home in the United States'],
@@ -256,6 +257,23 @@ $states = ['Michigan', 'Illinois', 'Indiana', 'New York', 'New Jersey', 'Kentuck
                </figure>
             </div>
             @endforeach
+         </div>
+
+         <div class="ksr-us-team row align-items-center g-0">
+            <div class="col-md-5">
+               <img class="ksr-us-team__photo" src="{{ asset('site/'.$photos['usTeam']) }}"
+                  alt="Two members of the KASAROSE LOGISTICS team at the US warehouse with a branded shipping box"
+                  width="800" height="984" loading="lazy">
+            </div>
+            <div class="col-md-7">
+               <div class="ksr-us-team__copy">
+                  <span class="sub-title2 fadeInUp single">On the US Side</span>
+                  <h3 class="display-6">The hands that pack your boxes</h3>
+                  <p>Our US warehouse team receives every drop-off and collection, checks and labels each box,
+                     and gets it ready for the trip to Ghana &mdash; so it arrives the way you sent it.</p>
+                  <a href="{{ route('quote') }}" class="btn btn-primary">Ship With Us <i class="fa fa-arrow-right"></i><span></span></a>
+               </div>
+            </div>
          </div>
       </div>
    </section>

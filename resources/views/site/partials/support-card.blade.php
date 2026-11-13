@@ -11,7 +11,7 @@
    <h2 class="support-card-kicker" id="support-card-title">For your shipment issues</h2>
    <div class="support-card-panel">
       <img class="support-card-photo" src="{{ asset('site/'.config('website.support_image')) }}"
-           alt="A KASAROSE support agent on a call" width="600" height="420" loading="lazy">
+           alt="A KASAROSE LOGISTICS support agent with her phone at the front desk" width="1200" height="675" loading="lazy">
       <div class="support-card-body">
          <h3 class="support-card-title">Get live support</h3>
          <p class="support-card-text">Our team is ready to answer your shipping questions.
