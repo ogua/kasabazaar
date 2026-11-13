@@ -26,6 +26,8 @@ class AuctionResource extends JsonResource
             'title' => $this->title,
             'description' => $this->description,
             'condition' => $this->condition,
+            'members_only_tier' => $this->members_only_tier,
+            'viewer_can_bid' => app(\App\Services\MembershipService::class)->meetsTier($viewer, $this->members_only_tier),
             'images' => $this->imageUrls(),
             'vendor' => $this->whenLoaded('vendor', fn () => $this->vendor ? [
                 'business_name' => $this->vendor->business_name,

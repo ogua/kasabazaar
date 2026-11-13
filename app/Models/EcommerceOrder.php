@@ -84,6 +84,21 @@ class EcommerceOrder extends Model
         return $this->belongsTo(User::class, 'cancelled_by');
     }
 
+    public function pickupStation(): BelongsTo
+    {
+        return $this->belongsTo(PickupStation::class, 'pickup_station_id');
+    }
+
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(PickupStation::class, 'warehouse_id');
+    }
+
+    public function returns(): HasMany
+    {
+        return $this->hasMany(EcommerceReturn::class, 'order_id');
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(EcommerceOrderItem::class, 'order_id');

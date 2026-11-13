@@ -241,21 +241,24 @@ class Shipment extends Model
         ];
     }
 
+    public const TRACKING_PREFIX = 'KRL';
+
     /**
-     * Generate unique tracking number in format KBZ + 7-digit zero-padded number.
-     * e.g. KBZ0047823
+     * Generate unique tracking number in format KRL + 7-digit zero-padded number.
+     * e.g. KRL0047823. Numbers issued before the KASAROSE rebrand start with KBZ and still
+     * resolve everywhere a tracking number is looked up.
      */
     public static function generateTrackingNumber(): string
     {
         do {
-            $number = 'KBZ'.str_pad((string) mt_rand(0, 9_999_999), 7, '0', STR_PAD_LEFT);
+            $number = self::TRACKING_PREFIX.str_pad((string) mt_rand(0, 9_999_999), 7, '0', STR_PAD_LEFT);
         } while (self::where('tracking_number', $number)->exists());
 
         return $number;
     }
 
     /**
-     * Public tracking page on kasarose.com, e.g. https://kasarose.com/tracking?ref=KBZ2854072.
+     * Public tracking page on kasarose.com, e.g. https://kasarose.com/tracking?ref=KRL2854072.
      * Falls back to the shipping reference, which the tracking page also accepts.
      */
     public function publicTrackingUrl(): ?string

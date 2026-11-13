@@ -14,7 +14,7 @@ class ShippingService
         $method = $this->resolveMethod($vendor, $address);
 
         if (! $method) {
-            return 0;
+            return (float) config('ecommerce.default_delivery_fee_ghs', 0);
         }
 
         if ($method->free_shipping_threshold_ghs !== null && $vendorSubtotalGhs >= (float) $method->free_shipping_threshold_ghs) {

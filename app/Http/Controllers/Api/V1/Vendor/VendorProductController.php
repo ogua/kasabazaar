@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Vendor;
 
+use App\Enums\ProductCondition;
 use App\Http\Resources\Ecommerce\EcommerceProductImageResource;
 use App\Http\Resources\Ecommerce\EcommerceProductResource;
 use App\Models\EcommerceProduct;
@@ -9,6 +10,7 @@ use App\Models\EcommerceProductImage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class VendorProductController extends VendorBaseController
 {
@@ -46,12 +48,14 @@ class VendorProductController extends VendorBaseController
             'sku' => 'nullable|string|max:100',
             'category_id' => 'nullable|uuid|exists:ecommerce_categories,id',
             'description' => 'nullable|string',
+            'condition' => ['sometimes', Rule::enum(ProductCondition::class)],
             'specifications' => 'nullable|array',
             'price_ghs' => 'required|numeric|min:0',
             'price_usd' => 'nullable|numeric|min:0',
             'discount_price_ghs' => 'nullable|numeric|min:0',
             'discount_price_usd' => 'nullable|numeric|min:0',
             'weight' => 'nullable|numeric|min:0',
+            'ships_from_usa' => 'sometimes|boolean',
             'stock' => 'nullable|integer|min:0',
             'low_stock_threshold' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
@@ -85,12 +89,14 @@ class VendorProductController extends VendorBaseController
             'sku' => 'nullable|string|max:100',
             'category_id' => 'nullable|uuid|exists:ecommerce_categories,id',
             'description' => 'nullable|string',
+            'condition' => ['sometimes', Rule::enum(ProductCondition::class)],
             'specifications' => 'nullable|array',
             'price_ghs' => 'sometimes|numeric|min:0',
             'price_usd' => 'nullable|numeric|min:0',
             'discount_price_ghs' => 'nullable|numeric|min:0',
             'discount_price_usd' => 'nullable|numeric|min:0',
             'weight' => 'nullable|numeric|min:0',
+            'ships_from_usa' => 'sometimes|boolean',
             'low_stock_threshold' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
         ]);

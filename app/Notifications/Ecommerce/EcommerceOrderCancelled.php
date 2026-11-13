@@ -53,7 +53,7 @@ class EcommerceOrderCancelled extends Notification implements ShouldQueue
 
     private function trackingUrl(): string
     {
-        return rtrim(config('app.frontend_url'), '/')."/track-order?order_number={$this->order->order_number}";
+        return rtrim(config('app.frontend_url'), '/').'/track-order/'.rawurlencode($this->order->order_number);
     }
 
     public function toWhatsapp(object $notifiable): ?WhatsappTemplateMessage

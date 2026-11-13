@@ -115,7 +115,7 @@ return [
             'url_label' => 'kasarosemarket.com',
             'show_on_website' => true,
             'tagline' => "Ghana's multi-vendor marketplace, delivered.",
-            'logo' => 'images/kasarosemarket-lockup.png',
+            'logo' => 'images/kasarosemarket-official.png',
         ],
     ],
 

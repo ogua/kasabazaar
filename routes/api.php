@@ -452,6 +452,12 @@ Route::prefix('v1')->group(function () {
             // Storefront banners (homepage hero slider, promo slots).
             Route::get('banners', [EcommerceCustomer\BannerController::class, 'index']);
 
+            // Where customers can collect Pickup orders (filter by country=Ghana|USA).
+            Route::get('pickup-stations', [EcommerceCustomer\PickupStationController::class, 'index']);
+
+            // Membership categories are public so shoppers can compare before joining.
+            Route::get('membership/plans', [EcommerceCustomer\MembershipController::class, 'plans']);
+
             // Auctions — browsing and bid history are public; bidding and paying need login.
             Route::get('auctions', [EcommerceCustomer\AuctionController::class, 'index']);
             Route::get('auctions/{slug}', [EcommerceCustomer\AuctionController::class, 'show']);
@@ -470,6 +476,8 @@ Route::prefix('v1')->group(function () {
 
             Route::get('orders', [EcommerceCustomer\CustomerEcommerceOrderController::class, 'index']);
             Route::get('orders/{id}', [EcommerceCustomer\CustomerEcommerceOrderController::class, 'show']);
+            Route::post('orders/{id}/returns', [EcommerceCustomer\CustomerEcommerceOrderController::class, 'requestReturn']);
+            Route::post('orders/{id}/delivery-fee/pay', [EcommerceCustomer\CustomerEcommerceOrderController::class, 'payDeliveryFee']);
             Route::get('orders/{id}/tracking', [EcommerceCustomer\CustomerEcommerceOrderController::class, 'tracking']);
             Route::delete('orders/{id}', [EcommerceCustomer\CustomerEcommerceOrderController::class, 'cancel']);
             Route::post('orders/{id}/rate', [EcommerceCustomer\CustomerEcommerceOrderController::class, 'rate']);
@@ -480,6 +488,10 @@ Route::prefix('v1')->group(function () {
 
             Route::post('coupons/validate', [EcommerceCustomer\CouponController::class, 'validateCode']);
             Route::get('shipping-methods', [EcommerceCustomer\ShippingMethodController::class, 'forAddress']);
+            Route::get('delivery-options', [EcommerceCustomer\ShippingMethodController::class, 'deliveryOptions']);
+
+            Route::get('membership', [EcommerceCustomer\MembershipController::class, 'show']);
+            Route::post('membership/subscribe', [EcommerceCustomer\MembershipController::class, 'subscribe']);
 
             Route::get('wishlist', [EcommerceCustomer\WishlistController::class, 'index']);
             Route::post('wishlist/{productId}', [EcommerceCustomer\WishlistController::class, 'store']);
@@ -529,6 +541,7 @@ Route::prefix('v1')->group(function () {
                 Route::patch('orders/{id}/process', [Vendor\VendorOrderController::class, 'process']);
                 Route::patch('orders/{id}/pack', [Vendor\VendorOrderController::class, 'pack']);
                 Route::patch('orders/{id}/dispatch', [Vendor\VendorOrderController::class, 'dispatch']);
+                Route::get('warehouses', [Vendor\VendorOrderController::class, 'warehouses']);
                 Route::post('orders/{orderId}/shipment', [Vendor\VendorShipmentController::class, 'create']);
                 Route::post('orders/{orderId}/shipment/tracking', [Vendor\VendorShipmentController::class, 'addTracking']);
 

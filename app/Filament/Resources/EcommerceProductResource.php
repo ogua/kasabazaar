@@ -48,6 +48,11 @@ class EcommerceProductResource extends Resource
                             ->searchable()
                             ->preload()
                             ->nullable(),
+                        Forms\Components\Select::make('condition')
+                            ->options(\App\Enums\ProductCondition::class)
+                            ->default(\App\Enums\ProductCondition::New)
+                            ->required()
+                            ->native(false),
                         Forms\Components\Textarea::make('description')
                             ->rows(4)
                             ->columnSpanFull(),
@@ -79,6 +84,8 @@ class EcommerceProductResource extends Resource
                             ->numeric()
                             ->nullable()
                             ->prefix('$'),
+                        Forms\Components\Toggle::make('ships_from_usa')
+                            ->label('Ships from the USA (via KASAROSE)'),
                         Forms\Components\TextInput::make('weight')
                             ->numeric()
                             ->nullable()

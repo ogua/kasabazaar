@@ -2,19 +2,25 @@
 
 namespace Tests\Feature;
 
+use App\Enums\AuctionStatus;
+use App\Models\Auction;
 use App\Models\Blog;
 use App\Models\BlogCategory;
 use App\Models\Branch;
 use App\Models\Client;
 use App\Models\ContactMessage;
 use App\Models\CustomerFeedback;
+use App\Models\EcommerceProduct;
+use App\Models\EcommerceProductImage;
 use App\Models\Product;
 use App\Models\Receiver;
 use App\Models\Shipment;
 use App\Models\ShipmentItem;
+use App\Models\Vendor;
 use App\Notifications\WebsiteEnquiryReceived;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Notifications\AnonymousNotifiable;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
@@ -190,6 +196,98 @@ class PublicWebsiteTest extends TestCase
             ->assertSee('At Harbour / Port GH')
             ->assertDontSee('Barrel (Large)')
             ->assertSee('search with the tracking', false);
+    }
+
+    public function test_new_tracking_numbers_start_with_krl_and_legacy_kbz_numbers_still_resolve(): void
+    {
+        $this->assertMatchesRegularExpression('/^KRL\d{7}$/', Shipment::generateTrackingNumber());
+
+        $legacy = $this->makeShipment(['tracking_number' => 'KBZ0047823']);
+
+        $this->get('/tracking?ref=KBZ0047823')
+            ->assertOk()
+            ->assertSee($legacy->tracking_number);
+    }
+
+    public function test_tracking_shows_the_estimated_arrival_on_the_status_label_until_delivery(): void
+    {
+        $shipment = $this->makeShipment(['status' => 'shipped', 'estimated_delivery_date' => '2026-12-24']);
+
+        $this->get('/tracking?ref='.$shipment->tracking_number)
+            ->assertOk()
+            ->assertSee('Estimated arrival in Ghana')
+            ->assertSee('Thu, Dec 24, 2026');
+
+        $shipment->update(['status' => 'delivered']);
+
+        $this->get('/tracking?ref='.$shipment->tracking_number)
+            ->assertOk()
+            ->assertDontSee('Estimated arrival in Ghana');
+    }
+
+    public function test_tracking_shows_the_live_support_card_and_no_eta_without_a_date(): void
+    {
+        $shipment = $this->makeShipment(['status' => 'shipped', 'estimated_delivery_date' => null]);
+
+        $this->get('/tracking?ref='.$shipment->tracking_number)
+            ->assertOk()
+            ->assertSee('Get live support')
+            ->assertSee('Connect now')
+            ->assertDontSee('Estimated arrival in Ghana');
+    }
+
+    public function test_the_homepage_carries_both_usa_to_ghana_promos(): void
+    {
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('Shipping from the USA to Ghana, made simple.')
+            ->assertSee('Book your next pickup with Kasarose.');
+    }
+
+    public function test_tracking_shows_market_products_on_sale_and_live_auctions_in_a_slider(): void
+    {
+        Cache::forget('site.market-showcase');
+
+        $suffix = Str::lower(Str::random(8));
+        $branch = Branch::create([
+            'name' => 'Showcase',
+            'slug' => 'showcase-'.$suffix,
+            'country' => 'Ghana',
+            'state' => 'Ashanti',
+            'address' => '1 Test Street',
+            'email' => 'showcase-'.$suffix.'@example.com',
+            'phone' => '0200000000',
+        ]);
+        $product = EcommerceProduct::create([
+            'branch_id' => $branch->id,
+            'name' => 'Jollof Rice 25kg',
+            'price_ghs' => 400,
+            'discount_price_ghs' => 300,
+            'stock' => 10,
+            'is_active' => true,
+        ]);
+        EcommerceProductImage::create(['ecommerce_product_id' => $product->id, 'path' => 'p/rice.jpg', 'is_primary' => true]);
+        Auction::create([
+            'vendor_id' => Vendor::platform()->id,
+            'title' => 'Vintage Kente Cloth',
+            'starting_price_ghs' => 150,
+            'image_paths' => ['a/kente.jpg'],
+            'starts_at' => now()->subHour(),
+            'ends_at' => now()->addDay(),
+            'status' => AuctionStatus::Published,
+        ]);
+
+        $shipment = $this->makeShipment();
+
+        $this->get('/tracking?ref='.$shipment->tracking_number)
+            ->assertOk()
+            ->assertSee('id="market-slider"', false)
+            ->assertSee('Jollof Rice 25kg')
+            ->assertSee('25% off')
+            ->assertSee('Vintage Kente Cloth')
+            ->assertSee('Live auction');
+
+        Cache::forget('site.market-showcase');
     }
 
     public function test_tracking_accepts_the_query_parameter_the_shipment_portal_used(): void

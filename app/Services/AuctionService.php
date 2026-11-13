@@ -44,6 +44,10 @@ class AuctionService
                 throw new AuctionException('You cannot bid on your own auction.');
             }
 
+            if (! app(MembershipService::class)->meetsTier($user, $locked->members_only_tier)) {
+                throw new AuctionException('This auction is for '.ucfirst($locked->members_only_tier).' members and above. Join or upgrade your membership to bid.');
+            }
+
             if ($this->isBarredFromBidding($user)) {
                 throw new AuctionException('Your account cannot bid right now because of unpaid auction wins. Please contact us to restore bidding.');
             }

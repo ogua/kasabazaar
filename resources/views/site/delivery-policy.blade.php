@@ -99,6 +99,9 @@
                   the group's ecommerce marketplace. Marketplace orders are delivered within Ghana on their own
                   timeframes &mdash; typically 1&ndash;3 business days in Accra and Kumasi, 3&ndash;7 business days
                   in other regions &mdash; and are governed by the KASAROSE MARKET delivery and returns policies.</p>
+               <p>Marketplace vendors send their packed orders to a KASAROSE warehouse, where each order is inspected
+                  before it is delivered or made available for pickup. The delivery cost for those orders is confirmed
+                  by our delivery team after the items are seen, and paid by the customer.</p>
                <p>We carry a share of those marketplace deliveries on KASAROSE MARKET's behalf, but KASAROSE MARKET remains
                   the point of contact for anything ordered there. Raise marketplace delivery questions with
                   KASAROSE MARKET rather than with us.</p>

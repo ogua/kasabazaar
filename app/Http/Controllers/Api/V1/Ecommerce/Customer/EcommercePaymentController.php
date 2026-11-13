@@ -4,8 +4,12 @@ namespace App\Http\Controllers\Api\V1\Ecommerce\Customer;
 
 use App\Enums\EcommerceOrderPaymentStatus;
 use App\Http\Controllers\Api\V1\Customer\CustomerBaseController;
+use App\Models\EcommerceOrder;
 use App\Models\EcommerceOrderGroup;
+use App\Models\Membership;
+use App\Services\DeliveryFeeService;
 use App\Services\EcommercePaymentService;
+use App\Services\MembershipService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -39,6 +43,41 @@ class EcommercePaymentController extends CustomerBaseController
     public function verifyPaystack(Request $request): JsonResponse
     {
         $data = $request->validate(['reference' => 'required|string']);
+
+        // Membership dues share this callback with marketplace orders.
+        $feeOrder = EcommerceOrder::where('user_id', auth()->id())->where('delivery_fee_payment_reference', $data['reference'])->first();
+
+        if ($feeOrder) {
+            try {
+                $feeOrder = app(DeliveryFeeService::class)->verifyPaystack($data['reference']);
+            } catch (\RuntimeException $e) {
+                return $this->error($e->getMessage(), 422);
+            }
+
+            return $this->success([
+                'type' => 'delivery_fee',
+                'order_id' => $feeOrder->id,
+                'order_number' => $feeOrder->order_number,
+            ], 'Delivery payment confirmed.');
+        }
+
+        $membership = Membership::where('user_id', auth()->id())->where('payment_reference', $data['reference'])->first();
+
+        if ($membership) {
+            try {
+                $membership = app(MembershipService::class)->verifyPaystack($data['reference']);
+            } catch (\RuntimeException $e) {
+                return $this->error($e->getMessage(), 422);
+            }
+
+            return $this->success([
+                'type' => 'membership',
+                'membership_id' => $membership->id,
+                'plan' => $membership->plan->name,
+                'expires_at' => $membership->expires_at,
+            ], 'Membership activated.');
+        }
+
         $group = $this->paymentService->verifyAndRecordPaystack($data['reference']);
 
         return $this->success([

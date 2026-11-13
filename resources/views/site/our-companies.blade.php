@@ -84,7 +84,7 @@
             <div class="col-lg-6 pe-lg-5 mt-5 mt-lg-0">
                <div class="about-content">
                   <div class="mb-4">
-                     <img src="{{ asset('site/images/kasarosemarket-lockup.png') }}" alt="" style="max-width: 240px; height: auto;">
+                     <img src="{{ asset('site/images/kasarosemarket-official.png') }}" alt="" style="max-width: 200px; height: auto;">
                   </div>
                   <span class="sub-title2 fadeInUp single">Our Ecommerce Marketplace</span>
                   <h2 class="sec-title">KASAROSE MARKET</h2>

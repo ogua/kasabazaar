@@ -12,6 +12,11 @@ enum EcommerceOrderStatus: string implements HasColor, HasLabel
     case Paid = 'paid';
     case Processing = 'processing';
     case Packed = 'packed';
+    case SentToWarehouse = 'sent_to_warehouse';
+    case AtWarehouse = 'at_warehouse';
+    case Inspected = 'inspected';
+    case InspectionFailed = 'inspection_failed';
+    case ReadyForPickup = 'ready_for_pickup';
     case Dispatched = 'dispatched';
     case InTransit = 'in_transit';
     case Delivered = 'delivered';
@@ -26,6 +31,11 @@ enum EcommerceOrderStatus: string implements HasColor, HasLabel
             self::Paid => 'Paid',
             self::Processing => 'Processing',
             self::Packed => 'Packed',
+            self::SentToWarehouse => 'Sent to Warehouse',
+            self::AtWarehouse => 'Received at Warehouse',
+            self::Inspected => 'Inspected',
+            self::InspectionFailed => 'Failed Inspection',
+            self::ReadyForPickup => 'Ready for Pickup',
             self::Dispatched => 'Dispatched',
             self::InTransit => 'In Transit',
             self::Delivered => 'Delivered',
@@ -42,6 +52,11 @@ enum EcommerceOrderStatus: string implements HasColor, HasLabel
             self::Paid => 'info',
             self::Processing => 'info',
             self::Packed => 'info',
+            self::SentToWarehouse => 'info',
+            self::AtWarehouse => 'primary',
+            self::Inspected => 'success',
+            self::InspectionFailed => 'danger',
+            self::ReadyForPickup => 'success',
             self::Dispatched => 'primary',
             self::InTransit => 'primary',
             self::Delivered => 'success',

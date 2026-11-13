@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ProductCondition;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,8 +24,10 @@ class EcommerceProduct extends Model
             'price_usd' => 'decimal:2',
             'discount_price_ghs' => 'decimal:2',
             'discount_price_usd' => 'decimal:2',
+            'condition' => ProductCondition::class,
             'weight' => 'decimal:3',
             'stock' => 'integer',
+            'ships_from_usa' => 'boolean',
             'is_active' => 'boolean',
             'is_featured' => 'boolean',
         ];

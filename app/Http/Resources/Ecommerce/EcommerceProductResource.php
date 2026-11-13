@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Ecommerce;
 
+use App\Enums\ProductCondition;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -15,12 +16,15 @@ class EcommerceProductResource extends JsonResource
             'slug' => $this->slug,
             'sku' => $this->sku,
             'description' => $this->description,
+            'condition' => $this->condition?->value ?? 'new',
+            'condition_label' => ($this->condition ?? ProductCondition::New)->getLabel(),
             'specifications' => $this->specifications,
             'price_ghs' => $this->price_ghs,
             'price_usd' => $this->price_usd,
             'discount_price_ghs' => $this->discount_price_ghs,
             'discount_price_usd' => $this->discount_price_usd,
             'weight' => $this->weight,
+            'ships_from_usa' => (bool) $this->ships_from_usa,
             'stock' => $this->stock,
             'low_stock_threshold' => $this->low_stock_threshold,
             'is_active' => $this->is_active,

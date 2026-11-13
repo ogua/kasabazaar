@@ -44,7 +44,7 @@
                      <label for="ref" class="visually-hidden">Tracking number or shipment reference</label>
                      <input type="text" id="ref" name="ref" class="form-control"
                         value="{{ $ref }}"
-                        placeholder="Tracking number or reference" required {{ $searched ? '' : 'autofocus' }}>
+                        placeholder="Tracking number, e.g. KRL1234567" required {{ $searched ? '' : 'autofocus' }}>
                      <button type="submit" class="btn btn-primary">
                         Track <i class="fa fa-arrow-right"></i><span></span>
                      </button>
@@ -75,10 +75,19 @@
                               <p class="mb-0">Reference {{ $shipment->shipping_reference }}</p>
                            @endif
                         </div>
-                        <span class="badge bg-{!! $status['class'] !!} fs-6 px-4 py-2 mt-3 mt-sm-0">
-                           <i class="fa-solid {!! $status['icon'] !!}"></i>
-                           {{ $status['label'] }}
-                        </span>
+                        <div class="track-status mt-3 mt-sm-0">
+                           <span class="badge bg-{!! $status['class'] !!} fs-6 px-4 py-2">
+                              <i class="fa-solid {!! $status['icon'] !!}"></i>
+                              {{ $status['label'] }}
+                           </span>
+                           @if ($estimatedDelivery)
+                              <span class="track-eta">
+                                 <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
+                                 <span class="track-eta-label">Estimated arrival in Ghana</span>
+                                 <strong>{{ $estimatedDelivery }}</strong>
+                              </span>
+                           @endif
+                        </div>
                      </div>
 
                      @php
@@ -186,7 +195,7 @@
                         <p class="bg-shade round p-4 mb-5">
                            <i class="fa-solid fa-circle-info text-primary"></i>
                            To see the items in this shipment and who they are going to, search with the tracking
-                           number (it starts with <strong>KBZ</strong>) from your receipt or SMS rather than the
+                           number (it starts with <strong>KRL</strong>) from your receipt or SMS rather than the
                            shipment reference.
                         </p>
                      @endif
@@ -222,11 +231,9 @@
                            our facility, or call us for an update.</p>
                      @endif
 
-                     <div class="bg-shade round p-4 mt-4">
-                        <p class="mb-0">Something look wrong, or is the status not what you expected? Call us and
-                           quote your tracking number &mdash; we'll check it straight away.</p>
-                        @include('site.partials.track-help')
-                     </div>
+                     @include('site.partials.support-card', [
+                        'reference' => $shipment->tracking_number ?: $shipment->shipping_reference,
+                     ])
                   </div>
                @endif
 
@@ -248,10 +255,10 @@
                <div class="col-lg-10 mx-auto">
                   <aside class="market-banner" aria-labelledby="market-banner-title">
                      <div class="market-banner-body">
-                        <img class="market-banner-logo" src="{{ asset('site/images/kasarosemarket-lockup.png') }}"
-                             alt="{{ $market['name'] }}" width="1452" height="327" loading="lazy">
+                        <img class="market-banner-logo" src="{{ asset('site/images/kasarosemarket-official.png') }}"
+                             alt="{{ $market['name'] }}" width="1100" height="875" loading="lazy">
                         <h2 class="market-banner-title" id="market-banner-title">Shop Ghana. <span>We&rsquo;ll deliver it to you.</span></h2>
-                        <p class="market-banner-text">Find rice, cooking oil, kitchen fixtures, car parts and more.</p>
+                        <p class="market-banner-text">{{ $marketSlides ? 'Deals and live auctions from vetted Ghanaian vendors, right now.' : 'Find rice, cooking oil, kitchen fixtures, car parts and more.' }}</p>
                         <a href="{{ $market['url'] }}" target="_blank" rel="noopener" class="market-banner-btn">
                            Start Shopping <i class="fa fa-arrow-right" aria-hidden="true"></i>
                         </a>
@@ -261,11 +268,15 @@
                            <li><i class="fa-solid fa-gavel" aria-hidden="true"></i>Live auctions</li>
                         </ul>
                      </div>
+                     @if ($marketSlides)
+                        @include('site.partials.market-slider', ['slides' => $marketSlides])
+                     @else
                      <picture class="market-banner-art">
                         <source srcset="{{ asset('site/images/market/market-products.webp') }}" type="image/webp">
                         <img src="{{ asset('site/images/market/market-products.jpg') }}" width="990" height="710" loading="lazy"
                              alt="Rice, vegetable oil, a kitchen sink, headlamps, a drive shaft and suspension struts">
                      </picture>
+                     @endif
                      <a href="{{ $market['url'] }}" target="_blank" rel="noopener" class="market-banner-footer">
                         <i class="fa-solid fa-globe" aria-hidden="true"></i>{{ preg_replace('#^https?://#', '', $market['url']) }}
                      </a>

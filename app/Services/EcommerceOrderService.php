@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\DeliveryMethod;
 use App\Enums\EcommerceOrderPaymentStatus;
 use App\Enums\EcommerceOrderStatus;
 use App\Exceptions\InsufficientStockException;
@@ -30,10 +31,13 @@ class EcommerceOrderService
         protected TaxService $taxService,
         protected ShippingService $shippingService,
         protected CouponService $couponService,
-        protected PushNotificationService $pushService
+        protected PushNotificationService $pushService,
+        protected DeliveryOptionsService $deliveryOptions,
+        protected MembershipService $memberships,
+        protected DeliveryFeeService $deliveryFees
     ) {}
 
-    public function createFromCart(User $user, string $deliveryAddressId, string $notes = ''): EcommerceOrderGroup
+    public function createFromCart(User $user, string $deliveryAddressId, string $notes = '', DeliveryMethod $localMethod = DeliveryMethod::Delivery, ?string $pickupStationId = null): EcommerceOrderGroup
     {
         $address = DeliveryAddress::where('user_id', $user->id)->findOrFail($deliveryAddressId);
 
@@ -77,11 +81,16 @@ class EcommerceOrderService
         $rateLog = ExchangeRateLog::latest('created_at')->first();
         $rate = $rateLog?->rate ?? 1;
 
-        return DB::transaction(function () use ($user, $cart, $address, $notes, $rate) {
-            $itemsByVendor = $cart->items->groupBy(fn ($item) => $item->product->vendor_id);
+        return DB::transaction(function () use ($user, $cart, $address, $notes, $rate, $localMethod, $pickupStationId) {
+            // One order per vendor and per delivery method: USA items travel with KASAROSE, the rest by the buyer's local choice.
+            $itemsByVendor = $cart->items->groupBy(fn ($item) => $item->product->vendor_id.'|'.$this->deliveryOptions->methodFor($item, $localMethod)->value);
             $cartSubtotal = $cart->items->sum(fn ($item) => (float) $item->price_ghs * $item->quantity);
 
             [$coupon, $couponDiscountTotal] = $this->resolveCoupon($cart->coupon_code, $user, $cartSubtotal);
+
+            // The membership discount comes off what is left after the coupon, and is spread over the vendor orders with it.
+            $memberDiscountTotal = round(max(0, $cartSubtotal - $couponDiscountTotal) * $this->memberships->discountPercentFor($user) / 100, 2);
+            $discountTotal = $couponDiscountTotal + $memberDiscountTotal;
 
             $group = EcommerceOrderGroup::create([
                 'user_id' => $user->id,
@@ -95,8 +104,9 @@ class EcommerceOrderService
 
             $totals = ['subtotal' => 0, 'shipping' => 0, 'tax' => 0, 'discount' => 0, 'total' => 0];
 
-            foreach ($itemsByVendor as $vendorId => $vendorItems) {
-                $vendor = Vendor::findOrFail($vendorId);
+            foreach ($itemsByVendor as $vendorItems) {
+                $vendor = Vendor::findOrFail($vendorItems->first()->product->vendor_id);
+                $method = $this->deliveryOptions->methodFor($vendorItems->first(), $localMethod);
 
                 $order = $this->createVendorOrder(
                     $group,
@@ -106,8 +116,11 @@ class EcommerceOrderService
                     $notes,
                     $rate,
                     $cartSubtotal,
-                    $couponDiscountTotal,
-                    $coupon
+                    $discountTotal,
+                    $coupon,
+                    $method,
+                    $vendorItems,
+                    $method === DeliveryMethod::Pickup ? $pickupStationId : null
                 );
 
                 $totals['subtotal'] += $order->subtotal_ghs;
@@ -134,6 +147,7 @@ class EcommerceOrderService
                 'shipping_fee_ghs' => $totals['shipping'],
                 'tax_ghs' => $totals['tax'],
                 'discount_ghs' => $totals['discount'],
+                'membership_discount_ghs' => $memberDiscountTotal,
                 'total_ghs' => $totals['total'],
                 'total_usd' => $rate > 0 ? round($totals['total'] / $rate, 2) : null,
             ]);
@@ -143,7 +157,7 @@ class EcommerceOrderService
                     'coupon_id' => $coupon->id,
                     'user_id' => $user->id,
                     'order_group_id' => $group->id,
-                    'discount_amount_ghs' => $totals['discount'],
+                    'discount_amount_ghs' => $couponDiscountTotal,
                 ]);
                 $coupon->increment('used_count');
             }
@@ -281,7 +295,10 @@ class EcommerceOrderService
         float $rate,
         float $cartSubtotal,
         float $couponDiscountTotal,
-        ?Coupon $coupon
+        ?Coupon $coupon,
+        DeliveryMethod $method = DeliveryMethod::Delivery,
+        ?\Illuminate\Support\Collection $cartItems = null,
+        ?string $pickupStationId = null
     ): EcommerceOrder {
         $order = EcommerceOrder::create([
             'order_group_id' => $group->id,
@@ -314,7 +331,13 @@ class EcommerceOrderService
             ]);
         }
 
-        $vendorShipping = $this->shippingService->feeFor($vendor, $address, $vendorSubtotal);
+        $shipping = $cartItems
+            ? $this->deliveryOptions->feeFor($method, $vendor, $address, $cartItems, $vendorSubtotal)
+            : ['fee_ghs' => $this->shippingService->feeFor($vendor, $address, $vendorSubtotal), 'weight_kg' => null];
+        // Delivery and KASAROSE shipping are quoted by the shipping team after they see the items and
+        // paid separately by the customer, so nothing is added to this order's total here.
+        $needsQuote = $this->deliveryFees->requiresQuote($method);
+        $vendorShipping = $needsQuote ? 0.0 : $shipping['fee_ghs'];
         $vendorTax = $this->taxService->calculate($vendorSubtotal);
         $vendorDiscount = $cartSubtotal > 0 && $couponDiscountTotal > 0
             ? round($couponDiscountTotal * ($vendorSubtotal / $cartSubtotal), 2)
@@ -325,6 +348,10 @@ class EcommerceOrderService
         $order->update([
             'subtotal_ghs' => $vendorSubtotal,
             'shipping_fee_ghs' => $vendorShipping,
+            'delivery_method' => $method->value,
+            'pickup_station_id' => $pickupStationId,
+            'shipping_weight_kg' => $method === DeliveryMethod::KasaroseShipping ? ($shipping['weight_kg'] ?? null) : null,
+            'delivery_fee_status' => $needsQuote ? DeliveryFeeService::AWAITING_QUOTE : DeliveryFeeService::NOT_REQUIRED,
             'tax_ghs' => $vendorTax,
             'discount_ghs' => $vendorDiscount,
             'total_ghs' => $vendorTotal,

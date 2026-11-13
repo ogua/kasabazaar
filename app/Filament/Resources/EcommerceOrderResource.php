@@ -16,8 +16,10 @@ use App\Notifications\Ecommerce\EcommerceOrderDispatched;
 use App\Notifications\Ecommerce\EcommerceOrderPacked;
 use App\Notifications\Ecommerce\EcommerceOrderProcessing;
 use App\Notifications\Ecommerce\EcommerceOrderRefunded;
+use App\Services\DeliveryFeeService;
 use App\Services\EcommerceInventoryService;
 use App\Services\PushNotificationService;
+use App\Services\WarehouseFlowService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists;
@@ -157,6 +159,33 @@ class EcommerceOrderResource extends Resource
                             ->columns(5),
                     ]),
 
+                Infolists\Components\Section::make('Warehouse and inspection')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('warehouse.name')->label('Warehouse')->placeholder('—'),
+                        Infolists\Components\TextEntry::make('pickupStation.name')->label('Customer pickup station')->placeholder('—'),
+                        Infolists\Components\TextEntry::make('sent_to_warehouse_at')->label('Sent by vendor')->dateTime()->placeholder('—'),
+                        Infolists\Components\TextEntry::make('received_at_warehouse_at')->label('Received')->dateTime()->placeholder('—'),
+                        Infolists\Components\TextEntry::make('inspected_at')->label('Inspected')->dateTime()->placeholder('—'),
+                        Infolists\Components\TextEntry::make('inspection_result')->label('Result')->badge()->placeholder('—'),
+                        Infolists\Components\TextEntry::make('inspection_notes')->label('Inspection notes')->placeholder('—')->columnSpanFull(),
+                    ])
+                    ->columns(3),
+
+                Infolists\Components\Section::make('Delivery cost and planning')
+                    ->visible(fn (EcommerceOrder $record) => $record->delivery_fee_status !== 'not_required')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('delivery_method')
+                            ->label('Method')
+                            ->formatStateUsing(fn (?string $state) => $state ? \App\Enums\DeliveryMethod::tryFrom($state)?->getLabel() : null),
+                        Infolists\Components\TextEntry::make('shipping_weight_kg')->label('Weight (kg)')->placeholder('—'),
+                        Infolists\Components\TextEntry::make('delivery_fee_ghs')->label('Delivery cost')->money('GHS')->placeholder('Not set yet'),
+                        Infolists\Components\TextEntry::make('delivery_fee_status')->label('Status')->badge(),
+                        Infolists\Components\TextEntry::make('delivery_fee_paid_at')->label('Paid at')->dateTime()->placeholder('—'),
+                        Infolists\Components\TextEntry::make('delivery_scheduled_at')->label('Delivery planned for')->dateTime()->placeholder('Not planned yet'),
+                        Infolists\Components\TextEntry::make('delivery_plan_notes')->label('Delivery plan')->placeholder('—')->columnSpanFull(),
+                    ])
+                    ->columns(3),
+
                 Infolists\Components\Section::make('Delivery Address')
                     ->schema([
                         Infolists\Components\TextEntry::make('deliveryDetail.full_name')
@@ -238,6 +267,26 @@ class EcommerceOrderResource extends Resource
                 Tables\Columns\TextColumn::make('payment_status')
                     ->label('Payment')
                     ->badge(),
+                Tables\Columns\TextColumn::make('delivery_method')
+                    ->label('Delivery')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state) => $state ? \App\Enums\DeliveryMethod::tryFrom($state)?->getLabel() : null)
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('delivery_fee_status')
+                    ->label('Delivery cost')
+                    ->badge()
+                    ->formatStateUsing(fn (?string $state) => match ($state) {
+                        'awaiting_quote' => 'Needs a quote',
+                        'quoted' => 'Awaiting payment',
+                        'paid' => 'Paid',
+                        default => '—',
+                    })
+                    ->color(fn (?string $state) => match ($state) {
+                        'awaiting_quote' => 'danger',
+                        'quoted' => 'warning',
+                        'paid' => 'success',
+                        default => 'gray',
+                    }),
                 Tables\Columns\TextColumn::make('total_ghs')
                     ->label('Total (GHS)')
                     ->money('GHS')
@@ -253,6 +302,13 @@ class EcommerceOrderResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
                     ->options(EcommerceOrderStatus::class),
+                Tables\Filters\SelectFilter::make('delivery_fee_status')
+                    ->label('Delivery cost')
+                    ->options([
+                        'awaiting_quote' => 'Needs a quote',
+                        'quoted' => 'Quoted, awaiting payment',
+                        'paid' => 'Paid, plan delivery',
+                    ]),
                 Tables\Filters\SelectFilter::make('payment_status')
                     ->label('Payment Status')
                     ->options(EcommerceOrderPaymentStatus::class),
@@ -352,11 +408,62 @@ class EcommerceOrderResource extends Resource
                         })
                         ->successNotificationTitle('Order marked as packed'),
 
+                    Tables\Actions\Action::make('receive_at_warehouse')
+                        ->label('Receive at warehouse')
+                        ->icon('heroicon-m-inbox-arrow-down')
+                        ->color('primary')
+                        ->visible(fn (EcommerceOrder $record) => in_array($record->status, [EcommerceOrderStatus::SentToWarehouse, EcommerceOrderStatus::Packed], true))
+                        ->modalDescription('Confirm the vendor has delivered this order to the warehouse. It is inspected next.')
+                        ->fillForm(fn (EcommerceOrder $record) => ['warehouse_id' => $record->warehouse_id])
+                        ->form([
+                            Forms\Components\Select::make('warehouse_id')
+                                ->label('Received at')
+                                ->options(fn () => \App\Models\PickupStation::warehouses()->orderBy('name')->pluck('name', 'id'))
+                                ->required(),
+                        ])
+                        ->action(fn (EcommerceOrder $record, array $data) => app(WarehouseFlowService::class)
+                            ->receive($record, \App\Models\PickupStation::findOrFail($data['warehouse_id']), auth()->user()))
+                        ->successNotificationTitle('Order received at the warehouse'),
+
+                    Tables\Actions\Action::make('inspect')
+                        ->label('Inspect')
+                        ->icon('heroicon-m-clipboard-document-check')
+                        ->color('info')
+                        ->visible(fn (EcommerceOrder $record) => $record->status === EcommerceOrderStatus::AtWarehouse)
+                        ->modalDescription('Check the items against the order. A failed inspection stops the order and the item goes back to the vendor.')
+                        ->form([
+                            Forms\Components\Radio::make('result')->options(['passed' => 'Passed', 'failed' => 'Failed'])->default('passed')->required(),
+                            Forms\Components\Textarea::make('notes')->label('Inspection notes')->rows(3),
+                        ])
+                        ->action(fn (EcommerceOrder $record, array $data) => app(WarehouseFlowService::class)
+                            ->inspect($record, $data['result'] === 'passed', $data['notes'] ?? null, auth()->user()))
+                        ->successNotificationTitle('Inspection recorded and the customer notified'),
+
+                    Tables\Actions\Action::make('ready_for_pickup')
+                        ->label('Ready for pickup')
+                        ->icon('heroicon-m-map-pin')
+                        ->color('success')
+                        ->visible(fn (EcommerceOrder $record) => $record->status === EcommerceOrderStatus::Inspected && $record->delivery_method === 'pickup')
+                        ->modalDescription(fn (EcommerceOrder $record) => 'The customer will collect from: '.($record->pickupStation?->name ?? 'their chosen station').'. Make sure the item is at that station.')
+                        ->requiresConfirmation()
+                        ->action(fn (EcommerceOrder $record) => app(WarehouseFlowService::class)->readyForPickup($record, auth()->user()))
+                        ->successNotificationTitle('Customer told their order is ready'),
+
+                    Tables\Actions\Action::make('return_failed_to_vendor')
+                        ->label('Return to vendor')
+                        ->icon('heroicon-m-arrow-uturn-left')
+                        ->color('danger')
+                        ->visible(fn (EcommerceOrder $record) => $record->status === EcommerceOrderStatus::InspectionFailed && ! $record->returned_to_vendor_at)
+                        ->requiresConfirmation()
+                        ->action(fn (EcommerceOrder $record) => app(WarehouseFlowService::class)->returnFailedToVendor($record, auth()->user()))
+                        ->successNotificationTitle('Marked as returned to the vendor'),
+
                     Tables\Actions\Action::make('dispatch')
                         ->label('Dispatch')
                         ->icon('heroicon-m-truck')
                         ->color('primary')
-                        ->visible(fn (EcommerceOrder $record) => $record->status === EcommerceOrderStatus::Packed)
+                        ->visible(fn (EcommerceOrder $record) => $record->status === EcommerceOrderStatus::Inspected && $record->delivery_method !== 'pickup')
+                        ->modalDescription('The item has been inspected at our warehouse. Dispatch it on to the customer.')
                         ->form([
                             Forms\Components\TextInput::make('tracking_number')
                                 ->required()
@@ -402,7 +509,7 @@ class EcommerceOrderResource extends Resource
                         ->label('Mark as Delivered')
                         ->icon('heroicon-m-check-badge')
                         ->color('success')
-                        ->visible(fn (EcommerceOrder $record) => in_array($record->status, [EcommerceOrderStatus::Dispatched, EcommerceOrderStatus::InTransit]))
+                        ->visible(fn (EcommerceOrder $record) => in_array($record->status, [EcommerceOrderStatus::Dispatched, EcommerceOrderStatus::InTransit, EcommerceOrderStatus::ReadyForPickup]))
                         ->requiresConfirmation()
                         ->action(function (EcommerceOrder $record): void {
                             $record->update(['status' => EcommerceOrderStatus::Delivered->value]);
@@ -423,6 +530,59 @@ class EcommerceOrderResource extends Resource
                             );
                         })
                         ->successNotificationTitle('Order marked as delivered'),
+
+                    Tables\Actions\Action::make('set_delivery_cost')
+                        ->label('Set delivery cost')
+                        ->icon('heroicon-m-truck')
+                        ->color('warning')
+                        ->visible(fn (EcommerceOrder $record) => in_array($record->delivery_fee_status, [DeliveryFeeService::AWAITING_QUOTE, DeliveryFeeService::QUOTED], true)
+                            && auth()->user()?->can('set_delivery_cost'))
+                        ->modalDescription(fn (EcommerceOrder $record) => 'Review the items and delivery address, then enter what the customer must pay for delivery. They are notified and pay it separately.'
+                            .($record->shipping_weight_kg ? " Total weight: {$record->shipping_weight_kg} kg." : ''))
+                        ->fillForm(fn (EcommerceOrder $record) => [
+                            'amount' => $record->delivery_fee_ghs ?? app(DeliveryFeeService::class)->suggestedFee($record),
+                        ])
+                        ->form([
+                            Forms\Components\TextInput::make('amount')
+                                ->label('Delivery cost (GHS)')
+                                ->numeric()
+                                ->required()
+                                ->minValue(0)
+                                ->helperText('Pre-filled with a suggestion. Confirm or change it.'),
+                            Forms\Components\Textarea::make('notes')
+                                ->label('Note to the customer')
+                                ->rows(2)
+                                ->default(fn (EcommerceOrder $record) => $record->delivery_fee_notes),
+                        ])
+                        ->action(function (EcommerceOrder $record, array $data): void {
+                            app(DeliveryFeeService::class)->quote($record, (float) $data['amount'], auth()->user(), $data['notes'] ?? null);
+                        })
+                        ->successNotificationTitle('Delivery cost set and the customer notified'),
+
+                    Tables\Actions\Action::make('plan_delivery')
+                        ->label('Plan delivery')
+                        ->icon('heroicon-m-phone')
+                        ->color('info')
+                        ->visible(fn (EcommerceOrder $record) => $record->delivery_fee_status === DeliveryFeeService::PAID
+                            && auth()->user()?->can('set_delivery_cost'))
+                        ->modalDescription(fn (EcommerceOrder $record) => 'Call the customer'.($record->deliveryDetail?->phone ? " on {$record->deliveryDetail->phone}" : '').' to agree how and when delivery will be made, then record it here. The customer is notified when you set a time.')
+                        ->fillForm(fn (EcommerceOrder $record) => [
+                            'scheduled_at' => $record->delivery_scheduled_at,
+                            'notes' => $record->delivery_plan_notes,
+                        ])
+                        ->form([
+                            Forms\Components\DateTimePicker::make('scheduled_at')->label('Agreed delivery time'),
+                            Forms\Components\Textarea::make('notes')->label('What was agreed')->rows(3),
+                        ])
+                        ->action(function (EcommerceOrder $record, array $data): void {
+                            app(DeliveryFeeService::class)->planDelivery(
+                                $record,
+                                auth()->user(),
+                                filled($data['scheduled_at'] ?? null) ? \Illuminate\Support\Carbon::parse($data['scheduled_at']) : null,
+                                $data['notes'] ?? null
+                            );
+                        })
+                        ->successNotificationTitle('Delivery plan saved'),
 
                     Tables\Actions\Action::make('cancel')
                         ->label('Cancel Order')
@@ -461,7 +621,7 @@ class EcommerceOrderResource extends Resource
                         ->label('Refund')
                         ->icon('heroicon-m-arrow-uturn-left')
                         ->color('warning')
-                        ->visible(fn (EcommerceOrder $record) => in_array($record->status, [EcommerceOrderStatus::Paid, EcommerceOrderStatus::Delivered]))
+                        ->visible(fn (EcommerceOrder $record) => in_array($record->status, [EcommerceOrderStatus::Paid, EcommerceOrderStatus::Delivered, EcommerceOrderStatus::InspectionFailed]))
                         ->requiresConfirmation()
                         ->modalDescription('This will mark the order as refunded. Process the payment reversal manually in your payment gateway dashboard.')
                         ->action(function (EcommerceOrder $record): void {

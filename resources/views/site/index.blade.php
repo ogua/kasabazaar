@@ -6,11 +6,13 @@
 @section('content')
 
 @php
-$heroSlides = config('website.hero_slides');
+$heroSlides = config('website.hero_slides') ?? [];
 @endphp
 @push('styles')
    <link rel="stylesheet" href="@siteAsset('css/hero.css')">
+   @if (! empty($heroSlides))
    <link rel="preload" as="image" href="{{ asset('site/'.$heroSlides[0]['image']) }}">
+   @endif
 @endpush
 @push('scripts')
    <script src="@siteAsset('js/hero.js')"></script>
@@ -223,6 +225,18 @@ $heroSlides = config('website.hero_slides');
       </div>
    </section>
    <!-- About Section End -->
+
+   <!-- USA to Ghana promos Start -->
+   <section class="pb-5">
+      <div class="container">
+         <div class="sec-intro text-center">
+            <span class="sub-title2">Ship With Us</span>
+            <h2 class="sec-title">USA to Ghana, door to door</h2>
+         </div>
+         @include('site.partials.usa-ghana-flyers')
+      </div>
+   </section>
+   <!-- USA to Ghana promos End -->
 
    <!-- App Section Start -->
    <section class="pb-5">

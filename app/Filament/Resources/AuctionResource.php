@@ -138,6 +138,12 @@ class AuctionResource extends Resource
                             ->default(2)
                             ->required()
                             ->helperText('A bid this close to the end pushes the end time out by the same amount. 0 turns it off.'),
+                        Forms\Components\Select::make('members_only_tier')
+                            ->label('Members only')
+                            ->options(\App\Enums\MembershipTier::class)
+                            ->placeholder('Open to every buyer')
+                            ->helperText('Only members of this tier or higher can bid.')
+                            ->native(false),
                         Forms\Components\Select::make('status')
                             ->options([
                                 AuctionStatus::Draft->value => 'Draft — hidden from shoppers',

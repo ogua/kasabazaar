@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Blog;
+use App\Services\PublicMarketShowcase;
 use App\Services\PublicShipmentTracking;
 use App\Services\PublicWebsite;
 use Illuminate\Contracts\View\View;
@@ -17,7 +18,7 @@ use Illuminate\Support\Facades\Storage;
  */
 class WebsiteController extends Controller
 {
-    public function tracking(Request $request, PublicShipmentTracking $tracking): View
+    public function tracking(Request $request, PublicShipmentTracking $tracking, PublicMarketShowcase $showcase): View
     {
         // A GET so results are linkable: emails, SMS and invoices point straight at
         // /tracking?ref=... ; `query` is the parameter the old site and the shipment
@@ -38,6 +39,8 @@ class WebsiteController extends Controller
             'facts' => [],
             'stageDates' => [],
             'market' => collect(PublicWebsite::groupCompanies())->firstWhere('external', true),
+            'marketSlides' => $showcase->slides(),
+            'estimatedDelivery' => null,
         ];
 
         if ($shipment === null) {
@@ -58,6 +61,11 @@ class WebsiteController extends Controller
             'byTrackingNumber' => $byTrackingNumber,
             // Paying goes through a phone check, and only by the random tracking number.
             'canPay' => $byTrackingNumber && $tracking->rawStatus($shipment) !== 'cancelled',
+            // Shown on the status badge until the goods are delivered, so the customer sees
+            // when to expect them in Ghana; cancelled and delivered shipments have no ETA.
+            'estimatedDelivery' => ($status['step'] ?? 99) < PublicShipmentTracking::STAGE_DELIVERY
+                ? $this->date($shipment->getRawOriginal('estimated_delivery_date'))?->format('D, M j, Y')
+                : null,
             'items' => $byTrackingNumber ? $tracking->items($shipment) : [],
             'timeline' => $tracking->timeline($shipment),
             'stageDates' => [
@@ -70,7 +78,6 @@ class WebsiteController extends Controller
                 // shipped_at is filled in when the shipment is booked, so only show it
                 // once the shipment has actually reached that stage.
                 'Shipped' => ($status['step'] ?? 0) >= PublicShipmentTracking::STAGE_SHIPPED ? $shippedAt?->format('M j, Y') : null,
-                'Estimated Delivery' => $this->date($shipment->getRawOriginal('estimated_delivery_date'))?->format('M j, Y'),
                 'Delivered' => $deliveredAt?->format('M j, Y g:i A'),
             ]),
         ]);

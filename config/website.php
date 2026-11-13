@@ -39,6 +39,12 @@ return [
     'staff_mail_url' => 'https://mail.hostinger.com',
 
     /*
+    | The photo on the tracking page's "Get live support" card, relative to public/site.
+    | Temporary illustration — drop the real photo in images/support and change this path.
+    */
+    'support_image' => 'images/support/agent-placeholder.svg',
+
+    /*
     | The KASAROSE customer app. The Android link is the Play testing opt-in page;
     | set MOBILE_APP_ANDROID_URL to the public store listing once it is in production.
     */

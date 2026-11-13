@@ -10,7 +10,9 @@ use App\Models\EcommerceOrder;
 use App\Models\EcommerceOrderRating;
 use App\Models\EcommerceOrderStatusHistory;
 use App\Notifications\Ecommerce\EcommerceOrderCancelled;
+use App\Services\DeliveryFeeService;
 use App\Services\EcommerceInventoryService;
+use App\Services\ReturnService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -40,7 +42,7 @@ class CustomerEcommerceOrderController extends CustomerBaseController
     public function show(Request $request, string $id): JsonResponse
     {
         $order = EcommerceOrder::where('user_id', auth()->id())
-            ->with(['items.product.images', 'deliveryDetail', 'statusHistory', 'shipment.trackingLogs', 'rating', 'vendor:id,business_name,slug'])
+            ->with(['items.product.images', 'deliveryDetail', 'statusHistory', 'shipment.trackingLogs', 'rating', 'vendor:id,business_name,slug', 'pickupStation', 'warehouse', 'returns.warehouse'])
             ->findOrFail($id);
 
         return $this->success(new EcommerceOrderDetailResource($order));
@@ -121,5 +123,38 @@ class CustomerEcommerceOrderController extends CustomerBaseController
         ]);
 
         return $this->success(null, 'Thank you for your rating!');
+    }
+
+    /**
+     * Open a Paystack checkout for the delivery cost the shipping team entered.
+     */
+    public function payDeliveryFee(Request $request, string $id): JsonResponse
+    {
+        $order = EcommerceOrder::where('user_id', auth()->id())->findOrFail($id);
+
+        try {
+            $result = app(DeliveryFeeService::class)->initiate($order, auth()->user(), $request->input('client') === 'mobile' ? 'mobile' : 'web');
+        } catch (\RuntimeException $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+
+        return $this->success(['gateway' => 'paystack'] + $result);
+    }
+
+    /**
+     * Ask to return a delivered order. The item comes to one of our warehouses, where it is
+     * checked before it goes back to the vendor.
+     */
+    public function requestReturn(Request $request, string $id): JsonResponse
+    {
+        $data = $request->validate([
+            'reason' => 'required|string|max:500',
+            'details' => 'nullable|string|max:2000',
+        ]);
+
+        $order = EcommerceOrder::where('user_id', auth()->id())->findOrFail($id);
+        $return = app(ReturnService::class)->request($order, auth()->user(), $data['reason'], $data['details'] ?? null);
+
+        return $this->success(['id' => $return->id, 'return_number' => $return->return_number, 'status' => $return->status], 'Return requested.', 201);
     }
 }

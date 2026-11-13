@@ -47,4 +47,40 @@ return [
      */
     'auction_max_second_chances' => (int) env('ECOMMERCE_AUCTION_MAX_SECOND_CHANCES', 2),
     'auction_max_payment_defaults' => (int) env('ECOMMERCE_AUCTION_MAX_PAYMENT_DEFAULTS', 2),
+
+    /*
+     * Days after delivery within which a customer can request a return. Published in
+     * the Returns policy on the storefront (config/group.php there) — keep them in step.
+     */
+    'return_window_days' => (int) env('ECOMMERCE_RETURN_WINDOW_DAYS', 7),
+
+    /*
+     * Vendor delivery fee (GHS) charged when no shipping method is configured for
+     * the buyer's region, so delivery is never silently free. CONFIRM before launch.
+     */
+    'default_delivery_fee_ghs' => (float) env('ECOMMERCE_DEFAULT_DELIVERY_FEE_GHS', 20),
+
+    /*
+     * KASAROSE USA-to-Ghana shipping for items held in the USA. The lane is
+     * fixed, so distance is built into the per-kg rate rather than computed per
+     * order. CONFIRM the rate with KASAROSE LOGISTICS before launch. Weight
+     * charged = item weight x quantity (default_weight_kg when an item has none),
+     * and the charge is never below min_charge_usd.
+     */
+    'kasarose_shipping' => [
+        'rate_per_kg_usd' => (float) env('ECOMMERCE_KASAROSE_RATE_PER_KG_USD', 10),
+        'min_charge_usd' => (float) env('ECOMMERCE_KASAROSE_MIN_CHARGE_USD', 15),
+        'default_weight_kg' => (float) env('ECOMMERCE_KASAROSE_DEFAULT_WEIGHT_KG', 1),
+        'min_days' => (int) env('ECOMMERCE_KASAROSE_MIN_DAYS', 14),
+        'max_days' => (int) env('ECOMMERCE_KASAROSE_MAX_DAYS', 28),
+    ],
+
+    /*
+     * Buyer memberships. The WhatsApp group is for buyers to discuss products
+     * and share information only (never for selling); its invite link is shown
+     * just to members with a running membership.
+     */
+    'membership' => [
+        'whatsapp_buyers_group_url' => env('ECOMMERCE_BUYERS_WHATSAPP_GROUP_URL'),
+    ],
 ];

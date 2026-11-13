@@ -63,7 +63,7 @@ class VendorShipmentController extends VendorBaseController
         if (isset($data['status'])) {
             $order->shipment->update(['status' => $data['status']]);
 
-            if ($data['status'] === 'in_transit') {
+            if ($data['status'] === 'in_transit' && $order->status === EcommerceOrderStatus::Dispatched) {
                 $order->update(['status' => EcommerceOrderStatus::InTransit->value]);
             }
         }

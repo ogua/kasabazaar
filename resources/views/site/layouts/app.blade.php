@@ -108,6 +108,7 @@
    <link rel="stylesheet" href="{{ asset('site/css/jquery.timepicker.min.css') }}">
    <!-- Style CSS -->
    <link rel="stylesheet" href="@siteAsset('css/style.css')">
+   <link rel="stylesheet" href="@siteAsset('css/extras.css')">
    @stack('styles')
 </head>
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Ecommerce\Customer;
 
+use App\Enums\ProductCondition;
 use App\Http\Controllers\Api\V1\Customer\CustomerBaseController;
 use App\Http\Resources\Ecommerce\EcommerceCategoryResource;
 use App\Http\Resources\Ecommerce\EcommerceProductResource;
@@ -30,6 +31,10 @@ class EcommerceProductCatalogController extends CustomerBaseController
 
         if ($request->filled('search')) {
             $this->applySearch($query, (string) $request->search);
+        }
+
+        if ($request->filled('condition')) {
+            $query->whereIn('condition', array_intersect((array) $request->input('condition'), array_column(ProductCondition::cases(), 'value')));
         }
 
         if ($request->filled('price_min')) {

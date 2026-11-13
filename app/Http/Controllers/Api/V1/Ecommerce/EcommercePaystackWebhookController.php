@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Api\V1\Ecommerce;
 
 use App\Http\Controllers\Controller;
+use App\Services\DeliveryFeeService;
 use App\Services\EcommercePaymentService;
+use App\Services\MembershipService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
@@ -34,6 +36,26 @@ class EcommercePaystackWebhookController extends Controller
 
         $data = $event['data'];
         $metadata = $data['metadata'] ?? [];
+
+        if (($metadata['type'] ?? '') === DeliveryFeeService::PAYMENT_TYPE) {
+            try {
+                app(DeliveryFeeService::class)->verifyPaystack($data['reference']);
+            } catch (\Throwable $e) {
+                Log::error('Delivery fee Paystack webhook error: '.$e->getMessage(), ['reference' => $data['reference']]);
+            }
+
+            return response('ok');
+        }
+
+        if (($metadata['type'] ?? '') === MembershipService::PAYMENT_TYPE) {
+            try {
+                app(MembershipService::class)->verifyPaystack($data['reference']);
+            } catch (\Throwable $e) {
+                Log::error('Membership Paystack webhook error: '.$e->getMessage(), ['reference' => $data['reference']]);
+            }
+
+            return response('ok');
+        }
 
         if (($metadata['type'] ?? '') !== 'ecommerce_order_group') {
             return response('ok');

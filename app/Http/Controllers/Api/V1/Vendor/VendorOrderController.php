@@ -7,12 +7,14 @@ use App\Http\Resources\Ecommerce\EcommerceOrderDetailResource;
 use App\Http\Resources\Ecommerce\EcommerceOrderResource;
 use App\Models\EcommerceOrder;
 use App\Models\EcommerceOrderStatusHistory;
-use App\Notifications\Ecommerce\EcommerceOrderDispatched;
+use App\Models\PickupStation;
 use App\Notifications\Ecommerce\EcommerceOrderPacked;
 use App\Notifications\Ecommerce\EcommerceOrderProcessing;
 use App\Services\PushNotificationService;
+use App\Services\WarehouseFlowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class VendorOrderController extends VendorBaseController
 {
@@ -72,21 +74,43 @@ class VendorOrderController extends VendorBaseController
         return $this->success(null, 'Order marked as packed.');
     }
 
+    /**
+     * Vendors do not deliver to buyers. A packed order is sent to one of our warehouses,
+     * where it is received and inspected before it continues to the customer.
+     */
     public function dispatch(Request $request, string $id): JsonResponse
     {
-        $order = EcommerceOrder::where('vendor_id', $this->vendorId())->with('shipment')->findOrFail($id);
+        $order = EcommerceOrder::where('vendor_id', $this->vendorId())->findOrFail($id);
 
-        abort_unless($order->status === EcommerceOrderStatus::Packed, 422, 'Order must be packed to dispatch.');
-        abort_unless($order->shipment !== null, 422, 'A shipment must be assigned before dispatching.');
+        $data = $request->validate([
+            'warehouse_id' => ['nullable', 'uuid', Rule::exists('pickup_stations', 'id')->where('is_active', true)->where('is_warehouse', true)],
+            'note' => 'nullable|string|max:255',
+        ]);
 
-        $order->update(['status' => EcommerceOrderStatus::Dispatched->value]);
-        $order->shipment->update(['dispatched_at' => now()]);
-        $this->appendHistory($order, EcommerceOrderStatus::Dispatched->value, 'Order dispatched.');
+        app(WarehouseFlowService::class)->sendToWarehouse(
+            $order,
+            isset($data['warehouse_id']) ? PickupStation::find($data['warehouse_id']) : null,
+            $data['note'] ?? null,
+            $request->user()
+        );
 
-        $order->user->notify(new EcommerceOrderDispatched($order));
-        $this->pushService->sendToUser($order->user_id, 'Order Dispatched', "Order {$order->order_number} is on its way.", ['type' => 'ecommerce_order', 'order_id' => $order->id]);
+        return $this->success(null, 'Order sent to the warehouse.');
+    }
 
-        return $this->success(null, 'Order dispatched.');
+    /**
+     * The warehouses a vendor can deliver to.
+     */
+    public function warehouses(): JsonResponse
+    {
+        return $this->success(PickupStation::warehouses()->orderBy('sort_order')->orderBy('name')->get()->map(fn (PickupStation $w) => [
+            'id' => $w->id,
+            'name' => $w->name,
+            'country' => $w->country,
+            'address' => $w->fullAddress(),
+            'phone' => $w->phone,
+            'opening_hours' => $w->opening_hours,
+            'instructions' => $w->instructions,
+        ])->values());
     }
 
     private function appendHistory(EcommerceOrder $order, string $status, string $notes = ''): void

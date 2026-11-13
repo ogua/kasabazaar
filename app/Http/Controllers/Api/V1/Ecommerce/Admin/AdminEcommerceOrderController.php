@@ -143,7 +143,7 @@ class AdminEcommerceOrderController extends BaseApiController
         $branchId = $this->resolveBranch($request);
         $order = EcommerceOrder::where('branch_id', $branchId)->with('shipment')->findOrFail($id);
 
-        abort_unless($order->status === EcommerceOrderStatus::Packed, 422, 'Order must be packed to dispatch.');
+        app(\App\Services\WarehouseFlowService::class)->assertCanDispatchToCustomer($order);
         abort_unless($order->shipment !== null, 422, 'A shipment must be assigned before dispatching.');
 
         $order->update(['status' => EcommerceOrderStatus::Dispatched->value]);
@@ -161,7 +161,7 @@ class AdminEcommerceOrderController extends BaseApiController
     {
         $branchId = $this->resolveBranch($request);
         $order = EcommerceOrder::where('branch_id', $branchId)->with('shipment')->findOrFail($id);
-        $allowedStatus = [EcommerceOrderStatus::Dispatched, EcommerceOrderStatus::InTransit];
+        $allowedStatus = [EcommerceOrderStatus::Dispatched, EcommerceOrderStatus::InTransit, EcommerceOrderStatus::ReadyForPickup];
 
         abort_unless(in_array($order->status, $allowedStatus), 422, 'Order must be dispatched or in transit to deliver.');
 
