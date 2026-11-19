@@ -145,6 +145,16 @@ class InvestorsPageTest extends TestCase
             ->assertDontSee('$123,456');
     }
 
+    public function test_the_homepage_still_renders_when_the_figures_cannot_be_loaded(): void
+    {
+        Cache::shouldReceive('remember')->andThrow(new \RuntimeException('cache store unavailable'));
+
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('id="clients-chart"', false)
+            ->assertSee('id="revenue-chart"', false);
+    }
+
     public function test_the_page_is_linked_from_the_footer_and_listed_in_the_sitemap(): void
     {
         $this->get('/about-us')->assertOk()->assertSee(route('investors'), false);

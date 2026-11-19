@@ -20,6 +20,7 @@
         "matscode/paystack": "^1.10",
         "nnjeim/world": "^1.1",
         "pragmarx/countries": "^0.8.3",
+        "rap2hpoutre/laravel-log-viewer": "^2.5",
         "solution-forest/filament-simplelightbox": "^0.0.10",
         "spatie/laravel-pdf": "^1.5",
         "spatie/laravel-sitemap": "^7.3",

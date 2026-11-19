@@ -4,7 +4,7 @@
 @section('meta_description', 'KASAROSE LOGISTICS for investors — client growth and revenue across the USA to Ghana shipping corridor, from live company data.')
 
 @php
-   $usStates = array_values(array_filter(array_keys(config('website.service_states')), fn (string $s): bool => $s !== 'Ghana'));
+   $usStates = array_values(array_filter(array_keys(config('website.service_states', [])), fn (string $s): bool => $s !== 'Ghana'));
    $market = collect(\App\Services\PublicWebsite::groupCompanies())->firstWhere('external', true);
    $email = config('website.investors.contact_email');
 @endphp

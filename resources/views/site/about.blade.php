@@ -33,7 +33,7 @@ $team = [
     ['name' => 'J.W. Adel', 'role' => 'Director', 'photo' => 'images/team/jw-adel.jpg'],
     ['name' => 'Rose N. Adel', 'role' => 'Chief Executive Officer', 'photo' => 'images/team/rose-n-adel.jpg'],
 ];
-$states = array_values(array_diff(array_keys(config('website.service_states')), ['Ghana']));
+$states = array_values(array_diff(array_keys(config('website.service_states', [])), ['Ghana']));
 @endphp
 
 @push('styles')

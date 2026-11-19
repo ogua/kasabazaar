@@ -191,7 +191,7 @@ $heroSlides = config('website.hero_slides') ?? [];
                      <span class="ksr-about__icon"><i class="fa-solid fa-truck-ramp-box" aria-hidden="true"></i></span>
                      <div>
                         <h3 class="h5">We collect</h3>
-                        @php $collectStates = array_values(array_diff(array_keys(config('website.service_states')), ['Ghana'])); @endphp
+                        @php $collectStates = array_values(array_diff(array_keys(config('website.service_states', [])), ['Ghana'])); @endphp
                         <p>From homes and businesses across {{ implode(', ', array_slice($collectStates, 0, -1)) }}
                            and {{ end($collectStates) }}.</p>
                      </div>

@@ -6,6 +6,7 @@ use App\Models\Client;
 use App\Models\Shipment;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
+use Throwable;
 
 /**
  * The figures behind the public investors page (resources/views/site/investors.blade.php):
@@ -34,11 +35,56 @@ class PublicInvestorMetrics
             return $this->build($now);
         }
 
-        return Cache::remember(
-            self::CACHE_KEY,
-            now()->addMinutes((int) config('website.investors.cache_minutes', 360)),
-            fn (): array => $this->build(CarbonImmutable::now()),
-        );
+        try {
+            return Cache::remember(
+                self::CACHE_KEY,
+                now()->addMinutes((int) config('website.investors.cache_minutes', 360)),
+                fn (): array => $this->build(CarbonImmutable::now()),
+            );
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return $this->blank(CarbonImmutable::now());
+        }
+    }
+
+    /**
+     * Zero figures for every month, so a failing cache store or query never takes the homepage down.
+     *
+     * @return array<string, mixed>
+     */
+    private function blank(CarbonImmutable $now): array
+    {
+        $end = $now->startOfMonth();
+        $monthCount = max(6, (int) config('website.investors.months', 24));
+        $months = [];
+
+        for ($month = $end->subMonths($monthCount - 1); $month <= $end; $month = $month->addMonth()) {
+            $months[] = [
+                'key' => $month->format('Y-m'),
+                'label' => $month->format('M Y'),
+                'short' => $month->format('M'),
+                'new_clients' => 0,
+                'clients_total' => 0,
+                'revenue' => 0.0,
+                'shipments' => 0,
+            ];
+        }
+
+        return [
+            'months' => $months,
+            'years' => [],
+            'kpis' => [
+                'clients_total' => 0,
+                'clients_last_12' => 0,
+                'clients_growth' => null,
+                'revenue_last_12' => 0.0,
+                'revenue_growth' => null,
+                'shipments_total' => 0,
+                'states_served' => count(array_filter(array_keys(config('website.service_states', [])), fn (string $place): bool => $place !== 'Ghana')),
+            ],
+            'generated_at' => $now->toIso8601String(),
+        ];
     }
 
     /**

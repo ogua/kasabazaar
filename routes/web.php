@@ -1,22 +1,22 @@
 <?php
 
+use Illuminate\Http\Request;
+use App\Livewire\AgreementForm;
+use App\Livewire\DisclaimerForm;
+use App\Livewire\CustomerFeedaback;
+use Illuminate\Support\Facades\Route;
+use App\Livewire\PaymentsuccessfulPage;
+use App\Http\Controllers\WebsiteController;
 use App\Http\Controllers\AppLinksController;
-use App\Http\Controllers\ExternalShipmentController;
-use App\Http\Controllers\ImpersonationController;
+use App\Http\Controllers\ShippingController;
 use App\Http\Controllers\InvestmentController;
+use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\InvestorReportController;
 use App\Http\Controllers\PublicShipmentController;
-use App\Http\Controllers\PublicShipmentRequestController;
-use App\Http\Controllers\ShippingController;
-use App\Http\Controllers\TrackingPaymentController;
-use App\Http\Controllers\WebsiteController;
 use App\Http\Controllers\WebsiteEnquiryController;
-use App\Livewire\AgreementForm;
-use App\Livewire\CustomerFeedaback;
-use App\Livewire\DisclaimerForm;
-use App\Livewire\PaymentsuccessfulPage;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\TrackingPaymentController;
+use App\Http\Controllers\ExternalShipmentController;
+use App\Http\Controllers\PublicShipmentRequestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -283,3 +283,5 @@ Route::prefix('api')->middleware('web')->group(function () {
     Route::get('/previous-receivers', [\App\Http\Controllers\Api\ReceiverController::class, 'getPreviousReceivers'])
         ->name('api.previous-receivers');
 });
+
+Route::get('logs', [\Rap2hpoutre\LaravelLogViewer\LogViewerController::class, 'index']);
