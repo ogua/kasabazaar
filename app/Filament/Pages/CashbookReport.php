@@ -67,6 +67,8 @@ class CashbookReport extends Page
 
         $filename = 'cashbook-'.strtolower($data['monthName']).'.pdf';
 
+        \App\Services\Audit\Audit::download('Cashbook Report (PDF)');
+
         return response()->streamDownload(function () use ($pdf) {
             echo $pdf->output();
         }, $filename);
@@ -76,6 +78,8 @@ class CashbookReport extends Page
     {
         $monthName = date('M-Y', mktime(0, 0, 0, $this->selectedMonth, 1, $this->selectedYear));
         $filename = 'cashbook-'.strtolower($monthName).'.xlsx';
+
+        \App\Services\Audit\Audit::download('Cashbook Report (Excel)');
 
         return Excel::download(
             new CashbookExport($this->selectedMonth, $this->selectedYear),

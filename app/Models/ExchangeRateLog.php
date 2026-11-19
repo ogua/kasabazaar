@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use App\Service\ExchangeRateService;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -10,7 +11,12 @@ use Illuminate\Support\Facades\Cache;
 
 class ExchangeRateLog extends Model
 {
-    use HasUuids;
+    use Auditable, HasUuids;
+
+    protected static string $auditLog = 'finance';
+
+    /** @var list<string> */
+    protected static array $auditHighRisk = ['rate'];
 
     protected $guarded = ['id'];
 

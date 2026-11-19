@@ -8,6 +8,7 @@ use App\Service\FinancialStatementService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
 
 /**
@@ -92,6 +93,8 @@ trait RendersFinancialStatement
                 'defaultFont' => 'sans-serif',
             ]);
 
+        \App\Services\Audit\Audit::download(Str::headline($this->pdfFilename()).' '.$this->selectedYear.' (PDF)');
+
         return response()->streamDownload(
             fn () => print ($pdf->output()),
             $this->pdfFilename().'-'.$this->selectedYear.'.pdf'
@@ -105,6 +108,8 @@ trait RendersFinancialStatement
     public function downloadExcel()
     {
         $export = $this->excelExport($this->statement());
+
+        \App\Services\Audit\Audit::download(Str::headline($this->pdfFilename()).' '.$this->selectedYear.' (Excel)');
 
         return Excel::download($export, $this->pdfFilename().'-'.$this->selectedYear.'.xlsx');
     }

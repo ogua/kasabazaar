@@ -61,6 +61,7 @@ return array(
     'a1cfe24d14977df6878b9bf804af2d1c' => $vendorDir . '/nunomaduro/collision/src/Adapters/Phpunit/Autoload.php',
     'ec07570ca5a812141189b1fa81503674' => $vendorDir . '/phpunit/phpunit/src/Framework/Assert/Functions.php',
     '9cf90fe04e875b390427268b191a95f0' => $vendorDir . '/pragmarx/countries/src/package/Support/helpers.php',
+    '72b1e3f4a2af9b30b3f137b3ec2057fc' => $vendorDir . '/spatie/laravel-activitylog/src/helpers.php',
     '5c6a9495e67e3398fc97ef867ed00846' => $vendorDir . '/spatie/laravel-pdf/src/Support/functions.php',
     'd92f49fe138fde4e7a3ec6f988960524' => $vendorDir . '/stripe/stripe-php/lib/version_check.php',
     'bab4ed692c1fd3872849227e2a85791e' => $vendorDir . '/unicodeveloper/laravel-paystack/src/Support/helpers.php',

@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MessageTemplate extends Model
 {
-    use HasUuids;
+    use Auditable, HasUuids;
+
+    protected static string $auditLog = 'messaging';
 
     protected $guarded = ['id'];
 
@@ -53,7 +56,7 @@ class MessageTemplate extends Model
         $body = $this->body;
 
         foreach ($data as $key => $value) {
-            $body = str_replace('{{' . $key . '}}', $value ?? '', $body);
+            $body = str_replace('{{'.$key.'}}', $value ?? '', $body);
         }
 
         return $body;
@@ -67,11 +70,9 @@ class MessageTemplate extends Model
         $subject = $this->subject;
 
         foreach ($data as $key => $value) {
-            $subject = str_replace('{{' . $key . '}}', $value ?? '', $subject);
+            $subject = str_replace('{{'.$key.'}}', $value ?? '', $subject);
         }
 
         return $subject;
     }
-
-    
 }

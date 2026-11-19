@@ -2,15 +2,21 @@
 
 namespace App\Models;
 
-use Illuminate\Support\Str;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class CustomerFeedback extends Model
 {
-    use HasUuids, SoftDeletes;
+    use Auditable, HasUuids, SoftDeletes;
+
+    protected static string $auditLog = 'feedback';
+
+    /** @var list<string> */
+    protected static array $auditRedacted = ['complaint_token'];
 
     protected $table = 'customer_feedback';
 
@@ -96,7 +102,7 @@ class CustomerFeedback extends Model
 
     public function getRatingStarsAttribute(): string
     {
-        return str_repeat('★', $this->rating) . str_repeat('☆', 5 - $this->rating);
+        return str_repeat('★', $this->rating).str_repeat('☆', 5 - $this->rating);
     }
 
     public function getStatusColorAttribute(): string

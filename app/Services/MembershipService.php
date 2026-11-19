@@ -159,7 +159,8 @@ class MembershipService
             Membership::running()
                 ->where('user_id', $membership->user_id)
                 ->where('id', '!=', $membership->id)
-                ->update(['status' => Membership::STATUS_EXPIRED]);
+                ->get()
+                ->each(fn (Membership $other) => $other->auditAs('superseded', 'Membership ended: replaced by a new one')->update(['status' => Membership::STATUS_EXPIRED]));
 
             return $membership->fresh('plan');
         });

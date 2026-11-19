@@ -69,6 +69,8 @@ class InvestorsShipmentReport extends Page
                 'defaultFont' => 'sans-serif',
             ]);
 
+        \App\Services\Audit\Audit::download('Investors Shipment Report (PDF)');
+
         return response()->streamDownload(function () use ($pdf) {
             echo $pdf->output();
         }, "shipment-summary-{$summary['start_date']}-to-{$summary['end_date']}.pdf");
@@ -77,6 +79,8 @@ class InvestorsShipmentReport extends Page
     public function downloadExcel()
     {
         $summary = $this->getSummary();
+
+        \App\Services\Audit\Audit::download('Investors Shipment Report (Excel)');
 
         return Excel::download(
             new InvestorShipmentSummaryExport($summary),

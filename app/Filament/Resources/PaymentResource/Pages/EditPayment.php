@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\PaymentResource\Pages;
 
+use App\Filament\Actions\AuditHistoryAction;
 use App\Filament\Resources\PaymentResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -13,6 +14,7 @@ class EditPayment extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            AuditHistoryAction::make(),
             Actions\DeleteAction::make(),
         ];
     }

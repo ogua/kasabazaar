@@ -8,6 +8,7 @@ use App\Filament\Resources\InvestmentResource;
 use App\Models\InvestmentRateOverride;
 use App\Service\InvestmentInterestPayoutService;
 use App\Service\InvestmentInterestService;
+use App\Services\Audit\Audit;
 use Carbon\Carbon;
 use Filament\Actions;
 use Filament\Forms;
@@ -33,9 +34,14 @@ class EditInvestment extends EditRecord
             Actions\DeleteAction::make()
                 ->visible(fn () => ! $this->record->transactions()->where('posted', true)->exists())
                 ->before(function () {
-                    $this->record->transactions()->delete();
-                    $this->record->rateOverrides()->delete();
-                    $this->record->interestPayouts()->delete();
+                    // Relation deletes fire no model events, so the trail gets one summary.
+                    $removed = [
+                        'transactions' => $this->record->transactions()->delete(),
+                        'rate_overrides' => $this->record->rateOverrides()->delete(),
+                        'interest_payouts' => $this->record->interestPayouts()->delete(),
+                    ];
+
+                    Audit::event($this->record, 'schedule_removed', "Unposted schedule of investment {$this->record->reference} removed before deleting it", $removed, true);
                 }),
 
             $this->reverseAndCloseAction(),
@@ -88,7 +94,7 @@ class EditInvestment extends EditRecord
                 $record->update([
                     'notes' => trim(($record->notes ?? '')."\n[".now()->format('M j, Y').'] Reversed & closed by '.$editor->name.": {$data['reason']}"),
                 ]);
-                $record->delete();
+                $record->auditAs('reversed_and_closed', "Investment {$record->reference} reversed and closed", ['reason' => $data['reason']], true)->delete();
 
                 Notification::make()
                     ->title('Investment reversed and closed')

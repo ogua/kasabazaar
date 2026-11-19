@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\UserStatus;
 use App\Models\User;
+use App\Services\Audit\AuditContext;
+use App\Services\Audit\AuthAudit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +22,10 @@ class AuthController extends BaseApiController
             'password' => 'required|string',
         ]);
 
-        if (! Auth::attempt($request->only('email', 'password'))) {
+        // The outcome is audited explicitly below, so the session guard's own events stay quiet.
+        if (! AuditContext::suppressAuthEvents(fn () => Auth::attempt($request->only('email', 'password')))) {
+            AuthAudit::loginFailed((string) $request->email, User::where('email', $request->email)->first(), 'staff app');
+
             return $this->error('Invalid email or password.', 401);
         }
 
@@ -28,10 +33,13 @@ class AuthController extends BaseApiController
         $user = Auth::user();
 
         if ($user->status !== UserStatus::Active) {
-            Auth::logout();
+            AuditContext::suppressAuthEvents(fn () => Auth::logout());
+            AuthAudit::loginBlocked($user, 'staff app', 'account deactivated');
 
             return $this->error('Your account has been deactivated.', 401);
         }
+
+        AuthAudit::loginSucceeded($user, 'staff app');
 
         $user->load(['branches', 'staff.role', 'investor']);
 
@@ -43,6 +51,7 @@ class AuthController extends BaseApiController
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
+        AuthAudit::loggedOut($request->user(), 'staff app');
 
         return $this->success(null, 'Logged out successfully.');
     }
@@ -109,6 +118,8 @@ class AuthController extends BaseApiController
     {
         /** @var User $user */
         $user = $request->user();
+
+        AuthAudit::accountDeleted($user, 'staff app');
 
         DB::transaction(function () use ($user) {
             $user->tokens()->delete();

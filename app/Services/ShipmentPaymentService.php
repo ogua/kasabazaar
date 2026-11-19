@@ -224,7 +224,12 @@ class ShipmentPaymentService
         }
 
         return DB::transaction(function () use ($shipment, $attempt, $reference, $data, $charged): Payment {
-            $payment = Payment::create([
+            $payment = (new Payment)->auditAs('payment_received', "Online payment of USD {$charged['usd']} received for shipment {$shipment->shipping_reference}", [
+                'gateway' => 'paystack',
+                'reference' => $reference,
+                'charged_currency' => $charged['currency'],
+            ]);
+            $payment->fill([
                 'branch_id' => $shipment->branch_id,
                 'shipment_id' => $shipment->id,
                 'payment_ref' => $reference,
@@ -240,7 +245,7 @@ class ShipmentPaymentService
                     .($attempt && (float) $attempt->fee_usd > 0 ? '; transaction charge USD '.number_format((float) $attempt->fee_usd, 2).' paid by the payer' : ''),
                 'paid_on' => $data['paid_at'] ?? now(),
                 'balance' => max(0, (float) $shipment->total - ($shipment->amount_paid + $charged['usd'])),
-            ]);
+            ])->save();
 
             $attempt?->update([
                 'status' => ShipmentPaymentAttemptStatus::Success,

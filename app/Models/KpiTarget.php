@@ -3,13 +3,16 @@
 namespace App\Models;
 
 use App\Enums\PeriodType;
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class KpiTarget extends Model
 {
-    use HasUuids;
+    use Auditable, HasUuids;
+
+    protected static string $auditLog = 'finance';
 
     protected $guarded = ['id'];
 
@@ -48,6 +51,7 @@ class KpiTarget extends Model
         } elseif ($this->achievement_percentage >= 50) {
             return 'at_risk';
         }
+
         return 'behind';
     }
 }

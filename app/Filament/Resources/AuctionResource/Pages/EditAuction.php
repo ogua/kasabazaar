@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AuctionResource\Pages;
 
+use App\Filament\Actions\AuditHistoryAction;
 use App\Filament\Resources\AuctionResource;
 use App\Models\Auction;
 use Filament\Actions;
@@ -14,6 +15,7 @@ class EditAuction extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            AuditHistoryAction::make(),
             // Once anyone has bid, the record is evidence of a binding offer — cancel it instead.
             Actions\DeleteAction::make()
                 ->visible(fn (Auction $record) => $record->bids_count === 0),

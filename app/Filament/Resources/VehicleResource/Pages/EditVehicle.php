@@ -2,9 +2,10 @@
 
 namespace App\Filament\Resources\VehicleResource\Pages;
 
+use App\Filament\Actions\AuditHistoryAction;
+use App\Filament\Resources\VehicleResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
-use App\Filament\Resources\VehicleResource;
 
 class EditVehicle extends EditRecord
 {
@@ -13,12 +14,13 @@ class EditVehicle extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            AuditHistoryAction::make(),
             Actions\DeleteAction::make(),
         ];
     }
 
     protected function getRedirectUrl(): string
-{
-    return $this->getResource()::getUrl('index');
-}
+    {
+        return $this->getResource()::getUrl('index');
+    }
 }

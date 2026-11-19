@@ -211,6 +211,13 @@ class UserResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('activity')
+                    ->label('Activity')
+                    ->icon('heroicon-o-finger-print')
+                    ->color('gray')
+                    ->tooltip('Everything this user has done')
+                    ->url(fn (User $record): string => \App\Filament\Resources\ActivityLogResource::getUrl('index', ['tableFilters' => ['causer' => ['user_id' => $record->getKey()]]]))
+                    ->visible(fn (): bool => auth()->user()?->can('viewAny', \App\Models\Activity::class) ?? false),
                 Tables\Actions\Action::make('impersonate')
                     ->label('Login As')
                     ->icon('heroicon-o-arrow-right-on-rectangle')

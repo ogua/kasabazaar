@@ -31,9 +31,21 @@ class WhatsappOptOut
             ? ['whatsapp_opted_out_at' => now()]
             : ['whatsapp_opted_out_at' => null, 'whatsapp_opt_in_at' => now()];
 
-        Client::whereIn('phone', $variants)->update($changes);
-        Receiver::whereIn('receiver_phone', $variants)->update($changes);
-        User::whereIn('phone', $variants)->update($changes);
+        $counts = [
+            'clients' => Client::whereIn('phone', $variants)->update($changes),
+            'receivers' => Receiver::whereIn('receiver_phone', $variants)->update($changes),
+            'users' => User::whereIn('phone', $variants)->update($changes),
+        ];
+
+        if (array_sum($counts) > 0) {
+            \App\Services\Audit\Audit::event(
+                null,
+                $optedOut ? 'whatsapp_opt_out' : 'whatsapp_opt_in',
+                'WhatsApp '.($optedOut ? 'opt-out' : 'opt-in').' recorded for '.\App\Services\Audit\Audit::mask((string) $variants[0]),
+                $counts,
+                log: 'messaging',
+            );
+        }
     }
 
     /**

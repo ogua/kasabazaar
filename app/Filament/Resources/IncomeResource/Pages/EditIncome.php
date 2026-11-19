@@ -2,9 +2,10 @@
 
 namespace App\Filament\Resources\IncomeResource\Pages;
 
+use App\Filament\Actions\AuditHistoryAction;
+use App\Filament\Resources\IncomeResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
-use App\Filament\Resources\IncomeResource;
 
 class EditIncome extends EditRecord
 {
@@ -13,11 +14,12 @@ class EditIncome extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            AuditHistoryAction::make(),
             Actions\DeleteAction::make(),
         ];
     }
 
-     protected function getRedirectUrl(): string
+    protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
     }

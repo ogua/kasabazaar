@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\InvestorResource\Pages;
 
+use App\Filament\Actions\AuditHistoryAction;
 use App\Filament\Resources\InvestorResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
@@ -13,6 +14,7 @@ class ViewInvestor extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            AuditHistoryAction::make(),
             Actions\EditAction::make(),
         ];
     }

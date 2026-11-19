@@ -2,9 +2,10 @@
 
 namespace App\Service;
 
-use App\Models\User;
 use App\Models\Staff;
 use App\Models\StaffRole;
+use App\Models\User;
+use App\Services\Audit\AccessChangeRecorder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
@@ -52,6 +53,11 @@ class StaffAccountService
      * Assign role-based permissions to a user
      */
     public function assignRolePermissions(User $user, StaffRole $staffRole): void
+    {
+        AccessChangeRecorder::around($user, fn () => $this->grantRolePermissions($user, $staffRole));
+    }
+
+    private function grantRolePermissions(User $user, StaffRole $staffRole): void
     {
         // Map staff role codes to Spatie roles/permissions
         $rolePermissions = $this->getRolePermissionsMap();
@@ -144,8 +150,10 @@ class StaffAccountService
      */
     public function revokeAllPermissions(User $user): void
     {
-        $user->syncRoles([]);
-        $user->syncPermissions([]);
+        AccessChangeRecorder::around($user, function () use ($user): void {
+            $user->syncRoles([]);
+            $user->syncPermissions([]);
+        });
     }
 
     /**
@@ -153,10 +161,9 @@ class StaffAccountService
      */
     public function updateUserPermissions(User $user, StaffRole $newRole): void
     {
-        // Revoke existing permissions
-        $this->revokeAllPermissions($user);
-
-        // Assign new permissions
-        $this->assignRolePermissions($user, $newRole);
+        AccessChangeRecorder::around($user, function () use ($user, $newRole): void {
+            $this->revokeAllPermissions($user);
+            $this->assignRolePermissions($user, $newRole);
+        });
     }
 }

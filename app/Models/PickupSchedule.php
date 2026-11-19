@@ -2,20 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\Branch;
-use App\Models\Client;
-use App\Models\Shipment;
-use App\Models\Staff;
-use App\Models\ScheduleItem;
-use App\Models\User;
 
 class PickupSchedule extends Model
 {
-    use HasUuids;
+    use Auditable, HasUuids;
+
+    protected static string $auditLog = 'shipments';
 
     protected $guarded = ['id'];
 
@@ -25,12 +22,12 @@ class PickupSchedule extends Model
     ];
 
     public const STATUSES = [
-        'scheduled'   => 'Scheduled',
-        'confirmed'   => 'Confirmed',
+        'scheduled' => 'Scheduled',
+        'confirmed' => 'Confirmed',
         'in-progress' => 'In Progress',
-        'completed'   => 'Completed',
-        'cancelled'   => 'Cancelled',
-        'converted'   => 'Converted',
+        'completed' => 'Completed',
+        'cancelled' => 'Cancelled',
+        'converted' => 'Converted',
     ];
 
     public function branch(): BelongsTo
@@ -66,13 +63,13 @@ class PickupSchedule extends Model
     public function getStatusColorAttribute(): string
     {
         return match ($this->status) {
-            'scheduled'   => 'info',
-            'confirmed'   => 'primary',
+            'scheduled' => 'info',
+            'confirmed' => 'primary',
             'in-progress' => 'warning',
-            'completed'   => 'success',
-            'converted'   => 'success',
-            'cancelled'   => 'danger',
-            default       => 'gray',
+            'completed' => 'success',
+            'converted' => 'success',
+            'cancelled' => 'danger',
+            default => 'gray',
         };
     }
 }

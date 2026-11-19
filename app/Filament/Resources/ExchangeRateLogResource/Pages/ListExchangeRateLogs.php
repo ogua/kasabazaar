@@ -6,8 +6,8 @@ use App\Filament\Resources\ExchangeRateLogResource;
 use App\Service\ExchangeRateService;
 use Filament\Actions;
 use Filament\Forms;
-use Filament\Resources\Pages\ListRecords;
 use Filament\Notifications\Notification;
+use Filament\Resources\Pages\ListRecords;
 
 class ListExchangeRateLogs extends ListRecords
 {
@@ -42,6 +42,7 @@ class ListExchangeRateLogs extends ListRecords
                         ->step(0.0001)
                         ->default(function () {
                             $service = app(ExchangeRateService::class);
+
                             return $service->getCurrentRate('USD', 'GHS');
                         })
                         ->helperText('Current rate is shown as default. Enter new rate.')
@@ -73,7 +74,8 @@ class ListExchangeRateLogs extends ListRecords
                     \App\Models\ExchangeRateLog::where('from_currency', 'USD')
                         ->where('to_currency', 'GHS')
                         ->whereDate('rate_date', today())
-                        ->update(['source' => $data['source']]);
+                        ->get()
+                        ->each->update(['source' => $data['source']]);
 
                     Notification::make()
                         ->title('Exchange Rate Updated')

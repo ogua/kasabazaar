@@ -33,7 +33,7 @@ class InvestorPanelProvider extends PanelProvider
         return $panel
             ->id('investor')
             ->path('investor')
-            ->login()
+            ->login(\App\Filament\Pages\Auth\Login::class)
             ->profile()
             ->sidebarCollapsibleOnDesktop()
             ->brandLogo(asset('images/kasarose-logo.png'))

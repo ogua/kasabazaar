@@ -18,6 +18,7 @@ use App\Models\Investor;
 use App\Models\User;
 use App\Notifications\InvestmentConversionStatusUpdated;
 use App\Notifications\InvestmentConverted;
+use App\Services\Audit\Audit;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -189,7 +190,7 @@ class InvestmentConversionService
 
             $target = $this->issueTargetTranche($conversion, round($totalRolled, 2), $staff);
 
-            $conversion->update([
+            $conversion->auditAs('executed', "Conversion {$conversion->reference} executed", [], true)->update([
                 'status' => InvestmentConversionStatus::executed->value,
                 'target_investment_id' => $target->id,
                 'total_amount' => round($totalRolled, 2),
@@ -500,9 +501,16 @@ class InvestmentConversionService
                     'status' => InvestmentStatus::active->value,
                 ]);
 
-                $investment->interestPayouts()
+                $restoredPayouts = $investment->interestPayouts()
                     ->where('status', InvestmentInterestPayoutStatus::converted->value)
                     ->update(['status' => InvestmentInterestPayoutStatus::due->value]);
+
+                if ($restoredPayouts > 0) {
+                    Audit::event($investment, 'payouts_restored', "{$restoredPayouts} converted interest payouts of {$investment->reference} set back to due (conversion {$conversion->reference} reversed)", [
+                        'conversion' => $conversion->reference,
+                        'payouts' => $restoredPayouts,
+                    ]);
+                }
             }
 
             $target = $conversion->targetInvestment;
@@ -511,13 +519,15 @@ class InvestmentConversionService
                 $target->update([
                     'notes' => trim(($target->notes ?? '')."\n[".now()->format('M j, Y').'] Conversion reversed by '.$staff->name.": {$reason}"),
                 ]);
-                $target->transactions()->delete();
-                $target->rateOverrides()->delete();
-                $target->interestPayouts()->delete();
-                $target->delete();
+                $removed = [
+                    'transactions' => $target->transactions()->delete(),
+                    'rate_overrides' => $target->rateOverrides()->delete(),
+                    'interest_payouts' => $target->interestPayouts()->delete(),
+                ];
+                $target->auditAs('conversion_reversed', "Investment {$target->reference} removed: conversion {$conversion->reference} reversed", array_merge(['reason' => $reason], $removed), true)->delete();
             }
 
-            $conversion->update([
+            $conversion->auditAs('reversed', "Conversion {$conversion->reference} reversed", ['reason' => $reason], true)->update([
                 'status' => InvestmentConversionStatus::cancelled->value,
                 'notes' => trim(($conversion->notes ?? '')."\n[".now()->format('M j, Y').'] Reversed by '.$staff->name.": {$reason}"),
                 'reviewed_by' => $staff->id,

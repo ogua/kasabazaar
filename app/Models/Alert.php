@@ -3,14 +3,17 @@
 namespace App\Models;
 
 use App\Enums\AlertSeverity;
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Alert extends Model
 {
-    use HasUuids;
+    use Auditable, HasUuids;
+
+    protected static string $auditLog = 'general';
 
     protected $guarded = ['id'];
 

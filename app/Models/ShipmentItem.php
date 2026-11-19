@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ShipmentItem extends Model
 {
-    use HasUuids;
+    use Auditable, HasUuids;
+
+    protected static string $auditLog = 'shipments';
 
     protected function casts(): array
     {
@@ -36,5 +39,13 @@ class ShipmentItem extends Model
     public function scopeVehicles(Builder $query): Builder
     {
         return $query->where('is_vehicle', true);
+    }
+
+    /**
+     * @return array{0: class-string, 1: mixed}|null
+     */
+    public function auditScope(): ?array
+    {
+        return [Shipment::class, $this->shipment_id];
     }
 }

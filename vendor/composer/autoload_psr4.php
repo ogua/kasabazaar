@@ -63,6 +63,7 @@ return array(
     'Spatie\\Crawler\\' => array($vendorDir . '/spatie/crawler/src'),
     'Spatie\\Color\\' => array($vendorDir . '/spatie/color/src'),
     'Spatie\\Browsershot\\' => array($vendorDir . '/spatie/browsershot/src'),
+    'Spatie\\Activitylog\\' => array($vendorDir . '/spatie/laravel-activitylog/src'),
     'SolutionForest\\FilamentSimpleLightBox\\Database\\Factories\\' => array($vendorDir . '/solution-forest/filament-simplelightbox/database/factories'),
     'SolutionForest\\FilamentSimpleLightBox\\' => array($vendorDir . '/solution-forest/filament-simplelightbox/src'),
     'Sabberworm\\CSS\\' => array($vendorDir . '/sabberworm/php-css-parser/src'),

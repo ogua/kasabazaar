@@ -2,9 +2,10 @@
 
 namespace App\Filament\Resources\ExpenseResource\Pages;
 
+use App\Filament\Actions\AuditHistoryAction;
+use App\Filament\Resources\ExpenseResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
-use App\Filament\Resources\ExpenseResource;
 
 class EditExpense extends EditRecord
 {
@@ -13,6 +14,7 @@ class EditExpense extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            AuditHistoryAction::make(),
             Actions\DeleteAction::make(),
         ];
     }

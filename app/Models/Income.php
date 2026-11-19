@@ -4,14 +4,23 @@ namespace App\Models;
 
 use App\Enums\IncomeStatus;
 use App\Enums\PaymentMethod;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Income extends Model
 {
-    use HasUuids, SoftDeletes;
+    use Auditable, HasUuids, SoftDeletes;
+
+    protected static string $auditLog = 'finance';
+
+    /** @var list<string> */
+    protected static array $auditExcept = ['amount_ghs'];
+
+    /** @var list<string> */
+    protected static array $auditHighRisk = ['amount_usd', 'exchange_rate', 'income_date', 'status'];
 
     protected $guarded = ['id'];
 
@@ -46,6 +55,7 @@ class Income extends Model
     {
         $date = now()->format('Ymd');
         $count = self::whereDate('created_at', now())->count() + 1;
+
         return sprintf('INC-%s-%04d', $date, $count);
     }
 

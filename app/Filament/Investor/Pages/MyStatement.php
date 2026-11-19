@@ -73,6 +73,8 @@ class MyStatement extends Page
         // Livewire only intercepts StreamedResponse/BinaryFileResponse as a browser
         // download; DomPDF's own ->download() returns a plain Response, which a
         // wire:click-triggered action silently swallows.
+        \App\Services\Audit\Audit::download('My Statement (PDF)');
+
         return response()->streamDownload(function () use ($pdf) {
             echo $pdf->output();
         }, "investment-statement-{$investor->id}.pdf");

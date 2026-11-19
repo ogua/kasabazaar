@@ -3,15 +3,22 @@
 namespace App\Models;
 
 use App\Enums\PayrollEntryStatus;
-use App\Models\PayrollPeriod;
-use App\Models\Staff;
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PayrollEntry extends Model
 {
-    use HasUuids;
+    use Auditable, HasUuids;
+
+    protected static string $auditLog = 'payroll';
+
+    /** @var list<string> */
+    protected static array $auditExcept = ['gross_pay', 'total_deductions'];
+
+    /** @var list<string> */
+    protected static array $auditHighRisk = ['base_salary', 'bonus', 'allowances', 'tax', 'ssnit', 'other_deductions', 'net_salary', 'status'];
 
     protected $guarded = ['id'];
 
@@ -57,5 +64,13 @@ class PayrollEntry extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'staff_id');
+    }
+
+    /**
+     * @return array{0: class-string, 1: mixed}|null
+     */
+    public function auditScope(): ?array
+    {
+        return [PayrollPeriod::class, $this->payroll_period_id];
     }
 }

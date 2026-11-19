@@ -60,6 +60,8 @@ class ExpenseReport extends Page
             'summary' => $data['summary'],
         ]);
 
+        \App\Services\Audit\Audit::download('Expense Report (PDF)');
+
         return response()->streamDownload(function () use ($pdf) {
             echo $pdf->output();
         }, 'expense-report-'.$this->start_date.'-to-'.$this->end_date.'.pdf');
@@ -67,6 +69,8 @@ class ExpenseReport extends Page
 
     public function downloadExcel()
     {
+        \App\Services\Audit\Audit::download('Expense Report (Excel)');
+
         return Excel::download(
             new ExpensesExport($this->start_date, $this->end_date),
             'expense-report-'.$this->start_date.'-to-'.$this->end_date.'.xlsx'

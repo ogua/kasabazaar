@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Enums\ShippingStatus;
+use App\Models\Concerns\Auditable;
 use App\Service\ExchangeRateService;
+use App\Services\Audit\Audit;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -13,7 +15,18 @@ use Illuminate\Support\Str;
 
 class Shipment extends Model
 {
-    use HasUuids;
+    use Auditable, HasUuids;
+
+    protected static string $auditLog = 'shipments';
+
+    /** @var list<string> */
+    protected static array $auditExcept = ['total_ghs', 'container_number', 'client_sequence', 'total_shipment_sequence', 'msc_tracking_updated_at'];
+
+    /** @var list<string> */
+    protected static array $auditRedacted = ['public_view_token', 'external_token'];
+
+    /** @var list<string> */
+    protected static array $auditHighRisk = ['total', 'discount', 'insurance', 'exchange_rate_at_shipment', 'client_id', 'status', 'paid', 'payment_status'];
 
     protected $guarded = ['id'];
 
@@ -482,10 +495,21 @@ class Shipment extends Model
             ? 'pending'
             : ($paid >= (float) $this->total ? 'paid' : 'partial');
 
+        $previousStatus = $this->getOriginal('payment_status');
+        $previousPaid = $this->getOriginal('paid');
+
         $this->forceFill([
             'paid' => $paid,
             'payment_status' => $status,
         ])->saveQuietly();
+
+        // Saved quietly so the status-change alerts don't fire; record it in the trail ourselves.
+        if ($previousStatus !== $status || (float) $previousPaid !== (float) $paid) {
+            Audit::event($this, 'payment_status_changed', "Shipment {$this->shipping_reference} payment status: {$previousStatus} → {$status} (paid {$paid})", [
+                'old' => ['paid' => $previousPaid, 'payment_status' => $previousStatus],
+                'attributes' => ['paid' => $paid, 'payment_status' => $status],
+            ], $previousStatus === 'paid' && $status !== 'paid');
+        }
 
         $this->invoice?->forceFill([
             'status' => match ($status) {

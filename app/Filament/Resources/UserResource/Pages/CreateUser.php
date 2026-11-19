@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\UserResource\Pages;
 
 use App\Filament\Resources\UserResource;
-use Filament\Actions;
+use App\Services\Audit\AccessChangeRecorder;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateUser extends CreateRecord
@@ -17,9 +17,12 @@ class CreateUser extends CreateRecord
 
     public function afterCreate(): void
     {
-        //add new client to users records for login
+        // add new client to users records for login
         $record = $this->record;
-        $record->role = "branch_personnel";
+        $record->role = 'branch_personnel';
         $record->save();
+
+        // Roles and branches were synced straight onto the new user by the form.
+        AccessChangeRecorder::record($record, ['roles' => [], 'permissions' => [], 'branches' => []]);
     }
 }

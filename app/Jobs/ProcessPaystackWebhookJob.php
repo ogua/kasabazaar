@@ -30,6 +30,16 @@ class ProcessPaystackWebhookJob extends ProcessWebhookJob
         InvestmentTransferService $investmentTransfers,
         EcommercePaymentService $ecommercePayments,
     ): void {
+        // Whatever this event changes is recorded in the audit trail as coming from Paystack.
+        \App\Services\Audit\AuditContext::as('webhook', 'paystack', fn () => $this->process($shipmentPayments, $investmentPayments, $investmentTransfers, $ecommercePayments));
+    }
+
+    private function process(
+        ShipmentPaymentService $shipmentPayments,
+        InvestmentPaymentService $investmentPayments,
+        InvestmentTransferService $investmentTransfers,
+        EcommercePaymentService $ecommercePayments,
+    ): void {
         $event = $this->webhookCall->payload;
         $name = (string) ($event['event'] ?? '');
 

@@ -118,7 +118,7 @@ class InvestmentWithdrawalApprovalService
 
     public function markUnderReview(InvestmentWithdrawalRequest $request): void
     {
-        $request->update(['status' => InvestmentWithdrawalStatus::under_review->value]);
+        $request->auditAs('under_review', 'Withdrawal request moved to review')->update(['status' => InvestmentWithdrawalStatus::under_review->value]);
 
         InvestorNotifier::notify($request->investor_id, new InvestmentWithdrawalStatusUpdated($request->fresh()));
     }
@@ -149,7 +149,7 @@ class InvestmentWithdrawalApprovalService
             // window would put the Company in default under the loan agreement.
             $paymentWindow = $isLoan ? 0 : config('investment.payment_window_days');
 
-            $request->update([
+            $request->auditAs('approved', 'Withdrawal request approved', [], true)->update([
                 'status' => InvestmentWithdrawalStatus::approved->value,
                 'exception_approved' => $options['exception_approved'] ?? $request->exception_approved,
                 'deferral_days' => $deferralDays ?: null,
@@ -191,7 +191,7 @@ class InvestmentWithdrawalApprovalService
 
     public function reject(InvestmentWithdrawalRequest $request, User $reviewedBy, string $reason): void
     {
-        $request->update([
+        $request->auditAs('rejected', 'Withdrawal request rejected', ['reason' => $reason], true)->update([
             'status' => InvestmentWithdrawalStatus::rejected->value,
             'rejection_reason' => $reason,
             'reviewed_by' => $reviewedBy->id,
@@ -264,7 +264,7 @@ class InvestmentWithdrawalApprovalService
                 ? $newBalance <= 0.01
                 : $newAmountPaid >= (float) $request->requested_amount - 0.01;
 
-            $request->update([
+            $request->auditAs('paid', 'Withdrawal payment recorded', [], true)->update([
                 'amount_paid' => $newAmountPaid,
                 'paid_at' => $isFullyPaid ? now() : $request->paid_at,
                 'status' => $isFullyPaid ? InvestmentWithdrawalStatus::paid->value : InvestmentWithdrawalStatus::processing->value,
@@ -275,7 +275,7 @@ class InvestmentWithdrawalApprovalService
             ]);
 
             if ($isFullyPaid && $request->is_full_withdrawal) {
-                $investment->update(['status' => InvestmentStatus::withdrawn->value]);
+                $investment->auditAs('withdrawn', "Investment {$investment->reference} fully withdrawn", [], true)->update(['status' => InvestmentStatus::withdrawn->value]);
             }
 
             InvestorNotifier::notify($request->investor_id, new InvestmentWithdrawalStatusUpdated($request->fresh()));

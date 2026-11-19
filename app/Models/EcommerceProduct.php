@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ProductCondition;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +13,15 @@ use Illuminate\Support\Str;
 
 class EcommerceProduct extends Model
 {
-    use HasUuids, SoftDeletes;
+    use Auditable, HasUuids, SoftDeletes;
+
+    protected static string $auditLog = 'marketplace';
+
+    /** Stock moves on every order; EcommerceInventoryLog already records it. */
+    protected static array $auditExcept = ['stock'];
+
+    /** @var list<string> */
+    protected static array $auditHighRisk = ['price_ghs', 'price_usd', 'discount_price_ghs', 'discount_price_usd', 'is_active'];
 
     protected $table = 'ecommerce_products';
 

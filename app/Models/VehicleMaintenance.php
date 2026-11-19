@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class VehicleMaintenance extends Model
 {
-    use HasUuids;
+    use Auditable, HasUuids;
+
+    protected static string $auditLog = 'fleet';
 
     protected $guarded = ['id'];
 
@@ -26,5 +29,13 @@ class VehicleMaintenance extends Model
     public function recordedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'recorded_by');
+    }
+
+    /**
+     * @return array{0: class-string, 1: mixed}|null
+     */
+    public function auditScope(): ?array
+    {
+        return [Vehicle::class, $this->vehicle_id];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,15 @@ use Illuminate\Support\Str;
 
 class ShipmentRequestLink extends Model
 {
-    use HasUuids;
+    use Auditable, HasUuids;
+
+    protected static string $auditLog = 'shipments';
+
+    /** @var list<string> */
+    protected static array $auditExcept = ['submissions_count'];
+
+    /** @var list<string> */
+    protected static array $auditRedacted = ['token'];
 
     protected $guarded = ['id'];
 

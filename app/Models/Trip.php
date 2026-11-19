@@ -3,32 +3,33 @@
 namespace App\Models;
 
 use App\Enums\TripStatus;
-use App\Models\Branch;
-use App\Models\Shipment;
-use App\Models\Staff;
-use App\Models\TripShipment;
-use App\Models\Vehicle;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Trip extends Model
 {
-    use HasUuids, SoftDeletes;
+    use Auditable, HasUuids, SoftDeletes;
+
+    protected static string $auditLog = 'fleet';
+
+    /** @var list<string> */
+    protected static array $auditExcept = ['total_cost'];
 
     protected $guarded = ['id'];
 
     protected $casts = [
-        'distance_km'         => 'decimal:2',
-        'scheduled_date'      => 'datetime',
+        'distance_km' => 'decimal:2',
+        'scheduled_date' => 'datetime',
         'scheduled_departure' => 'datetime',
-        'scheduled_arrival'   => 'datetime',
-        'actual_departure'    => 'datetime',
-        'actual_arrival'      => 'datetime',
-        'status'              => TripStatus::class,
+        'scheduled_arrival' => 'datetime',
+        'actual_departure' => 'datetime',
+        'actual_arrival' => 'datetime',
+        'status' => TripStatus::class,
         'fuel_cost' => 'decimal:2',
         'toll_fees' => 'decimal:2',
         'driver_allowance' => 'decimal:2',
@@ -53,6 +54,7 @@ class Trip extends Model
     {
         $date = now()->format('Ymd');
         $count = self::whereDate('created_at', now())->count() + 1;
+
         return sprintf('TRIP-%s-%03d', $date, $count);
     }
 
@@ -103,6 +105,7 @@ class Trip extends Model
         if ($this->total_shipments === 0) {
             return 0;
         }
+
         return ($this->delivered_count / $this->total_shipments) * 100;
     }
 }

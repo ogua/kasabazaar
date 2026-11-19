@@ -2,13 +2,14 @@
 
 namespace App\Filament\Resources\ClientResource\Pages;
 
+use App\Filament\Actions\AuditHistoryAction;
+use App\Filament\Resources\ClientResource;
 use App\Models\User;
 use App\Services\CustomerAccountProvisioner;
 use Filament\Actions;
 use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
-use App\Filament\Resources\ClientResource;
 
 class EditClient extends EditRecord
 {
@@ -17,6 +18,7 @@ class EditClient extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            AuditHistoryAction::make(),
             Actions\DeleteAction::make(),
         ];
     }

@@ -2,8 +2,9 @@
 
 namespace App\Filament\Resources\TripResource\Pages;
 
-use Filament\Actions;
+use App\Filament\Actions\AuditHistoryAction;
 use App\Filament\Resources\TripResource;
+use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 class EditTrip extends EditRecord
@@ -13,11 +14,12 @@ class EditTrip extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            AuditHistoryAction::make(),
             Actions\DeleteAction::make(),
         ];
     }
 
-     protected function getRedirectUrl(): string
+    protected function getRedirectUrl(): string
     {
         return $this->getResource()::getUrl('index');
     }

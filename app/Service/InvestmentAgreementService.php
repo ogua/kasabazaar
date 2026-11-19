@@ -229,6 +229,8 @@ class InvestmentAgreementService
             'agreement_signature_name' => $investment->investor?->name,
             'agreement_signature_affixed_at' => now(),
         ])->saveQuietly();
+
+        \App\Services\Audit\Audit::event($investment, 'agreement_signed', "Agreement signature affixed to investment {$investment->reference} in the name of {$investment->agreement_signature_name}");
     }
 
     /**

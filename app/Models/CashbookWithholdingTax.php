@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CashbookWithholdingTax extends Model
 {
-    use HasUuids, SoftDeletes;
+    use Auditable, HasUuids, SoftDeletes;
+
+    protected static string $auditLog = 'cashbook';
 
     protected $table = 'cashbook_withholding_tax';
 
@@ -16,8 +19,8 @@ class CashbookWithholdingTax extends Model
 
     protected $casts = [
         'gross_amount' => 'decimal:2',
-        'rate'         => 'decimal:4',
-        'wht_amount'   => 'decimal:2',
+        'rate' => 'decimal:4',
+        'wht_amount' => 'decimal:2',
     ];
 
     protected static function booted(): void

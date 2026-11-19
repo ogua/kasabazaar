@@ -8,6 +8,7 @@ use App\Models\Investment;
 use App\Models\InvestmentTransaction;
 use App\Models\User;
 use App\Notifications\InvestmentInterestPosted;
+use App\Services\Audit\Audit;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -276,11 +277,13 @@ class InvestmentInterestService
         }
 
         // Regenerate cleanly if stale drafts for these days exist (e.g. rates changed since).
-        InvestmentTransaction::where('investment_id', $investment->id)
+        $discarded = InvestmentTransaction::where('investment_id', $investment->id)
             ->where('type', InvestmentTransactionType::interest_credit->value)
             ->where('posted', false)
             ->where(fn ($query) => $query->whereNull('period_start')->orWhere('period_start', '<=', $yearEnd->toDateString()))
             ->delete();
+
+        $this->auditDiscardedDrafts($investment, $discarded);
 
         return $this->createDrafts($investment, $from, $yearEnd);
     }
@@ -309,10 +312,12 @@ class InvestmentInterestService
         }
 
         // Regenerate cleanly if stale drafts exist.
-        InvestmentTransaction::where('investment_id', $investment->id)
+        $discarded = InvestmentTransaction::where('investment_id', $investment->id)
             ->where('type', InvestmentTransactionType::interest_credit->value)
             ->where('posted', false)
             ->delete();
+
+        $this->auditDiscardedDrafts($investment, $discarded);
 
         return $this->createDrafts($investment, $periodStart, $periodEnd);
     }
@@ -393,10 +398,12 @@ class InvestmentInterestService
         }
 
         // Regenerate cleanly if a stale draft exists.
-        InvestmentTransaction::where('investment_id', $investment->id)
+        $discarded = InvestmentTransaction::where('investment_id', $investment->id)
             ->where('type', InvestmentTransactionType::interest_credit->value)
             ->where('posted', false)
             ->delete();
+
+        $this->auditDiscardedDrafts($investment, $discarded);
 
         $balanceAtPeriodStart = (float) $investment->current_balance;
         $daysHeld = $periodStart->diffInDays($periodEnd) + 1;
@@ -423,6 +430,17 @@ class InvestmentInterestService
                 $periodEnd->toDateString()
             ),
         ]);
+    }
+
+    /**
+     * Unposted drafts are thrown away with a query delete (no model events), so the
+     * trail gets one line saying how many went.
+     */
+    private function auditDiscardedDrafts(Investment $investment, int $discarded): void
+    {
+        if ($discarded > 0) {
+            Audit::event($investment, 'interest_drafts_discarded', "{$discarded} unposted interest draft(s) of {$investment->reference} discarded to be regenerated", ['drafts' => $discarded]);
+        }
     }
 
     /**
@@ -467,6 +485,11 @@ class InvestmentInterestService
             $draft->posted = true;
             $draft->posted_by = $postedBy->id;
             $draft->posted_at = now();
+            $draft->auditAs('interest_posted', sprintf('Interest of %s posted to investment %s', number_format((float) $draft->credit, 2), $investment->reference), array_filter([
+                'period_start' => $draft->period_start?->toDateString(),
+                'period_end' => $draft->period_end?->toDateString(),
+                'overridden' => $overrideAmount !== null ? true : null,
+            ]), $overrideAmount !== null);
             $draft->save();
 
             $running = (float) $draft->cl_balance;
@@ -548,6 +571,13 @@ class InvestmentInterestService
             ));
             $pivot->edited_by = $editor->id;
             $pivot->edited_at = now();
+            $reversal = str_starts_with((string) $reason, 'REVERSED:');
+            $pivot->auditAs(
+                $reversal ? 'interest_reversed' : 'interest_revised',
+                sprintf('Interest credit on %s %s from %s to %s', $pivot->investment?->reference, $reversal ? 'reversed' : 'revised', number_format($oldAmount, 2), number_format($newCreditAmount, 2)),
+                ['reason' => $reason],
+                true,
+            );
             $pivot->save();
 
             $subsequent = InvestmentTransaction::where('investment_id', $pivot->investment_id)
@@ -747,10 +777,12 @@ class InvestmentInterestService
         }
 
         return DB::transaction(function () use ($investment, $from, $throughDate, $postedBy) {
-            InvestmentTransaction::where('investment_id', $investment->id)
+            $discarded = InvestmentTransaction::where('investment_id', $investment->id)
                 ->where('type', InvestmentTransactionType::interest_credit->value)
                 ->where('posted', false)
                 ->delete();
+
+            $this->auditDiscardedDrafts($investment, $discarded);
 
             $drafts = $this->createDrafts($investment, $from, $throughDate, "Stub-period interest through {$throughDate->toDateString()}:");
 

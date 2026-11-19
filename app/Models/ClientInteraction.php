@@ -2,15 +2,18 @@
 
 namespace App\Models;
 
-use App\Enums\InteractionType;
 use App\Enums\InteractionOutcome;
-use Illuminate\Database\Eloquent\Model;
+use App\Enums\InteractionType;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ClientInteraction extends Model
 {
-    use HasUuids;
+    use Auditable, HasUuids;
+
+    protected static string $auditLog = 'clients';
 
     protected $guarded = ['id'];
 
@@ -43,5 +46,13 @@ class ClientInteraction extends Model
         return $query->where('follow_up_completed', false)
             ->whereNotNull('follow_up_date')
             ->where('follow_up_date', '>', now());
+    }
+
+    /**
+     * @return array{0: class-string, 1: mixed}|null
+     */
+    public function auditScope(): ?array
+    {
+        return [Client::class, $this->client_id];
     }
 }

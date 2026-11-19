@@ -103,6 +103,8 @@ class AgentActivityReport extends Page implements HasForms
 
         $filename = 'agent_activity_'.($this->date ?? now()->toDateString()).'.xlsx';
 
+        \App\Services\Audit\Audit::download('Agent Activity Report (Excel)');
+
         return Excel::download(
             new AgentActivityExport($this->clearances ?? collect(), $this->deliveries ?? collect()),
             $filename

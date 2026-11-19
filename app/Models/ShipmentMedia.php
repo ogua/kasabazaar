@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +12,9 @@ use Illuminate\Support\Str;
 
 class ShipmentMedia extends Model
 {
-    use HasUuids;
+    use Auditable, HasUuids;
+
+    protected static string $auditLog = 'shipments';
 
     protected $table = 'shipment_media';
 
@@ -120,5 +123,13 @@ class ShipmentMedia extends Model
     public function uploader(): BelongsTo
     {
         return $this->belongsTo(User::class, 'uploaded_by');
+    }
+
+    /**
+     * @return array{0: class-string, 1: mixed}|null
+     */
+    public function auditScope(): ?array
+    {
+        return [Shipment::class, $this->shipment_id];
     }
 }

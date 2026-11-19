@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\EcommerceOrderPaymentStatus;
 use App\Enums\EcommerceOrderStatus;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -14,7 +15,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class EcommerceOrder extends Model
 {
-    use HasUuids, SoftDeletes;
+    use Auditable, HasUuids, SoftDeletes;
+
+    protected static string $auditLog = 'marketplace';
+
+    /** @var list<string> */
+    protected static array $auditHighRisk = ['status', 'payment_status', 'total_ghs', 'discount_ghs', 'delivery_fee_ghs', 'shipping_fee_ghs'];
 
     protected $table = 'ecommerce_orders';
 

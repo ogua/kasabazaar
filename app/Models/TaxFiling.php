@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\TaxFilingType;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,7 +15,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class TaxFiling extends Model
 {
-    use HasUuids, SoftDeletes;
+    use Auditable, HasUuids, SoftDeletes;
+
+    protected static string $auditLog = 'finance';
 
     protected $guarded = ['id'];
 

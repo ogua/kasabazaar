@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Models\Trip;
-use App\Models\TripShipment;
 use App\Http\Requests\StoreTripRequest;
 use App\Http\Resources\TripResource;
-use App\Http\Controllers\Api\V1\BaseApiController;
+use App\Models\Trip;
+use App\Models\TripShipment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -17,7 +16,7 @@ class TripController extends BaseApiController
         abort_unless(auth()->user()->can('view_any_trip'), 403);
 
         $branchId = $this->resolveBranch($request);
-        $query    = Trip::where('branch_id', $branchId)
+        $query = Trip::where('branch_id', $branchId)
             ->with(['vehicle:id,registration_number,make,model', 'driver:id,name', 'assistant:id,name']);
 
         if ($status = $request->input('status')) {
@@ -61,13 +60,13 @@ class TripController extends BaseApiController
         abort_unless(auth()->user()->can('view_trip'), 403);
 
         $branchId = $this->resolveBranch($request);
-        $trip     = Trip::where('branch_id', $branchId)
+        $trip = Trip::where('branch_id', $branchId)
             ->with(['vehicle', 'driver', 'assistant'])
             ->findOrFail($id);
 
         $data = array_merge((new TripResource($trip))->resolve(), [
             'shipments_summary' => [
-                'total'     => $trip->total_shipments,
+                'total' => $trip->total_shipments,
                 'delivered' => $trip->delivered_count,
             ],
         ]);
@@ -80,18 +79,18 @@ class TripController extends BaseApiController
         abort_unless(auth()->user()->can('update_trip'), 403);
 
         $branchId = $this->resolveBranch($request);
-        $trip     = Trip::where('branch_id', $branchId)->findOrFail($id);
+        $trip = Trip::where('branch_id', $branchId)->findOrFail($id);
 
         $request->validate([
-            'status'           => 'sometimes|in:planned,scheduled,loading,in_progress,completed,cancelled,delayed',
+            'status' => 'sometimes|in:planned,scheduled,loading,in_progress,completed,cancelled,delayed',
             'actual_departure' => 'nullable|date',
-            'actual_arrival'   => 'nullable|date',
-            'end_mileage'      => 'nullable|integer|min:0',
-            'fuel_cost'        => 'nullable|numeric|min:0',
-            'toll_fees'        => 'nullable|numeric|min:0',
+            'actual_arrival' => 'nullable|date',
+            'end_mileage' => 'nullable|integer|min:0',
+            'fuel_cost' => 'nullable|numeric|min:0',
+            'toll_fees' => 'nullable|numeric|min:0',
             'driver_allowance' => 'nullable|numeric|min:0',
-            'other_costs'      => 'nullable|numeric|min:0',
-            'notes'            => 'nullable|string',
+            'other_costs' => 'nullable|numeric|min:0',
+            'notes' => 'nullable|string',
         ]);
 
         $trip->update($request->only([
@@ -108,7 +107,7 @@ class TripController extends BaseApiController
         abort_unless(auth()->user()->can('delete_trip'), 403);
 
         $branchId = $this->resolveBranch($request);
-        $trip     = Trip::where('branch_id', $branchId)->findOrFail($id);
+        $trip = Trip::where('branch_id', $branchId)->findOrFail($id);
         $trip->delete();
 
         return $this->success(null, 'Trip deleted.');
@@ -119,24 +118,24 @@ class TripController extends BaseApiController
         abort_unless(auth()->user()->can('view_trip'), 403);
 
         $branchId = $this->resolveBranch($request);
-        $trip     = Trip::where('branch_id', $branchId)->findOrFail($id);
+        $trip = Trip::where('branch_id', $branchId)->findOrFail($id);
 
         $tripShipments = TripShipment::where('trip_id', $id)
             ->with(['shipment:id,shipping_reference,tracking_number,status,client_id', 'shipment.client:id,name,phone'])
             ->get()
             ->map(fn ($ts) => [
-                'id'               => $ts->id,
-                'shipment_id'      => $ts->shipment_id,
-                'delivery_status'  => $ts->delivery_status instanceof \BackedEnum ? $ts->delivery_status->value : $ts->delivery_status,
-                'delivery_notes'   => $ts->delivery_notes,
-                'delivered_at'     => $ts->delivered_at,
+                'id' => $ts->id,
+                'shipment_id' => $ts->shipment_id,
+                'delivery_status' => $ts->delivery_status instanceof \BackedEnum ? $ts->delivery_status->value : $ts->delivery_status,
+                'delivery_notes' => $ts->delivery_notes,
+                'delivered_at' => $ts->delivered_at,
                 'receiver_signature' => $ts->receiver_signature,
-                'shipment'         => $ts->shipment ? [
-                    'id'                 => $ts->shipment->id,
+                'shipment' => $ts->shipment ? [
+                    'id' => $ts->shipment->id,
                     'shipping_reference' => $ts->shipment->shipping_reference,
-                    'tracking_number'    => $ts->shipment->tracking_number,
-                    'status'             => $ts->shipment->status instanceof \BackedEnum ? $ts->shipment->status->value : $ts->shipment->status,
-                    'client'             => $ts->shipment->client ? ['id' => $ts->shipment->client->id, 'name' => $ts->shipment->client->name, 'phone' => $ts->shipment->client->phone] : null,
+                    'tracking_number' => $ts->shipment->tracking_number,
+                    'status' => $ts->shipment->status instanceof \BackedEnum ? $ts->shipment->status->value : $ts->shipment->status,
+                    'client' => $ts->shipment->client ? ['id' => $ts->shipment->client->id, 'name' => $ts->shipment->client->name, 'phone' => $ts->shipment->client->phone] : null,
                 ] : null,
             ]);
 
@@ -148,7 +147,7 @@ class TripController extends BaseApiController
         abort_unless(auth()->user()->can('update_trip'), 403);
 
         $branchId = $this->resolveBranch($request);
-        $trip     = Trip::where('branch_id', $branchId)->findOrFail($id);
+        $trip = Trip::where('branch_id', $branchId)->findOrFail($id);
 
         $request->validate(['shipment_id' => 'required|uuid|exists:shipments,id']);
 
@@ -160,8 +159,8 @@ class TripController extends BaseApiController
         }
 
         $ts = TripShipment::create([
-            'trip_id'         => $trip->id,
-            'shipment_id'     => $shipmentId,
+            'trip_id' => $trip->id,
+            'shipment_id' => $shipmentId,
             'delivery_status' => 'pending',
         ]);
 
@@ -175,7 +174,8 @@ class TripController extends BaseApiController
         $branchId = $this->resolveBranch($request);
         Trip::where('branch_id', $branchId)->findOrFail($id);
 
-        TripShipment::where('trip_id', $id)->where('shipment_id', $shipmentId)->delete();
+        // One by one, so each removal reaches the audit trail.
+        TripShipment::where('trip_id', $id)->where('shipment_id', $shipmentId)->get()->each->delete();
 
         return $this->success(null, 'Shipment removed from trip.');
     }
@@ -188,9 +188,9 @@ class TripController extends BaseApiController
         Trip::where('branch_id', $branchId)->findOrFail($id);
 
         $request->validate([
-            'delivery_status'    => 'required|in:pending,delivered,failed,partial',
-            'delivery_notes'     => 'nullable|string',
-            'delivered_at'       => 'nullable|date',
+            'delivery_status' => 'required|in:pending,delivered,failed,partial',
+            'delivery_notes' => 'nullable|string',
+            'delivered_at' => 'nullable|date',
             'receiver_signature' => 'nullable|string',
         ]);
 
@@ -199,9 +199,9 @@ class TripController extends BaseApiController
             ->firstOrFail();
 
         $tripShipment->update([
-            'delivery_status'    => $request->delivery_status,
-            'delivery_notes'     => $request->input('delivery_notes'),
-            'delivered_at'       => $request->input('delivered_at', $request->delivery_status === 'delivered' ? now() : null),
+            'delivery_status' => $request->delivery_status,
+            'delivery_notes' => $request->input('delivery_notes'),
+            'delivered_at' => $request->input('delivered_at', $request->delivery_status === 'delivered' ? now() : null),
             'receiver_signature' => $request->input('receiver_signature'),
         ]);
 
@@ -219,11 +219,10 @@ class TripController extends BaseApiController
         }
 
         return $this->success([
-            'id'               => $tripShipment->id,
-            'delivery_status'  => $tripShipment->delivery_status instanceof \BackedEnum ? $tripShipment->delivery_status->value : $tripShipment->delivery_status,
-            'delivery_notes'   => $tripShipment->delivery_notes,
-            'delivered_at'     => $tripShipment->delivered_at,
+            'id' => $tripShipment->id,
+            'delivery_status' => $tripShipment->delivery_status instanceof \BackedEnum ? $tripShipment->delivery_status->value : $tripShipment->delivery_status,
+            'delivery_notes' => $tripShipment->delivery_notes,
+            'delivered_at' => $tripShipment->delivered_at,
         ]);
     }
-
 }

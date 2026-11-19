@@ -13,8 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->prepend(\App\Http\Middleware\RedirectLegacyDomains::class);
+        $middleware->append(\App\Http\Middleware\AuditRequestContext::class);
 
         $middleware->alias([
+            'audit.download' => \App\Http\Middleware\AuditDownload::class,
             'customer' => \App\Http\Middleware\EnsureCustomer::class,
             'active' => \App\Http\Middleware\EnsureUserActive::class,
             'investor' => \App\Http\Middleware\EnsureInvestor::class,

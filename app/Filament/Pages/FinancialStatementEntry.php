@@ -2,20 +2,20 @@
 
 namespace App\Filament\Pages;
 
-use Filament\Forms\Form;
-use Filament\Pages\Page;
-use App\Models\FiscalPeriod;
-use Filament\Actions\Action;
-use App\Models\AccountBalance;
-use App\Models\ChartOfAccount;
 use App\Enums\FiscalPeriodSource;
 use App\Enums\FiscalPeriodStatus;
-use Filament\Forms\Components\Select;
-use Filament\Forms\Contracts\HasForms;
-use Filament\Forms\Components\TextInput;
-use Filament\Notifications\Notification;
+use App\Models\AccountBalance;
+use App\Models\ChartOfAccount;
+use App\Models\FiscalPeriod;
 use App\Service\FinancialStatementService;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Form;
+use Filament\Notifications\Notification;
+use Filament\Pages\Page;
 
 /**
  * Keys in a year's closing balances from the accountant's books, for years that
@@ -235,7 +235,8 @@ class FinancialStatementEntry extends Page implements HasForms
             if (! filled($amount)) {
                 AccountBalance::where('fiscal_year', $this->selectedYear)
                     ->where('chart_of_account_id', $accountId)
-                    ->delete();
+                    ->get()
+                    ->each->delete();
 
                 continue;
             }

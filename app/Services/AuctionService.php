@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Notifications\Ecommerce\AuctionOutbid;
 use App\Notifications\Ecommerce\AuctionSecondChance;
 use App\Notifications\Ecommerce\AuctionWon;
+use App\Services\Audit\Audit;
 use Illuminate\Support\Facades\DB;
 
 class AuctionService
@@ -89,7 +90,8 @@ class AuctionService
                 $updates['ends_at'] = now()->addMinutes($window);
             }
 
-            $locked->update($updates);
+            // Bids are their own ledger (auction_bids); the running price is not audit news.
+            $locked->disableLogging()->update($updates);
 
             return [$bid, $leadingBid?->user];
         });
@@ -122,7 +124,7 @@ class AuctionService
                 default => AuctionOutcome::Sold,
             };
 
-            $locked->update([
+            $locked->auditAs('closed', "Auction {$locked->title} closed: ".$outcome->value)->update([
                 'status' => AuctionStatus::Ended,
                 'outcome' => $outcome,
                 'closed_at' => now(),
@@ -208,7 +210,7 @@ class AuctionService
                 : null;
 
             if (! $nextBid) {
-                $locked->update([
+                $locked->auditAs('payment_lapsed', "Auction {$locked->title}: winner did not pay and no bidder is left", [], true)->update([
                     'outcome' => AuctionOutcome::Unpaid,
                     'winner_user_id' => null,
                     'payment_due_at' => null,
@@ -218,7 +220,7 @@ class AuctionService
                 return null;
             }
 
-            $locked->update([
+            $locked->auditAs('second_chance_offered', "Auction {$locked->title} offered to the next bidder", ['declined' => $declined], true)->update([
                 'winner_user_id' => $nextBid->user_id,
                 'winning_bid_id' => $nextBid->id,
                 'current_price_ghs' => $nextBid->amount_ghs,
@@ -275,6 +277,8 @@ class AuctionService
      */
     public function relist(Auction $auction, ?User $by = null): Auction
     {
+        Audit::event($auction, 'relisted', "Auction {$auction->title} relisted as a new draft");
+
         return Auction::create([
             'vendor_id' => $auction->vendor_id,
             'category_id' => $auction->category_id,
@@ -330,7 +334,7 @@ class AuctionService
             throw new AuctionException('This auction\'s closing time has already passed. Ask the vendor to reschedule it.');
         }
 
-        $auction->update(['status' => AuctionStatus::Published, 'review_notes' => null]);
+        $auction->auditAs('approved', "Auction {$auction->title} approved and published")->update(['status' => AuctionStatus::Published, 'review_notes' => null]);
 
         return $auction;
     }
@@ -341,7 +345,7 @@ class AuctionService
             throw new AuctionException('Only an auction awaiting review can be sent back.');
         }
 
-        $auction->update(['status' => AuctionStatus::Draft, 'review_notes' => $reason]);
+        $auction->auditAs('sent_back', "Auction {$auction->title} sent back to the vendor", ['reason' => $reason])->update(['status' => AuctionStatus::Draft, 'review_notes' => $reason]);
 
         return $auction;
     }
@@ -418,6 +422,6 @@ class AuctionService
             throw new AuctionException('An auction that has already ended cannot be cancelled.');
         }
 
-        $auction->update(['status' => AuctionStatus::Cancelled]);
+        $auction->auditAs('cancelled', "Auction {$auction->title} cancelled", [], true)->update(['status' => AuctionStatus::Cancelled]);
     }
 }

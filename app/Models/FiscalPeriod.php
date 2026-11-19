@@ -4,13 +4,16 @@ namespace App\Models;
 
 use App\Enums\FiscalPeriodSource;
 use App\Enums\FiscalPeriodStatus;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class FiscalPeriod extends Model
 {
-    use HasUuids;
+    use Auditable, HasUuids;
+
+    protected static string $auditLog = 'finance';
 
     protected $guarded = ['id'];
 

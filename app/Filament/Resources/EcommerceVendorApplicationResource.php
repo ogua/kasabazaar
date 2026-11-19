@@ -105,7 +105,11 @@ class EcommerceVendorApplicationResource extends Resource
             ->label($label)
             ->icon('heroicon-m-arrow-down-tray')
             ->visible(fn (EcommerceVendorApplication $record): bool => filled($record->{$field}))
-            ->action(fn (EcommerceVendorApplication $record) => Storage::disk('vendor_documents')->download($record->{$field}));
+            ->action(function (EcommerceVendorApplication $record) use ($field) {
+                \App\Services\Audit\Audit::download('Vendor application document', $record, ['document' => $field]);
+
+                return Storage::disk('vendor_documents')->download($record->{$field});
+            });
     }
 
     public static function table(Table $table): Table

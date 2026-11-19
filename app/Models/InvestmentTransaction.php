@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\InvestmentTransactionType;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,15 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class InvestmentTransaction extends Model
 {
-    use HasUuids, SoftDeletes;
+    use Auditable, HasUuids, SoftDeletes;
+
+    protected static string $auditLog = 'investors';
+
+    /** @var list<string> */
+    protected static array $auditExcept = ['op_balance', 'cl_balance'];
+
+    /** @var list<string> */
+    protected static array $auditHighRisk = ['debit', 'credit', 'rate_applied', 'posted'];
 
     protected $guarded = ['id'];
 
@@ -60,5 +69,13 @@ class InvestmentTransaction extends Model
     public function editedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'edited_by');
+    }
+
+    /**
+     * @return array{0: class-string, 1: mixed}|null
+     */
+    public function auditScope(): ?array
+    {
+        return [Investment::class, $this->investment_id];
     }
 }

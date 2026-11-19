@@ -71,6 +71,8 @@ class InvestorsIncomeReport extends Page
                 'defaultFont' => 'sans-serif',
             ]);
 
+        \App\Services\Audit\Audit::download('Investors Income Report (PDF)');
+
         return response()->streamDownload(function () use ($pdf) {
             echo $pdf->output();
         }, "income-summary-{$summary['start_date']}-to-{$summary['end_date']}.pdf");
@@ -79,6 +81,8 @@ class InvestorsIncomeReport extends Page
     public function downloadExcel()
     {
         $summary = $this->getSummary();
+
+        \App\Services\Audit\Audit::download('Investors Income Report (Excel)');
 
         return Excel::download(
             new InvestorIncomeSummaryExport($summary),

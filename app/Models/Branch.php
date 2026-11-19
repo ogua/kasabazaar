@@ -2,16 +2,19 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Branch extends Model
 {
-    use HasUuids;
+    use Auditable, HasUuids;
 
-    protected $guarded = ["id"];
+    protected static string $auditLog = 'access';
+
+    protected $guarded = ['id'];
 
     public function users(): HasMany
     {
@@ -48,11 +51,13 @@ class Branch extends Model
         return $this->hasMany(Shipment::class);
     }
 
-    public function quotations() : HasMany {
+    public function quotations(): HasMany
+    {
         return $this->hasMany(Quotation::class);
     }
 
-    public function messageTemplates(){
+    public function messageTemplates()
+    {
         return $this->hasMany(MessageTemplate::class);
     }
 

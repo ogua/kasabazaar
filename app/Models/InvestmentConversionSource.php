@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\InvestmentConversionSourceMode;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,7 +16,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class InvestmentConversionSource extends Model
 {
-    use HasUuids, SoftDeletes;
+    use Auditable, HasUuids, SoftDeletes;
+
+    protected static string $auditLog = 'investors';
 
     protected $guarded = ['id'];
 
@@ -37,5 +40,13 @@ class InvestmentConversionSource extends Model
     public function sourceInvestment(): BelongsTo
     {
         return $this->belongsTo(Investment::class, 'source_investment_id');
+    }
+
+    /**
+     * @return array{0: class-string, 1: mixed}|null
+     */
+    public function auditScope(): ?array
+    {
+        return [InvestmentConversion::class, $this->investment_conversion_id];
     }
 }

@@ -1,22 +1,22 @@
 <?php
 
-use Illuminate\Http\Request;
-use App\Livewire\AgreementForm;
-use App\Livewire\DisclaimerForm;
-use App\Livewire\CustomerFeedaback;
-use Illuminate\Support\Facades\Route;
-use App\Livewire\PaymentsuccessfulPage;
-use App\Http\Controllers\WebsiteController;
 use App\Http\Controllers\AppLinksController;
-use App\Http\Controllers\ShippingController;
-use App\Http\Controllers\InvestmentController;
+use App\Http\Controllers\ExternalShipmentController;
 use App\Http\Controllers\ImpersonationController;
+use App\Http\Controllers\InvestmentController;
 use App\Http\Controllers\InvestorReportController;
 use App\Http\Controllers\PublicShipmentController;
-use App\Http\Controllers\WebsiteEnquiryController;
-use App\Http\Controllers\TrackingPaymentController;
-use App\Http\Controllers\ExternalShipmentController;
 use App\Http\Controllers\PublicShipmentRequestController;
+use App\Http\Controllers\ShippingController;
+use App\Http\Controllers\TrackingPaymentController;
+use App\Http\Controllers\WebsiteController;
+use App\Http\Controllers\WebsiteEnquiryController;
+use App\Livewire\AgreementForm;
+use App\Livewire\CustomerFeedaback;
+use App\Livewire\DisclaimerForm;
+use App\Livewire\PaymentsuccessfulPage;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -99,38 +99,41 @@ foreach (array_keys(config('website.services')) as $serviceSlug) {
     Route::get("{$serviceSlug}.php", fn () => redirect()->to(route('our-services').'#'.$serviceSlug, 301));
 }
 
-Route::get('/packing-slip/{id}', [ShippingController::class, 'packingslip'])
-    ->name('packing-slip');
+// Every open/download of a shipment document is recorded in the audit trail (guests by IP).
+Route::middleware('audit.download')->group(function () {
+    Route::get('/packing-slip/{id}', [ShippingController::class, 'packingslip'])
+        ->name('packing-slip');
 
-Route::get('/shipping-label/{id}', [ShippingController::class, 'shippinglabel'])
-    ->name('shipping-label');
+    Route::get('/shipping-label/{id}', [ShippingController::class, 'shippinglabel'])
+        ->name('shipping-label');
 
-Route::get('/shipping-invoice/{id}', [ShippingController::class, 'shippinginvoice'])
-    ->name('shipping-invoice');
+    Route::get('/shipping-invoice/{id}', [ShippingController::class, 'shippinginvoice'])
+        ->name('shipping-invoice');
 
-Route::get('/shipping-invoice-pdf/{id}', [ShippingController::class, 'shippinginvoicepdf'])
-    ->name('shipping-invoice-pdf');
+    Route::get('/shipping-invoice-pdf/{id}', [ShippingController::class, 'shippinginvoicepdf'])
+        ->name('shipping-invoice-pdf');
 
-Route::get('/shipping-invoice-download/{id}', [ShippingController::class, 'downloadinvoicepdf'])
-    ->name('shipping-invoice-download');
+    Route::get('/shipping-invoice-download/{id}', [ShippingController::class, 'downloadinvoicepdf'])
+        ->name('shipping-invoice-download');
 
-Route::get('/send-invoice-email/{id}', [ShippingController::class, 'sendinvoiceemail'])
-    ->name('send-invoice-email');
+    Route::get('/send-invoice-email/{id}', [ShippingController::class, 'sendinvoiceemail'])
+        ->name('send-invoice-email');
 
-Route::get('/shipping-receipt/{id}', [ShippingController::class, 'shippingreceipt'])
-    ->name('shipping-receipt');
+    Route::get('/shipping-receipt/{id}', [ShippingController::class, 'shippingreceipt'])
+        ->name('shipping-receipt');
 
-Route::get('/payment-receipt/{payment}', [ShippingController::class, 'paymentReceipt'])
-    ->name('payment-receipt');
+    Route::get('/payment-receipt/{payment}', [ShippingController::class, 'paymentReceipt'])
+        ->name('payment-receipt');
 
-Route::get('/print-quotation/{record}', [ShippingController::class, 'printquotation'])
-    ->name('print-quotation');
+    Route::get('/print-quotation/{record}', [ShippingController::class, 'printquotation'])
+        ->name('print-quotation');
 
-Route::get('/delivery-report/{id}', [ShippingController::class, 'deliveryReport'])
-    ->name('delivery-report');
+    Route::get('/delivery-report/{id}', [ShippingController::class, 'deliveryReport'])
+        ->name('delivery-report');
 
-Route::get('/delivery-report-download/{id}', [ShippingController::class, 'downloadDeliveryReport'])
-    ->name('delivery-report-download');
+    Route::get('/delivery-report-download/{id}', [ShippingController::class, 'downloadDeliveryReport'])
+        ->name('delivery-report-download');
+});
 
 // Scannable QR label lookup — secured by the shipment's existing unguessable
 // public_view_token (same trust model as /my-shipment/{token} above), not
@@ -143,7 +146,7 @@ Route::get('/shipment-label/{token}', [ShippingController::class, 'shipmentLabel
 // Signed (not session-authenticated) so both the Filament portals and the mobile
 // app's in-app browser — which has no shared session cookie — can open the same
 // links. Every place that generates these URLs must use URL::signedRoute().
-Route::middleware('signed')->group(function () {
+Route::middleware(['signed', 'audit.download'])->group(function () {
     Route::get('/investment-agreement/{investment}', [InvestmentController::class, 'agreement'])
         ->name('investment-agreement');
 

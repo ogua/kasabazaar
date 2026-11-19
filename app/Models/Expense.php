@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ExpenseScope;
 use App\Enums\ExpenseStage;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -12,7 +13,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Expense extends Model
 {
-    use HasUuids, SoftDeletes;
+    use Auditable, HasUuids, SoftDeletes;
+
+    protected static string $auditLog = 'finance';
+
+    /** @var list<string> */
+    protected static array $auditHighRisk = ['amount_usd', 'amount_ghs', 'exchange_rate', 'expense_date', 'shipment_id'];
 
     protected $guarded = ['id'];
 

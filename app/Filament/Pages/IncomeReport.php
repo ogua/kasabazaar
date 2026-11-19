@@ -2,12 +2,12 @@
 
 namespace App\Filament\Pages;
 
-use Filament\Pages\Page;
-use App\Filament\Widgets\IncomeStatsWidget;
-use Filament\Actions\Action;
 use App\Exports\IncomesExport;
-use Maatwebsite\Excel\Facades\Excel;
+use App\Filament\Widgets\IncomeStatsWidget;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Filament\Actions\Action;
+use Filament\Pages\Page;
+use Maatwebsite\Excel\Facades\Excel;
 
 class IncomeReport extends Page
 {
@@ -24,6 +24,7 @@ class IncomeReport extends Page
     protected static ?string $navigationLabel = 'Income Report';
 
     public ?string $start_date = null;
+
     public ?string $end_date = null;
 
     public function mount(): void
@@ -58,16 +59,20 @@ class IncomeReport extends Page
             'summary' => $data['summary'],
         ]);
 
+        \App\Services\Audit\Audit::download('Income Report (PDF)');
+
         return response()->streamDownload(function () use ($pdf) {
             echo $pdf->output();
-        }, 'income-report-' . $this->start_date . '-to-' . $this->end_date . '.pdf');
+        }, 'income-report-'.$this->start_date.'-to-'.$this->end_date.'.pdf');
     }
 
     public function downloadExcel()
     {
+        \App\Services\Audit\Audit::download('Income Report (Excel)');
+
         return Excel::download(
             new IncomesExport($this->start_date, $this->end_date),
-            'income-report-' . $this->start_date . '-to-' . $this->end_date . '.xlsx'
+            'income-report-'.$this->start_date.'-to-'.$this->end_date.'.xlsx'
         );
     }
 
@@ -144,8 +149,8 @@ class IncomeReport extends Page
             ->whereBetween('income_date', [$startDate, $endDate])
             ->where('status', \App\Enums\IncomeStatus::Received)
             ->get()
-            ->groupBy(fn($i) => $i->category?->name ?? 'Uncategorized')
-            ->map(fn($group) => [
+            ->groupBy(fn ($i) => $i->category?->name ?? 'Uncategorized')
+            ->map(fn ($group) => [
                 'count' => $group->count(),
                 'total_usd' => $group->sum('amount_usd'),
                 'total_ghs' => $group->sum('amount_ghs'),
@@ -157,8 +162,8 @@ class IncomeReport extends Page
         $byMethod = \App\Models\Income::whereBetween('income_date', [$startDate, $endDate])
             ->where('status', \App\Enums\IncomeStatus::Received)
             ->get()
-            ->groupBy(fn($i) => $i->payment_method?->value ?? 'N/A')
-            ->map(fn($group) => [
+            ->groupBy(fn ($i) => $i->payment_method?->value ?? 'N/A')
+            ->map(fn ($group) => [
                 'count' => $group->count(),
                 'total_usd' => $group->sum('amount_usd'),
                 'total_ghs' => $group->sum('amount_ghs'),

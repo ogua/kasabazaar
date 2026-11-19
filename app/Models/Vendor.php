@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\VendorStatus;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -14,7 +15,15 @@ use Illuminate\Support\Str;
 
 class Vendor extends Model
 {
-    use HasUuids, SoftDeletes;
+    use Auditable, HasUuids, SoftDeletes;
+
+    protected static string $auditLog = 'marketplace';
+
+    /** @var list<string> */
+    protected static array $auditRedacted = ['payout_details'];
+
+    /** @var list<string> */
+    protected static array $auditHighRisk = ['payout_method', 'payout_details', 'commission_rate', 'status'];
 
     protected function casts(): array
     {

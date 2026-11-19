@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use App\Service\ExchangeRateService;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -10,7 +11,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Payment extends Model
 {
-    use HasUuids;
+    use Auditable, HasUuids;
+
+    protected static string $auditLog = 'payments';
+
+    /** @var list<string> */
+    protected static array $auditExcept = ['amount'];
+
+    /** @var list<string> */
+    protected static array $auditMasked = ['accountnumber'];
+
+    /** @var list<string> */
+    protected static array $auditHighRisk = ['amount_usd', 'amount_ghs', 'exchange_rate', 'currency', 'paying_method', 'payment_ref', 'shipment_id', 'paid_on'];
 
     protected $guarded = ['id'];
 
@@ -101,5 +113,13 @@ class Payment extends Model
     public function scopeOfbranch($query)
     {
         $query->where('branch_id', Filament::getTenant()->id);
+    }
+
+    /**
+     * @return array{0: class-string, 1: mixed}|null
+     */
+    public function auditScope(): ?array
+    {
+        return [Shipment::class, $this->shipment_id];
     }
 }

@@ -334,6 +334,7 @@ class PaymentResource extends Resource
                     ->action(function ($record) {
                         try {
                             NotificationService::sendPaymentConfirmation($record);
+                            \App\Services\Audit\Audit::event($record, 'receipt_sent', 'Payment receipt '.($record->payment_ref ?? '').' sent to the client');
                             Notification::make()->title('Receipt sent to client.')->success()->send();
                         } catch (\Throwable $e) {
                             Notification::make()->title('Failed: '.$e->getMessage())->danger()->send();

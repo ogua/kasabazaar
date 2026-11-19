@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasWhatsappConsent;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -10,7 +11,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Client extends Model
 {
-    use HasUuids, HasWhatsappConsent;
+    use Auditable, HasUuids, HasWhatsappConsent;
+
+    protected static string $auditLog = 'clients';
+
+    /** @var list<string> */
+    protected static array $auditMasked = ['id_number'];
+
+    /** @var list<string> */
+    protected static array $auditHighRisk = ['email', 'phone', 'id_number'];
 
     public function getFullnameBranchAttribute()
     {

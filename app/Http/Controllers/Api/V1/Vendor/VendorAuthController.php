@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Vendor;
 
 use App\Enums\UserStatus;
 use App\Models\User;
+use App\Services\Audit\AuthAudit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -21,16 +22,24 @@ class VendorAuthController extends VendorBaseController
         $user = User::where('email', $request->email)->whereNotNull('vendor_id')->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
+            AuthAudit::loginFailed((string) $request->email, $user, 'vendor app');
+
             return $this->error('Invalid credentials.', 401);
         }
 
         if ($user->status !== UserStatus::Active) {
+            AuthAudit::loginBlocked($user, 'vendor app', 'account deactivated');
+
             return $this->error('Your account has been deactivated.', 401);
         }
 
         if ($user->vendor?->status?->value !== 'active') {
+            AuthAudit::loginBlocked($user, 'vendor app', 'vendor account inactive');
+
             return $this->error('Your vendor account is currently inactive. Please contact support.', 403);
         }
+
+        AuthAudit::loginSucceeded($user, 'vendor app');
 
         $token = $user->createToken('vendor-app')->plainTextToken;
 
@@ -66,6 +75,7 @@ class VendorAuthController extends VendorBaseController
             function (User $user, string $password) {
                 $user->update(['password' => Hash::make($password)]);
                 $user->tokens()->delete();
+                AuthAudit::passwordResetCompleted($user, 'vendor app');
             }
         );
 
@@ -107,6 +117,7 @@ class VendorAuthController extends VendorBaseController
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
+        AuthAudit::loggedOut($request->user(), 'vendor app');
 
         return $this->success(null, 'Logged out.');
     }

@@ -2,13 +2,19 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class EcommerceReturn extends Model
 {
-    use HasUuids;
+    use Auditable, HasUuids;
+
+    protected static string $auditLog = 'marketplace';
+
+    /** @var list<string> */
+    protected static array $auditHighRisk = ['status', 'refunded_at'];
 
     public const REQUESTED = 'requested';
 
@@ -60,5 +66,13 @@ class EcommerceReturn extends Model
     public function warehouse(): BelongsTo
     {
         return $this->belongsTo(PickupStation::class, 'warehouse_id');
+    }
+
+    /**
+     * @return array{0: class-string, 1: mixed}|null
+     */
+    public function auditScope(): ?array
+    {
+        return [EcommerceOrder::class, $this->order_id];
     }
 }

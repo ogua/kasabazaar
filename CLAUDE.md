@@ -222,6 +222,32 @@ Filament Shield (wraps Spatie Permissions) manages RBAC. Permissions are prefixe
 
 `worksome/exchange` handles USD↔GHS conversion. Rates are synced via `php artisan app:exchange-rate` (scheduled). Shipments snapshot the rate at creation in `exchange_rate_at_shipment`.
 
+### Audit Trail (who did what)
+
+`spatie/laravel-activitylog` v4 with our own layer (added 2026-11-19). Table `activity_log`, model
+`App\Models\Activity` — **append-only** (updates/deletes throw) and never pruned.
+
+- **Model changes:** `App\Models\Concerns\Auditable` on ~80 models records created/updated/deleted/restored with
+  only the changed fields, old → new. Per model: `$auditLog` (module), `$auditExcept` (derived columns such as
+  running balances — required, or one recalculation writes N rows), `$auditMasked` (last 4 shown),
+  `$auditRedacted` (tokens, encrypted payout details), `$auditHighRisk` (flags the entry), `auditScope()` (parent,
+  so a payment shows in its shipment's History) and `auditLabel()`. A new business model should use the trait.
+- **Named events:** call `$model->auditAs('approved', 'Payroll approved', [...props], highRisk)` before saving, so
+  the save is recorded as that event instead of a plain "updated". Use `App\Services\Audit\Audit::event()` /
+  `::security()` / `::download()` only when no model save happens.
+- **Bulk / quiet writes bypass the trail.** `Model::where()->update()`, relation `->delete()`, `saveQuietly()` and
+  `withoutEvents()` fire no events. Prefer `->get()->each->update()`, or log a summary with `Audit::event()`.
+- **Context** (`App\Services\Audit\AuditContext`): channel (admin/client/investor panel, api, webhook, queue,
+  console), IP/agent/URL, branch and impersonator are filled in automatically. Queued jobs carry the user,
+  impersonator, branch and batch of the request that queued them (`AuditServiceProvider`). Use
+  `AuditContext::as('webhook', 'paystack', fn)` where the route cannot tell, and
+  `AuditContext::suppressAuthEvents(fn)` around deliberate login swaps. Migrations are never audited.
+- **Sign-ins:** panel and staff-API logins come from `App\Listeners\AuditAuthEvents`. The customer/investor/vendor
+  API logins check passwords themselves and call `App\Services\Audit\AuthAudit`. Role/branch changes that use a plain
+  relationship sync are diffed by `AccessChangeRecorder`.
+- **UI:** Audit & Security → Activity Log (`ActivityLogResource`; permissions `view_any_activity::log` /
+  `view_activity::log`), the `AuditHistoryAction` "History" slide-over on record pages, and `shipment_updates.recorded_by`.
+
 ### AppServiceProvider Notes
 
 - `Model::unguard()` is called globally — all models are mass-assignable.

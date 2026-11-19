@@ -2,24 +2,25 @@
 
 namespace App\Filament\Resources;
 
-use Filament\Forms;
-use Filament\Tables;
-use App\Models\Staff;
-use Filament\Forms\Form;
-use Filament\Tables\Table;
 use App\Enums\EmploymentStatus;
-use Filament\Resources\Resource;
-use Illuminate\Database\Eloquent\Builder;
 use App\Filament\Resources\StaffResource\Pages;
+use App\Models\Staff;
+use Filament\Forms;
+use Filament\Forms\Form;
+use Filament\Resources\Resource;
+use Filament\Tables;
+use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use App\Filament\Resources\StaffResource\RelationManagers;
 
 class StaffResource extends Resource
 {
     protected static ?string $model = Staff::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
+
     protected static ?string $navigationGroup = 'Staff Management';
+
     protected static ?int $navigationSort = 1;
 
     public static function form(Form $form): Form
@@ -204,11 +205,20 @@ class StaffResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('activity')
+                    ->label('Activity')
+                    ->icon('heroicon-o-finger-print')
+                    ->color('gray')
+                    ->tooltip('Everything this staff member has done')
+                    ->url(fn (Staff $record): ?string => $record->user_id
+                        ? \App\Filament\Resources\ActivityLogResource::getUrl('index', ['tableFilters' => ['causer' => ['user_id' => $record->user_id]]])
+                        : null)
+                    ->visible(fn (Staff $record): bool => filled($record->user_id) && (auth()->user()?->can('viewAny', \App\Models\Activity::class) ?? false)),
                 Tables\Actions\Action::make('createAccount')
                     ->label('Create Account')
                     ->icon('heroicon-o-user-plus')
                     ->color('success')
-                    ->visible(fn ($record) => !$record->user_id)
+                    ->visible(fn ($record) => ! $record->user_id)
                     ->form([
                         Forms\Components\TextInput::make('password')
                             ->password()

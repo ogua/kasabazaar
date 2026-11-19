@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\User;
-use App\Http\Controllers\Api\V1\BaseApiController;
+use App\Services\Audit\AccessChangeRecorder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -36,30 +36,34 @@ class UserController extends BaseApiController
         abort_unless(auth()->user()->can('create_user'), 403);
 
         $request->validate([
-            'name'      => 'required|string|max:255',
-            'email'     => 'required|email|unique:users,email',
-            'phone'     => 'nullable|string|max:30',
-            'role'      => 'required|in:customer,admin,branch_personnel',
-            'password'  => 'required|string|min:6',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'phone' => 'nullable|string|max:30',
+            'role' => 'required|in:customer,admin,branch_personnel',
+            'password' => 'required|string|min:6',
             'branch_id' => 'nullable|uuid|exists:branches,id',
-            'branches'  => 'nullable|array',
-            'branches.*'=> 'uuid|exists:branches,id',
+            'branches' => 'nullable|array',
+            'branches.*' => 'uuid|exists:branches,id',
         ]);
 
         $user = User::create([
-            'name'      => $request->name,
-            'email'     => $request->email,
-            'phone'     => $request->input('phone'),
-            'role'      => $request->role,
-            'password'  => Hash::make($request->password),
+            'name' => $request->name,
+            'email' => $request->email,
+            'phone' => $request->input('phone'),
+            'role' => $request->role,
+            'password' => Hash::make($request->password),
             'branch_id' => $request->input('branch_id'),
         ]);
+
+        $access = AccessChangeRecorder::snapshot($user);
 
         if ($request->has('branches')) {
             $user->branches()->sync($request->branches);
         } elseif ($request->branch_id) {
             $user->branches()->sync([$request->branch_id]);
         }
+
+        AccessChangeRecorder::record($user, $access);
 
         return $this->success($this->formatUser($user->load('branches')), 'User created.', 201);
     }
@@ -80,15 +84,17 @@ class UserController extends BaseApiController
         $user = User::findOrFail($id);
 
         $request->validate([
-            'name'  => 'sometimes|string|max:255',
+            'name' => 'sometimes|string|max:255',
             'phone' => 'nullable|string|max:30',
-            'role'  => 'sometimes|in:customer,admin,branch_personnel',
+            'role' => 'sometimes|in:customer,admin,branch_personnel',
         ]);
 
         $user->update($request->only(['name', 'phone', 'role', 'branch_id']));
 
         if ($request->has('branches')) {
+            $access = AccessChangeRecorder::snapshot($user);
             $user->branches()->sync($request->branches);
+            AccessChangeRecorder::record($user, $access);
         }
 
         return $this->success($this->formatUser($user->fresh('branches')));
@@ -110,16 +116,16 @@ class UserController extends BaseApiController
     private function formatUser(User $u): array
     {
         return [
-            'id'        => $u->id,
-            'name'      => $u->name,
-            'email'     => $u->email,
-            'phone'     => $u->phone,
-            'role'      => $u->role,
+            'id' => $u->id,
+            'name' => $u->name,
+            'email' => $u->email,
+            'phone' => $u->phone,
+            'role' => $u->role,
             'branch_id' => $u->branch_id,
             'client_id' => $u->client_id,
-            'avatar'    => $u->avatar ? asset('storage/' . $u->avatar) : null,
-            'branches'  => $u->relationLoaded('branches') ? $u->branches->map(fn ($b) => ['id' => $b->id, 'name' => $b->name]) : [],
-            'created_at'=> $u->created_at,
+            'avatar' => $u->avatar ? asset('storage/'.$u->avatar) : null,
+            'branches' => $u->relationLoaded('branches') ? $u->branches->map(fn ($b) => ['id' => $b->id, 'name' => $b->name]) : [],
+            'created_at' => $u->created_at,
         ];
     }
 }

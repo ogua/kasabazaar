@@ -246,6 +246,8 @@ class FinancialReportController extends BaseApiController
         $file = "expense-report-{$start}-to-{$end}";
 
         if ($format === 'excel') {
+            \App\Services\Audit\Audit::download("{$file} (Excel)");
+
             return Excel::download(new ExpensesExport($start, $end), "{$file}.xlsx");
         }
 
@@ -255,6 +257,8 @@ class FinancialReportController extends BaseApiController
             ->get();
 
         $pdf = Pdf::loadView('reports.expense-pdf', compact('expenses', 'start', 'end'));
+
+        \App\Services\Audit\Audit::download("{$file} (PDF)");
 
         return response()->streamDownload(fn () => print ($pdf->output()), "{$file}.pdf");
     }
@@ -364,6 +368,8 @@ class FinancialReportController extends BaseApiController
         $file = "income-report-{$start}-to-{$end}";
 
         if ($format === 'excel') {
+            \App\Services\Audit\Audit::download("{$file} (Excel)");
+
             return Excel::download(new IncomesExport($start, $end), "{$file}.xlsx");
         }
 
@@ -373,6 +379,8 @@ class FinancialReportController extends BaseApiController
             ->get();
 
         $pdf = Pdf::loadView('reports.income-pdf', compact('incomes', 'start', 'end'));
+
+        \App\Services\Audit\Audit::download("{$file} (PDF)");
 
         return response()->streamDownload(fn () => print ($pdf->output()), "{$file}.pdf");
     }
@@ -467,6 +475,8 @@ class FinancialReportController extends BaseApiController
         $file = "payroll-report-{$start}-to-{$end}";
 
         if ($format === 'excel') {
+            \App\Services\Audit\Audit::download("{$file} (Excel)");
+
             return Excel::download(new PayrollExport($start, $end), "{$file}.xlsx");
         }
 
@@ -476,6 +486,8 @@ class FinancialReportController extends BaseApiController
             ->get();
 
         $pdf = Pdf::loadView('reports.payroll-pdf', compact('payrolls', 'start', 'end'));
+
+        \App\Services\Audit\Audit::download("{$file} (PDF)");
 
         return response()->streamDownload(fn () => print ($pdf->output()), "{$file}.pdf");
     }
@@ -552,6 +564,8 @@ class FinancialReportController extends BaseApiController
         $file = str_replace([' ', '/'], '_', strtolower($title)).'_'.now()->format('Y-m-d');
 
         if ($format === 'excel') {
+            \App\Services\Audit\Audit::download("{$file} (Excel)");
+
             return Excel::download(new \App\Exports\ShipmentReportExport($data, $type), "{$file}.xlsx");
         }
 
@@ -562,6 +576,8 @@ class FinancialReportController extends BaseApiController
             'year' => $year,
             'containerSequence' => $seq,
         ]);
+
+        \App\Services\Audit\Audit::download("{$file} (PDF)");
 
         return response()->streamDownload(fn () => print ($pdf->output()), "{$file}.pdf");
     }

@@ -6,6 +6,7 @@ use App\Enums\InvestmentAgreementStatus;
 use App\Enums\InvestmentCapitalType;
 use App\Enums\InvestmentPayoutFrequency;
 use App\Enums\InvestmentStatus;
+use App\Models\Concerns\Auditable;
 use App\Service\ExchangeRateService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -17,7 +18,15 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Investment extends Model
 {
-    use HasUuids, SoftDeletes;
+    use Auditable, HasUuids, SoftDeletes;
+
+    protected static string $auditLog = 'investors';
+
+    /** @var list<string> */
+    protected static array $auditExcept = ['principal_amount_ghs', 'next_payout_due_date', 'last_interest_posted_through', 'last_interest_posted_year'];
+
+    /** @var list<string> */
+    protected static array $auditHighRisk = ['principal_amount', 'exchange_rate_at_investment', 'contract_term_months', 'start_date', 'status', 'capital_type', 'payout_frequency', 'current_balance', 'investor_id'];
 
     protected $guarded = ['id'];
 
@@ -200,5 +209,13 @@ class Investment extends Model
     public function conversionSources(): HasMany
     {
         return $this->hasMany(InvestmentConversionSource::class, 'source_investment_id');
+    }
+
+    /**
+     * @return array{0: class-string, 1: mixed}|null
+     */
+    public function auditScope(): ?array
+    {
+        return [Investor::class, $this->investor_id];
     }
 }

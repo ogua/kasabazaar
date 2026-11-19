@@ -3,15 +3,21 @@
 namespace App\Models;
 
 use App\Enums\EmploymentStatus;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Staff extends Model
 {
-    use HasUuids, SoftDeletes;
+    use Auditable, HasUuids, SoftDeletes;
+
+    protected static string $auditLog = 'staff';
+
+    /** @var list<string> */
+    protected static array $auditHighRisk = ['salary', 'employment_status', 'user_id'];
 
     protected $guarded = ['id'];
 
@@ -33,6 +39,7 @@ class Staff extends Model
     public static function generateEmployeeId(): string
     {
         $count = self::withTrashed()->count() + 1;
+
         return sprintf('EMP-%04d', $count);
     }
 

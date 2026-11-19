@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\AuctionOutcome;
 use App\Enums\AuctionStatus;
 use App\Enums\EcommerceOrderPaymentStatus;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -20,7 +21,15 @@ use Illuminate\Support\Str;
  */
 class Auction extends Model
 {
-    use HasUuids, SoftDeletes;
+    use Auditable, HasUuids, SoftDeletes;
+
+    protected static string $auditLog = 'marketplace';
+
+    /** @var list<string> */
+    protected static array $auditExcept = ['current_price_ghs', 'bids_count', 'winning_bid_id'];
+
+    /** @var list<string> */
+    protected static array $auditHighRisk = ['reserve_price_ghs', 'starting_price_ghs', 'status', 'outcome'];
 
     public const STATE_UPCOMING = 'upcoming';
 

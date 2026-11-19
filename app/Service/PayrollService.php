@@ -2,12 +2,12 @@
 
 namespace App\Service;
 
-use App\Models\Staff;
-use App\Models\PayrollPeriod;
-use App\Models\PayrollEntry;
 use App\Enums\EmploymentStatus;
-use App\Enums\PayrollStatus;
 use App\Enums\PayrollEntryStatus;
+use App\Enums\PayrollStatus;
+use App\Models\PayrollEntry;
+use App\Models\PayrollPeriod;
+use App\Models\Staff;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -41,6 +41,7 @@ class PayrollService
 
             if ($existingEntry) {
                 $entries->push($existingEntry);
+
                 continue;
             }
 
@@ -131,6 +132,14 @@ class PayrollService
      */
     public function approvePayroll(PayrollPeriod $period, string $userId): PayrollPeriod
     {
+        $pending = $period->entries()->where('status', PayrollEntryStatus::Pending);
+
+        // The entries are approved with one query update, so the period's entry carries the totals.
+        $period->auditAs('approved', "Payroll {$period->name} approved", [
+            'entries' => (clone $pending)->count(),
+            'total_net_salary' => round((float) (clone $pending)->sum('net_salary'), 2),
+        ], true);
+
         $period->update([
             'status' => PayrollStatus::Approved,
             'approved_by' => $userId,
@@ -150,6 +159,13 @@ class PayrollService
      */
     public function processPayroll(PayrollPeriod $period): PayrollPeriod
     {
+        $approved = $period->entries()->where('status', PayrollEntryStatus::Approved);
+
+        $period->auditAs('paid', "Payroll {$period->name} marked as paid", [
+            'entries' => (clone $approved)->count(),
+            'total_net_salary' => round((float) (clone $approved)->sum('net_salary'), 2),
+        ], true);
+
         $period->update([
             'status' => PayrollStatus::Paid,
         ]);

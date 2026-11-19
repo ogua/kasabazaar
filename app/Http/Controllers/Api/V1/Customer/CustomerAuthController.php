@@ -12,6 +12,8 @@ use App\Models\DeviceToken;
 use App\Models\EcommerceCart;
 use App\Models\User;
 use App\Service\SystemSetting;
+use App\Services\Audit\Audit;
+use App\Services\Audit\AuthAudit;
 use App\Services\CustomerSignupService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -88,8 +90,19 @@ class CustomerAuthController extends CustomerBaseController
         try {
             $user = $signups->verify($verification, $request->code);
         } catch (\InvalidArgumentException $e) {
+            Audit::security('signup_code_failed', 'Wrong or expired signup code for '.$verification->maskedDestination(), null, [
+                'verification_id' => $verification->id,
+                'channel' => $verification->channel,
+                'attempts' => $verification->fresh()?->attempts,
+                'reason' => $e->getMessage(),
+            ]);
+
             return $this->error($e->getMessage(), 422);
         }
+
+        Audit::security('signup_completed', "{$user->name} verified their signup code and created an account", $user, [
+            'channel' => $verification->channel,
+        ], causer: $user);
 
         $this->mergeGuestCart($user, $request->header('X-Guest-Session-Id'));
 
@@ -155,18 +168,26 @@ class CustomerAuthController extends CustomerBaseController
             ->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
+            AuthAudit::loginFailed((string) $request->email, $user, 'customer app');
+
             return $this->error('Invalid credentials.', 401);
         }
 
         if ($user->status !== UserStatus::Active) {
+            AuthAudit::loginBlocked($user, 'customer app', 'account deactivated');
+
             return $this->error('Your account has been deactivated.', 401);
         }
 
         $user->load(['client', 'investor']);
 
         if ($user->investor_id && $user->investor?->status !== 'active') {
+            AuthAudit::loginBlocked($user, 'customer app', 'investor account inactive');
+
             return $this->error('Your investor account is currently inactive. Please contact us for assistance.', 401);
         }
+
+        AuthAudit::loginSucceeded($user, 'customer app');
 
         $this->mergeGuestCart($user, $request->header('X-Guest-Session-Id'));
 
@@ -231,11 +252,10 @@ class CustomerAuthController extends CustomerBaseController
 
         $user->update($request->only(['name', 'phone']));
 
-        if ($user->client_id) {
-            Client::where('id', $user->client_id)->update(
-                $request->only(['name', 'phone', 'country', 'state_region', 'city', 'address'])
-            );
-        }
+        // Through the model, so the change reaches the audit trail.
+        Client::find($user->client_id)?->update(
+            $request->only(['name', 'phone', 'country', 'state_region', 'city', 'address'])
+        );
 
         if ($request->has('whatsapp_opt_in')) {
             $user->setWhatsappConsent($request->boolean('whatsapp_opt_in'));
@@ -266,6 +286,7 @@ class CustomerAuthController extends CustomerBaseController
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
+        AuthAudit::loggedOut($request->user(), 'customer app');
 
         return $this->success(null, 'Logged out.');
     }
@@ -283,6 +304,8 @@ class CustomerAuthController extends CustomerBaseController
         /** @var User $user */
         $user = $request->user();
 
+        AuthAudit::accountDeleted($user, 'customer app');
+
         DB::transaction(function () use ($user) {
             $user->tokens()->delete();
             DeviceToken::where('user_id', $user->id)->delete();
@@ -290,7 +313,7 @@ class CustomerAuthController extends CustomerBaseController
             EcommerceCart::where('user_id', $user->id)->delete();
 
             if ($user->client_id) {
-                Client::whereKey($user->client_id)->update([
+                Client::find($user->client_id)?->update([
                     'name' => 'Deleted Client',
                     'email' => null,
                     'phone' => null,
@@ -345,6 +368,7 @@ class CustomerAuthController extends CustomerBaseController
             function (User $user, string $password) {
                 $user->update(['password' => Hash::make($password)]);
                 $user->tokens()->delete();
+                AuthAudit::passwordResetCompleted($user, 'customer app');
             }
         );
 

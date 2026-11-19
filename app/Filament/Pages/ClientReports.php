@@ -147,6 +147,8 @@ class ClientReports extends Page implements HasForms
 
         $filename = str_replace(' ', '_', strtolower($title)).'_'.now()->format('Y-m-d').'.pdf';
 
+        \App\Services\Audit\Audit::download('Client Reports (PDF)');
+
         return response()->streamDownload(function () use ($pdf) {
             echo $pdf->output();
         }, $filename);
@@ -163,6 +165,8 @@ class ClientReports extends Page implements HasForms
         $data = $this->form->getState();
         $reportType = $data['report_type'];
         $filename = str_replace(' ', '_', strtolower($this->reportTitle($reportType))).'_'.now()->format('Y-m-d').'.xlsx';
+
+        \App\Services\Audit\Audit::download('Client Reports (Excel)');
 
         return Excel::download(new ClientReportExport($this->reportData, $reportType), $filename);
     }

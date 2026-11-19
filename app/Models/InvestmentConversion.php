@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\InvestmentConversionDirection;
 use App\Enums\InvestmentConversionStatus;
 use App\Enums\InvestmentPayoutFrequency;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,7 +21,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class InvestmentConversion extends Model
 {
-    use HasUuids, SoftDeletes;
+    use Auditable, HasUuids, SoftDeletes;
+
+    protected static string $auditLog = 'investors';
+
+    /** @var list<string> */
+    protected static array $auditHighRisk = ['status'];
 
     protected $guarded = ['id'];
 

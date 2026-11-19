@@ -2,12 +2,12 @@
 
 namespace App\Filament\Pages;
 
-use Filament\Pages\Page;
-use App\Filament\Widgets\PayrollStatsWidget;
-use Filament\Actions\Action;
 use App\Exports\PayrollExport;
-use Maatwebsite\Excel\Facades\Excel;
+use App\Filament\Widgets\PayrollStatsWidget;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Filament\Actions\Action;
+use Filament\Pages\Page;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PayrollReport extends Page
 {
@@ -24,6 +24,7 @@ class PayrollReport extends Page
     protected static ?string $navigationLabel = 'Payroll Report';
 
     public ?string $start_date = null;
+
     public ?string $end_date = null;
 
     public function mount(): void
@@ -58,16 +59,20 @@ class PayrollReport extends Page
             'summary' => $data['summary'],
         ]);
 
+        \App\Services\Audit\Audit::download('Payroll Report (PDF)');
+
         return response()->streamDownload(function () use ($pdf) {
             echo $pdf->output();
-        }, 'payroll-report-' . $this->start_date . '-to-' . $this->end_date . '.pdf');
+        }, 'payroll-report-'.$this->start_date.'-to-'.$this->end_date.'.pdf');
     }
 
     public function downloadExcel()
     {
+        \App\Services\Audit\Audit::download('Payroll Report (Excel)');
+
         return Excel::download(
             new PayrollExport($this->start_date, $this->end_date),
-            'payroll-report-' . $this->start_date . '-to-' . $this->end_date . '.xlsx'
+            'payroll-report-'.$this->start_date.'-to-'.$this->end_date.'.xlsx'
         );
     }
 
@@ -82,7 +87,7 @@ class PayrollReport extends Page
     protected function getPayrollData(): array
     {
         $query = \App\Models\PayrollEntry::with(['payrollPeriod', 'employee'])
-            ->whereHas('payrollPeriod', function($q) {
+            ->whereHas('payrollPeriod', function ($q) {
                 if ($this->start_date && $this->end_date) {
                     $q->whereBetween('pay_date', [$this->start_date, $this->end_date]);
                 }
@@ -95,7 +100,7 @@ class PayrollReport extends Page
                     'id' => $entry->id,
                     'employee' => $entry->employee?->name ?? 'N/A',
                     'period' => $entry->payrollPeriod ?
-                        $entry->payrollPeriod->start_date->format('M d') . ' - ' . $entry->payrollPeriod->end_date->format('M d, Y') :
+                        $entry->payrollPeriod->start_date->format('M d').' - '.$entry->payrollPeriod->end_date->format('M d, Y') :
                         'N/A',
                     'pay_date' => $entry->payrollPeriod?->pay_date,
                     'gross_salary' => $entry->gross_salary,
@@ -135,8 +140,8 @@ class PayrollReport extends Page
             $query->whereBetween('pay_date', [$startDate, $endDate]);
         })
             ->get()
-            ->groupBy(fn($p) => $p->status?->value ?? 'N/A')
-            ->map(fn($group) => [
+            ->groupBy(fn ($p) => $p->status?->value ?? 'N/A')
+            ->map(fn ($group) => [
                 'count' => $group->count(),
                 'total' => $group->sum('net_salary'),
                 'avg' => $group->avg('net_salary'),

@@ -3,15 +3,21 @@
 namespace App\Models;
 
 use App\Enums\DeliveryStatus;
-use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TripShipment extends Model
 {
-    use HasUuids;
+    use Auditable, HasUuids;
 
-   // protected $guarded = ['id'];
+    protected static string $auditLog = 'fleet';
+
+    /** @var list<string> */
+    protected static array $auditRedacted = ['receiver_signature'];
+
+    // protected $guarded = ['id'];
 
     protected $casts = [
         'delivery_status' => DeliveryStatus::class,
@@ -26,5 +32,13 @@ class TripShipment extends Model
     public function shipment(): BelongsTo
     {
         return $this->belongsTo(Shipment::class);
+    }
+
+    /**
+     * @return array{0: class-string, 1: mixed}|null
+     */
+    public function auditScope(): ?array
+    {
+        return [Trip::class, $this->trip_id];
     }
 }

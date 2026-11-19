@@ -4,7 +4,9 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Enums\UserStatus;
+use App\Models\Concerns\Auditable;
 use App\Models\Concerns\HasWhatsappConsent;
+use App\Services\Audit\Audit;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Models\Contracts\HasTenants;
 use Filament\Panel;
@@ -23,9 +25,33 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements FilamentUser, HasTenants
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, HasUuids, HasWhatsappConsent, Notifiable;
+    use Auditable, HasApiTokens, HasFactory, HasUuids, HasWhatsappConsent, Notifiable;
 
     use HasRoles;
+
+    protected static string $auditLog = 'access';
+
+    /** @var list<string> */
+    protected static array $auditHighRisk = ['email', 'phone', 'status', 'role', 'client_id', 'investor_id', 'vendor_id', 'branch_id'];
+
+    protected static function booted(): void
+    {
+        // The password itself is never recorded, so a password-only change would leave no
+        // entry at all — record it as its own security event instead.
+        static::updated(function (User $user): void {
+            if ($user->wasChanged('password')) {
+                $byOwner = (string) auth()->id() === (string) $user->getKey();
+
+                Audit::security(
+                    'password_changed',
+                    $byOwner ? "{$user->name} changed their password" : "Password of {$user->name} was changed",
+                    $user,
+                    ['by_owner' => $byOwner],
+                    true,
+                );
+            }
+        });
+    }
 
     /**
      * The attributes that are mass assignable.

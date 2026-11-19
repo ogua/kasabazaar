@@ -198,6 +198,8 @@ class ShipmentReports extends Page implements HasForms
 
         $filename = str_replace(' ', '_', strtolower($title)).'_'.now()->format('Y-m-d').'.pdf';
 
+        \App\Services\Audit\Audit::download('Shipment Reports (PDF)');
+
         return response()->streamDownload(function () use ($pdf) {
             echo $pdf->output();
         }, $filename);
@@ -229,6 +231,8 @@ class ShipmentReports extends Page implements HasForms
         };
 
         $filename = $title.'_'.now()->format('Y-m-d').'.xlsx';
+
+        \App\Services\Audit\Audit::download('Shipment Reports (Excel)');
 
         return Excel::download(
             new ShipmentReportExport($this->reportData, $reportType),
@@ -292,6 +296,8 @@ class ShipmentReports extends Page implements HasForms
 </html>';
 
         $filename = str_replace(' ', '_', strtolower($title)).'_'.now()->format('Y-m-d').'.doc';
+
+        \App\Services\Audit\Audit::download('Shipment Reports (Word)');
 
         return response()->streamDownload(function () use ($wordContent) {
             echo $wordContent;

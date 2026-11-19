@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\AppPlatform;
 use App\Enums\MobileApp;
+use App\Models\Concerns\Auditable;
 use App\Services\AppUpdatePolicy;
 use Database\Factories\AppVersionFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,6 +20,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class AppVersion extends Model
 {
+    use Auditable;
+
+    protected static string $auditLog = 'settings';
+
     /** @use HasFactory<AppVersionFactory> */
     use HasFactory, HasUuids;
 

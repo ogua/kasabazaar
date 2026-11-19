@@ -29,7 +29,7 @@ class ClientPanelProvider extends PanelProvider
         return $panel
             ->id('client')
             ->path('client')
-            ->login()
+            ->login(\App\Filament\Pages\Auth\Login::class)
             ->profile()
             ->sidebarCollapsibleOnDesktop()
             ->brandLogo(asset('images/kasarose-logo.png'))

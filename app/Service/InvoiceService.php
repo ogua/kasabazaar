@@ -130,6 +130,9 @@ class InvoiceService
 
             // Log the email sent
             logger()->info("Invoice sent to {$clientEmail} for shipment {$shipment->shipping_reference}");
+            \App\Services\Audit\Audit::event($shipment, 'invoice_emailed', "Invoice for shipment {$shipment->shipping_reference} emailed to {$clientEmail}", [
+                'recipient' => $clientEmail,
+            ]);
 
             return true;
         } catch (\Exception $e) {

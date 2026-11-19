@@ -71,6 +71,8 @@ class InvestorsExpensesReport extends Page
                 'defaultFont' => 'sans-serif',
             ]);
 
+        \App\Services\Audit\Audit::download('Investors Expenses Report (PDF)');
+
         return response()->streamDownload(function () use ($pdf) {
             echo $pdf->output();
         }, "expense-summary-{$summary['start_date']}-to-{$summary['end_date']}.pdf");
@@ -79,6 +81,8 @@ class InvestorsExpensesReport extends Page
     public function downloadExcel()
     {
         $summary = $this->getSummary();
+
+        \App\Services\Audit\Audit::download('Investors Expenses Report (Excel)');
 
         return Excel::download(
             new InvestorExpenseSummaryExport($summary),

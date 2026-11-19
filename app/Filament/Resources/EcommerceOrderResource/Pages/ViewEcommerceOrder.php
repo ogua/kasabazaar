@@ -4,6 +4,7 @@ namespace App\Filament\Resources\EcommerceOrderResource\Pages;
 
 use App\Enums\EcommerceOrderPaymentStatus;
 use App\Enums\EcommerceOrderStatus;
+use App\Filament\Actions\AuditHistoryAction;
 use App\Filament\Resources\EcommerceOrderResource;
 use App\Models\EcommerceOrder;
 use App\Models\EcommerceOrderShipment;
@@ -29,6 +30,7 @@ class ViewEcommerceOrder extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            AuditHistoryAction::make(),
             Actions\Action::make('approve')
                 ->label('Approve')
                 ->icon('heroicon-m-check-circle')

@@ -100,7 +100,8 @@ class ShipmentRequestSubmissionService
     {
         PickupSchedule::where('shipment_request_id', $shipmentRequest->id)
             ->whereIn('status', ['scheduled', 'confirmed'])
-            ->update(['status' => 'cancelled']);
+            ->get()
+            ->each->update(['status' => 'cancelled']);
     }
 
     private function schedulePickup(Client $client, ShipmentRequest $shipmentRequest): void

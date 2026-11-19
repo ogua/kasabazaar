@@ -62,6 +62,7 @@ class ComposerStaticInit0321787910185c60692bd0b71891e687
         'a1cfe24d14977df6878b9bf804af2d1c' => __DIR__ . '/..' . '/nunomaduro/collision/src/Adapters/Phpunit/Autoload.php',
         'ec07570ca5a812141189b1fa81503674' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/Assert/Functions.php',
         '9cf90fe04e875b390427268b191a95f0' => __DIR__ . '/..' . '/pragmarx/countries/src/package/Support/helpers.php',
+        '72b1e3f4a2af9b30b3f137b3ec2057fc' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/helpers.php',
         '5c6a9495e67e3398fc97ef867ed00846' => __DIR__ . '/..' . '/spatie/laravel-pdf/src/Support/functions.php',
         'd92f49fe138fde4e7a3ec6f988960524' => __DIR__ . '/..' . '/stripe/stripe-php/lib/version_check.php',
         'bab4ed692c1fd3872849227e2a85791e' => __DIR__ . '/..' . '/unicodeveloper/laravel-paystack/src/Support/helpers.php',
@@ -148,6 +149,7 @@ class ComposerStaticInit0321787910185c60692bd0b71891e687
             'Spatie\\Crawler\\' => 15,
             'Spatie\\Color\\' => 13,
             'Spatie\\Browsershot\\' => 19,
+            'Spatie\\Activitylog\\' => 19,
             'SolutionForest\\FilamentSimpleLightBox\\Database\\Factories\\' => 57,
             'SolutionForest\\FilamentSimpleLightBox\\' => 38,
             'Sabberworm\\CSS\\' => 15,
@@ -546,6 +548,10 @@ class ComposerStaticInit0321787910185c60692bd0b71891e687
         'Spatie\\Browsershot\\' => 
         array (
             0 => __DIR__ . '/..' . '/spatie/browsershot/src',
+        ),
+        'Spatie\\Activitylog\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/spatie/laravel-activitylog/src',
         ),
         'SolutionForest\\FilamentSimpleLightBox\\Database\\Factories\\' => 
         array (
@@ -10433,6 +10439,26 @@ class ComposerStaticInit0321787910185c60692bd0b71891e687
         'SolutionForest\\FilamentSimpleLightBox\\FilamentSimpleLightBoxServiceProvider' => __DIR__ . '/..' . '/solution-forest/filament-simplelightbox/src/FilamentSimpleLightBoxServiceProvider.php',
         'SolutionForest\\FilamentSimpleLightBox\\SimpleLightBoxPlugin' => __DIR__ . '/..' . '/solution-forest/filament-simplelightbox/src/SimpleLightBoxPlugin.php',
         'SolutionForest\\FilamentSimpleLightBox\\Testing\\TestsFilamentSimpleLightBox' => __DIR__ . '/..' . '/solution-forest/filament-simplelightbox/src/Testing/TestsFilamentSimpleLightBox.php',
+        'Spatie\\Activitylog\\ActivityLogStatus' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/ActivityLogStatus.php',
+        'Spatie\\Activitylog\\ActivityLogger' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/ActivityLogger.php',
+        'Spatie\\Activitylog\\ActivitylogServiceProvider' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/ActivitylogServiceProvider.php',
+        'Spatie\\Activitylog\\CauserResolver' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/CauserResolver.php',
+        'Spatie\\Activitylog\\CleanActivitylogCommand' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/CleanActivitylogCommand.php',
+        'Spatie\\Activitylog\\Contracts\\Activity' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Contracts/Activity.php',
+        'Spatie\\Activitylog\\Contracts\\LoggablePipe' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Contracts/LoggablePipe.php',
+        'Spatie\\Activitylog\\EventLogBag' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/EventLogBag.php',
+        'Spatie\\Activitylog\\Exceptions\\CouldNotLogActivity' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Exceptions/CouldNotLogActivity.php',
+        'Spatie\\Activitylog\\Exceptions\\CouldNotLogChanges' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Exceptions/CouldNotLogChanges.php',
+        'Spatie\\Activitylog\\Exceptions\\InvalidConfiguration' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Exceptions/InvalidConfiguration.php',
+        'Spatie\\Activitylog\\Facades\\Activity' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Facades/Activity.php',
+        'Spatie\\Activitylog\\Facades\\CauserResolver' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Facades/CauserResolver.php',
+        'Spatie\\Activitylog\\Facades\\LogBatch' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Facades/LogBatch.php',
+        'Spatie\\Activitylog\\LogBatch' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/LogBatch.php',
+        'Spatie\\Activitylog\\LogOptions' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/LogOptions.php',
+        'Spatie\\Activitylog\\Models\\Activity' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Models/Activity.php',
+        'Spatie\\Activitylog\\PendingActivityLog' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/PendingActivityLog.php',
+        'Spatie\\Activitylog\\Traits\\CausesActivity' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Traits/CausesActivity.php',
+        'Spatie\\Activitylog\\Traits\\LogsActivity' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Traits/LogsActivity.php',
         'Spatie\\Browsershot\\Browsershot' => __DIR__ . '/..' . '/spatie/browsershot/src/Browsershot.php',
         'Spatie\\Browsershot\\ChromiumResult' => __DIR__ . '/..' . '/spatie/browsershot/src/ChromiumResult.php',
         'Spatie\\Browsershot\\Enums\\Polling' => __DIR__ . '/..' . '/spatie/browsershot/src/Enums/Polling.php',

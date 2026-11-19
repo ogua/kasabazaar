@@ -5,52 +5,79 @@ namespace App\Models;
 use App\Enums\CashbookCostCenter;
 use App\Enums\ExpenditureLedgerType;
 use App\Enums\IncomeLedgerType;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\DB;
-use App\Models\CashbookIncomeLedger;
-use App\Models\CashbookExpenditureLedger;
 
 class CashbookEntry extends Model
 {
-    use HasUuids, SoftDeletes;
+    use Auditable, HasUuids, SoftDeletes;
+
+    protected static string $auditLog = 'cashbook';
+
+    /** Running balances are recalculated across later entries; they are not the entry's own change. */
+    protected static array $auditExcept = ['bank_balance', 'momo_balance', 'op_balance'];
+
+    /** @var list<string> */
+    protected static array $auditHighRisk = ['bank_debit', 'bank_credit', 'momo_debit', 'momo_credit', 'date', 'cost_center'];
 
     protected $guarded = ['id'];
 
     protected $casts = [
-        'date'          => 'date',
-        'bank_debit'    => 'decimal:2',
-        'momo_debit'    => 'decimal:2',
-        'bank_credit'   => 'decimal:2',
-        'momo_credit'   => 'decimal:2',
-        'bank_balance'  => 'decimal:2',
-        'momo_balance'  => 'decimal:2',
-        'cost_center'   => CashbookCostCenter::class,
+        'date' => 'date',
+        'bank_debit' => 'decimal:2',
+        'momo_debit' => 'decimal:2',
+        'bank_credit' => 'decimal:2',
+        'momo_credit' => 'decimal:2',
+        'bank_balance' => 'decimal:2',
+        'momo_balance' => 'decimal:2',
+        'cost_center' => CashbookCostCenter::class,
         // receipt analysis
-        'op_balance'            => 'decimal:2',
-        'sales'                 => 'decimal:2',
-        'dir_transfer'          => 'decimal:2',
-        'shipping_fee'          => 'decimal:2',
-        'service_fee'           => 'decimal:2',
-        'momo_interest'         => 'decimal:2',
-        'property_management'   => 'decimal:2',
-        'refund'                => 'decimal:2',
-        'contra_receipt'        => 'decimal:2',
+        'op_balance' => 'decimal:2',
+        'sales' => 'decimal:2',
+        'dir_transfer' => 'decimal:2',
+        'shipping_fee' => 'decimal:2',
+        'service_fee' => 'decimal:2',
+        'momo_interest' => 'decimal:2',
+        'property_management' => 'decimal:2',
+        'refund' => 'decimal:2',
+        'contra_receipt' => 'decimal:2',
         // expenditure analysis
-        'import_duty'           => 'decimal:2',
-        'shipping_expenses'     => 'decimal:2',
-        'salaries_wages'        => 'decimal:2',
-        'bank_charges'          => 'decimal:2',
-        'ssnit'                 => 'decimal:2',
-        'paye'                  => 'decimal:2',
-        'withholding_tax'       => 'decimal:2',
-        'momo_charges'          => 'decimal:2',
-        'contra_payment'        => 'decimal:2',
-        'transportation'        => 'decimal:2',
-        'materials'             => 'decimal:2',
-        'donation'              => 'decimal:2',
+        'import_duty' => 'decimal:2',
+        'shipping_expenses' => 'decimal:2',
+        'salaries_wages' => 'decimal:2',
+        'bank_charges' => 'decimal:2',
+        'ssnit' => 'decimal:2',
+        'paye' => 'decimal:2',
+        'withholding_tax' => 'decimal:2',
+        'momo_charges' => 'decimal:2',
+        'contra_payment' => 'decimal:2',
+        'transportation' => 'decimal:2',
+        'materials' => 'decimal:2',
+        'donation' => 'decimal:2',
     ];
+
+    /**
+     * The analysis columns are filled from cost_center and the amounts, so the trail records
+     * those instead.
+     *
+     * @return list<string>
+     */
+    public static function auditExcludedAttributes(): array
+    {
+        return array_values(array_unique(array_merge(
+            ['password', 'remember_token', 'created_at', 'updated_at'],
+            self::$auditExcept,
+            CashbookCostCenter::allAnalysisColumns(),
+        )));
+    }
+
+    public function auditLabel(): ?string
+    {
+        return trim(($this->date?->format('d M Y') ?? '').' '.($this->pv_no ?: $this->details));
+    }
 
     protected static function booted(): void
     {
@@ -186,8 +213,8 @@ class CashbookEntry extends Model
                 ->sum('momo_debit');
 
             $ledger = CashbookIncomeLedger::firstOrNew([
-                'month'       => $month,
-                'year'        => $year,
+                'month' => $month,
+                'year' => $year,
                 'ledger_type' => $ledgerType->value,
             ]);
             $ledger->credit = round((float) $credit, 2);
@@ -212,8 +239,8 @@ class CashbookEntry extends Model
                 ->sum('momo_credit');
 
             $ledger = CashbookExpenditureLedger::firstOrNew([
-                'month'       => $month,
-                'year'        => $year,
+                'month' => $month,
+                'year' => $year,
                 'ledger_type' => $ledgerType->value,
             ]);
             $ledger->debit = round((float) $debit, 2);

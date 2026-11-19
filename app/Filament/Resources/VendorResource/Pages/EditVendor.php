@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\VendorResource\Pages;
 
+use App\Filament\Actions\AuditHistoryAction;
 use App\Filament\Resources\VendorResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -13,6 +14,7 @@ class EditVendor extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            AuditHistoryAction::make(),
             Actions\ViewAction::make(),
             Actions\DeleteAction::make(),
         ];

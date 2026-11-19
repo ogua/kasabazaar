@@ -62,6 +62,10 @@ class FlagVehicleShipmentItems extends Command
             $updated += ShipmentItem::whereIn('id', $ids)->update(['is_vehicle' => true]);
         });
 
+        if ($updated > 0) {
+            \App\Services\Audit\Audit::event(null, 'vehicles_flagged', "{$updated} shipment item(s) flagged as vehicles", ['items' => $updated], log: 'shipments');
+        }
+
         $this->info("Flagged {$updated} shipment item(s) as vehicles.");
 
         return self::SUCCESS;

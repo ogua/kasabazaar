@@ -2,32 +2,35 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
 class CashbookShipmentDetail extends Model
 {
-    use HasUuids;
+    use Auditable, HasUuids;
+
+    protected static string $auditLog = 'cashbook';
 
     protected $guarded = ['id'];
 
     protected $casts = [
-        'date'              => 'date',
-        'import_duty'       => 'decimal:2',
-        'feeding'           => 'decimal:2',
-        'internal_travels'  => 'decimal:2',
-        'loading_charges'   => 'decimal:2',
-        'accra_delivery'    => 'decimal:2',
+        'date' => 'date',
+        'import_duty' => 'decimal:2',
+        'feeding' => 'decimal:2',
+        'internal_travels' => 'decimal:2',
+        'loading_charges' => 'decimal:2',
+        'accra_delivery' => 'decimal:2',
         'port_to_warehouse' => 'decimal:2',
-        'accra_to_kumasi'   => 'decimal:2',
-        'kumasi_delivery'   => 'decimal:2',
-        'stationaries'      => 'decimal:2',
-        'port_entry'        => 'decimal:2',
-        'communication'     => 'decimal:2',
-        'replacement'       => 'decimal:2',
-        'police'            => 'decimal:2',
-        'gas'               => 'decimal:2',
-        'total'             => 'decimal:2',
+        'accra_to_kumasi' => 'decimal:2',
+        'kumasi_delivery' => 'decimal:2',
+        'stationaries' => 'decimal:2',
+        'port_entry' => 'decimal:2',
+        'communication' => 'decimal:2',
+        'replacement' => 'decimal:2',
+        'police' => 'decimal:2',
+        'gas' => 'decimal:2',
+        'total' => 'decimal:2',
     ];
 
     protected static function booted(): void

@@ -3,13 +3,22 @@
 namespace App\Models;
 
 use App\Enums\VendorPayoutStatus;
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class VendorPayoutRequest extends Model
 {
-    use HasUuids;
+    use Auditable, HasUuids;
+
+    protected static string $auditLog = 'marketplace';
+
+    /** @var list<string> */
+    protected static array $auditRedacted = ['payout_details'];
+
+    /** @var list<string> */
+    protected static array $auditHighRisk = ['amount_ghs', 'status'];
 
     protected function casts(): array
     {

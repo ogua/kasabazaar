@@ -7,6 +7,7 @@ use App\Models\Shipment;
 use App\Models\ShipmentUpdate;
 use App\Models\User;
 use App\Notifications\ShipmentStatusUpdated;
+use App\Services\Audit\Audit;
 use App\Services\PushNotificationService;
 use App\Services\ShipmentNotifier;
 
@@ -48,6 +49,23 @@ class ShipmentObserver
         }
 
         $this->syncReceivedFlag($shipment, $status);
+
+        if ($shipment->isDirty('status')) {
+            $from = self::labelFor($shipment->getOriginal('status'));
+            $to = self::labelFor($shipment->status);
+
+            $shipment->auditAs('status_changed', "Shipment {$shipment->shipping_reference} moved from {$from} to {$to}", array_filter([
+                'location' => $shipment->statusHistoryNote['location'] ?? null,
+                'remarks' => $shipment->statusHistoryNote['remarks'] ?? null,
+            ]));
+        }
+    }
+
+    private static function labelFor(mixed $status): string
+    {
+        $value = $status instanceof \BackedEnum ? $status->value : (string) $status;
+
+        return self::$statusLabels[$value] ?? \Illuminate\Support\Str::headline($value ?: 'none');
     }
 
     /**
@@ -102,6 +120,10 @@ class ShipmentObserver
                 $shipment->status = ShippingStatus::received;
                 $shipment->saveQuietly();
             }
+
+            Audit::event($shipment, 'receipt_confirmed', "Receipt of shipment {$shipment->shipping_reference} confirmed", [
+                'attributes' => ['is_received' => true, 'status' => self::statusValue($shipment)],
+            ]);
         }
     }
 

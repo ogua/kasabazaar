@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -9,7 +10,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Investor extends Model
 {
-    use HasUuids;
+    use Auditable, HasUuids;
+
+    protected static string $auditLog = 'investors';
+
+    /** @var list<string> */
+    protected static array $auditExcept = ['name'];
+
+    /** @var list<string> */
+    protected static array $auditMasked = ['account_number', 'id_number'];
+
+    /** @var list<string> */
+    protected static array $auditHighRisk = ['bank_name', 'bank_code', 'account_number', 'account_name', 'paystack_recipient_code', 'email', 'phone', 'status', 'default_annual_rate'];
 
     protected $guarded = ['id'];
 
