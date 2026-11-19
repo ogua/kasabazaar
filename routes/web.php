@@ -29,9 +29,10 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::view('/', 'site.index')->name('home-page');
+Route::get('/', [WebsiteController::class, 'home'])->name('home-page');
 Route::view('/about-us', 'site.about')->name('about-us');
 Route::view('/our-companies', 'site.our-companies')->name('our-companies');
+Route::get('/investors', [WebsiteController::class, 'investors'])->name('investors');
 Route::view('/our-services', 'site.services')->name('our-services');
 Route::view('/quote', 'site.quote')->name('quote');
 Route::get('/tracking', [WebsiteController::class, 'tracking'])->name('our-tracking');

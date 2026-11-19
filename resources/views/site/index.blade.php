@@ -10,12 +10,14 @@ $heroSlides = config('website.hero_slides') ?? [];
 @endphp
 @push('styles')
    <link rel="stylesheet" href="@siteAsset('css/hero.css')">
+   <link rel="stylesheet" href="@siteAsset('css/investors.css')">
    @if (! empty($heroSlides))
    <link rel="preload" as="image" href="{{ asset('site/'.$heroSlides[0]['image']) }}">
    @endif
 @endpush
 @push('scripts')
    <script src="@siteAsset('js/hero.js')"></script>
+   <script src="@siteAsset('js/charts.js')" defer></script>
 @endpush
 
    <!-- Hero Section Start -->
@@ -189,8 +191,9 @@ $heroSlides = config('website.hero_slides') ?? [];
                      <span class="ksr-about__icon"><i class="fa-solid fa-truck-ramp-box" aria-hidden="true"></i></span>
                      <div>
                         <h3 class="h5">We collect</h3>
-                        <p>From homes and businesses across Michigan, Illinois, Indiana, New York, New Jersey,
-                           Kentucky and Ohio.</p>
+                        @php $collectStates = array_values(array_diff(array_keys(config('website.service_states')), ['Ghana'])); @endphp
+                        <p>From homes and businesses across {{ implode(', ', array_slice($collectStates, 0, -1)) }}
+                           and {{ end($collectStates) }}.</p>
                      </div>
                   </li>
                   <li>
@@ -225,6 +228,22 @@ $heroSlides = config('website.hero_slides') ?? [];
       </div>
    </section>
    <!-- About Section End -->
+
+   <!-- Growth Section Start: live figures, the same block as /investors -->
+   <section class="ksr-home-growth sec-padding bg-shade" aria-labelledby="home-growth-title">
+      <div class="container">
+         <div class="sec-intro mx-auto text-center mb-5">
+            <span class="sub-title2">Our Growth</span>
+            <h2 class="sec-title" id="home-growth-title">More families and businesses ship with us every month.</h2>
+            <p>Live figures from the system we run the business on &mdash; clients served and revenue, month by month.</p>
+         </div>
+         @include('site.partials.growth-charts', ['metrics' => $metrics, 'showRevenue' => $showRevenue])
+         <div class="text-center">
+            <a href="{{ route('investors') }}" class="btn btn-primary">See Investor Figures <i class="fa fa-arrow-right"></i><span></span></a>
+         </div>
+      </div>
+   </section>
+   <!-- Growth Section End -->
 
    <!-- USA to Ghana promos Start -->
    <section class="pb-5">

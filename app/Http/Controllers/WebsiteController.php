@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Blog;
+use App\Models\Shipment;
+use App\Services\PublicInvestorMetrics;
 use App\Services\PublicMarketShowcase;
 use App\Services\PublicShipmentTracking;
 use App\Services\PublicWebsite;
@@ -13,7 +15,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 /**
- * The public website's data-driven pages: shipment tracking, news and the sitemap. The static
+ * The public website's data-driven pages: the homepage, investors, shipment tracking, news and the sitemap. The static
  * pages are plain Route::view() routes in routes/web.php.
  */
 class WebsiteController extends Controller
@@ -36,11 +38,11 @@ class WebsiteController extends Controller
             'canPay' => false,
             'items' => [],
             'timeline' => [],
-            'facts' => [],
+            'places' => [],
+            'dates' => [],
             'stageDates' => [],
             'market' => collect(PublicWebsite::groupCompanies())->firstWhere('external', true),
             'marketSlides' => $showcase->slides(),
-            'estimatedDelivery' => null,
         ];
 
         if ($shipment === null) {
@@ -50,10 +52,9 @@ class WebsiteController extends Controller
         $status = PublicShipmentTracking::statusMeta($tracking->rawStatus($shipment), $tracking->isReceived($shipment));
         $byTrackingNumber = $tracking->lookedUpByTrackingNumber($shipment, $ref);
 
-        $origin = trim(($tracking->placeName($shipment, 'origin') ?? '').' '.($shipment->originBranch?->country ?? ''));
-        $destination = trim(($tracking->placeName($shipment, 'destination') ?? '').' '.($shipment->destinationBranch?->country ?? ''));
         $shippedAt = $this->date($shipment->getRawOriginal('shipped_at'));
         $deliveredAt = $this->date($shipment->getRawOriginal('delivered_at'));
+        $estimated = $this->date($shipment->getRawOriginal('estimated_delivery_date'));
 
         return view('site.tracking', [
             ...$data,
@@ -61,25 +62,78 @@ class WebsiteController extends Controller
             'byTrackingNumber' => $byTrackingNumber,
             // Paying goes through a phone check, and only by the random tracking number.
             'canPay' => $byTrackingNumber && $tracking->rawStatus($shipment) !== 'cancelled',
-            // Shown on the status badge until the goods are delivered, so the customer sees
-            // when to expect them in Ghana; cancelled and delivered shipments have no ETA.
-            'estimatedDelivery' => ($status['step'] ?? 99) < PublicShipmentTracking::STAGE_DELIVERY
-                ? $this->date($shipment->getRawOriginal('estimated_delivery_date'))?->format('D, M j, Y')
-                : null,
             'items' => $byTrackingNumber ? $tracking->items($shipment) : [],
             'timeline' => $tracking->timeline($shipment),
             'stageDates' => [
                 PublicShipmentTracking::STAGE_SHIPPED => $shippedAt?->format('M j, Y'),
                 PublicShipmentTracking::STAGE_DELIVERY => $deliveredAt?->format('M j, Y'),
             ],
-            'facts' => array_filter([
-                'Origin' => $origin ?: null,
-                'Destination' => $destination ?: null,
+            'places' => array_filter([
+                'Origin' => $this->placeCard($tracking, $shipment, 'origin'),
+                'Destination' => $this->placeCard($tracking, $shipment, 'destination'),
+            ]),
+            'dates' => array_filter([
                 // shipped_at is filled in when the shipment is booked, so only show it
                 // once the shipment has actually reached that stage.
-                'Shipped' => ($status['step'] ?? 0) >= PublicShipmentTracking::STAGE_SHIPPED ? $shippedAt?->format('M j, Y') : null,
-                'Delivered' => $deliveredAt?->format('M j, Y g:i A'),
+                'Shipped' => ($status['step'] ?? 0) >= PublicShipmentTracking::STAGE_SHIPPED && $shippedAt
+                    ? ['value' => $shippedAt->format('M j, Y'), 'icon' => 'fa-calendar-days', 'note' => null]
+                    : null,
+                // Until the goods are delivered the customer sees when to expect them in Ghana;
+                // cancelled and delivered shipments have no ETA.
+                'Estimated Delivery' => ($status['step'] ?? 99) < PublicShipmentTracking::STAGE_DELIVERY && $estimated
+                    ? ['value' => $estimated->format('D, M j, Y'), 'icon' => 'fa-truck-fast', 'note' => 'Estimated arrival in Ghana']
+                    : null,
+                'Delivered' => $deliveredAt
+                    ? ['value' => $deliveredAt->format('M j, Y g:i A'), 'icon' => 'fa-circle-check', 'note' => null]
+                    : null,
             ]),
+        ]);
+    }
+
+    /**
+     * An Origin / Destination card: the place, its country when the branch records one, and
+     * the scene for it (null when we have no picture of the place).
+     *
+     * @return array{place: string, country: ?string, image: ?string, landmark: ?string}|null
+     */
+    private function placeCard(PublicShipmentTracking $tracking, Shipment $shipment, string $side): ?array
+    {
+        $place = $tracking->placeName($shipment, $side);
+
+        if (blank($place)) {
+            return null;
+        }
+
+        $country = ($side === 'origin' ? $shipment->originBranch : $shipment->destinationBranch)?->country;
+        $scene = PublicShipmentTracking::placeScene($place);
+
+        return [
+            'place' => $place,
+            'country' => filled($country) && strcasecmp($country, $place) !== 0 ? $country : null,
+            'image' => $scene['image'] ?? null,
+            'landmark' => $scene['landmark'] ?? null,
+        ];
+    }
+
+    /**
+     * The homepage, with the "Our Growth" figures and charts from the investors page.
+     */
+    public function home(PublicInvestorMetrics $metrics): View
+    {
+        return view('site.index', [
+            'metrics' => $metrics->summary(),
+            'showRevenue' => (bool) config('website.investors.show_revenue_figures', true),
+        ]);
+    }
+
+    /**
+     * The investors page: client growth and billed revenue from live (cached) data.
+     */
+    public function investors(PublicInvestorMetrics $metrics): View
+    {
+        return view('site.investors', [
+            'metrics' => $metrics->summary(),
+            'showRevenue' => (bool) config('website.investors.show_revenue_figures', true),
         ]);
     }
 
@@ -124,6 +178,7 @@ class WebsiteController extends Controller
             'quote' => ['monthly', '0.9'],
             'about-us' => ['monthly', '0.8'],
             'our-companies' => ['monthly', '0.8'],
+            'investors' => ['monthly', '0.7'],
             'contact-us' => ['monthly', '0.8'],
             'our-blog' => ['weekly', '0.7'],
             'our-projects' => ['monthly', '0.6'],

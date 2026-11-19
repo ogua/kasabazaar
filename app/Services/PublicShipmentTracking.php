@@ -92,6 +92,26 @@ class PublicShipmentTracking
     }
 
     /**
+     * The scene for a place on the tracking page's Origin / Destination cards, from
+     * config('website.service_states'), matched case-insensitively; null for "Others" or
+     * a place we have no picture of.
+     *
+     * @return array{name: string, image: string, landmark: string}|null
+     */
+    public static function placeScene(?string $place): ?array
+    {
+        $place = trim((string) $place);
+
+        foreach (config('website.service_states', []) as $name => $scene) {
+            if (strcasecmp($name, $place) === 0) {
+                return ['name' => $name, 'image' => $scene['image'], 'landmark' => $scene['landmark']];
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * The shipment's status history, newest first. Both `trackings` (branch-scoped status
      * changes) and `shipment_updates` (free-text locations) record movement; neither is
      * authoritative on its own, so both are read.
@@ -266,8 +286,8 @@ class PublicShipmentTracking
             'status_meta' => ['key' => $statusKey, 'label' => $meta['label'], 'step' => $step, 'tone' => $meta['class'], 'icon' => $meta['icon']],
             'is_cancelled' => $step === null,
             'stages' => $stages,
-            'origin' => ['place' => $this->placeName($shipment, 'origin'), 'country' => $shipment->originBranch?->country],
-            'destination' => ['place' => $this->placeName($shipment, 'destination'), 'country' => $shipment->destinationBranch?->country],
+            'origin' => $this->placePayload($shipment, 'origin'),
+            'destination' => $this->placePayload($shipment, 'destination'),
             'shipped_at' => $step !== null && $step >= self::STAGE_SHIPPED ? $shippedAt?->toISOString() : null,
             'estimated_delivery_date' => $estimated?->toDateString(),
             'delivered_at' => $deliveredAt?->toISOString(),
@@ -285,6 +305,22 @@ class PublicShipmentTracking
                 : null,
             'web_url' => route('our-tracking', ['ref' => $shipment->tracking_number ?? $shipment->shipping_reference]),
             'items_by_receiver' => $byTrackingNumber ? $this->items($shipment) : [],
+        ];
+    }
+
+    /**
+     * @return array{place: ?string, country: ?string, image: ?string}
+     */
+    private function placePayload(Shipment $shipment, string $side): array
+    {
+        $place = $this->placeName($shipment, $side);
+        $scene = self::placeScene($place);
+
+        return [
+            'place' => $place,
+            'country' => ($side === 'origin' ? $shipment->originBranch : $shipment->destinationBranch)?->country,
+            // The JPG twin of the SVG scene: native app image views don't render SVG.
+            'image' => $scene ? asset('site/'.preg_replace('/\.svg$/', '.jpg', $scene['image'])) : null,
         ];
     }
 

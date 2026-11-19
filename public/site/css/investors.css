@@ -1,0 +1,289 @@
+/*
+ * Investors page (resources/views/site/investors.blade.php) and the inline-SVG charts
+ * (resources/views/site/partials/chart.blade.php). Hand-written; loaded only on /investors.
+ */
+
+.ksr-investors,
+.ksr-growth {
+   --inv-navy: var(--dark, #052240);
+   --inv-red: var(--primary, #e4252c);
+   --inv-ink-2: #4a5568;
+   --inv-card-shadow: 0 10px 30px rgba(5, 34, 64, .08);
+}
+
+/* ---------- KPI tiles ---------- */
+.ksr-kpi {
+   position: relative;
+   height: 100%;
+   padding: 22px 22px 20px;
+   border-radius: 20px;
+   background: #fff;
+   border: 1px solid rgba(5, 34, 64, .07);
+   box-shadow: var(--inv-card-shadow);
+}
+
+.ksr-kpi--accent {
+   background: linear-gradient(160deg, var(--inv-navy) 0%, #0b3a6b 100%);
+   border-color: transparent;
+}
+
+.ksr-kpi__icon {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   width: 42px;
+   height: 42px;
+   margin-bottom: 14px;
+   border-radius: 12px;
+   background: rgba(228, 37, 44, .1);
+   color: var(--inv-red);
+   font-size: 18px;
+}
+
+.ksr-kpi--accent .ksr-kpi__icon { background: rgba(255, 255, 255, .12); color: #fff; }
+
+.ksr-kpi__label {
+   margin: 0 0 4px;
+   font-size: 13px;
+   font-weight: 600;
+   letter-spacing: .6px;
+   text-transform: uppercase;
+   color: var(--inv-ink-2);
+}
+
+.ksr-kpi__value {
+   margin: 0;
+   font-family: var(--font-family-headings);
+   font-size: clamp(28px, 3.4vw, 40px);
+   font-weight: 800;
+   line-height: 1.1;
+   letter-spacing: -.5px;
+   color: var(--inv-navy);
+   font-variant-numeric: tabular-nums;
+}
+
+.ksr-kpi__note {
+   display: flex;
+   flex-wrap: wrap;
+   align-items: center;
+   gap: 6px 8px;
+   margin: 6px 0 0;
+   font-size: 13px;
+   color: var(--inv-ink-2);
+}
+
+.ksr-kpi--accent .ksr-kpi__label,
+.ksr-kpi--accent .ksr-kpi__note { color: rgba(255, 255, 255, .78); }
+.ksr-kpi--accent .ksr-kpi__value { color: #fff; }
+
+.ksr-kpi__trend {
+   display: inline-flex;
+   align-items: center;
+   gap: 5px;
+   padding: 2px 9px;
+   border-radius: 999px;
+   font-size: 12px;
+   font-weight: 700;
+   white-space: nowrap;
+}
+
+/* Status colours carry an icon and a sign, never colour alone. */
+.ksr-kpi__trend.is-up { background: #e3f4ea; color: #146c3b; }
+.ksr-kpi__trend.is-down { background: #fde8e8; color: #9b1c1c; }
+
+/* ---------- Chart cards ---------- */
+.ksr-chart-card {
+   height: 100%;
+   padding: 24px 24px 16px;
+   border-radius: 22px;
+   background: #fff;
+   border: 1px solid rgba(5, 34, 64, .07);
+   box-shadow: var(--inv-card-shadow);
+}
+
+.ksr-chart-card__head {
+   display: flex;
+   align-items: flex-start;
+   justify-content: space-between;
+   gap: 12px;
+   margin-bottom: 10px;
+}
+
+.ksr-chart-card__title {
+   margin: 0 0 2px;
+   font-size: 22px;
+   font-weight: 800;
+   color: var(--inv-navy);
+}
+
+.ksr-chart-card__sub {
+   margin: 0;
+   font-size: 14px;
+   color: var(--inv-ink-2);
+}
+
+/* ---------- Chart (partials/chart) ---------- */
+.ksr-chart { margin: 0; --chart-series: var(--inv-red, #e4252c); }
+.ksr-chart--navy { --chart-series: #1f5aa6; }
+
+.ksr-chart__plot { position: relative; }
+
+.ksr-chart svg {
+   display: block;
+   width: 100%;
+   height: auto;
+   overflow: visible;
+}
+
+.ksr-chart__grid { stroke: #e7ebf0; stroke-width: 1; }
+.ksr-chart__grid.is-base { stroke: #b8c2cf; }
+
+.ksr-chart__tick {
+   fill: #6b7686;
+   font-size: 12px;
+   font-family: var(--font-family-body, inherit);
+   font-variant-numeric: tabular-nums;
+}
+
+.ksr-chart__bar {
+   fill: var(--chart-series);
+   transition: opacity .15s ease;
+}
+
+.ksr-chart.is-hovering .ksr-chart__bar { opacity: .35; }
+.ksr-chart.is-hovering .ksr-chart__bar.is-active { opacity: 1; }
+
+.ksr-chart__line {
+   fill: none;
+   stroke: var(--chart-series);
+   stroke-width: 2.5;
+   stroke-linejoin: round;
+   stroke-linecap: round;
+}
+
+.ksr-chart__fill-top { stop-color: var(--chart-series); stop-opacity: .22; }
+.ksr-chart__fill-bottom { stop-color: var(--chart-series); stop-opacity: 0; }
+
+.ksr-chart__dot,
+.ksr-chart__hover-dot {
+   fill: var(--chart-series);
+   stroke: #fff;
+   stroke-width: 2;
+}
+
+.ksr-chart__direct {
+   fill: var(--inv-navy, #052240);
+   font-size: 13px;
+   font-weight: 700;
+   paint-order: stroke;
+   stroke: #fff;
+   stroke-width: 4px;
+   stroke-linejoin: round;
+}
+
+.ksr-chart__cross { stroke: #9aa6b6; stroke-width: 1; stroke-dasharray: 3 3; }
+
+.ksr-chart__hit { fill: transparent; cursor: crosshair; }
+
+.ksr-chart__tip {
+   position: absolute;
+   z-index: 5;
+   transform: translateX(-50%);
+   pointer-events: none;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   padding: 8px 12px;
+   border-radius: 10px;
+   background: var(--inv-navy, #052240);
+   color: #fff;
+   box-shadow: 0 8px 20px rgba(5, 34, 64, .25);
+   white-space: nowrap;
+   line-height: 1.3;
+}
+
+.ksr-chart__tip-label { font-size: 12px; opacity: .8; }
+.ksr-chart__tip-value { font-size: 15px; font-variant-numeric: tabular-nums; }
+
+.ksr-chart__table { margin-top: 8px; font-size: 14px; }
+.ksr-chart__table summary { cursor: pointer; color: var(--inv-ink-2); font-weight: 600; }
+.ksr-chart__table .table-responsive { max-height: 260px; overflow-y: auto; margin-top: 8px; }
+.ksr-chart__table td { font-variant-numeric: tabular-nums; }
+
+/* ---------- Year by year ---------- */
+.ksr-years {
+   padding: 26px 28px;
+   border-radius: 22px;
+   background: #f6f8fb;
+}
+
+.ksr-years__title { margin: 0 0 16px; font-size: 22px; font-weight: 800; color: var(--inv-navy); }
+
+.ksr-years__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+
+.ksr-years__row {
+   display: grid;
+   grid-template-columns: 110px minmax(0, 1fr) 80px 110px;
+   align-items: center;
+   gap: 14px;
+   font-variant-numeric: tabular-nums;
+}
+
+.ksr-years__year { font-weight: 700; color: var(--inv-navy); }
+.ksr-years__year small { font-weight: 400; color: var(--inv-ink-2); }
+
+.ksr-years__bar { height: 14px; border-radius: 7px; background: #e3e8ef; overflow: hidden; }
+.ksr-years__bar span { display: block; height: 100%; border-radius: 7px; background: var(--inv-red); }
+
+.ksr-years__value { font-weight: 700; color: var(--inv-navy); text-align: right; }
+.ksr-years__clients { font-size: 13px; color: var(--inv-ink-2); }
+
+@media (max-width: 575.98px) {
+   .ksr-years { padding: 20px 18px; }
+   .ksr-years__row { grid-template-columns: 70px minmax(0, 1fr) 64px; }
+   .ksr-years__clients { display: none; }
+}
+
+/* ---------- Reasons ---------- */
+.ksr-reason {
+   height: 100%;
+   padding: 24px;
+   border-radius: 20px;
+   border: 1px solid rgba(5, 34, 64, .08);
+   background: #fff;
+}
+
+.ksr-reason i { font-size: 26px; color: var(--inv-red); margin-bottom: 14px; display: block; }
+.ksr-reason h3 { font-size: 19px; font-weight: 800; color: var(--inv-navy); margin-bottom: 8px; }
+.ksr-reason p { margin: 0; font-size: 15px; color: var(--inv-ink-2); }
+
+/* ---------- Contact ---------- */
+.ksr-invest-cta {
+   display: flex;
+   flex-wrap: wrap;
+   align-items: center;
+   justify-content: space-between;
+   gap: 18px 28px;
+   padding: 28px 32px;
+   border-radius: 22px;
+   border: 2px solid var(--inv-red);
+   background: linear-gradient(180deg, #fff 0%, #fdf1f1 100%);
+}
+
+.ksr-invest-cta h3 { margin: 0 0 4px; font-size: 24px; font-weight: 800; color: var(--inv-navy); }
+
+.ksr-invest-cta__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px; }
+.ksr-invest-cta__link { font-weight: 700; color: var(--inv-navy); }
+.ksr-invest-cta__link:hover { color: var(--inv-red); }
+
+.ksr-investors__disclaimer {
+   max-width: 860px;
+   margin: 28px auto 0;
+   font-size: 13px;
+   text-align: center;
+   color: var(--inv-ink-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .ksr-chart__bar { transition: none; }
+}

@@ -98,6 +98,19 @@ class Shipment extends Model
     }
 
     /**
+     * The "Shipping From (State)" / "To" choices: every place in config('website.service_states')
+     * plus "Others". The stored value is the place name itself.
+     *
+     * @return array<string, string>
+     */
+    public static function routePlaceOptions(): array
+    {
+        $places = array_keys(config('website.service_states', []));
+
+        return array_combine([...$places, 'Others'], [...$places, 'Others']);
+    }
+
+    /**
      * Parse shipping reference to extract components
      * Format: CON{N}-{YY}-C{CY}-{CS}
      *

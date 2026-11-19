@@ -304,40 +304,14 @@ class CreateShipment extends CreateRecord
                             Forms\Components\Select::make('origin_branch_id')
                                 ->label('Shipping From (State)')
                                 ->required()
-                                ->options([
-                                    'Michigan' => 'Michigan',
-                                    'Illinois' => 'Illinois',
-                                    'Indiana' => 'Indiana',
-                                    'New York' => 'New York',
-                                    'New Jersey' => 'New Jersey',
-                                    'Kentucky' => 'Kentucky',
-                                    'Ohio' => 'Ohio',
-                                    'Missouri' => 'Missouri',
-                                    'Texas' => 'Texas',
-                                    'Maryland' => 'Maryland',
-                                    'Ghana' => 'Ghana',
-                                    'Others' => 'Others',
-                                ])
+                                ->options(Shipment::routePlaceOptions())
                                 ->searchable()
                                 ->native(false),
 
                             Forms\Components\Select::make('destination_branch_id')
                                 ->label('To')
                                 ->required()
-                                ->options([
-                                    'Michigan' => 'Michigan',
-                                    'Illinois' => 'Illinois',
-                                    'Indiana' => 'Indiana',
-                                    'New York' => 'New York',
-                                    'New Jersey' => 'New Jersey',
-                                    'Kentucky' => 'Kentucky',
-                                    'Ohio' => 'Ohio',
-                                    'Missouri' => 'Missouri',
-                                    'Texas' => 'Texas',
-                                    'Maryland' => 'Maryland',
-                                    'Ghana' => 'Ghana',
-                                    'Others' => 'Others',
-                                ])
+                                ->options(Shipment::routePlaceOptions())
                                 ->default('Ghana')
                                 ->searchable()
                                 ->native(false),

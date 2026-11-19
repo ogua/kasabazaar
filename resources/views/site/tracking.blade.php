@@ -3,6 +3,10 @@
 @section('title', 'Track Your Shipment')
 @section('meta_description', 'Track a KASAROSE LOGISTICS shipment — enter your tracking number or shipment reference for a live status update.')
 
+@push('styles')
+   <link rel="stylesheet" href="@siteAsset('css/tracking.css')">
+@endpush
+
 @section('content')
 
    <!-- Promo Section Start -->
@@ -80,13 +84,6 @@
                               <i class="fa-solid {!! $status['icon'] !!}"></i>
                               {{ $status['label'] }}
                            </span>
-                           @if ($estimatedDelivery)
-                              <span class="track-eta">
-                                 <i class="fa-solid fa-calendar-check" aria-hidden="true"></i>
-                                 <span class="track-eta-label">Estimated arrival in Ghana</span>
-                                 <strong>{{ $estimatedDelivery }}</strong>
-                              </span>
-                           @endif
                         </div>
                      </div>
 
@@ -136,25 +133,67 @@
                         </ol>
                      @endif
 
-                     <div class="row g-4 mb-5">
-                        @foreach ($facts as $label => $value)
-                           <div class="col-md-4 col-sm-6">
-                              <div class="bg-shade round p-4 h-100">
-                                 <p class="mb-1 small text-uppercase">{!! $label !!}</p>
-                                 <p class="mb-0 fw-bold">{{ $value }}</p>
+                     @if ($places || $dates)
+                        <div class="track-route row g-3 g-lg-4 mb-5">
+                           @foreach ($places as $label => $place)
+                              <div class="col-lg-6">
+                                 <div class="route-card{{ $place['image'] ? '' : ' route-card--plain' }}">
+                                    <div class="route-card__text">
+                                       <p class="route-card__label">{!! $label !!}</p>
+                                       <p class="route-card__place">{{ $place['place'] }}</p>
+                                       @if ($place['country'])
+                                          <p class="route-card__country">{{ $place['country'] }}</p>
+                                       @endif
+                                    </div>
+                                    @if ($place['image'])
+                                       <div class="route-card__art">
+                                          <img src="{{ asset('site/'.$place['image']) }}" alt="{!! $place['landmark'] !!}"
+                                               title="{!! $place['landmark'] !!}" width="960" height="480" loading="lazy">
+                                          <svg class="route-card__swoosh" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+                                             <path class="route-card__mask" d="M0,0 L34,0 C20,30 12,64 0,100 Z"/>
+                                             <path class="route-card__edge" d="M34,0 C20,30 12,64 0,100" vector-effect="non-scaling-stroke"/>
+                                          </svg>
+                                       </div>
+                                    @endif
+                                 </div>
                               </div>
-                           </div>
-                        @endforeach
-                     </div>
+                           @endforeach
+                           @foreach ($dates as $label => $date)
+                              <div class="col-lg-{{ count($dates) === 1 ? '12' : (count($dates) === 2 ? '6' : '4') }}">
+                                 <div class="date-card">
+                                    <span class="date-card__icon"><i class="fa-solid {!! $date['icon'] !!}" aria-hidden="true"></i></span>
+                                    <div class="date-card__text">
+                                       <p class="date-card__label">{!! $label !!}</p>
+                                       <p class="date-card__value">{{ $date['value'] }}</p>
+                                       @if ($date['note'])
+                                          <p class="date-card__note">{{ $date['note'] }}</p>
+                                       @endif
+                                    </div>
+                                 </div>
+                              </div>
+                           @endforeach
+                        </div>
+                     @endif
 
                      @if ($canPay)
-                        <div class="track-pay-cta mb-5">
-                           <div class="track-pay-cta-text">
-                              <h3 class="h5 mb-1"><i class="fa-solid fa-credit-card"></i> Paying for this shipment?</h3>
-                              <p class="mb-0">Settle your balance online in US dollars. We&rsquo;ll ask for your phone number or email first, so only you see the amount.</p>
+                        <div class="pay-card mb-5">
+                           <div class="pay-card__body">
+                              <h3 class="pay-card__title">
+                                 <span class="pay-card__icon"><i class="fa-solid fa-credit-card" aria-hidden="true"></i></span>
+                                 Paying for this shipment?
+                              </h3>
+                              <p class="pay-card__text">Settle your balance online in US dollars. We&rsquo;ll ask for your phone number or email first, so only you see the amount.</p>
+                              <p class="pay-card__secure">
+                                 <span class="pay-card__shield"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></span>
+                                 Your payment is private and secure
+                              </p>
                            </div>
-                           <a href="{{ route('tracking-payment.create', $shipment->tracking_number) }}" class="btn btn-primary">
-                              Pay Now <i class="fa fa-arrow-right"></i><span></span>
+                           <picture class="pay-card__person">
+                              <source srcset="{{ asset('site/images/team/esther-gyebour-fosu-cutout.webp') }}" type="image/webp">
+                              <img src="{{ asset('site/images/team/esther-gyebour-fosu-cutout.png') }}" alt="" width="540" height="660" loading="lazy">
+                           </picture>
+                           <a href="{{ route('tracking-payment.create', $shipment->tracking_number) }}" class="pay-card__btn">
+                              Pay Now <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
                            </a>
                         </div>
                      @endif

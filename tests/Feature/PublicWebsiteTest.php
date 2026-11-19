@@ -54,6 +54,7 @@ class PublicWebsiteTest extends TestCase
             'home' => ['/', 'Their doorstep in America. <em>Your door in Ghana.</em>'],
             'about' => ['/about-us', 'About Us'],
             'our companies' => ['/our-companies', 'KASAROSE MARKET'],
+            'investors' => ['/investors', 'Growing the USA&ndash;Ghana shipping corridor.'],
             'services' => ['/our-services', 'Air Freight'],
             'quote' => ['/quote', 'Request a Quote'],
             'tracking' => ['/tracking', 'Enter Your Tracking Number'],
@@ -209,20 +210,86 @@ class PublicWebsiteTest extends TestCase
             ->assertSee($legacy->tracking_number);
     }
 
-    public function test_tracking_shows_the_estimated_arrival_on_the_status_label_until_delivery(): void
+    public function test_tracking_shows_the_estimated_delivery_card_until_delivery(): void
     {
         $shipment = $this->makeShipment(['status' => 'shipped', 'estimated_delivery_date' => '2026-12-24']);
 
         $this->get('/tracking?ref='.$shipment->tracking_number)
             ->assertOk()
-            ->assertSee('Estimated arrival in Ghana')
-            ->assertSee('Thu, Dec 24, 2026');
+            ->assertSeeInOrder(['Estimated Delivery', 'Thu, Dec 24, 2026', 'Estimated arrival in Ghana']);
 
         $shipment->update(['status' => 'delivered']);
 
         $this->get('/tracking?ref='.$shipment->tracking_number)
             ->assertOk()
             ->assertDontSee('Estimated arrival in Ghana');
+    }
+
+    public function test_tracking_shows_origin_and_destination_with_their_state_scenes(): void
+    {
+        $shipment = $this->makeShipment(['status' => 'shipped', 'shipped_at' => '2026-09-19 10:00:00']);
+        $shipment->forceFill(['origin_branch_id' => 'Pennsylvania', 'destination_branch_id' => 'Ghana'])->saveQuietly();
+
+        $this->get('/tracking?ref='.$shipment->tracking_number)
+            ->assertOk()
+            ->assertSee(asset('site/css/tracking.css'), false)
+            ->assertSeeInOrder(['Origin', 'Pennsylvania', 'Destination', 'Ghana', 'Shipped', 'Sep 19, 2026'])
+            ->assertSee(asset('site/images/states/pennsylvania.svg'), false)
+            ->assertSee(asset('site/images/states/ghana.svg'), false)
+            ->assertSee('Philadelphia &amp; Independence Hall', false);
+    }
+
+    public function test_a_place_without_a_scene_gets_a_plain_card(): void
+    {
+        $shipment = $this->makeShipment(['status' => 'shipped']);
+        $shipment->forceFill(['origin_branch_id' => 'Others'])->saveQuietly();
+
+        $this->get('/tracking?ref='.$shipment->tracking_number)
+            ->assertOk()
+            ->assertSee('route-card route-card--plain', false)
+            ->assertSee('Others');
+    }
+
+    public function test_the_pay_card_shows_only_when_looked_up_by_tracking_number(): void
+    {
+        $shipment = $this->makeShipment(['status' => 'shipped', 'shipping_reference' => 'CON50-26-C1-'.Str::random(4)]);
+
+        $this->get('/tracking?ref='.$shipment->tracking_number)
+            ->assertOk()
+            ->assertSee('Paying for this shipment?')
+            ->assertSee('Your payment is private and secure')
+            ->assertSee(route('tracking-payment.create', $shipment->tracking_number), false);
+
+        $this->get('/tracking?ref='.$shipment->shipping_reference)
+            ->assertOk()
+            ->assertDontSee('Paying for this shipment?');
+    }
+
+    public function test_the_app_payload_carries_a_raster_scene_for_each_place(): void
+    {
+        $shipment = $this->makeShipment(['status' => 'shipped']);
+        $shipment->forceFill(['origin_branch_id' => 'Maine', 'destination_branch_id' => 'Ghana'])->saveQuietly();
+
+        $payload = app(\App\Services\PublicShipmentTracking::class)->payload($shipment->fresh(), true);
+
+        $this->assertSame('Maine', $payload['origin']['place']);
+        $this->assertSame(asset('site/images/states/maine.jpg'), $payload['origin']['image']);
+        $this->assertSame(asset('site/images/states/ghana.jpg'), $payload['destination']['image']);
+    }
+
+    public function test_every_service_state_has_its_scene_on_disk_and_is_a_shipment_route_option(): void
+    {
+        $options = Shipment::routePlaceOptions();
+
+        foreach (config('website.service_states') as $place => $scene) {
+            $this->assertFileExists(public_path('site/'.$scene['image']));
+            $this->assertFileExists(public_path('site/'.preg_replace('/\.svg$/', '.jpg', $scene['image'])));
+            $this->assertArrayHasKey($place, $options);
+        }
+
+        $this->assertArrayHasKey('Pennsylvania', $options);
+        $this->assertArrayHasKey('Maine', $options);
+        $this->assertSame('Others', array_key_last($options));
     }
 
     public function test_tracking_shows_the_live_support_card_and_no_eta_without_a_date(): void

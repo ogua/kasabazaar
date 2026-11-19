@@ -23,6 +23,7 @@
                   <ul>
                      <li><a href="{{ route('about-us') }}">About Us</a></li>
                      <li><a href="{{ route('our-companies') }}">Our Companies</a></li>
+                     <li><a href="{{ route('investors') }}">Investors</a></li>
                      <li><a href="{{ route('our-services') }}">Our Services</a></li>
                      <li><a href="{{ route('our-projects') }}">Our Work</a></li>
                      <li><a href="{{ route('our-blog') }}">News</a></li>

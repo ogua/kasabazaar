@@ -223,4 +223,41 @@ return [
         'Other',
     ],
 
+    /*
+    | The places a shipment travels from or to, keyed by the name stored in
+    | shipments.origin_branch_id / destination_branch_id. Drives the back-office
+    | "Shipping From (State)" / "To" pickers, the "states we collect from" copy and the
+    | scene on the tracking page's Origin / Destination cards. `image` is relative to
+    | public/site (flat-vector scenes, 960x480, landmark kept clear of the edges).
+    | Add a state here, not in a blade or a Filament form.
+    */
+    'service_states' => [
+        'Michigan' => ['image' => 'images/states/michigan.svg', 'landmark' => 'Detroit &amp; the Renaissance Center'],
+        'Illinois' => ['image' => 'images/states/illinois.svg', 'landmark' => 'Chicago &amp; Willis Tower'],
+        'Indiana' => ['image' => 'images/states/indiana.svg', 'landmark' => 'Indianapolis &amp; the Soldiers&rsquo; and Sailors&rsquo; Monument'],
+        'New York' => ['image' => 'images/states/new-york.svg', 'landmark' => 'New York Harbor &amp; the Statue of Liberty'],
+        'New Jersey' => ['image' => 'images/states/new-jersey.svg', 'landmark' => 'Barnegat Lighthouse on the Jersey Shore'],
+        'Pennsylvania' => ['image' => 'images/states/pennsylvania.svg', 'landmark' => 'Philadelphia &amp; Independence Hall'],
+        'Kentucky' => ['image' => 'images/states/kentucky.svg', 'landmark' => 'Louisville &amp; the twin spires of Churchill Downs'],
+        'Ohio' => ['image' => 'images/states/ohio.svg', 'landmark' => 'Cleveland &amp; Terminal Tower'],
+        'Missouri' => ['image' => 'images/states/missouri.svg', 'landmark' => 'St. Louis &amp; the Gateway Arch'],
+        'Texas' => ['image' => 'images/states/texas.svg', 'landmark' => 'Dallas &amp; Reunion Tower'],
+        'Maryland' => ['image' => 'images/states/maryland.svg', 'landmark' => 'Baltimore&rsquo;s Inner Harbor'],
+        'Maine' => ['image' => 'images/states/maine.svg', 'landmark' => 'Portland Head Light, Cape Elizabeth'],
+        'Ghana' => ['image' => 'images/states/ghana.svg', 'landmark' => 'Accra &amp; the Black Star Gate'],
+    ],
+
+    /*
+    | The investors page (/investors): client growth and revenue charts built from live
+    | data by App\Services\PublicInvestorMetrics. Revenue is billed shipment value in USD
+    | (shipments.total, cancelled shipments excluded). Set WEBSITE_INVESTOR_FIGURES=false
+    | to keep the page but hide the absolute revenue figures (growth stays visible).
+    */
+    'investors' => [
+        'show_revenue_figures' => (bool) env('WEBSITE_INVESTOR_FIGURES', true),
+        'cache_minutes' => 360,
+        'months' => 24,
+        'contact_email' => env('WEBSITE_INVESTOR_EMAIL', 'support@kasarose.com'),
+    ],
+
 ];

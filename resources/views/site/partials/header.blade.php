@@ -35,6 +35,7 @@
                <li><a href="{{ route('our-tracking') }}">Track a Shipment</a></li>
                <li><a href="{{ route('our-projects') }}">Our Work</a></li>
                <li><a href="{{ route('our-blog') }}">News</a></li>
+               <li><a href="{{ route('investors') }}">Investors</a></li>
                <li><a href="{{ route('our-feeback') }}">Give Feedback</a></li>
             </ul>
          </nav>
