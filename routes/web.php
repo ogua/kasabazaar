@@ -5,6 +5,7 @@ use App\Http\Controllers\ExternalShipmentController;
 use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\InvestmentController;
 use App\Http\Controllers\InvestorReportController;
+use App\Http\Controllers\ManualReceiptController;
 use App\Http\Controllers\PublicShipmentController;
 use App\Http\Controllers\PublicShipmentRequestController;
 use App\Http\Controllers\ShippingController;
@@ -185,6 +186,13 @@ Route::middleware(['signed', 'audit.download'])->group(function () {
 
     Route::get('/investor/{investor}/reports/expenses/download', [InvestorReportController::class, 'expensesDownload'])
         ->name('investor-report-expenses-download');
+
+    // Receipts issued by hand for payments received before/outside the system (ManualReceiptResource).
+    Route::get('/manual-receipt/{receipt}', [ManualReceiptController::class, 'show'])
+        ->name('manual-receipt');
+
+    Route::get('/manual-receipt/{receipt}/download', [ManualReceiptController::class, 'download'])
+        ->name('manual-receipt-download');
 });
 
 Route::get('/impersonate/start/{user}', [ImpersonationController::class, 'start'])

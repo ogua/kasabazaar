@@ -31,6 +31,11 @@ class Branch extends Model
         return $this->hasMany(Client::class);
     }
 
+    public function manualReceipts(): HasMany
+    {
+        return $this->hasMany(ManualReceipt::class);
+    }
+
     public function staff(): HasMany
     {
         return $this->hasMany(Client::class);
