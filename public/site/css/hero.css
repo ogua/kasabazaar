@@ -15,7 +15,7 @@
 
 .ksr-slide {
    position: relative;
-   min-height: clamp(700px, 88vh, 820px);
+   min-height: clamp(760px, 94vh, 880px);
    background: var(--ksr-navy-2);
    overflow: hidden;
 }
@@ -55,7 +55,7 @@
 .ksr-slide__panel {
    display: flex;
    align-items: center;
-   padding: 190px 0 110px var(--ksr-gutter);
+   padding: 230px 0 100px var(--ksr-gutter);
    background:
       radial-gradient(circle at 0 0, rgba(255, 255, 255, .07), transparent 55%),
       linear-gradient(165deg, #0a3462 0%, var(--ksr-navy) 62%);
@@ -68,23 +68,25 @@
    color: #fff;
 }
 
+/* USA → GHANA is the headline route, so the badge is sized as a headline, not a tag. */
 .ksr-route {
    display: inline-flex;
    align-items: center;
-   gap: 10px;
-   padding: 6px 14px;
-   margin-bottom: 22px;
-   border: 1px solid rgba(255, 255, 255, .22);
+   gap: .6em;
+   padding: .45em 1.1em;
+   margin-bottom: 24px;
+   border: 2px solid rgba(255, 255, 255, .3);
    border-radius: 100px;
    font-family: var(--font-family-headings);
-   font-size: 13px;
-   font-weight: 700;
+   font-size: clamp(18px, 1.7vw, 26px);
+   font-weight: 800;
+   line-height: 1.2;
    letter-spacing: .14em;
    color: #fff;
-   background: rgba(255, 255, 255, .06);
+   background: rgba(255, 255, 255, .08);
 }
 
-.ksr-route i { color: var(--ksr-red); font-size: 12px; }
+.ksr-route i { color: var(--ksr-red); font-size: .9em; }
 
 .ksr-eyebrow {
    display: flex;

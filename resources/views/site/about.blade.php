@@ -263,7 +263,7 @@ $states = array_values(array_diff(array_keys(config('website.service_states', []
             <div class="col-md-5">
                <img class="ksr-us-team__photo" src="{{ asset('site/'.$photos['usTeam']) }}"
                   alt="Two members of the KASAROSE LOGISTICS team at the US warehouse with a branded shipping box"
-                  width="800" height="984" loading="lazy">
+                  width="928" height="1141" loading="lazy">
             </div>
             <div class="col-md-7">
                <div class="ksr-us-team__copy">
