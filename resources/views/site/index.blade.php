@@ -18,6 +18,26 @@ $heroSlides = config('website.hero_slides') ?? [];
 @push('scripts')
    <script src="@siteAsset('js/hero.js')"></script>
    <script src="@siteAsset('js/charts.js')" defer></script>
+   <script>
+      (function () {
+         var video = document.querySelector('.ksr-video__player');
+         if (!video || !('IntersectionObserver' in window)
+            || window.matchMedia('(prefers-reduced-motion: reduce)').matches) { return; }
+         var userPaused = false;
+         video.addEventListener('pause', function () { if (!video.dataset.autoPausing) { userPaused = true; } });
+         new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+               if (entry.isIntersecting && !userPaused) {
+                  video.play().catch(function () {});
+               } else if (!entry.isIntersecting && !video.paused) {
+                  video.dataset.autoPausing = '1';
+                  video.pause();
+                  delete video.dataset.autoPausing;
+               }
+            });
+         }, { threshold: 0.5 }).observe(video);
+      })();
+   </script>
 @endpush
 
    <!-- Hero Section Start -->
@@ -112,6 +132,34 @@ $heroSlides = config('website.hero_slides') ?? [];
       </div>
    </section>
    <!-- Quick Track Section End -->
+
+   <!-- Video Section Start -->
+   <section class="ksr-video sec-padding overflow-hidden">
+      <div class="container">
+         <div class="row align-items-center gy-5">
+            <div class="col-lg-5">
+               <span class="sub-title2 fadeInUp single">See Us at Work</span>
+               <h2 class="sec-title text-white">From a Doorstep in the US to a Door in Ghana</h2>
+               <p class="lead">Twenty seconds with the KASAROSE LOGISTICS crew: picked up, packed, shipped and
+                  delivered, and tracked the whole way.</p>
+               <div class="ksr-actions">
+                  <a href="{{ route('quote') }}" class="btn btn-hover btn-primary">Book a Pickup
+                     <i class="fa fa-arrow-right"></i><span></span></a>
+               </div>
+            </div>
+            <div class="col-lg-7">
+               <div class="ksr-video__frame">
+                  <video class="ksr-video__player" muted loop playsinline controls preload="metadata"
+                     poster="{{ asset('site/images/hero/pickup-usa.jpg') }}"
+                     aria-label="KASAROSE LOGISTICS: shipping from the USA to Ghana">
+                     <source src="{{ asset('site/videos/kasarose-video.mp4') }}" type="video/mp4">
+                  </video>
+               </div>
+            </div>
+         </div>
+      </div>
+   </section>
+   <!-- Video Section End -->
 
    <!-- Services Section Start -->
    <div class="services-sec2 sec-padding overflow-hidden bg-cover jarallax" data-jarallax data-speed=".2">
